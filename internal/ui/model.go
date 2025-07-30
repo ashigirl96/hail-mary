@@ -38,41 +38,41 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "esc":
 			m.logger.Debug("TUI exit requested")
 			return m, tea.Quit
-			
+
 		case "enter":
 			m.confirmed = true
 			m.logger.Debug("Input confirmed", slog.String("input", m.input))
 			return m, tea.Quit
-			
+
 		case "left":
 			if m.cursor > 0 {
 				m.cursor--
 			}
-			
+
 		case "right":
 			if m.cursor < len(m.input) {
 				m.cursor++
 			}
-			
+
 		case "backspace":
 			if m.cursor > 0 && len(m.input) > 0 {
 				// カーソル位置の前の文字を削除
 				m.input = m.input[:m.cursor-1] + m.input[m.cursor:]
 				m.cursor--
 			}
-			
+
 		case "delete":
 			if m.cursor < len(m.input) {
 				// カーソル位置の文字を削除
 				m.input = m.input[:m.cursor] + m.input[m.cursor+1:]
 			}
-			
+
 		case "home":
 			m.cursor = 0
-			
+
 		case "end":
 			m.cursor = len(m.input)
-			
+
 		default:
 			// 通常の文字入力
 			if len(msg.String()) == 1 {
@@ -82,7 +82,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	
+
 	return m, nil
 }
 
@@ -95,7 +95,7 @@ func (m Model) View() string {
 	} else {
 		displayText = m.input + "│"
 	}
-	
+
 	return fmt.Sprintf(
 		"\n🚀 Hail Mary TUI Demo\n\n"+
 			"Enter some text:\n"+

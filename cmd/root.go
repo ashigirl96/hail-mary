@@ -45,7 +45,7 @@ func Execute() {
 func init() {
 	// グローバルフラグの設定
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Set log level (debug, info, warn, error)")
-	
+
 	// 補完オプションの設定
 	rootCmd.CompletionOptions = cobra.CompletionOptions{
 		// フラグの補完時に -- を必要としない
@@ -81,7 +81,7 @@ func setupLogger() {
 
 	handler := slog.NewTextHandler(os.Stderr, opts)
 	logger = slog.New(handler)
-	
+
 	// デフォルトロガーとして設定
 	slog.SetDefault(logger)
 }
@@ -97,7 +97,7 @@ func GetLogger() *slog.Logger {
 // GetFlagCompletions returns dynamic flag completions for a command
 func GetFlagCompletions(cmd *cobra.Command) []string {
 	var completions []string
-	
+
 	// ローカルフラグを取得
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		// ロングフラグ
@@ -106,7 +106,7 @@ func GetFlagCompletions(cmd *cobra.Command) []string {
 			completion += "\t" + flag.Usage
 		}
 		completions = append(completions, completion)
-		
+
 		// ショートフラグがある場合
 		if flag.Shorthand != "" {
 			shortCompletion := "-" + flag.Shorthand
@@ -116,7 +116,7 @@ func GetFlagCompletions(cmd *cobra.Command) []string {
 			completions = append(completions, shortCompletion)
 		}
 	})
-	
+
 	// 継承されたフラグ（グローバルフラグ）を取得
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
 		// 既に追加されていないか確認
@@ -126,7 +126,7 @@ func GetFlagCompletions(cmd *cobra.Command) []string {
 				alreadyAdded = true
 			}
 		})
-		
+
 		if !alreadyAdded {
 			// ロングフラグ
 			completion := "--" + flag.Name
@@ -134,7 +134,7 @@ func GetFlagCompletions(cmd *cobra.Command) []string {
 				completion += "\t" + flag.Usage
 			}
 			completions = append(completions, completion)
-			
+
 			// ショートフラグがある場合
 			if flag.Shorthand != "" {
 				shortCompletion := "-" + flag.Shorthand
@@ -145,6 +145,6 @@ func GetFlagCompletions(cmd *cobra.Command) []string {
 			}
 		}
 	})
-	
+
 	return completions
 }

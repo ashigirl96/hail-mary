@@ -11,8 +11,6 @@ var (
 	// listコマンド固有のフラグ
 	showAll bool
 	format  string
-	verbose bool
-	limit   int
 )
 
 var listCmd = &cobra.Command{
@@ -25,12 +23,12 @@ var listCmd = &cobra.Command{
 			// 動的にフラグを取得
 			return GetFlagCompletions(cmd), cobra.ShellCompDirectiveNoFileComp
 		}
-		
+
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := GetLogger()
-		
+
 		logger.Debug("Executing list command",
 			slog.Bool("show-all", showAll),
 			slog.String("format", format),
@@ -81,9 +79,7 @@ func init() {
 	// フラグの設定
 	listCmd.Flags().BoolVarP(&showAll, "all", "a", false, "Show all items")
 	listCmd.Flags().StringVarP(&format, "format", "f", "text", "Output format (text, json, csv)")
-	listCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
-	listCmd.Flags().IntVar(&limit, "limit", 10, "Maximum number of items to display")
-	
+
 	// formatフラグの補完関数を登録
 	listCmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"text", "json", "csv"}, cobra.ShellCompDirectiveNoFileComp

@@ -4,8 +4,8 @@ import (
 	"log/slog"
 
 	"github.com/ashigirl96/hail-mary/internal/ui"
-	"github.com/spf13/cobra"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -23,22 +23,22 @@ var uiCmd = &cobra.Command{
 			// 動的にフラグを取得
 			return GetFlagCompletions(cmd), cobra.ShellCompDirectiveNoFileComp
 		}
-		
+
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger := GetLogger()
-		
+
 		logger.Info("Launching TUI",
 			slog.String("initial_text", initialText),
 		)
 
 		// TUIモデルの初期化
 		model := ui.NewModel(initialText, logger)
-		
+
 		// Bubbletea プログラムの作成と実行
 		p := tea.NewProgram(model)
-		
+
 		// TUIを実行
 		finalModel, err := p.Run()
 		if err != nil {

@@ -78,3 +78,8 @@ The internal/ui/model.go implements a text input field with:
 - Keyboard shortcuts (Enter to confirm, Esc to cancel)
 
 The model passes the logger through to enable debugging of TUI events without interfering with the terminal UI rendering.
+
+## Development Guidelines
+
+### Code Best Practices
+- プログラムにコメントを残すときはすべて英語にする
