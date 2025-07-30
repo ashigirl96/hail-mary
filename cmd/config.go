@@ -96,4 +96,5 @@ func init() {
 	configCmd.AddCommand(configGetCmd)
 	configCmd.AddCommand(configSetCmd)
 	configCmd.AddCommand(configListCmd)
+	
 }

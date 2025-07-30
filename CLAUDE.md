@@ -45,10 +45,13 @@ make build-all
 ```
 
 ### Post-Build Requirements
-After running `make build`, always execute the following command to update zsh completions:
+After running `make build`, always execute the following commands to update zsh completions:
 ```bash
 ./bin/hail-mary completion zsh > ~/.local/share/zinit/completions/_hm
+./scripts/fix-completion.sh ~/.local/share/zinit/completions/_hm
 ```
+
+Note: The fix-completion.sh script corrects a known Cobra bug where array appending syntax in zsh completions causes duplicate display.
 
 ## Architecture Overview
 

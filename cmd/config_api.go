@@ -85,4 +85,5 @@ func init() {
 	// Add subcommands to config api endpoint
 	configApiEndpointCmd.AddCommand(configApiEndpointGetCmd)
 	configApiEndpointCmd.AddCommand(configApiEndpointSetCmd)
+	
 }
