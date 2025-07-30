@@ -17,6 +17,15 @@ var uiCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Launch the interactive TUI",
 	Long:  `Launch an interactive Terminal User Interface using Bubbletea.`,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		// 引数の位置でもフラグの候補を返す
+		if len(args) == 0 && toComplete == "" {
+			// 動的にフラグを取得
+			return GetFlagCompletions(cmd), cobra.ShellCompDirectiveNoFileComp
+		}
+		
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger := GetLogger()
 		

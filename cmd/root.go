@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -44,6 +45,18 @@ func Execute() {
 func init() {
 	// グローバルフラグの設定
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Set log level (debug, info, warn, error)")
+	
+	// 補完オプションの設定
+	rootCmd.CompletionOptions = cobra.CompletionOptions{
+		// フラグの補完時に -- を必要としない
+		HiddenDefaultCmd: true,
+		// サブコマンドの後でもフラグの補完を有効にする
+		DisableDefaultCmd: false,
+		// フラグの補完をより積極的に行う
+		DisableNoDescFlag: false,
+		// 説明なしのフラグも補完する
+		DisableDescriptions: false,
+	}
 }
 
 // setupLogger configures slog based on the log level flag
@@ -79,4 +92,59 @@ func GetLogger() *slog.Logger {
 		setupLogger()
 	}
 	return logger
+}
+
+// GetFlagCompletions returns dynamic flag completions for a command
+func GetFlagCompletions(cmd *cobra.Command) []string {
+	var completions []string
+	
+	// ローカルフラグを取得
+	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		// ロングフラグ
+		completion := "--" + flag.Name
+		if flag.Usage != "" {
+			completion += "\t" + flag.Usage
+		}
+		completions = append(completions, completion)
+		
+		// ショートフラグがある場合
+		if flag.Shorthand != "" {
+			shortCompletion := "-" + flag.Shorthand
+			if flag.Usage != "" {
+				shortCompletion += "\t" + flag.Usage
+			}
+			completions = append(completions, shortCompletion)
+		}
+	})
+	
+	// 継承されたフラグ（グローバルフラグ）を取得
+	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
+		// 既に追加されていないか確認
+		alreadyAdded := false
+		cmd.Flags().VisitAll(func(localFlag *pflag.Flag) {
+			if localFlag.Name == flag.Name {
+				alreadyAdded = true
+			}
+		})
+		
+		if !alreadyAdded {
+			// ロングフラグ
+			completion := "--" + flag.Name
+			if flag.Usage != "" {
+				completion += "\t" + flag.Usage
+			}
+			completions = append(completions, completion)
+			
+			// ショートフラグがある場合
+			if flag.Shorthand != "" {
+				shortCompletion := "-" + flag.Shorthand
+				if flag.Usage != "" {
+					shortCompletion += "\t" + flag.Usage
+				}
+				completions = append(completions, shortCompletion)
+			}
+		}
+	})
+	
+	return completions
 }
