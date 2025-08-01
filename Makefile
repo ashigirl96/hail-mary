@@ -7,6 +7,8 @@ GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 GOFMT=gofmt
 GOLINT=golangci-lint
+GOIMPORTS=goimports
+STATICCHECK=staticcheck
 
 # Binary name
 BINARY_NAME=hail-mary
@@ -62,11 +64,25 @@ coverage:
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
 
-## lint: Run linter
+## lint: Run linter, goimports, and staticcheck
 lint:
-	@echo "Running linter..."
+	@echo "Running goimports (auto-fix)..."
+	@if command -v goimports >/dev/null 2>&1; then \
+		$(GOIMPORTS) -w .; \
+	else \
+		echo "goimports not installed. Install with: go install golang.org/x/tools/cmd/goimports@latest"; \
+		exit 1; \
+	fi
+	@echo "Running staticcheck (no auto-fix available)..."
+	@if command -v staticcheck >/dev/null 2>&1; then \
+		$(STATICCHECK) ./...; \
+	else \
+		echo "staticcheck not installed. Install with: go install honnef.co/go/tools/cmd/staticcheck@latest"; \
+		exit 1; \
+	fi
+	@echo "Running golangci-lint (with auto-fix)..."
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		$(GOLINT) run ./...; \
+		$(GOLINT) run --fix ./...; \
 	else \
 		echo "golangci-lint not installed. Install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
 		exit 1; \
