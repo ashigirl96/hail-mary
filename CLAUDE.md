@@ -62,28 +62,32 @@ This is a CLI application built with **Cobra** (command framework), **slog** (st
 The `internal/claude/executor.go` provides enhanced session management capabilities:
 
 - **SessionInfo**: Struct containing session ID, result, cost, duration, and turns
-- **ExecuteWithSessionTracking**: Execute prompts and retrieve session information using print mode + JSON
+- **ExecuteInteractive**: Now automatically gets session ID and continues interactively (NEW!)
+- **ExecuteAndContinueInteractive**: Same as ExecuteInteractive but also returns SessionInfo
+- **ExecuteWithSessionTracking**: Execute prompts and retrieve session information (print mode)
 - **ResumeSession**: Resume specific sessions by session ID (print mode)
 - **ExecuteInteractiveWithSession**: Resume specific sessions in interactive mode
 - **Input Validation**: Security validation for prompts and session IDs
 
-Note: Session IDs are automatically returned in the JSON response when using print mode (`-p --output-format=json`), so there's no need to parse session files separately.
+Note: Session IDs are automatically returned in the JSON response when using print mode (`-p --output-format=json`).
 
 #### Usage Example
 ```go
 executor := claude.NewExecutor()
 
-// Execute with session tracking
+// NEW: Interactive mode with automatic session tracking
+err := executor.ExecuteInteractive("Create a function")
+// This automatically:
+// 1. Executes the prompt and gets session ID
+// 2. Shows initial response
+// 3. Continues in interactive mode
+
+// Alternative: Get SessionInfo while starting interactive mode
+sessionInfo, err := executor.ExecuteAndContinueInteractive("Create a function")
+
+// Programmatic execution (non-interactive)
 sessionInfo, err := executor.ExecuteWithSessionTracking("Create a function")
-if err == nil {
-    fmt.Printf("Session ID: %s, Cost: $%.6f\n", sessionInfo.ID, sessionInfo.CostUSD)
-}
-
-// Resume a specific session (print mode)
 resumedInfo, err := executor.ResumeSession(sessionInfo.ID, "Add error handling")
-
-// Resume a specific session (interactive mode)
-err = executor.ExecuteInteractiveWithSession(sessionInfo.ID)
 ```
 
 ### Command Structure
