@@ -57,6 +57,35 @@ Note: The fix-completion.sh script corrects a known Cobra bug where array append
 
 This is a CLI application built with **Cobra** (command framework), **slog** (structured logging), and **Bubbletea** (TUI framework). The architecture follows a clean separation of concerns:
 
+### Claude Session Management
+
+The `internal/claude/executor.go` provides enhanced session management capabilities:
+
+- **SessionInfo**: Struct containing session ID, result, cost, duration, and turns
+- **ExecuteWithSessionTracking**: Execute prompts and retrieve session information using print mode + JSON
+- **ResumeSession**: Resume specific sessions by session ID (print mode)
+- **ExecuteInteractiveWithSession**: Resume specific sessions in interactive mode
+- **Input Validation**: Security validation for prompts and session IDs
+
+Note: Session IDs are automatically returned in the JSON response when using print mode (`-p --output-format=json`), so there's no need to parse session files separately.
+
+#### Usage Example
+```go
+executor := claude.NewExecutor()
+
+// Execute with session tracking
+sessionInfo, err := executor.ExecuteWithSessionTracking("Create a function")
+if err == nil {
+    fmt.Printf("Session ID: %s, Cost: $%.6f\n", sessionInfo.ID, sessionInfo.CostUSD)
+}
+
+// Resume a specific session (print mode)
+resumedInfo, err := executor.ResumeSession(sessionInfo.ID, "Add error handling")
+
+// Resume a specific session (interactive mode)
+err = executor.ExecuteInteractiveWithSession(sessionInfo.ID)
+```
+
 ### Command Structure
 - **main.go**: Entry point that calls cmd.Execute()
 - **cmd/root.go**: Root command setup with global flags (--log-level) and slog configuration
