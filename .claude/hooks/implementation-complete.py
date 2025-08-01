@@ -52,8 +52,9 @@ def analyze_implementation_activity(transcript: list) -> dict:
         content = entry.get('content', [])
         
         for item in content:
-            if item.get('type') == 'text':
-                text = item.get('text', '').lower()
+            # Handle both string content and dict content
+            if isinstance(item, str):
+                text = item.lower()
                 
                 # Check for implementation keywords
                 if any(keyword in text for keyword in impl_keywords):
@@ -65,18 +66,33 @@ def analyze_implementation_activity(transcript: list) -> dict:
                 
                 if any(keyword in text for keyword in test_keywords):
                     implementation_indicators['test_commands'] = True
-            
-            elif item.get('type') == 'tool_use':
-                tool_name = item.get('name', '')
-                implementation_indicators['tool_usage'].append(tool_name)
+                    
+            elif isinstance(item, dict):
+                if item.get('type') == 'text':
+                    text = item.get('text', '').lower()
+                    
+                    # Check for implementation keywords
+                    if any(keyword in text for keyword in impl_keywords):
+                        implementation_indicators['implementation_keywords'] = True
+                    
+                    # Check for build/test commands
+                    if any(keyword in text for keyword in build_keywords):
+                        implementation_indicators['build_commands'] = True
+                    
+                    if any(keyword in text for keyword in test_keywords):
+                        implementation_indicators['test_commands'] = True
                 
-                # Track file operations
-                if tool_name in ['Write', 'Edit', 'MultiEdit']:
-                    if tool_name == 'Write':
-                        implementation_indicators['files_created'] += 1
-                    else:
-                        implementation_indicators['files_modified'] += 1
-                    implementation_indicators['code_written'] = True
+                elif item.get('type') == 'tool_use':
+                    tool_name = item.get('name', '')
+                    implementation_indicators['tool_usage'].append(tool_name)
+                    
+                    # Track file operations
+                    if tool_name in ['Write', 'Edit', 'MultiEdit']:
+                        if tool_name == 'Write':
+                            implementation_indicators['files_created'] += 1
+                        else:
+                            implementation_indicators['files_modified'] += 1
+                        implementation_indicators['code_written'] = True
     
     return implementation_indicators
 
