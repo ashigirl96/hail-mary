@@ -5,7 +5,6 @@ import (
 	"os/exec"
 )
 
-
 // Executor handles Claude CLI execution
 type Executor struct {
 }
@@ -15,13 +14,11 @@ func NewExecutor() *Executor {
 	return &Executor{}
 }
 
-
-
 // ExecuteInteractive launches Claude CLI in interactive mode (actual shell)
 func (e *Executor) ExecuteInteractive(prompt string) error {
 	// Create a command for interactive Claude shell without JSON output
 	cmd := exec.Command("bunx", "@anthropic-ai/claude-code@latest", "--dangerously-skip-permissions", prompt)
-	
+
 	// Set environment variables
 	cmd.Env = append(os.Environ(),
 		"ENABLE_BACKGROUND_TASKS=1",
@@ -37,12 +34,11 @@ func (e *Executor) ExecuteInteractive(prompt string) error {
 	return cmd.Run()
 }
 
-
 // ExecuteInteractiveContinue continues the most recent Claude session in interactive mode
 func (e *Executor) ExecuteInteractiveContinue() error {
 	// Create a command for interactive Claude shell with --continue flag
 	cmd := exec.Command("bunx", "@anthropic-ai/claude-code@latest", "--dangerously-skip-permissions", "--continue")
-	
+
 	// Set environment variables
 	cmd.Env = append(os.Environ(),
 		"ENABLE_BACKGROUND_TASKS=1",
