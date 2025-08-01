@@ -1,21 +1,10 @@
 package claude
 
 import (
-	"bufio"
-	"encoding/json"
-	"fmt"
-	"io"
 	"os"
 	"os/exec"
 )
 
-// Output represents a single output event from Claude
-type Output struct {
-	Type    string      `json:"type"`
-	Subtype string      `json:"subtype,omitempty"`
-	Content interface{} `json:"content,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
-}
 
 // Executor handles Claude CLI execution
 type Executor struct {
