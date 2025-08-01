@@ -8,14 +8,11 @@ import (
 
 // Executor handles Claude CLI execution
 type Executor struct {
-	command string
 }
 
 // NewExecutor creates a new Claude executor
 func NewExecutor() *Executor {
-	return &Executor{
-		command: "npx -y @anthropic-ai/claude-code@latest --dangerously-skip-permissions --verbose --output-format=stream-json",
-	}
+	return &Executor{}
 }
 
 
