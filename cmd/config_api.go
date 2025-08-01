@@ -14,7 +14,7 @@ var configApiCmd = &cobra.Command{
 	Long:  `Manage API-related configuration settings such as endpoints, timeouts, and authentication.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// If no subcommand is provided, show help
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
@@ -24,7 +24,7 @@ var configApiEndpointCmd = &cobra.Command{
 	Short: "Manage API endpoint configuration",
 	Long:  `Get or set API endpoint configuration.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
@@ -60,7 +60,7 @@ var configApiTimeoutCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := GetLogger()
-		
+
 		if len(args) == 0 {
 			// Get current timeout
 			logger.Debug("Getting API timeout")
@@ -77,13 +77,13 @@ var configApiTimeoutCmd = &cobra.Command{
 func init() {
 	// Add api subcommand to config
 	configCmd.AddCommand(configApiCmd)
-	
+
 	// Add subcommands to config api
 	configApiCmd.AddCommand(configApiEndpointCmd)
 	configApiCmd.AddCommand(configApiTimeoutCmd)
-	
+
 	// Add subcommands to config api endpoint
 	configApiEndpointCmd.AddCommand(configApiEndpointGetCmd)
 	configApiEndpointCmd.AddCommand(configApiEndpointSetCmd)
-	
+
 }

@@ -21,15 +21,20 @@ VERSION=$(shell git describe --tags --always --dirty)
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)"
 
-.PHONY: all build clean test coverage lint fmt help run install deps tidy
+.PHONY: all build clean test coverage lint fmt help run install deps tidy parallel-checks
 
 ## help: Show this help message
 help:
 	@echo 'Usage:'
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed -e 's/^/ /'
 
-## all: Run fmt, lint, test, and build
-all: fmt lint test build
+## all: Run fmt, lint, test, and build (test and build run in parallel)
+all: fmt lint parallel-checks
+
+## parallel-checks: Run test and build in parallel
+parallel-checks:
+	@$(MAKE) --no-print-directory -j2 test build
+	@echo "All checks completed"
 
 ## build: Build the binary
 build:

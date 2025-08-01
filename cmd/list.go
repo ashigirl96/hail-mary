@@ -81,7 +81,7 @@ func init() {
 	listCmd.Flags().StringVarP(&format, "format", "f", "text", "Output format (text, json, csv)")
 
 	// formatフラグの補完関数を登録
-	listCmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = listCmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"text", "json", "csv"}, cobra.ShellCompDirectiveNoFileComp
 	})
 }

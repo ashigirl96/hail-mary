@@ -13,7 +13,7 @@ var configCmd = &cobra.Command{
 	Long:  `Config command allows you to manage various configuration settings.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// If no subcommand is provided, show help
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 
@@ -25,7 +25,7 @@ var configGetCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := GetLogger()
-		
+
 		if len(args) == 0 {
 			fmt.Println("Available configuration keys:")
 			fmt.Println("  - api.endpoint")
@@ -34,10 +34,10 @@ var configGetCmd = &cobra.Command{
 			fmt.Println("  - user.email")
 			return
 		}
-		
+
 		key := args[0]
 		logger.Debug("Getting config value", "key", key)
-		
+
 		// Simulate getting config value
 		switch key {
 		case "api.endpoint":
@@ -62,10 +62,10 @@ var configSetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := GetLogger()
-		
+
 		key := args[0]
 		value := args[1]
-		
+
 		logger.Info("Setting config value", "key", key, "value", value)
 		fmt.Printf("Configuration set: %s = %s\n", key, value)
 	},
@@ -79,7 +79,7 @@ var configListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := GetLogger()
 		logger.Debug("Listing all config values")
-		
+
 		fmt.Println("Current configuration:")
 		fmt.Println("  api.endpoint: https://api.example.com")
 		fmt.Println("  api.timeout: 30s")
@@ -91,10 +91,10 @@ var configListCmd = &cobra.Command{
 func init() {
 	// Add config command to root
 	rootCmd.AddCommand(configCmd)
-	
+
 	// Add subcommands to config
 	configCmd.AddCommand(configGetCmd)
 	configCmd.AddCommand(configSetCmd)
 	configCmd.AddCommand(configListCmd)
-	
+
 }

@@ -45,7 +45,7 @@ func Execute() {
 func init() {
 	// Disable automatic command sorting to control order manually
 	cobra.EnableCommandSorting = false
-	
+
 	// グローバルフラグの設定
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Set log level (debug, info, warn, error)")
 
@@ -60,7 +60,7 @@ func init() {
 		// 説明なしのフラグも補完する
 		DisableDescriptions: false,
 	}
-	
+
 }
 
 // setupLogger configures slog based on the log level flag
