@@ -82,7 +82,7 @@ lint:
 	fi
 	@echo "Running golangci-lint (with auto-fix)..."
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		$(GOLINT) run --fix ./...; \
+		$(GOLINT) run --enable=unused --fix ./...; \
 	else \
 		echo "golangci-lint not installed. Install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
 		exit 1; \
