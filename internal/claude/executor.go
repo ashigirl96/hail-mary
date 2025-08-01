@@ -1,29 +1,196 @@
+// Package claude provides a Go wrapper for the Claude CLI tool.
+// It offers both interactive and programmatic interfaces for executing
+// Claude commands with session management and configuration options.
 package claude
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
-// Executor handles Claude CLI execution
-type Executor struct {
+// Constants for Claude CLI execution
+const (
+	// claudeCommand is the command to execute Claude CLI
+	claudeCommand = "bunx"
+	// claudePackage is the Claude Code package identifier
+	claudePackage = "@anthropic-ai/claude-code@latest"
+	// dangerousFlag allows Claude to execute without permissions prompt
+	dangerousFlag = "--dangerously-skip-permissions"
+	// printFlag enables print mode for JSON output
+	printFlag = "-p"
+	// outputJSONFlag sets output format to JSON
+	outputJSONFlag = "--output-format=json"
+	// resumeFlag resumes a previous session
+	resumeFlag = "--resume"
+	// continueFlag continues the most recent session
+	continueFlag = "--continue"
+
+	// Environment variable names
+	envBackgroundTasks = "ENABLE_BACKGROUND_TASKS"
+	envMaintainWorkDir = "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"
+
+	// Validation constants
+	maxPromptLength    = 10000
+	minSessionIDLength = 8
+	maxSessionIDLength = 100
+)
+
+// SessionInfo contains information about a Claude session
+type SessionInfo struct {
+	ID       string  `json:"session_id"`
+	Result   string  `json:"result"`
+	CostUSD  float64 `json:"cost_usd"`
+	Duration string  `json:"duration,omitempty"`
+	Turns    int     `json:"turns,omitempty"`
 }
 
-// NewExecutor creates a new Claude executor
-func NewExecutor() *Executor {
-	return &Executor{}
+// Config holds configuration options for the Claude executor
+type Config struct {
+	// Command is the command to execute (default: "bunx")
+	Command string
+	// Package is the Claude package identifier (default: "@anthropic-ai/claude-code@latest")
+	Package string
+	// EnableBackgroundTasks enables background task execution in Claude CLI.
+	// When enabled, Claude can perform background operations like file watching.
+	EnableBackgroundTasks bool
+	// MaintainWorkingDir maintains the project working directory across Claude operations.
+	// This ensures Claude commands execute in the correct project context.
+	MaintainWorkingDir bool
+	// SkipPermissions skips the permissions prompt
+	SkipPermissions bool
+	// MaxPromptLength is the maximum allowed prompt length
+	MaxPromptLength int
 }
 
-// ExecuteInteractive launches Claude CLI in interactive mode (actual shell)
-func (e *Executor) ExecuteInteractive(prompt string) error {
-	// Create a command for interactive Claude shell without JSON output
-	cmd := exec.Command("bunx", "@anthropic-ai/claude-code@latest", "--dangerously-skip-permissions", prompt)
+// DefaultConfig returns the default configuration
+func DefaultConfig() *Config {
+	return &Config{
+		Command:               claudeCommand,
+		Package:               claudePackage,
+		EnableBackgroundTasks: true,
+		MaintainWorkingDir:    true,
+		SkipPermissions:       true,
+		MaxPromptLength:       maxPromptLength,
+	}
+}
+
+// Executor defines the interface for Claude CLI operations.
+// This interface allows for easy mocking in tests and alternative implementations.
+type Executor interface {
+	// ExecuteInteractive launches Claude CLI in interactive mode
+	ExecuteInteractive(prompt string) error
+	// ExecuteInteractiveContinue continues the most recent session
+	ExecuteInteractiveContinue() error
+	// ExecuteWithSessionTracking executes a prompt and returns session info
+	ExecuteWithSessionTracking(prompt string) (*SessionInfo, error)
+	// ResumeSession resumes a specific session with a new prompt
+	ResumeSession(sessionID, prompt string) (*SessionInfo, error)
+	// ExecuteInteractiveWithSession launches interactive mode with a specific session
+	ExecuteInteractiveWithSession(sessionID string) error
+}
+
+// ExecutorImpl handles Claude CLI execution with configurable options.
+// It implements the Executor interface and provides a wrapper around
+// the Claude CLI command-line tool.
+type ExecutorImpl struct {
+	config *Config
+}
+
+// ensure ExecutorImpl implements Executor interface
+var _ Executor = (*ExecutorImpl)(nil)
+
+// validatePrompt validates the input prompt for security and usability.
+// It ensures the prompt is not empty and doesn't exceed the configured length limit.
+func (e *ExecutorImpl) validatePrompt(prompt string) error {
+	trimmed := strings.TrimSpace(prompt)
+	if trimmed == "" {
+		return fmt.Errorf("prompt validation failed: prompt cannot be empty or contain only whitespace")
+	}
+	if len(prompt) > e.config.MaxPromptLength {
+		return fmt.Errorf("prompt validation failed: prompt length (%d) exceeds maximum allowed length (%d)",
+			len(prompt), e.config.MaxPromptLength)
+	}
+	return nil
+}
+
+// validateSessionID validates the session ID format.
+// Session IDs are expected to be between 8 and 100 characters,
+// which accommodates various ID formats including UUIDs.
+func validateSessionID(sessionID string) error {
+	trimmed := strings.TrimSpace(sessionID)
+	if trimmed == "" {
+		return fmt.Errorf("session ID validation failed: session ID cannot be empty or contain only whitespace")
+	}
+	if len(trimmed) < minSessionIDLength || len(trimmed) > maxSessionIDLength {
+		return fmt.Errorf("session ID validation failed: session ID length (%d) must be between %d and %d characters",
+			len(trimmed), minSessionIDLength, maxSessionIDLength)
+	}
+	return nil
+}
+
+// NewExecutor creates a new Claude executor with default configuration.
+// This is the recommended way to create an executor for most use cases.
+func NewExecutor() *ExecutorImpl {
+	return &ExecutorImpl{
+		config: DefaultConfig(),
+	}
+}
+
+// NewExecutorWithConfig creates a new Claude executor with custom configuration.
+// Use this when you need to customize the Claude CLI behavior, such as:
+// - Using a different command or package version
+// - Disabling background tasks or working directory maintenance
+// - Changing validation limits
+func NewExecutorWithConfig(config *Config) *ExecutorImpl {
+	if config == nil {
+		config = DefaultConfig()
+	}
+	return &ExecutorImpl{
+		config: config,
+	}
+}
+
+// buildCommand creates an exec.Cmd with common configuration.
+// It applies all configuration options and environment variables
+// needed for Claude CLI execution.
+func (e *ExecutorImpl) buildCommand(args ...string) *exec.Cmd {
+	// Prepare command arguments
+	cmdArgs := []string{e.config.Package}
+	if e.config.SkipPermissions {
+		cmdArgs = append(cmdArgs, dangerousFlag)
+	}
+	cmdArgs = append(cmdArgs, args...)
+
+	// Create command
+	cmd := exec.Command(e.config.Command, cmdArgs...)
 
 	// Set environment variables
-	cmd.Env = append(os.Environ(),
-		"ENABLE_BACKGROUND_TASKS=1",
-		"CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=1",
-	)
+	env := os.Environ()
+	if e.config.EnableBackgroundTasks {
+		env = append(env, fmt.Sprintf("%s=1", envBackgroundTasks))
+	}
+	if e.config.MaintainWorkingDir {
+		env = append(env, fmt.Sprintf("%s=1", envMaintainWorkDir))
+	}
+	cmd.Env = env
+
+	return cmd
+}
+
+// ExecuteInteractive launches Claude CLI in interactive mode.
+// This provides a full interactive shell experience where users can
+// have a conversation with Claude. The prompt parameter provides
+// the initial message to Claude.
+func (e *ExecutorImpl) ExecuteInteractive(prompt string) error {
+	if err := e.validatePrompt(prompt); err != nil {
+		return fmt.Errorf("execute interactive: %w", err)
+	}
+
+	// Create command for interactive Claude shell
+	cmd := e.buildCommand(prompt)
 
 	// Connect stdin, stdout, and stderr to the current terminal
 	cmd.Stdin = os.Stdin
@@ -31,19 +198,17 @@ func (e *Executor) ExecuteInteractive(prompt string) error {
 	cmd.Stderr = os.Stderr
 
 	// Run the command and wait for it to complete
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("execute interactive: failed to run Claude CLI: %w", err)
+	}
+	return nil
 }
 
-// ExecuteInteractiveContinue continues the most recent Claude session in interactive mode
-func (e *Executor) ExecuteInteractiveContinue() error {
-	// Create a command for interactive Claude shell with --continue flag
-	cmd := exec.Command("bunx", "@anthropic-ai/claude-code@latest", "--dangerously-skip-permissions", "--continue")
-
-	// Set environment variables
-	cmd.Env = append(os.Environ(),
-		"ENABLE_BACKGROUND_TASKS=1",
-		"CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=1",
-	)
+// ExecuteInteractiveContinue continues the most recent Claude session in interactive mode.
+// This is useful for resuming a conversation after the CLI has exited.
+func (e *ExecutorImpl) ExecuteInteractiveContinue() error {
+	// Create command for interactive Claude shell with --continue flag
+	cmd := e.buildCommand(continueFlag)
 
 	// Connect stdin, stdout, and stderr to the current terminal
 	cmd.Stdin = os.Stdin
@@ -51,5 +216,83 @@ func (e *Executor) ExecuteInteractiveContinue() error {
 	cmd.Stderr = os.Stderr
 
 	// Run the command and wait for it to complete
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("execute interactive continue: failed to continue Claude session: %w", err)
+	}
+	return nil
+}
+
+// ExecuteWithSessionTracking executes a Claude prompt and returns session information.
+// This method runs Claude in print mode with JSON output, allowing programmatic
+// access to the response, session ID, cost, and other metadata.
+// Use this when you need to track sessions or process Claude's output programmatically.
+func (e *ExecutorImpl) ExecuteWithSessionTracking(prompt string) (*SessionInfo, error) {
+	if err := e.validatePrompt(prompt); err != nil {
+		return nil, fmt.Errorf("execute with session tracking: %w", err)
+	}
+
+	// Use print mode to get session info
+	cmd := e.buildCommand(printFlag, outputJSONFlag, prompt)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("execute with session tracking: failed to execute Claude command: %w", err)
+	}
+
+	var sessionInfo SessionInfo
+	if err := json.Unmarshal(output, &sessionInfo); err != nil {
+		return nil, fmt.Errorf("execute with session tracking: failed to parse Claude output: %w", err)
+	}
+
+	return &sessionInfo, nil
+}
+
+// ResumeSession resumes a specific Claude session with a new prompt.
+// This allows continuing a previous conversation by providing the session ID.
+// The method returns updated session information including the response to the new prompt.
+func (e *ExecutorImpl) ResumeSession(sessionID, prompt string) (*SessionInfo, error) {
+	if err := validateSessionID(sessionID); err != nil {
+		return nil, fmt.Errorf("resume session: %w", err)
+	}
+	if err := e.validatePrompt(prompt); err != nil {
+		return nil, fmt.Errorf("resume session: %w", err)
+	}
+
+	// Use print mode with --resume flag to continue specific session
+	cmd := e.buildCommand(printFlag, outputJSONFlag, resumeFlag, sessionID, prompt)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("resume session %s: failed to resume Claude session: %w", sessionID, err)
+	}
+
+	var sessionInfo SessionInfo
+	if err := json.Unmarshal(output, &sessionInfo); err != nil {
+		return nil, fmt.Errorf("resume session %s: failed to parse Claude output: %w", sessionID, err)
+	}
+
+	return &sessionInfo, nil
+}
+
+// ExecuteInteractiveWithSession launches Claude CLI in interactive mode with a specific session ID.
+// This combines the benefits of interactive mode with the ability to resume a specific
+// previous session, allowing users to continue a conversation interactively.
+func (e *ExecutorImpl) ExecuteInteractiveWithSession(sessionID string) error {
+	if err := validateSessionID(sessionID); err != nil {
+		return fmt.Errorf("execute interactive with session: %w", err)
+	}
+
+	// Create command for interactive Claude shell with --resume flag
+	cmd := e.buildCommand(resumeFlag, sessionID)
+
+	// Connect stdin, stdout, and stderr to the current terminal
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Run the command and wait for it to complete
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("execute interactive with session %s: failed to run Claude CLI: %w", sessionID, err)
+	}
+	return nil
 }
