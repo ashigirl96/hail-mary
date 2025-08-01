@@ -90,6 +90,8 @@ type Executor interface {
 	ResumeSession(sessionID, prompt string) (*SessionInfo, error)
 	// ExecuteInteractiveWithSession launches interactive mode with a specific session
 	ExecuteInteractiveWithSession(sessionID string) error
+	// ExecuteAndContinueInteractive executes a prompt and then continues in interactive mode
+	ExecuteAndContinueInteractive(prompt string) (*SessionInfo, error)
 }
 
 // ExecutorImpl handles Claude CLI execution with configurable options.
@@ -181,27 +183,25 @@ func (e *ExecutorImpl) buildCommand(args ...string) *exec.Cmd {
 }
 
 // ExecuteInteractive launches Claude CLI in interactive mode.
-// This provides a full interactive shell experience where users can
-// have a conversation with Claude. The prompt parameter provides
-// the initial message to Claude.
+// It first executes the prompt to get a session ID, then resumes that session interactively.
+// This ensures proper session tracking while providing an interactive experience.
 func (e *ExecutorImpl) ExecuteInteractive(prompt string) error {
 	if err := e.validatePrompt(prompt); err != nil {
 		return fmt.Errorf("execute interactive: %w", err)
 	}
 
-	// Create command for interactive Claude shell
-	cmd := e.buildCommand(prompt)
-
-	// Connect stdin, stdout, and stderr to the current terminal
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	// Run the command and wait for it to complete
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("execute interactive: failed to run Claude CLI: %w", err)
+	// First, execute with session tracking to get the session ID
+	sessionInfo, err := e.ExecuteWithSessionTracking(prompt)
+	if err != nil {
+		return fmt.Errorf("execute interactive: failed to initialize session: %w", err)
 	}
-	return nil
+
+	fmt.Printf("\n=== Session initialized (ID: %s) ===\n", sessionInfo.ID)
+	fmt.Printf("Initial response:\n%s\n", sessionInfo.Result)
+	fmt.Printf("\n=== Continuing in interactive mode ===\n\n")
+
+	// Then continue with interactive mode using the session ID
+	return e.ExecuteInteractiveWithSession(sessionInfo.ID)
 }
 
 // ExecuteInteractiveContinue continues the most recent Claude session in interactive mode.
@@ -295,4 +295,30 @@ func (e *ExecutorImpl) ExecuteInteractiveWithSession(sessionID string) error {
 		return fmt.Errorf("execute interactive with session %s: failed to run Claude CLI: %w", sessionID, err)
 	}
 	return nil
+}
+
+// ExecuteAndContinueInteractive executes a prompt and then continues in interactive mode.
+// This method combines ExecuteWithSessionTracking and ExecuteInteractiveWithSession,
+// returning the session information while also launching interactive mode.
+func (e *ExecutorImpl) ExecuteAndContinueInteractive(prompt string) (*SessionInfo, error) {
+	if err := e.validatePrompt(prompt); err != nil {
+		return nil, fmt.Errorf("execute and continue interactive: %w", err)
+	}
+
+	// First, execute with session tracking to get the session ID
+	sessionInfo, err := e.ExecuteWithSessionTracking(prompt)
+	if err != nil {
+		return nil, fmt.Errorf("execute and continue interactive: failed to initialize session: %w", err)
+	}
+
+	fmt.Printf("\n=== Session initialized (ID: %s) ===\n", sessionInfo.ID)
+	fmt.Printf("Initial response:\n%s\n", sessionInfo.Result)
+	fmt.Printf("\n=== Continuing in interactive mode ===\n\n")
+
+	// Then continue with interactive mode using the session ID
+	if err := e.ExecuteInteractiveWithSession(sessionInfo.ID); err != nil {
+		return sessionInfo, fmt.Errorf("execute and continue interactive: failed to start interactive mode: %w", err)
+	}
+
+	return sessionInfo, nil
 }
