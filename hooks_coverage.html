@@ -1,0 +1,293 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>hooks: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/ashigirl96/hail-mary/internal/hooks/events.go (92.9%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package hooks
+
+import (
+        "encoding/json"
+        "fmt"
+
+        "github.com/go-playground/validator/v10"
+)
+
+var validate = validator.New(validator.WithRequiredStructEnabled())
+
+// BaseHookEvent contains common fields for all hook events
+type BaseHookEvent struct {
+        SessionID      string `json:"session_id" validate:"required"`
+        TranscriptPath string `json:"transcript_path" validate:"required,filepath"`
+        CWD            string `json:"cwd" validate:"required,dir"`
+        HookEventName  string `json:"hook_event_name" validate:"required,oneof=UserPromptSubmit PostToolUse Stop SubagentStop Notification PreCompact PreToolUse SessionStart"`
+}
+
+// SessionStartEvent is sent when a Claude session starts
+type SessionStartEvent struct {
+        BaseHookEvent
+        Source string `json:"source" validate:"required,oneof=startup resume clear"`
+}
+
+// UserPromptSubmitEvent is sent when user submits a prompt
+type UserPromptSubmitEvent struct {
+        BaseHookEvent
+        Prompt string `json:"prompt" validate:"required"`
+}
+
+// ToolInput represents generic tool input data
+type ToolInput map[string]interface{}
+
+// ToolResponse represents generic tool response data
+type ToolResponse map[string]interface{}
+
+// PreToolUseEvent is sent before a tool is used
+type PreToolUseEvent struct {
+        BaseHookEvent
+        ToolName  string    `json:"tool_name" validate:"required"`
+        ToolInput ToolInput `json:"tool_input" validate:"required"`
+}
+
+// PostToolUseEvent is sent after a tool is used
+type PostToolUseEvent struct {
+        BaseHookEvent
+        ToolName     string       `json:"tool_name" validate:"required"`
+        ToolInput    ToolInput    `json:"tool_input" validate:"required"`
+        ToolResponse ToolResponse `json:"tool_response" validate:"required"`
+}
+
+// NotificationEvent is sent for notifications
+type NotificationEvent struct {
+        BaseHookEvent
+        Message string `json:"message" validate:"required"`
+}
+
+// StopEvent is sent when Claude stops
+type StopEvent struct {
+        BaseHookEvent
+        StopHookActive bool `json:"stop_hook_active,omitempty"`
+}
+
+// SubagentStopEvent is sent when a subagent stops
+type SubagentStopEvent struct {
+        BaseHookEvent
+        StopHookActive bool `json:"stop_hook_active,omitempty"`
+}
+
+// PreCompactEvent is sent before compaction
+type PreCompactEvent struct {
+        BaseHookEvent
+        Trigger            string `json:"trigger" validate:"required,oneof=manual auto"`
+        CustomInstructions string `json:"custom_instructions,omitempty"`
+}
+
+// HookOutput represents the response from a hook
+type HookOutput struct {
+        Continue           bool                   `json:"continue,omitempty"`
+        StopReason         string                 `json:"stopReason,omitempty"`
+        SuppressOutput     bool                   `json:"suppressOutput,omitempty"`
+        Decision           string                 `json:"decision,omitempty" validate:"omitempty,oneof=approve block allow deny ask"`
+        Reason             string                 `json:"reason,omitempty"`
+        HookSpecificOutput map[string]interface{} `json:"hookSpecificOutput,omitempty"`
+}
+
+// PreToolUseDecision represents PreToolUse specific output
+type PreToolUseDecision struct {
+        HookEventName            string `json:"hookEventName" validate:"required,eq=PreToolUse"`
+        PermissionDecision       string `json:"permissionDecision" validate:"required,oneof=allow deny ask"`
+        PermissionDecisionReason string `json:"permissionDecisionReason,omitempty"`
+}
+
+// UserPromptSubmitDecision represents UserPromptSubmit specific output
+type UserPromptSubmitDecision struct {
+        HookEventName     string `json:"hookEventName" validate:"required,eq=UserPromptSubmit"`
+        AdditionalContext string `json:"additionalContext,omitempty"`
+}
+
+// SessionStartDecision represents SessionStart specific output
+type SessionStartDecision struct {
+        HookEventName     string `json:"hookEventName" validate:"required,eq=SessionStart"`
+        AdditionalContext string `json:"additionalContext,omitempty"`
+}
+
+// ParseHookEvent parses and validates a hook event from JSON
+func ParseHookEvent(data []byte) (interface{}, error) <span class="cov10" title="26">{
+        // First parse to get the event name
+        var base BaseHookEvent
+        if err := json.Unmarshal(data, &amp;base); err != nil </span><span class="cov1" title="1">{
+                return nil, fmt.Errorf("failed to parse base event: %w", err)
+        }</span>
+
+        // Parse based on event type
+        <span class="cov9" title="25">var event interface{}
+        switch base.HookEventName </span>{
+        case "SessionStart":<span class="cov4" title="4">
+                var e SessionStartEvent
+                if err := json.Unmarshal(data, &amp;e); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to parse SessionStart event: %w", err)
+                }</span>
+                <span class="cov4" title="4">event = e</span>
+        case "UserPromptSubmit":<span class="cov2" title="2">
+                var e UserPromptSubmitEvent
+                if err := json.Unmarshal(data, &amp;e); err != nil </span><span class="cov1" title="1">{
+                        return nil, fmt.Errorf("failed to parse UserPromptSubmit event: %w", err)
+                }</span>
+                <span class="cov1" title="1">event = e</span>
+        case "PreToolUse":<span class="cov4" title="3">
+                var e PreToolUseEvent
+                if err := json.Unmarshal(data, &amp;e); err != nil </span><span class="cov1" title="1">{
+                        return nil, fmt.Errorf("failed to parse PreToolUse event: %w", err)
+                }</span>
+                <span class="cov2" title="2">event = e</span>
+        case "PostToolUse":<span class="cov4" title="3">
+                var e PostToolUseEvent
+                if err := json.Unmarshal(data, &amp;e); err != nil </span><span class="cov1" title="1">{
+                        return nil, fmt.Errorf("failed to parse PostToolUse event: %w", err)
+                }</span>
+                <span class="cov2" title="2">event = e</span>
+        case "Notification":<span class="cov2" title="2">
+                var e NotificationEvent
+                if err := json.Unmarshal(data, &amp;e); err != nil </span><span class="cov1" title="1">{
+                        return nil, fmt.Errorf("failed to parse Notification event: %w", err)
+                }</span>
+                <span class="cov1" title="1">event = e</span>
+        case "Stop":<span class="cov4" title="3">
+                var e StopEvent
+                if err := json.Unmarshal(data, &amp;e); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to parse Stop event: %w", err)
+                }</span>
+                <span class="cov4" title="3">event = e</span>
+        case "SubagentStop":<span class="cov2" title="2">
+                var e SubagentStopEvent
+                if err := json.Unmarshal(data, &amp;e); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to parse SubagentStop event: %w", err)
+                }</span>
+                <span class="cov2" title="2">event = e</span>
+        case "PreCompact":<span class="cov4" title="4">
+                var e PreCompactEvent
+                if err := json.Unmarshal(data, &amp;e); err != nil </span><span class="cov1" title="1">{
+                        return nil, fmt.Errorf("failed to parse PreCompact event: %w", err)
+                }</span>
+                <span class="cov4" title="3">event = e</span>
+        default:<span class="cov2" title="2">
+                return nil, fmt.Errorf("unknown hook event type: %s", base.HookEventName)</span>
+        }
+
+        // Validate the event
+        <span class="cov8" title="18">if err := ValidateHookEvent(event); err != nil </span><span class="cov5" title="6">{
+                return nil, err
+        }</span>
+
+        <span class="cov7" title="12">return event, nil</span>
+}
+
+// ValidateHookEvent validates any hook event struct
+func ValidateHookEvent(event interface{}) error <span class="cov9" title="23">{
+        return validate.Struct(event)
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

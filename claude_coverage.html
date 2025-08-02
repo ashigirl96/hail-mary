@@ -1,0 +1,438 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>claude: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/ashigirl96/hail-mary/internal/claude/executor.go (55.6%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">// Package claude provides a Go wrapper for the Claude CLI tool.
+// It offers both interactive and programmatic interfaces for executing
+// Claude commands with session management and configuration options.
+package claude
+
+import (
+        "encoding/json"
+        "fmt"
+        "os"
+        "os/exec"
+        "strings"
+)
+
+// Constants for Claude CLI execution
+const (
+        // claudeCommand is the command to execute Claude CLI
+        claudeCommand = "bunx"
+        // claudePackage is the Claude Code package identifier
+        claudePackage = "@anthropic-ai/claude-code@latest"
+        // dangerousFlag allows Claude to execute without permissions prompt
+        dangerousFlag = "--dangerously-skip-permissions --verbose --debug"
+        // printFlag enables print mode for JSON output
+        printFlag = "-p"
+        // outputJSONFlag sets output format to JSON
+        outputJSONFlag = "--output-format=json"
+        // resumeFlag resumes a previous session
+        resumeFlag = "--resume"
+        // continueFlag continues the most recent session
+        continueFlag = "--continue"
+
+        // Environment variable names
+        envBackgroundTasks = "ENABLE_BACKGROUND_TASKS"
+        envMaintainWorkDir = "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"
+
+        // Validation constants
+        maxPromptLength    = 10000
+        minSessionIDLength = 8
+        maxSessionIDLength = 100
+)
+
+// SessionInfo contains information about a Claude session
+type SessionInfo struct {
+        ID       string  `json:"session_id"`
+        Result   string  `json:"result"`
+        CostUSD  float64 `json:"cost_usd"`
+        Duration string  `json:"duration,omitempty"`
+        Turns    int     `json:"turns,omitempty"`
+}
+
+// Config holds configuration options for the Claude executor
+type Config struct {
+        // Command is the command to execute (default: "bunx")
+        Command string
+        // Package is the Claude package identifier (default: "@anthropic-ai/claude-code@latest")
+        Package string
+        // EnableBackgroundTasks enables background task execution in Claude CLI.
+        // When enabled, Claude can perform background operations like file watching.
+        EnableBackgroundTasks bool
+        // MaintainWorkingDir maintains the project working directory across Claude operations.
+        // This ensures Claude commands execute in the correct project context.
+        MaintainWorkingDir bool
+        // SkipPermissions skips the permissions prompt
+        SkipPermissions bool
+        // MaxPromptLength is the maximum allowed prompt length
+        MaxPromptLength int
+        // SettingsPath is the path to a settings file to use with --settings flag
+        SettingsPath string
+}
+
+// DefaultConfig returns the default configuration
+func DefaultConfig() *Config <span class="cov8" title="1">{
+        return &amp;Config{
+                Command:               claudeCommand,
+                Package:               claudePackage,
+                EnableBackgroundTasks: true,
+                MaintainWorkingDir:    true,
+                SkipPermissions:       true,
+                MaxPromptLength:       maxPromptLength,
+        }
+}</span>
+
+// Executor defines the interface for Claude CLI operations.
+// This interface allows for easy mocking in tests and alternative implementations.
+type Executor interface {
+        // ExecuteInteractive launches Claude CLI in interactive mode
+        ExecuteInteractive(prompt string) error
+        // ExecuteInteractiveContinue continues the most recent session
+        ExecuteInteractiveContinue() error
+        // ExecuteWithSessionTracking executes a prompt and returns session info
+        ExecuteWithSessionTracking(prompt string) (*SessionInfo, error)
+        // ResumeSession resumes a specific session with a new prompt
+        ResumeSession(sessionID, prompt string) (*SessionInfo, error)
+        // ExecuteInteractiveWithSession launches interactive mode with a specific session
+        ExecuteInteractiveWithSession(sessionID string) error
+        // ExecuteAndContinueInteractive executes a prompt and then continues in interactive mode
+        ExecuteAndContinueInteractive(prompt string) (*SessionInfo, error)
+}
+
+// ExecutorImpl handles Claude CLI execution with configurable options.
+// It implements the Executor interface and provides a wrapper around
+// the Claude CLI command-line tool.
+type ExecutorImpl struct {
+        config *Config
+}
+
+// SetSettingsPath sets the path to a settings file to use with --settings flag
+func (e *ExecutorImpl) SetSettingsPath(path string) <span class="cov8" title="1">{
+        e.config.SettingsPath = path
+}</span>
+
+// ensure ExecutorImpl implements Executor interface
+var _ Executor = (*ExecutorImpl)(nil)
+
+// validatePrompt validates the input prompt for security and usability.
+// It ensures the prompt is not empty and doesn't exceed the configured length limit.
+func (e *ExecutorImpl) validatePrompt(prompt string) error <span class="cov8" title="1">{
+        trimmed := strings.TrimSpace(prompt)
+        if trimmed == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("prompt validation failed: prompt cannot be empty or contain only whitespace")
+        }</span>
+        <span class="cov8" title="1">if len(prompt) &gt; e.config.MaxPromptLength </span><span class="cov8" title="1">{
+                return fmt.Errorf("prompt validation failed: prompt length (%d) exceeds maximum allowed length (%d)",
+                        len(prompt), e.config.MaxPromptLength)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// validateSessionID validates the session ID format.
+// Session IDs are expected to be between 8 and 100 characters,
+// which accommodates various ID formats including UUIDs.
+func validateSessionID(sessionID string) error <span class="cov8" title="1">{
+        trimmed := strings.TrimSpace(sessionID)
+        if trimmed == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf("session ID validation failed: session ID cannot be empty or contain only whitespace")
+        }</span>
+        <span class="cov8" title="1">if len(trimmed) &lt; minSessionIDLength || len(trimmed) &gt; maxSessionIDLength </span><span class="cov8" title="1">{
+                return fmt.Errorf("session ID validation failed: session ID length (%d) must be between %d and %d characters",
+                        len(trimmed), minSessionIDLength, maxSessionIDLength)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// NewExecutor creates a new Claude executor with default configuration.
+// This is the recommended way to create an executor for most use cases.
+func NewExecutor() *ExecutorImpl <span class="cov8" title="1">{
+        return &amp;ExecutorImpl{
+                config: DefaultConfig(),
+        }
+}</span>
+
+// NewExecutorWithConfig creates a new Claude executor with custom configuration.
+// Use this when you need to customize the Claude CLI behavior, such as:
+// - Using a different command or package version
+// - Disabling background tasks or working directory maintenance
+// - Changing validation limits
+func NewExecutorWithConfig(config *Config) *ExecutorImpl <span class="cov8" title="1">{
+        if config == nil </span><span class="cov8" title="1">{
+                config = DefaultConfig()
+        }</span>
+        <span class="cov8" title="1">return &amp;ExecutorImpl{
+                config: config,
+        }</span>
+}
+
+// buildCommand creates an exec.Cmd with common configuration.
+// It applies all configuration options and environment variables
+// needed for Claude CLI execution.
+func (e *ExecutorImpl) buildCommand(args ...string) *exec.Cmd <span class="cov8" title="1">{
+        // Prepare command arguments
+        cmdArgs := []string{e.config.Package}
+        if e.config.SkipPermissions </span><span class="cov8" title="1">{
+                cmdArgs = append(cmdArgs, dangerousFlag)
+        }</span>
+        // Add settings flag if path is provided
+        <span class="cov8" title="1">if e.config.SettingsPath != "" </span><span class="cov8" title="1">{
+                cmdArgs = append(cmdArgs, "--settings", e.config.SettingsPath)
+        }</span>
+        <span class="cov8" title="1">cmdArgs = append(cmdArgs, args...)
+
+        // Create command
+        cmd := exec.Command(e.config.Command, cmdArgs...)
+
+        // Set environment variables
+        env := os.Environ()
+        if e.config.EnableBackgroundTasks </span><span class="cov8" title="1">{
+                env = append(env, fmt.Sprintf("%s=1", envBackgroundTasks))
+        }</span>
+        <span class="cov8" title="1">if e.config.MaintainWorkingDir </span><span class="cov8" title="1">{
+                env = append(env, fmt.Sprintf("%s=1", envMaintainWorkDir))
+        }</span>
+        <span class="cov8" title="1">cmd.Env = env
+
+        return cmd</span>
+}
+
+// ExecuteInteractive launches Claude CLI in interactive mode.
+// It first executes the prompt to get a session ID, then resumes that session interactively.
+// This ensures proper session tracking while providing an interactive experience.
+func (e *ExecutorImpl) ExecuteInteractive(prompt string) error <span class="cov8" title="1">{
+        if err := e.validatePrompt(prompt); err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("execute interactive: %w", err)
+        }</span>
+
+        // First, execute with session tracking to get the session ID
+        <span class="cov0" title="0">sessionInfo, err := e.ExecuteWithSessionTracking(prompt)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("execute interactive: failed to initialize session: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Printf("\n=== Session initialized (ID: %s) ===\n", sessionInfo.ID)
+        fmt.Printf("Initial response:\n%s\n", sessionInfo.Result)
+        fmt.Printf("\n=== Continuing in interactive mode ===\n\n")
+
+        // Then continue with interactive mode using the session ID
+        return e.ExecuteInteractiveWithSession(sessionInfo.ID)</span>
+}
+
+// ExecuteInteractiveContinue continues the most recent Claude session in interactive mode.
+// This is useful for resuming a conversation after the CLI has exited.
+func (e *ExecutorImpl) ExecuteInteractiveContinue() error <span class="cov8" title="1">{
+        // Create command for interactive Claude shell with --continue flag
+        cmd := e.buildCommand(continueFlag)
+
+        // Connect stdin, stdout, and stderr to the current terminal
+        cmd.Stdin = os.Stdin
+        cmd.Stdout = os.Stdout
+        cmd.Stderr = os.Stderr
+
+        // Run the command and wait for it to complete
+        if err := cmd.Run(); err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("execute interactive continue: failed to continue Claude session: %w", err)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ExecuteWithSessionTracking executes a Claude prompt and returns session information.
+// This method runs Claude in print mode with JSON output, allowing programmatic
+// access to the response, session ID, cost, and other metadata.
+// Use this when you need to track sessions or process Claude's output programmatically.
+func (e *ExecutorImpl) ExecuteWithSessionTracking(prompt string) (*SessionInfo, error) <span class="cov8" title="1">{
+        if err := e.validatePrompt(prompt); err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("execute with session tracking: %w", err)
+        }</span>
+
+        // Use print mode to get session info
+        <span class="cov0" title="0">cmd := e.buildCommand(printFlag, outputJSONFlag, prompt)
+
+        output, err := cmd.Output()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("execute with session tracking: failed to execute Claude command: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">var sessionInfo SessionInfo
+        if err := json.Unmarshal(output, &amp;sessionInfo); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("execute with session tracking: failed to parse Claude output: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;sessionInfo, nil</span>
+}
+
+// ResumeSession resumes a specific Claude session with a new prompt.
+// This allows continuing a previous conversation by providing the session ID.
+// The method returns updated session information including the response to the new prompt.
+func (e *ExecutorImpl) ResumeSession(sessionID, prompt string) (*SessionInfo, error) <span class="cov8" title="1">{
+        if err := validateSessionID(sessionID); err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("resume session: %w", err)
+        }</span>
+        <span class="cov8" title="1">if err := e.validatePrompt(prompt); err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("resume session: %w", err)
+        }</span>
+
+        // Use print mode with --resume flag to continue specific session
+        <span class="cov0" title="0">cmd := e.buildCommand(printFlag, outputJSONFlag, resumeFlag, sessionID, prompt)
+
+        output, err := cmd.Output()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("resume session %s: failed to resume Claude session: %w", sessionID, err)
+        }</span>
+
+        <span class="cov0" title="0">var sessionInfo SessionInfo
+        if err := json.Unmarshal(output, &amp;sessionInfo); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("resume session %s: failed to parse Claude output: %w", sessionID, err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;sessionInfo, nil</span>
+}
+
+// ExecuteInteractiveWithSession launches Claude CLI in interactive mode with a specific session ID.
+// This combines the benefits of interactive mode with the ability to resume a specific
+// previous session, allowing users to continue a conversation interactively.
+func (e *ExecutorImpl) ExecuteInteractiveWithSession(sessionID string) error <span class="cov8" title="1">{
+        if err := validateSessionID(sessionID); err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("execute interactive with session: %w", err)
+        }</span>
+
+        // Create command for interactive Claude shell with --resume flag
+        <span class="cov0" title="0">cmd := e.buildCommand(resumeFlag, sessionID)
+
+        // Connect stdin, stdout, and stderr to the current terminal
+        cmd.Stdin = os.Stdin
+        cmd.Stdout = os.Stdout
+        cmd.Stderr = os.Stderr
+
+        // Run the command and wait for it to complete
+        if err := cmd.Run(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("execute interactive with session %s: failed to run Claude CLI: %w", sessionID, err)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ExecuteAndContinueInteractive executes a prompt and then continues in interactive mode.
+// This method combines ExecuteWithSessionTracking and ExecuteInteractiveWithSession,
+// returning the session information while also launching interactive mode.
+func (e *ExecutorImpl) ExecuteAndContinueInteractive(prompt string) (*SessionInfo, error) <span class="cov8" title="1">{
+        if err := e.validatePrompt(prompt); err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("execute and continue interactive: %w", err)
+        }</span>
+
+        // First, execute with session tracking to get the session ID
+        <span class="cov0" title="0">sessionInfo, err := e.ExecuteWithSessionTracking(prompt)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("execute and continue interactive: failed to initialize session: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Printf("\n=== Session initialized (ID: %s) ===\n", sessionInfo.ID)
+        fmt.Printf("Initial response:\n%s\n", sessionInfo.Result)
+        fmt.Printf("\n=== Continuing in interactive mode ===\n\n")
+
+        // Then continue with interactive mode using the session ID
+        if err := e.ExecuteInteractiveWithSession(sessionInfo.ID); err != nil </span><span class="cov0" title="0">{
+                return sessionInfo, fmt.Errorf("execute and continue interactive: failed to start interactive mode: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return sessionInfo, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
