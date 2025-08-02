@@ -1,15 +1,17 @@
-package claude
+package mocks
 
 import (
 	"time"
+
+	"github.com/ashigirl96/hail-mary/internal/claude"
 )
 
-// MockExecutor is a mock implementation of the Executor interface for testing.
+// Executor is a mock implementation of the claude.Executor interface for testing.
 // It allows for controlled testing of components that depend on Claude CLI
 // without actually executing external processes.
-type MockExecutor struct {
+type Executor struct {
 	// Configuration for return values
-	SessionResult     *SessionInfo
+	SessionResult     *claude.SessionInfo
 	ExecuteError      error
 	InteractiveResult error
 
@@ -29,10 +31,10 @@ type MethodCall struct {
 	Time   time.Time
 }
 
-// NewMockExecutor creates a new MockExecutor with default success values
-func NewMockExecutor() *MockExecutor {
-	return &MockExecutor{
-		SessionResult: &SessionInfo{
+// NewExecutor creates a new mock Executor with default success values
+func NewExecutor() *Executor {
+	return &Executor{
+		SessionResult: &claude.SessionInfo{
 			ID:       "mock-session-123",
 			Result:   "Mock response",
 			CostUSD:  0.01,
@@ -44,7 +46,7 @@ func NewMockExecutor() *MockExecutor {
 }
 
 // ExecuteInteractive simulates interactive execution
-func (m *MockExecutor) ExecuteInteractive(prompt string) error {
+func (m *Executor) ExecuteInteractive(prompt string) error {
 	m.recordCall("ExecuteInteractive", prompt)
 
 	if m.ShouldFailInteractive {
@@ -54,7 +56,7 @@ func (m *MockExecutor) ExecuteInteractive(prompt string) error {
 }
 
 // ExecuteInteractiveContinue simulates continuing the most recent session
-func (m *MockExecutor) ExecuteInteractiveContinue() error {
+func (m *Executor) ExecuteInteractiveContinue() error {
 	m.recordCall("ExecuteInteractiveContinue")
 
 	if m.ShouldFailInteractive {
@@ -64,7 +66,7 @@ func (m *MockExecutor) ExecuteInteractiveContinue() error {
 }
 
 // ExecuteWithSessionTracking simulates execution with session tracking
-func (m *MockExecutor) ExecuteWithSessionTracking(prompt string) (*SessionInfo, error) {
+func (m *Executor) ExecuteWithSessionTracking(prompt string) (*claude.SessionInfo, error) {
 	m.recordCall("ExecuteWithSessionTracking", prompt)
 
 	if m.ShouldFailTracking {
@@ -74,7 +76,7 @@ func (m *MockExecutor) ExecuteWithSessionTracking(prompt string) (*SessionInfo, 
 }
 
 // ResumeSession simulates resuming a specific session
-func (m *MockExecutor) ResumeSession(sessionID, prompt string) (*SessionInfo, error) {
+func (m *Executor) ResumeSession(sessionID, prompt string) (*claude.SessionInfo, error) {
 	m.recordCall("ResumeSession", sessionID, prompt)
 
 	if m.ShouldFailResume {
@@ -88,7 +90,7 @@ func (m *MockExecutor) ResumeSession(sessionID, prompt string) (*SessionInfo, er
 }
 
 // ExecuteInteractiveWithSession simulates interactive execution with a specific session
-func (m *MockExecutor) ExecuteInteractiveWithSession(sessionID string) error {
+func (m *Executor) ExecuteInteractiveWithSession(sessionID string) error {
 	m.recordCall("ExecuteInteractiveWithSession", sessionID)
 
 	if m.ShouldFailInteractive {
@@ -98,7 +100,7 @@ func (m *MockExecutor) ExecuteInteractiveWithSession(sessionID string) error {
 }
 
 // ExecuteAndContinueInteractive simulates execution followed by interactive continuation
-func (m *MockExecutor) ExecuteAndContinueInteractive(prompt string) (*SessionInfo, error) {
+func (m *Executor) ExecuteAndContinueInteractive(prompt string) (*claude.SessionInfo, error) {
 	m.recordCall("ExecuteAndContinueInteractive", prompt)
 
 	if m.ShouldFailTracking {
@@ -108,7 +110,7 @@ func (m *MockExecutor) ExecuteAndContinueInteractive(prompt string) (*SessionInf
 }
 
 // recordCall adds a method call to the call log for verification
-func (m *MockExecutor) recordCall(method string, args ...interface{}) {
+func (m *Executor) recordCall(method string, args ...interface{}) {
 	m.CallLog = append(m.CallLog, MethodCall{
 		Method: method,
 		Args:   args,
@@ -117,7 +119,7 @@ func (m *MockExecutor) recordCall(method string, args ...interface{}) {
 }
 
 // GetCallCount returns the number of times a specific method was called
-func (m *MockExecutor) GetCallCount(method string) int {
+func (m *Executor) GetCallCount(method string) int {
 	count := 0
 	for _, call := range m.CallLog {
 		if call.Method == method {
@@ -128,7 +130,7 @@ func (m *MockExecutor) GetCallCount(method string) int {
 }
 
 // GetLastCall returns the last call made to a specific method, or nil if not found
-func (m *MockExecutor) GetLastCall(method string) *MethodCall {
+func (m *Executor) GetLastCall(method string) *MethodCall {
 	for i := len(m.CallLog) - 1; i >= 0; i-- {
 		if m.CallLog[i].Method == method {
 			return &m.CallLog[i]
@@ -138,7 +140,7 @@ func (m *MockExecutor) GetLastCall(method string) *MethodCall {
 }
 
 // Reset clears the call log and resets behavior flags
-func (m *MockExecutor) Reset() {
+func (m *Executor) Reset() {
 	m.CallLog = make([]MethodCall, 0)
 	m.ShouldFailInteractive = false
 	m.ShouldFailTracking = false
@@ -146,7 +148,7 @@ func (m *MockExecutor) Reset() {
 }
 
 // SetupFailure configures the mock to fail for specific operations
-func (m *MockExecutor) SetupFailure(interactive, tracking, resume bool, err error) {
+func (m *Executor) SetupFailure(interactive, tracking, resume bool, err error) {
 	m.ShouldFailInteractive = interactive
 	m.ShouldFailTracking = tracking
 	m.ShouldFailResume = resume

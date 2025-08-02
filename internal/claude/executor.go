@@ -13,32 +13,6 @@ import (
 	"strings"
 )
 
-// Constants for Claude CLI execution
-const (
-	// claudeCommand is the command to execute Claude CLI
-	claudeCommand = "bunx"
-	// claudePackage is the Claude Code package identifier
-	claudePackage = "@anthropic-ai/claude-code@latest"
-	// dangerousFlag allows Claude to execute without permissions prompt
-	dangerousFlag = "--dangerously-skip-permissions"
-	// printFlag enables print mode for JSON output
-	printFlag = "-p"
-	// outputJSONFlag sets output format to JSON
-	outputJSONFlag = "--output-format=json"
-	// resumeFlag resumes a previous session
-	resumeFlag = "--resume"
-	// continueFlag continues the most recent session
-	continueFlag = "--continue"
-
-	// Environment variable names
-	envBackgroundTasks = "ENABLE_BACKGROUND_TASKS"
-	envMaintainWorkDir = "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"
-
-	// Validation constants
-	maxPromptLength    = 10000
-	minSessionIDLength = 8
-	maxSessionIDLength = 100
-)
 
 // SessionInfo contains information about a Claude session
 type SessionInfo struct {
@@ -49,37 +23,6 @@ type SessionInfo struct {
 	Turns    int     `json:"turns,omitempty"`
 }
 
-// Config holds configuration options for the Claude executor
-type Config struct {
-	// Command is the command to execute (default: "bunx")
-	Command string
-	// Package is the Claude package identifier (default: "@anthropic-ai/claude-code@latest")
-	Package string
-	// EnableBackgroundTasks enables background task execution in Claude CLI.
-	// When enabled, Claude can perform background operations like file watching.
-	EnableBackgroundTasks bool
-	// MaintainWorkingDir maintains the project working directory across Claude operations.
-	// This ensures Claude commands execute in the correct project context.
-	MaintainWorkingDir bool
-	// SkipPermissions skips the permissions prompt
-	SkipPermissions bool
-	// MaxPromptLength is the maximum allowed prompt length
-	MaxPromptLength int
-	// SettingsPath is the path to a settings file to use with --settings flag
-	SettingsPath string
-}
-
-// DefaultConfig returns the default configuration
-func DefaultConfig() *Config {
-	return &Config{
-		Command:               claudeCommand,
-		Package:               claudePackage,
-		EnableBackgroundTasks: true,
-		MaintainWorkingDir:    true,
-		SkipPermissions:       true,
-		MaxPromptLength:       maxPromptLength,
-	}
-}
 
 // Executor defines the interface for Claude CLI operations.
 // This interface allows for easy mocking in tests and alternative implementations.
@@ -168,28 +111,14 @@ func NewExecutorWithConfig(config *Config) *ExecutorImpl {
 // It applies all configuration options and environment variables
 // needed for Claude CLI execution.
 func (e *ExecutorImpl) buildCommand(args ...string) *exec.Cmd {
-	// Prepare command arguments
-	cmdArgs := []string{e.config.Package}
-	if e.config.SkipPermissions {
-		cmdArgs = append(cmdArgs, dangerousFlag)
-	}
-	// Add settings flag if path is provided
-	if e.config.SettingsPath != "" {
-		cmdArgs = append(cmdArgs, "--settings", e.config.SettingsPath)
-	}
-	cmdArgs = append(cmdArgs, args...)
+	// Prepare command arguments using config
+	cmdArgs := e.config.BuildArgs(args...)
 
 	// Create command
 	cmd := exec.Command(e.config.Command, cmdArgs...)
 
-	// Set environment variables
-	env := os.Environ()
-	if e.config.EnableBackgroundTasks {
-		env = append(env, fmt.Sprintf("%s=1", envBackgroundTasks))
-	}
-	if e.config.MaintainWorkingDir {
-		env = append(env, fmt.Sprintf("%s=1", envMaintainWorkDir))
-	}
+	// Set environment variables using config
+	env := e.config.SetEnvironment(os.Environ())
 	cmd.Env = env
 
 	// Log command details for debugging

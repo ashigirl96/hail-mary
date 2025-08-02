@@ -75,7 +75,7 @@ func TestClaudeExecutorIntegration(t *testing.T) {
 ```go
 func TestExecutorImplementsInterface(t *testing.T) {
     var _ claude.Executor = (*claude.ExecutorImpl)(nil)
-    var _ claude.Executor = (*claude.MockExecutor)(nil)
+    var _ claude.Executor = (*mocks.Executor)(nil)
 }
 ```
 
@@ -88,8 +88,8 @@ func TestExecutorImplementsInterface(t *testing.T) {
 
 #### 1. Mock Executor実装
 ```go
-// internal/claude/mock_executor.go
-type MockExecutor struct {
+// internal/testing/mocks/executor.go
+type Executor struct {
     // 予想される戻り値を設定
     SessionResult     *SessionInfo
     ExecuteError      error
@@ -105,7 +105,7 @@ type MethodCall struct {
     Time   time.Time
 }
 
-func (m *MockExecutor) ExecuteWithSessionTracking(prompt string) (*SessionInfo, error) {
+func (m *Executor) ExecuteWithSessionTracking(prompt string) (*claude.SessionInfo, error) {
     m.recordCall("ExecuteWithSessionTracking", prompt)
     
     if m.ExecuteError != nil {
@@ -140,11 +140,10 @@ func NewPRDInitializer(executor claude.Executor, logger *slog.Logger) *PRDInitia
 
 // テストでは
 func TestPRDInitialization(t *testing.T) {
-    mockExecutor := &claude.MockExecutor{
-        SessionResult: &claude.SessionInfo{
-            ID:     "test-session",
-            Result: "PRD created successfully",
-        },
+    mockExecutor := mocks.NewExecutor()
+    mockExecutor.SessionResult = &claude.SessionInfo{
+        ID:     "test-session",
+        Result: "PRD created successfully",
     }
     
     initializer := NewPRDInitializer(mockExecutor, testLogger)
@@ -238,14 +237,14 @@ func TestExecutorValidatePromptFunction(t *testing.T) {}
 ### 2. Contextual Helpers
 ```go
 // テスト用のヘルパー関数
-func createTestExecutor(t *testing.T) *claude.MockExecutor {
+func createTestExecutor(t *testing.T) *mocks.Executor {
     t.Helper()
-    return &claude.MockExecutor{
-        SessionResult: &claude.SessionInfo{
-            ID:     "test-session",
-            Result: "success",
-        },
+    executor := mocks.NewExecutor()
+    executor.SessionResult = &claude.SessionInfo{
+        ID:     "test-session",
+        Result: "success",
     }
+    return executor
 }
 
 func createTempSessionFile(t *testing.T, sessionID string) string {
@@ -323,9 +322,9 @@ jobs:
 
 ## 🔧 現在のプロジェクト向けリファクタリング計画
 
-### Phase 1: Mock基盤構築
-1. `internal/claude/mock_executor.go` 作成
-2. `MockExecutor` 実装とテスト
+### Phase 1: Mock基盤構築 ✅
+1. `internal/testing/mocks/executor.go` 作成完了
+2. `mocks.Executor` 実装とテスト完了
 
 ### Phase 2: 既存テスト移行
 1. `executor_test.go` のモック化
