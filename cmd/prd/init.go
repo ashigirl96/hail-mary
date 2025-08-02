@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
@@ -18,15 +19,20 @@ import (
 // This will be removed when we update root.go imports
 var GetLogger func() *slog.Logger
 
+// Command-line flags
+// (no flags for prd init - always uses plan mode)
+
 // prdInitCmd represents the prd init command
 var prdInitCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a new PRD with Claude assistance",
 	Long: `Initialize a new Product Requirements Document (PRD) with Claude AI assistance.
 
-This command launches Claude CLI to help you create a comprehensive PRD by guiding you through
+This command launches Claude CLI in plan mode to help you create a comprehensive PRD by guiding you through
 the requirements gathering process. Claude will ask relevant questions and help structure
-your product requirements document.`,
+your product requirements document.
+
+Note: This command automatically runs in plan mode for non-destructive analysis and safe exploration.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger := GetLogger()
 		logger.Info("Initializing PRD with Claude assistance")
@@ -37,18 +43,19 @@ your product requirements document.`,
 			return fmt.Errorf("failed to create PRD directory: %w", err)
 		}
 
-		// Use hook-based session tracking
+		// Use hook-based session tracking with plan mode
 		ctx := context.Background()
-		return initPRDWithHooks(ctx, logger)
+		return initPRDWithHooks(ctx, logger, "plan")
 	},
 }
 
 func init() {
 	PrdCmd.AddCommand(prdInitCmd)
+	// No flags needed - prd init always uses plan mode
 }
 
 // initPRDWithHooks initializes PRD with hook-based session tracking
-func initPRDWithHooks(ctx context.Context, logger *slog.Logger) error {
+func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) error {
 	// Setup hook configuration
 	hookConfigPath, cleanup, err := setupHookConfig(logger)
 	if err != nil {
@@ -103,7 +110,14 @@ Let's start with understanding what product we're building.`
 			"settings_path", hookConfigPath,
 			"executor_config", config)
 
-		if err := executor.ExecuteInteractive(prompt); err != nil {
+		// Read system prompt from file if it exists
+		systemPrompt, err := readSystemPromptFile(logger)
+		if err != nil {
+			logger.Warn("Failed to read system prompt file, continuing without it", "error", err)
+			systemPrompt = ""
+		}
+
+		if err := executor.ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt); err != nil {
 			logger.Error("Failed to execute Claude interactive session",
 				"error", err,
 				"prompt_length", len(prompt),
@@ -259,4 +273,32 @@ func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessi
 			}
 		}
 	}
+}
+
+// readSystemPromptFile reads the PRD system prompt from file
+func readSystemPromptFile(logger *slog.Logger) (string, error) {
+	// Get current working directory
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	// Try to read from system-prompt/prd.md
+	systemPromptPath := filepath.Join(wd, "system-prompt", "prd.md")
+	content, err := os.ReadFile(systemPromptPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read system prompt file %s: %w", systemPromptPath, err)
+	}
+
+	// Convert to string and trim whitespace
+	systemPrompt := strings.TrimSpace(string(content))
+	if systemPrompt == "" {
+		return "", fmt.Errorf("system prompt file is empty")
+	}
+
+	logger.Debug("Loaded system prompt from file",
+		"path", systemPromptPath,
+		"length", len(systemPrompt))
+
+	return systemPrompt, nil
 }
