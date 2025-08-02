@@ -65,6 +65,7 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) err
 	// Create Claude executor with settings path
 	config := claude.DefaultConfig()
 	config.SkipPermissions = false // TODO: refactoring
+	config.SettingsPath = hookConfigPath
 	executor := claude.NewExecutorWithConfig(config)
 
 	// Prepare the initial prompt for PRD creation
@@ -162,6 +163,7 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) err
 // monitorSessionEstablishment monitors for session file creation
 func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessionChan chan<- *session.State) {
 	processID := fmt.Sprintf("%d", os.Getpid())
+	fmt.Printf("Monitoring for session establishment (PID: %s)...\n", processID)
 
 	sm, err := session.NewManager()
 	if err != nil {
