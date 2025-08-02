@@ -2,14 +2,28 @@ package claude
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 )
 
+// getClaudeCommand returns the full path to the claude command
+func getClaudeCommand() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		// Fallback to command in PATH
+		return "claude"
+	}
+	return filepath.Join(homeDir, ".local", "bin", "claude")
+}
+
 // Constants for Claude CLI execution
-const (
+var (
 	// claudeCommand is the command to execute Claude CLI
-	claudeCommand = "bunx"
-	// claudePackage is the Claude Code package identifier
-	claudePackage = "@anthropic-ai/claude-code@latest"
+	// Uses ~/.local/bin/claude with proper home directory expansion
+	claudeCommand = getClaudeCommand()
+)
+
+const (
 	// dangerousFlag allows Claude to execute without permissions prompt
 	dangerousFlag = "--dangerously-skip-permissions"
 	// permissionModeFlag sets the permission mode
@@ -31,10 +45,8 @@ const (
 
 // Config holds configuration options for the Claude executor
 type Config struct {
-	// Command is the command to execute (default: "bunx")
+	// Command is the command to execute (default: ~/.local/bin/claude)
 	Command string
-	// Package is the Claude package identifier (default: "@anthropic-ai/claude-code@latest")
-	Package string
 	// EnableBackgroundTasks enables background task execution in Claude CLI.
 	// When enabled, Claude can perform background operations like file watching.
 	EnableBackgroundTasks bool
@@ -53,7 +65,6 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Command:               claudeCommand,
-		Package:               claudePackage,
 		EnableBackgroundTasks: true,
 		MaintainWorkingDir:    true,
 		SkipPermissions:       true,
@@ -74,7 +85,7 @@ func (c *Config) SetEnvironment(env []string) []string {
 
 // BuildArgs constructs command line arguments from configuration
 func (c *Config) BuildArgs(additionalArgs ...string) []string {
-	args := []string{c.Package}
+	var args []string
 	if c.SkipPermissions {
 		args = append(args, dangerousFlag)
 	}
@@ -90,7 +101,6 @@ func NewConfigWithDefaults(overrides Config) *Config {
 	// Start with default values
 	config := &Config{
 		Command:               claudeCommand,
-		Package:               claudePackage,
 		EnableBackgroundTasks: true,
 		MaintainWorkingDir:    true,
 		SkipPermissions:       true,
@@ -100,9 +110,6 @@ func NewConfigWithDefaults(overrides Config) *Config {
 	// Apply overrides
 	if overrides.Command != "" {
 		config.Command = overrides.Command
-	}
-	if overrides.Package != "" {
-		config.Package = overrides.Package
 	}
 	if overrides.SettingsPath != "" {
 		config.SettingsPath = overrides.SettingsPath

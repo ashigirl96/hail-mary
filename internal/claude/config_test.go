@@ -12,7 +12,6 @@ func TestDefaultConfig(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, claudeCommand, config.Command, "Command should be set to default claude command")
-	assert.Equal(t, claudePackage, config.Package, "Package should be set to default claude package")
 	assert.True(t, config.EnableBackgroundTasks, "EnableBackgroundTasks should be enabled by default")
 	assert.True(t, config.MaintainWorkingDir, "MaintainWorkingDir should be enabled by default")
 	assert.True(t, config.SkipPermissions, "SkipPermissions should be enabled by default")
@@ -35,7 +34,6 @@ func TestConfig_Validation(t *testing.T) {
 			name: "custom config is valid",
 			config: &Config{
 				Command:               "custom-command",
-				Package:               "custom-package",
 				EnableBackgroundTasks: false,
 				MaintainWorkingDir:    false,
 				SkipPermissions:       false,
@@ -47,8 +45,7 @@ func TestConfig_Validation(t *testing.T) {
 		{
 			name: "config with zero max prompt length",
 			config: &Config{
-				Command:               "bunx",
-				Package:               "@anthropic-ai/claude-code@latest",
+				Command:               "claude",
 				EnableBackgroundTasks: true,
 				MaintainWorkingDir:    true,
 				SkipPermissions:       true,
@@ -77,7 +74,6 @@ func TestConfig_DeepCopy(t *testing.T) {
 	// Act - simulate copying by creating new config
 	copy := &Config{
 		Command:               original.Command,
-		Package:               original.Package,
 		EnableBackgroundTasks: original.EnableBackgroundTasks,
 		MaintainWorkingDir:    original.MaintainWorkingDir,
 		SkipPermissions:       original.SkipPermissions,
