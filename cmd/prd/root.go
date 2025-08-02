@@ -1,11 +1,11 @@
-package cmd
+package prd
 
 import (
 	"github.com/spf13/cobra"
 )
 
-// prdCmd represents the prd command
-var prdCmd = &cobra.Command{
+// PrdCmd represents the prd command
+var PrdCmd = &cobra.Command{
 	Use:   "prd",
 	Short: "Product Requirements Document management commands",
 	Long: `PRD (Product Requirements Document) management commands.
@@ -14,6 +14,6 @@ This command provides subcommands to help create, manage, and maintain product r
 using Claude AI assistance.`,
 }
 
-func init() {
-	rootCmd.AddCommand(prdCmd)
+func Init(rootCmd *cobra.Command) {
+	rootCmd.AddCommand(PrdCmd)
 }

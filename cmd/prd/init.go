@@ -1,4 +1,4 @@
-package cmd
+package prd
 
 import (
 	"context"
@@ -13,6 +13,10 @@ import (
 	"github.com/ashigirl96/hail-mary/internal/settings"
 	"github.com/spf13/cobra"
 )
+
+// GetLogger is a temporary function to access the logger
+// This will be removed when we update root.go imports
+var GetLogger func() *slog.Logger
 
 // prdInitCmd represents the prd init command
 var prdInitCmd = &cobra.Command{
@@ -40,7 +44,7 @@ your product requirements document.`,
 }
 
 func init() {
-	prdCmd.AddCommand(prdInitCmd)
+	PrdCmd.AddCommand(prdInitCmd)
 }
 
 // initPRDWithHooks initializes PRD with hook-based session tracking

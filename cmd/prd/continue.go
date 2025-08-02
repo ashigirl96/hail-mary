@@ -1,4 +1,4 @@
-package cmd
+package prd
 
 import (
 	"fmt"
@@ -38,5 +38,5 @@ made in earlier sessions.`,
 }
 
 func init() {
-	prdCmd.AddCommand(prdContinueCmd)
+	PrdCmd.AddCommand(prdContinueCmd)
 }

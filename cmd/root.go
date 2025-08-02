@@ -8,6 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/ashigirl96/hail-mary/cmd/hook"
+	"github.com/ashigirl96/hail-mary/cmd/prd"
 )
 
 var (
@@ -61,6 +64,19 @@ func init() {
 		DisableDescriptions: false,
 	}
 
+	// Initialize subcommands
+	initSubcommands()
+}
+
+// initSubcommands initializes all subcommands
+func initSubcommands() {
+	// Set up logger access for subcommands
+	hook.GetLogger = GetLogger
+	prd.GetLogger = GetLogger
+
+	// Initialize command groups
+	hook.Init(rootCmd)
+	prd.Init(rootCmd)
 }
 
 // setupLogger configures slog based on the log level flag

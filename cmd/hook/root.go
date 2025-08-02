@@ -1,4 +1,4 @@
-package cmd
+package hook
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 	"github.com/ashigirl96/hail-mary/internal/session"
 )
 
-var hookCmd = &cobra.Command{
+var HookCmd = &cobra.Command{
 	Use:   "hook",
 	Short: "Hook handler for Claude Code integration",
 	Long: `Processes hook events from Claude Code and manages session state.
@@ -28,9 +28,13 @@ processes to track Claude sessions.`,
 	RunE:   runHook,
 }
 
-func init() {
-	rootCmd.AddCommand(hookCmd)
+func Init(rootCmd *cobra.Command) {
+	rootCmd.AddCommand(HookCmd)
 }
+
+// GetLogger is a temporary function to access the logger
+// This will be removed when we update root.go imports
+var GetLogger func() *slog.Logger
 
 func runHook(cmd *cobra.Command, args []string) error {
 	logger := GetLogger()
