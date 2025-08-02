@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "deepwiki": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": ["-y", "mcp-deepwiki@latest"],
+      "env": {
+        "DEEPWIKI_MAX_CONCURRENCY": "10",
+        "DEEPWIKI_REQUEST_TIMEOUT": "60000",
+        "DEEPWIKI_MAX_RETRIES": "5",
+        "DEEPWIKI_RETRY_DELAY": "500"
+      }
+    }
+  }
+}
