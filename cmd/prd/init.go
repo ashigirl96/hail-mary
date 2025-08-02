@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
+	"github.com/ashigirl96/hail-mary/internal/hooks"
+	"github.com/ashigirl96/hail-mary/internal/prompt"
 	"github.com/ashigirl96/hail-mary/internal/session"
-	"github.com/ashigirl96/hail-mary/internal/settings"
 	"github.com/spf13/cobra"
 )
 
@@ -57,20 +56,19 @@ func init() {
 // initPRDWithHooks initializes PRD with hook-based session tracking
 func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) error {
 	// Setup hook configuration
-	hookConfigPath, cleanup, err := setupHookConfig(logger)
+	hookConfigPath, cleanup, err := hooks.SetupConfig(logger)
 	if err != nil {
 		return fmt.Errorf("failed to setup hooks: %w", err)
 	}
 	defer cleanup()
 
 	// Create Claude executor with settings path
-	config := claude.NewConfigWithDefaults(claude.Config{
-		SettingsPath: hookConfigPath,
-	})
+	config := claude.DefaultConfig()
+	config.SkipPermissions = false // TODO: refactoring
 	executor := claude.NewExecutorWithConfig(config)
 
 	// Prepare the initial prompt for PRD creation
-	prompt := `I need help creating a Product Requirements Document (PRD). 
+	initialPrompt := `I need help creating a Product Requirements Document (PRD). 
 Please guide me through the process by asking relevant questions about:
 - The product vision and goals
 - Target users and their needs
@@ -112,7 +110,7 @@ Let's start with understanding what product we're building.`
 			"executor_config", config)
 
 		// Read system prompt from file if it exists
-		systemPrompt, err := readSystemPromptFile(logger)
+		systemPrompt, err := prompt.ReadPRDSystemPrompt(logger)
 		if err != nil {
 			logger.Warn("Failed to read system prompt file, continuing without it", "error", err)
 			systemPrompt = ""
@@ -120,7 +118,7 @@ Let's start with understanding what product we're building.`
 
 		// Create execution options
 		opts := claude.ExecuteOptions{
-			Prompt:       prompt,
+			Prompt:       initialPrompt,
 			Mode:         mode,
 			SystemPrompt: systemPrompt,
 		}
@@ -128,7 +126,7 @@ Let's start with understanding what product we're building.`
 		if err := executor.Execute(opts); err != nil {
 			logger.Error("Failed to execute Claude interactive session",
 				"error", err,
-				"prompt_length", len(prompt),
+				"prompt_length", len(initialPrompt),
 				"settings_path", hookConfigPath)
 			errChan <- err
 			return
@@ -170,89 +168,6 @@ Let's start with understanding what product we're building.`
 	return nil
 }
 
-// setupHookConfig creates temporary hook configuration
-func setupHookConfig(logger *slog.Logger) (string, func(), error) {
-	// Get executable path for hook command
-	execPath, err := os.Executable()
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	// Create hook configuration
-	hookCmd := fmt.Sprintf("HAIL_MARY_PARENT_PID=%d %s hook", os.Getpid(), execPath)
-
-	// Define our hooks
-	hailMaryHooks := map[string][]settings.HookMatcher{
-		"SessionStart": {
-			{
-				Hooks: []settings.HookEntry{
-					{
-						Type:    "command",
-						Command: hookCmd,
-						Timeout: 5,
-					},
-				},
-			},
-		},
-		"UserPromptSubmit": {
-			{
-				Hooks: []settings.HookEntry{
-					{
-						Type:    "command",
-						Command: hookCmd,
-						Timeout: 2,
-					},
-				},
-			},
-		},
-		"Stop": {
-			{
-				Hooks: []settings.HookEntry{
-					{
-						Type:    "command",
-						Command: hookCmd,
-						Timeout: 2,
-					},
-				},
-			},
-		},
-	}
-
-	// Check for existing .claude/settings.json
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to get working directory: %w", err)
-	}
-	existingSettingsPath := filepath.Join(wd, ".claude", "settings.json")
-
-	// Create merged settings
-	mergedSettings, err := settings.CreateMergedSettings(existingSettingsPath, hailMaryHooks)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to create merged settings: %w", err)
-	}
-
-	// Write temporary merged settings
-	tempDir := os.TempDir()
-	tempHookPath := filepath.Join(tempDir, fmt.Sprintf("hail-mary-settings-%d.json", os.Getpid()))
-
-	if err := mergedSettings.SaveToFile(tempHookPath); err != nil {
-		return "", nil, fmt.Errorf("failed to save merged settings: %w", err)
-	}
-
-	// Cleanup function
-	cleanup := func() {
-		os.Remove(tempHookPath)
-		// Session files are preserved for future reference
-	}
-
-	logger.Debug("Merged settings created",
-		"config_path", tempHookPath,
-		"parent_pid", os.Getpid(),
-		"existing_settings", existingSettingsPath)
-
-	return tempHookPath, cleanup, nil
-}
-
 // monitorSessionEstablishment monitors for session file creation
 func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessionChan chan<- *session.State) {
 	processID := fmt.Sprintf("%d", os.Getpid())
@@ -279,32 +194,4 @@ func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessi
 			}
 		}
 	}
-}
-
-// readSystemPromptFile reads the PRD system prompt from file
-func readSystemPromptFile(logger *slog.Logger) (string, error) {
-	// Get current working directory
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("failed to get working directory: %w", err)
-	}
-
-	// Try to read from system-prompt/prd.md
-	systemPromptPath := filepath.Join(wd, "system-prompt", "prd.md")
-	content, err := os.ReadFile(systemPromptPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to read system prompt file %s: %w", systemPromptPath, err)
-	}
-
-	// Convert to string and trim whitespace
-	systemPrompt := strings.TrimSpace(string(content))
-	if systemPrompt == "" {
-		return "", fmt.Errorf("system prompt file is empty")
-	}
-
-	logger.Debug("Loaded system prompt from file",
-		"path", systemPromptPath,
-		"length", len(systemPrompt))
-
-	return systemPrompt, nil
 }
