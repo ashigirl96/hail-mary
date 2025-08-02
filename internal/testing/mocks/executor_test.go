@@ -184,9 +184,9 @@ func TestExecutor_GetCallCount(t *testing.T) {
 	mock := NewExecutor()
 
 	// Act
-	mock.ExecuteInteractive("test1")
-	mock.ExecuteInteractive("test2")
-	mock.ExecuteWithSessionTracking("test3")
+	_ = mock.ExecuteInteractive("test1")
+	_ = mock.ExecuteInteractive("test2")
+	_, _ = mock.ExecuteWithSessionTracking("test3")
 
 	// Assert
 	assert.Equal(t, 2, mock.GetCallCount("ExecuteInteractive"))
@@ -199,9 +199,9 @@ func TestExecutor_GetLastCall(t *testing.T) {
 	mock := NewExecutor()
 
 	// Act
-	mock.ExecuteInteractive("first")
-	mock.ExecuteInteractive("second")
-	mock.ExecuteWithSessionTracking("tracking")
+	_ = mock.ExecuteInteractive("first")
+	_ = mock.ExecuteInteractive("second")
+	_, _ = mock.ExecuteWithSessionTracking("tracking")
 
 	// Assert
 	lastInteractive := mock.GetLastCall("ExecuteInteractive")
@@ -222,7 +222,7 @@ func TestExecutor_Reset(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
 	mock.SetupFailure(true, true, true, errors.New("test error"))
-	mock.ExecuteInteractive("test")
+	_ = mock.ExecuteInteractive("test")
 
 	// Pre-condition checks
 	assert.Len(t, mock.CallLog, 1)
@@ -262,9 +262,9 @@ func TestExecutor_CallTimestamps(t *testing.T) {
 	start := time.Now()
 
 	// Act
-	mock.ExecuteInteractive("test")
+	_ = mock.ExecuteInteractive("test")
 	time.Sleep(1 * time.Millisecond) // Ensure timestamp difference
-	mock.ExecuteWithSessionTracking("test")
+	_, _ = mock.ExecuteWithSessionTracking("test")
 
 	// Assert
 	require.Len(t, mock.CallLog, 2)
