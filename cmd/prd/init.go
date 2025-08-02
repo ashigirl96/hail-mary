@@ -49,7 +49,7 @@ Note: This command automatically runs in plan mode for non-destructive analysis 
 }
 
 func init() {
-	PrdCmd.AddCommand(prdInitCmd)
+	Cmd.AddCommand(prdInitCmd)
 	// No flags needed - prd init always uses plan mode
 }
 

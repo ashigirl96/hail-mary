@@ -14,7 +14,7 @@ import (
 	"github.com/ashigirl96/hail-mary/internal/session"
 )
 
-var HookCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "hook",
 	Short: "Hook handler for Claude Code integration",
 	Long: `Processes hook events from Claude Code and manages session state.
@@ -29,7 +29,7 @@ processes to track Claude sessions.`,
 }
 
 func Init(rootCmd *cobra.Command) {
-	rootCmd.AddCommand(HookCmd)
+	rootCmd.AddCommand(Cmd)
 }
 
 // GetLogger is a temporary function to access the logger
