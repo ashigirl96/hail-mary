@@ -23,7 +23,7 @@ VERSION=$(shell git describe --tags --always --dirty)
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)"
 
-.PHONY: all build clean test coverage lint fmt help run install deps tidy parallel-checks
+.PHONY: all build clean test coverage lint fmt help run install deps tidy parallel-checks watch
 
 ## help: Show this help message
 help:
@@ -124,6 +124,36 @@ dev:
 		echo "Air not installed. Install with: go install github.com/cosmtrek/air@latest"; \
 		echo "Running without live reload..."; \
 		$(GOCMD) run $(MAIN_PATH); \
+	fi
+
+## watch: Watch for file changes and rebuild automatically
+watch:
+	@echo "Watching for file changes..."
+	@if command -v air >/dev/null 2>&1; then \
+		echo "Using Air for file watching and rebuilding..."; \
+		air --build.cmd "make build" --build.bin "" --build.exclude_dir "bin,vendor,tmp" --build.include_ext "go"; \
+	elif command -v gomon >/dev/null 2>&1; then \
+		echo "Using gomon for file watching..."; \
+		gomon -- make build; \
+	elif command -v watchexec >/dev/null 2>&1; then \
+		echo "Using watchexec for file watching..."; \
+		watchexec -e go -r "make build"; \
+	elif command -v fswatch >/dev/null 2>&1; then \
+		echo "Using fswatch for file watching..."; \
+		fswatch -o . -e ".*" -i "\\.go$$" | xargs -n1 -I{} make build; \
+	else \
+		echo "No file watcher found. Install one of these Go-based tools:"; \
+		echo ""; \
+		echo "Go ecosystem tools (recommended):"; \
+		echo "  - air: go install github.com/cosmtrek/air@latest"; \
+		echo "  - gomon: go install github.com/c9s/gomon@latest"; \
+		echo ""; \
+		echo "System package managers:"; \
+		echo "  - watchexec: brew install watchexec"; \
+		echo "  - fswatch: brew install fswatch"; \
+		echo ""; \
+		echo "Or use 'make dev' for Air with default configuration."; \
+		exit 1; \
 	fi
 
 
