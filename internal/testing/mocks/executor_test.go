@@ -17,11 +17,9 @@ func TestNewExecutor(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, mock, "NewExecutor should not return nil")
-	assert.NotNil(t, mock.SessionResult, "SessionResult should be initialized")
-	assert.Equal(t, "mock-session-123", mock.SessionResult.ID, "Default session ID should be set")
-	assert.Equal(t, "Mock response", mock.SessionResult.Result, "Default result should be set")
-	assert.Equal(t, 0.01, mock.SessionResult.CostUSD, "Default cost should be set")
 	assert.Empty(t, mock.CallLog, "CallLog should be empty initially")
+	assert.False(t, mock.ShouldFail, "ShouldFail should be false by default")
+	assert.Nil(t, mock.ExecuteError, "ExecuteError should be nil by default")
 }
 
 func TestExecutor_ImplementsInterface(t *testing.T) {
@@ -29,29 +27,34 @@ func TestExecutor_ImplementsInterface(t *testing.T) {
 	var _ claude.Executor = (*Executor)(nil)
 }
 
-func TestExecutor_ExecuteInteractive_Success(t *testing.T) {
+func TestExecutor_Execute_Success(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
-	prompt := "Create a function"
+	opts := claude.ExecuteOptions{
+		Prompt:       "Create a function",
+		Mode:         "plan",
+		SystemPrompt: "Be helpful",
+	}
 
 	// Act
-	err := mock.ExecuteInteractive(prompt)
+	err := mock.Execute(opts)
 
 	// Assert
 	require.NoError(t, err)
 	assert.Len(t, mock.CallLog, 1, "Should record one call")
-	assert.Equal(t, "ExecuteInteractive", mock.CallLog[0].Method)
-	assert.Equal(t, prompt, mock.CallLog[0].Args[0])
+	assert.Equal(t, "Execute", mock.CallLog[0].Method)
+	assert.Equal(t, opts, mock.CallLog[0].Args[0])
 }
 
-func TestExecutor_ExecuteInteractive_Failure(t *testing.T) {
+func TestExecutor_Execute_Failure(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
-	expectedError := errors.New("interactive execution failed")
-	mock.SetupFailure(true, false, expectedError)
+	expectedError := errors.New("execution failed")
+	mock.SetupFailure(expectedError)
+	opts := claude.ExecuteOptions{Prompt: "test"}
 
 	// Act
-	err := mock.ExecuteInteractive("test")
+	err := mock.Execute(opts)
 
 	// Assert
 	require.Error(t, err)
@@ -59,37 +62,24 @@ func TestExecutor_ExecuteInteractive_Failure(t *testing.T) {
 	assert.Len(t, mock.CallLog, 1, "Should record the call even on failure")
 }
 
-func TestExecutor_ExecuteInteractiveWithSession(t *testing.T) {
+func TestExecutor_ExecuteWithSession(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
 	sessionID := "session-789"
+	opts := claude.ExecuteOptions{
+		Mode:         "plan",
+		SystemPrompt: "Continue conversation",
+	}
 
 	// Act
-	err := mock.ExecuteInteractiveWithSession(sessionID)
+	err := mock.ExecuteWithSession(sessionID, opts)
 
 	// Assert
 	require.NoError(t, err)
 	assert.Len(t, mock.CallLog, 1)
-	assert.Equal(t, "ExecuteInteractiveWithSession", mock.CallLog[0].Method)
+	assert.Equal(t, "ExecuteWithSession", mock.CallLog[0].Method)
 	assert.Equal(t, sessionID, mock.CallLog[0].Args[0])
-}
-
-func TestExecutor_ExecuteAndContinueInteractive(t *testing.T) {
-	// Arrange
-	mock := NewExecutor()
-	prompt := "Start and continue"
-
-	// Act
-	result, err := mock.ExecuteAndContinueInteractive(prompt)
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	assert.Equal(t, mock.SessionResult.ID, result.ID)
-
-	assert.Len(t, mock.CallLog, 1)
-	assert.Equal(t, "ExecuteAndContinueInteractive", mock.CallLog[0].Method)
-	assert.Equal(t, prompt, mock.CallLog[0].Args[0])
+	assert.Equal(t, opts, mock.CallLog[0].Args[1])
 }
 
 func TestExecutor_GetCallCount(t *testing.T) {
@@ -97,13 +87,13 @@ func TestExecutor_GetCallCount(t *testing.T) {
 	mock := NewExecutor()
 
 	// Act
-	_ = mock.ExecuteInteractive("test1")
-	_ = mock.ExecuteInteractive("test2")
-	_ = mock.ExecuteInteractiveWithSession("session-test")
+	_ = mock.Execute(claude.ExecuteOptions{Prompt: "test1"})
+	_ = mock.Execute(claude.ExecuteOptions{Prompt: "test2"})
+	_ = mock.ExecuteWithSession("session-test", claude.ExecuteOptions{})
 
 	// Assert
-	assert.Equal(t, 2, mock.GetCallCount("ExecuteInteractive"))
-	assert.Equal(t, 1, mock.GetCallCount("ExecuteInteractiveWithSession"))
+	assert.Equal(t, 2, mock.GetCallCount("Execute"))
+	assert.Equal(t, 1, mock.GetCallCount("ExecuteWithSession"))
 }
 
 func TestExecutor_GetLastCall(t *testing.T) {
@@ -111,19 +101,20 @@ func TestExecutor_GetLastCall(t *testing.T) {
 	mock := NewExecutor()
 
 	// Act
-	_ = mock.ExecuteInteractive("first")
-	_ = mock.ExecuteInteractive("second")
-	_ = mock.ExecuteInteractiveWithSession("session-test")
+	_ = mock.Execute(claude.ExecuteOptions{Prompt: "first"})
+	_ = mock.Execute(claude.ExecuteOptions{Prompt: "second"})
+	_ = mock.ExecuteWithSession("session-test", claude.ExecuteOptions{Mode: "plan"})
 
 	// Assert
-	lastInteractive := mock.GetLastCall("ExecuteInteractive")
-	require.NotNil(t, lastInteractive)
-	assert.Equal(t, "ExecuteInteractive", lastInteractive.Method)
-	assert.Equal(t, "second", lastInteractive.Args[0])
+	lastExecute := mock.GetLastCall("Execute")
+	require.NotNil(t, lastExecute)
+	assert.Equal(t, "Execute", lastExecute.Method)
+	opts := lastExecute.Args[0].(claude.ExecuteOptions)
+	assert.Equal(t, "second", opts.Prompt)
 
-	lastSession := mock.GetLastCall("ExecuteInteractiveWithSession")
+	lastSession := mock.GetLastCall("ExecuteWithSession")
 	require.NotNil(t, lastSession)
-	assert.Equal(t, "ExecuteInteractiveWithSession", lastSession.Method)
+	assert.Equal(t, "ExecuteWithSession", lastSession.Method)
 
 	nonExistent := mock.GetLastCall("NonExistentMethod")
 	assert.Nil(t, nonExistent)
@@ -132,89 +123,82 @@ func TestExecutor_GetLastCall(t *testing.T) {
 func TestExecutor_Reset(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
-	mock.SetupFailure(true, true, errors.New("test error"))
-	_ = mock.ExecuteInteractive("test")
-
-	// Pre-condition checks
-	assert.Len(t, mock.CallLog, 1)
-	assert.True(t, mock.ShouldFailInteractive)
-	assert.True(t, mock.ShouldFailTracking)
+	mock.SetupFailure(errors.New("error"))
+	_ = mock.Execute(claude.ExecuteOptions{Prompt: "test"})
 
 	// Act
 	mock.Reset()
 
 	// Assert
-	assert.Empty(t, mock.CallLog, "CallLog should be cleared")
-	assert.False(t, mock.ShouldFailInteractive, "ShouldFailInteractive should be reset")
-	assert.False(t, mock.ShouldFailTracking, "ShouldFailTracking should be reset")
+	assert.Empty(t, mock.CallLog, "CallLog should be empty after reset")
+	assert.False(t, mock.ShouldFail, "ShouldFail should be false after reset")
+
+	// Verify behavior is reset
+	err := mock.Execute(claude.ExecuteOptions{Prompt: "after reset"})
+	assert.NoError(t, err, "Should not fail after reset")
 }
 
 func TestExecutor_SetupFailure(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
-	testError := errors.New("custom test error")
+	expectedError := errors.New("test error")
 
 	// Act
-	mock.SetupFailure(true, false, testError)
+	mock.SetupFailure(expectedError)
 
 	// Assert
-	assert.True(t, mock.ShouldFailInteractive)
-	assert.False(t, mock.ShouldFailTracking)
-	assert.Equal(t, testError, mock.ExecuteError)
-	assert.Equal(t, testError, mock.InteractiveResult)
+	assert.True(t, mock.ShouldFail)
+	assert.Equal(t, expectedError, mock.ExecuteError)
+
+	// Verify failure behavior
+	err := mock.Execute(claude.ExecuteOptions{})
+	assert.Equal(t, expectedError, err)
 }
 
 func TestExecutor_CallTimestamps(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
-	start := time.Now()
 
 	// Act
-	_ = mock.ExecuteInteractive("test")
-	time.Sleep(1 * time.Millisecond) // Ensure timestamp difference
-	_, _ = mock.ExecuteAndContinueInteractive("test")
+	timeBefore := time.Now()
+	time.Sleep(10 * time.Millisecond) // Small delay to ensure time difference
+	_ = mock.Execute(claude.ExecuteOptions{Prompt: "test"})
+	timeAfter := time.Now()
 
 	// Assert
-	require.Len(t, mock.CallLog, 2)
-
-	firstCall := mock.CallLog[0]
-	secondCall := mock.CallLog[1]
-
-	assert.True(t, firstCall.Time.After(start) || firstCall.Time.Equal(start))
-	assert.True(t, secondCall.Time.After(firstCall.Time))
+	assert.Len(t, mock.CallLog, 1)
+	callTime := mock.CallLog[0].Time
+	assert.True(t, callTime.After(timeBefore), "Call time should be after start time")
+	assert.True(t, callTime.Before(timeAfter), "Call time should be before end time")
 }
 
 func TestExecutor_ComplexScenario(t *testing.T) {
-	// Arrange
+	// This test simulates a more complex scenario with multiple calls and failures
 	mock := NewExecutor()
-	mock.SessionResult = &claude.SessionInfo{
-		ID:       "complex-session",
-		Result:   "Complex result",
-		CostUSD:  0.05,
-		Duration: "5s",
-		Turns:    3,
-	}
 
-	// Act - Simulate a complex workflow
-	// 1. Start with interactive execution
-	result1, err1 := mock.ExecuteAndContinueInteractive("Initial prompt")
-	require.NoError(t, err1)
+	// First call succeeds
+	err := mock.Execute(claude.ExecuteOptions{Prompt: "first", Mode: "plan"})
+	assert.NoError(t, err)
 
-	// 2. Continue with interactive mode
-	err2 := mock.ExecuteInteractiveWithSession(result1.ID)
-	require.NoError(t, err2)
+	// Setup failure for next calls
+	mock.SetupFailure(errors.New("service unavailable"))
 
-	// Assert
-	assert.Len(t, mock.CallLog, 2, "Should have recorded 2 calls")
+	// Second call fails
+	err = mock.Execute(claude.ExecuteOptions{Prompt: "second"})
+	assert.Error(t, err)
 
-	// Verify call sequence
-	assert.Equal(t, "ExecuteAndContinueInteractive", mock.CallLog[0].Method)
-	assert.Equal(t, "ExecuteInteractiveWithSession", mock.CallLog[1].Method)
+	// Session call also fails
+	err = mock.ExecuteWithSession("session-123", claude.ExecuteOptions{})
+	assert.Error(t, err)
 
-	// Verify session ID consistency
-	assert.Equal(t, "complex-session", result1.ID)
+	// Verify call history
+	assert.Equal(t, 3, len(mock.CallLog))
+	assert.Equal(t, 2, mock.GetCallCount("Execute"))
+	assert.Equal(t, 1, mock.GetCallCount("ExecuteWithSession"))
 
-	// Verify call counts
-	assert.Equal(t, 1, mock.GetCallCount("ExecuteAndContinueInteractive"))
-	assert.Equal(t, 1, mock.GetCallCount("ExecuteInteractiveWithSession"))
+	// Reset and verify normal operation
+	mock.Reset()
+	err = mock.Execute(claude.ExecuteOptions{Prompt: "after reset"})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(mock.CallLog), "CallLog should only have one call after reset")
 }

@@ -87,26 +87,25 @@ func TestExecutorImpl_InterfaceCompliance(t *testing.T) {
 		test func(t *testing.T, executor claude.Executor)
 	}{
 		{
-			name: "ExecuteInteractive method exists",
+			name: "Execute method exists",
 			test: func(t *testing.T, executor claude.Executor) {
-				err := executor.ExecuteInteractive("test prompt")
+				opts := claude.ExecuteOptions{
+					Prompt: "test prompt",
+					Mode:   "plan",
+				}
+				err := executor.Execute(opts)
 				// MockExecutor should not return error by default
 				assert.NoError(t, err)
 			},
 		},
 		{
-			name: "ExecuteInteractiveWithSession method exists",
+			name: "ExecuteWithSession method exists",
 			test: func(t *testing.T, executor claude.Executor) {
-				err := executor.ExecuteInteractiveWithSession("session-123")
+				opts := claude.ExecuteOptions{
+					Mode: "plan",
+				}
+				err := executor.ExecuteWithSession("session-123", opts)
 				assert.NoError(t, err)
-			},
-		},
-		{
-			name: "ExecuteAndContinueInteractive method exists",
-			test: func(t *testing.T, executor claude.Executor) {
-				result, err := executor.ExecuteAndContinueInteractive("test prompt")
-				assert.NoError(t, err)
-				assert.NotNil(t, result)
 			},
 		},
 	}
@@ -121,4 +120,68 @@ func TestExecutorImpl_InterfaceCompliance(t *testing.T) {
 // Integration test for checking if mock provides full interface coverage
 func TestMockExecutor_ImplementsInterface(t *testing.T) {
 	var _ claude.Executor = (*mocks.Executor)(nil)
+}
+
+func TestNewConfigWithDefaults(t *testing.T) {
+	tests := []struct {
+		name      string
+		overrides claude.Config
+		want      *claude.Config
+	}{
+		{
+			name:      "empty overrides uses all defaults",
+			overrides: claude.Config{},
+			want: &claude.Config{
+				Command:               "bunx",
+				Package:               "@anthropic-ai/claude-code@latest",
+				EnableBackgroundTasks: true,
+				MaintainWorkingDir:    true,
+				SkipPermissions:       true,
+				MaxPromptLength:       10000,
+				SettingsPath:          "",
+			},
+		},
+		{
+			name: "override settings path only",
+			overrides: claude.Config{
+				SettingsPath: "/custom/settings.json",
+			},
+			want: &claude.Config{
+				Command:               "bunx",
+				Package:               "@anthropic-ai/claude-code@latest",
+				EnableBackgroundTasks: true,
+				MaintainWorkingDir:    true,
+				SkipPermissions:       true,
+				MaxPromptLength:       10000,
+				SettingsPath:          "/custom/settings.json",
+			},
+		},
+		{
+			name: "override multiple values",
+			overrides: claude.Config{
+				Command:         "npx",
+				SettingsPath:    "/custom/settings.json",
+				MaxPromptLength: 5000,
+			},
+			want: &claude.Config{
+				Command:               "npx",
+				Package:               "@anthropic-ai/claude-code@latest",
+				EnableBackgroundTasks: true,
+				MaintainWorkingDir:    true,
+				SkipPermissions:       true,
+				MaxPromptLength:       5000,
+				SettingsPath:          "/custom/settings.json",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Act
+			got := claude.NewConfigWithDefaults(tt.overrides)
+
+			// Assert
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

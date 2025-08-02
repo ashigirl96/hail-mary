@@ -11,16 +11,13 @@ import (
 // without actually executing external processes.
 type Executor struct {
 	// Configuration for return values
-	SessionResult     *claude.SessionInfo
-	ExecuteError      error
-	InteractiveResult error
+	ExecuteError error
 
 	// Call tracking for verification
 	CallLog []MethodCall
 
 	// Behavior control
-	ShouldFailInteractive bool
-	ShouldFailTracking    bool
+	ShouldFail bool
 }
 
 // MethodCall represents a recorded method invocation
@@ -33,115 +30,28 @@ type MethodCall struct {
 // NewExecutor creates a new mock Executor with default success values
 func NewExecutor() *Executor {
 	return &Executor{
-		SessionResult: &claude.SessionInfo{
-			ID:       "mock-session-123",
-			Result:   "Mock response",
-			CostUSD:  0.01,
-			Duration: "1s",
-			Turns:    1,
-		},
 		CallLog: make([]MethodCall, 0),
 	}
 }
 
-// ExecuteInteractive simulates interactive execution
-func (m *Executor) ExecuteInteractive(prompt string) error {
-	m.recordCall("ExecuteInteractive", prompt)
+// Execute simulates executing Claude with options
+func (m *Executor) Execute(opts claude.ExecuteOptions) error {
+	m.recordCall("Execute", opts)
 
-	if m.ShouldFailInteractive {
-		return m.InteractiveResult
+	if m.ShouldFail {
+		return m.ExecuteError
 	}
 	return nil
 }
 
-// ExecuteInteractiveWithMode simulates interactive execution with a permission mode
-func (m *Executor) ExecuteInteractiveWithMode(prompt, mode string) error {
-	m.recordCall("ExecuteInteractiveWithMode", prompt, mode)
+// ExecuteWithSession simulates executing Claude with a session ID and options
+func (m *Executor) ExecuteWithSession(sessionID string, opts claude.ExecuteOptions) error {
+	m.recordCall("ExecuteWithSession", sessionID, opts)
 
-	if m.ShouldFailInteractive {
-		return m.InteractiveResult
+	if m.ShouldFail {
+		return m.ExecuteError
 	}
 	return nil
-}
-
-// ExecuteInteractiveWithSession simulates interactive execution with a specific session
-func (m *Executor) ExecuteInteractiveWithSession(sessionID string) error {
-	m.recordCall("ExecuteInteractiveWithSession", sessionID)
-
-	if m.ShouldFailInteractive {
-		return m.InteractiveResult
-	}
-	return nil
-}
-
-// ExecuteInteractiveWithSessionAndMode simulates interactive execution with a specific session and permission mode
-func (m *Executor) ExecuteInteractiveWithSessionAndMode(sessionID, mode string) error {
-	m.recordCall("ExecuteInteractiveWithSessionAndMode", sessionID, mode)
-
-	if m.ShouldFailInteractive {
-		return m.InteractiveResult
-	}
-	return nil
-}
-
-// ExecuteAndContinueInteractive simulates execution followed by interactive continuation
-func (m *Executor) ExecuteAndContinueInteractive(prompt string) (*claude.SessionInfo, error) {
-	m.recordCall("ExecuteAndContinueInteractive", prompt)
-
-	if m.ShouldFailTracking {
-		return nil, m.ExecuteError
-	}
-	return m.SessionResult, nil
-}
-
-// ExecuteAndContinueInteractiveWithMode simulates execution with mode followed by interactive continuation
-func (m *Executor) ExecuteAndContinueInteractiveWithMode(prompt, mode string) (*claude.SessionInfo, error) {
-	m.recordCall("ExecuteAndContinueInteractiveWithMode", prompt, mode)
-
-	if m.ShouldFailTracking {
-		return nil, m.ExecuteError
-	}
-	return m.SessionResult, nil
-}
-
-// ExecuteInteractiveWithSystemPrompt simulates interactive execution with a system prompt
-func (m *Executor) ExecuteInteractiveWithSystemPrompt(prompt, systemPrompt string) error {
-	m.recordCall("ExecuteInteractiveWithSystemPrompt", prompt, systemPrompt)
-
-	if m.ShouldFailInteractive {
-		return m.InteractiveResult
-	}
-	return nil
-}
-
-// ExecuteInteractiveWithModeAndSystemPrompt simulates interactive execution with permission mode and system prompt
-func (m *Executor) ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) error {
-	m.recordCall("ExecuteInteractiveWithModeAndSystemPrompt", prompt, mode, systemPrompt)
-
-	if m.ShouldFailInteractive {
-		return m.InteractiveResult
-	}
-	return nil
-}
-
-// ExecuteAndContinueInteractiveWithSystemPrompt simulates execution with system prompt followed by interactive continuation
-func (m *Executor) ExecuteAndContinueInteractiveWithSystemPrompt(prompt, systemPrompt string) (*claude.SessionInfo, error) {
-	m.recordCall("ExecuteAndContinueInteractiveWithSystemPrompt", prompt, systemPrompt)
-
-	if m.ShouldFailTracking {
-		return nil, m.ExecuteError
-	}
-	return m.SessionResult, nil
-}
-
-// ExecuteAndContinueInteractiveWithModeAndSystemPrompt simulates execution with mode and system prompt followed by interactive continuation
-func (m *Executor) ExecuteAndContinueInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) (*claude.SessionInfo, error) {
-	m.recordCall("ExecuteAndContinueInteractiveWithModeAndSystemPrompt", prompt, mode, systemPrompt)
-
-	if m.ShouldFailTracking {
-		return nil, m.ExecuteError
-	}
-	return m.SessionResult, nil
 }
 
 // recordCall adds a method call to the call log for verification
@@ -177,14 +87,11 @@ func (m *Executor) GetLastCall(method string) *MethodCall {
 // Reset clears the call log and resets behavior flags
 func (m *Executor) Reset() {
 	m.CallLog = make([]MethodCall, 0)
-	m.ShouldFailInteractive = false
-	m.ShouldFailTracking = false
+	m.ShouldFail = false
 }
 
-// SetupFailure configures the mock to fail for specific operations
-func (m *Executor) SetupFailure(interactive, tracking bool, err error) {
-	m.ShouldFailInteractive = interactive
-	m.ShouldFailTracking = tracking
+// SetupFailure configures the mock to fail with the given error
+func (m *Executor) SetupFailure(err error) {
+	m.ShouldFail = true
 	m.ExecuteError = err
-	m.InteractiveResult = err
 }
