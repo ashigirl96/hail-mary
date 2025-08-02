@@ -64,8 +64,9 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) err
 	defer cleanup()
 
 	// Create Claude executor with settings path
-	config := claude.DefaultConfig()
-	config.SettingsPath = hookConfigPath
+	config := claude.NewConfigWithDefaults(claude.Config{
+		SettingsPath: hookConfigPath,
+	})
 	executor := claude.NewExecutorWithConfig(config)
 
 	// Prepare the initial prompt for PRD creation
@@ -117,7 +118,14 @@ Let's start with understanding what product we're building.`
 			systemPrompt = ""
 		}
 
-		if err := executor.ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt); err != nil {
+		// Create execution options
+		opts := claude.ExecuteOptions{
+			Prompt:       prompt,
+			Mode:         mode,
+			SystemPrompt: systemPrompt,
+		}
+
+		if err := executor.Execute(opts); err != nil {
 			logger.Error("Failed to execute Claude interactive session",
 				"error", err,
 				"prompt_length", len(prompt),
