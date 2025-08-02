@@ -36,7 +36,6 @@ func TestNewExecutorWithConfig(t *testing.T) {
 			name: "custom config is preserved",
 			config: &claude.Config{
 				Command:               "custom-bunx",
-				Package:               "custom-package",
 				EnableBackgroundTasks: false,
 				MaintainWorkingDir:    false,
 				SkipPermissions:       false,
@@ -45,7 +44,6 @@ func TestNewExecutorWithConfig(t *testing.T) {
 			},
 			want: &claude.Config{
 				Command:               "custom-bunx",
-				Package:               "custom-package",
 				EnableBackgroundTasks: false,
 				MaintainWorkingDir:    false,
 				SkipPermissions:       false,
@@ -123,6 +121,9 @@ func TestMockExecutor_ImplementsInterface(t *testing.T) {
 }
 
 func TestNewConfigWithDefaults(t *testing.T) {
+	// Get the default config to compare against
+	defaultConfig := claude.DefaultConfig()
+
 	tests := []struct {
 		name      string
 		overrides claude.Config
@@ -131,15 +132,7 @@ func TestNewConfigWithDefaults(t *testing.T) {
 		{
 			name:      "empty overrides uses all defaults",
 			overrides: claude.Config{},
-			want: &claude.Config{
-				Command:               "bunx",
-				Package:               "@anthropic-ai/claude-code@latest",
-				EnableBackgroundTasks: true,
-				MaintainWorkingDir:    true,
-				SkipPermissions:       true,
-				MaxPromptLength:       10000,
-				SettingsPath:          "",
-			},
+			want:      defaultConfig,
 		},
 		{
 			name: "override settings path only",
@@ -147,8 +140,7 @@ func TestNewConfigWithDefaults(t *testing.T) {
 				SettingsPath: "/custom/settings.json",
 			},
 			want: &claude.Config{
-				Command:               "bunx",
-				Package:               "@anthropic-ai/claude-code@latest",
+				Command:               defaultConfig.Command,
 				EnableBackgroundTasks: true,
 				MaintainWorkingDir:    true,
 				SkipPermissions:       true,
@@ -165,7 +157,6 @@ func TestNewConfigWithDefaults(t *testing.T) {
 			},
 			want: &claude.Config{
 				Command:               "npx",
-				Package:               "@anthropic-ai/claude-code@latest",
 				EnableBackgroundTasks: true,
 				MaintainWorkingDir:    true,
 				SkipPermissions:       true,
