@@ -59,20 +59,6 @@ func TestExecutor_ExecuteInteractive_Failure(t *testing.T) {
 	assert.Len(t, mock.CallLog, 1, "Should record the call even on failure")
 }
 
-func TestExecutor_ExecuteInteractiveContinue(t *testing.T) {
-	// Arrange
-	mock := NewExecutor()
-
-	// Act
-	err := mock.ExecuteInteractiveContinue()
-
-	// Assert
-	require.NoError(t, err)
-	assert.Len(t, mock.CallLog, 1)
-	assert.Equal(t, "ExecuteInteractiveContinue", mock.CallLog[0].Method)
-	assert.Empty(t, mock.CallLog[0].Args, "Should have no arguments")
-}
-
 func TestExecutor_ExecuteInteractiveWithSession(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
@@ -113,11 +99,11 @@ func TestExecutor_GetCallCount(t *testing.T) {
 	// Act
 	_ = mock.ExecuteInteractive("test1")
 	_ = mock.ExecuteInteractive("test2")
-	_ = mock.ExecuteInteractiveContinue()
+	_ = mock.ExecuteInteractiveWithSession("session-test")
 
 	// Assert
 	assert.Equal(t, 2, mock.GetCallCount("ExecuteInteractive"))
-	assert.Equal(t, 1, mock.GetCallCount("ExecuteInteractiveContinue"))
+	assert.Equal(t, 1, mock.GetCallCount("ExecuteInteractiveWithSession"))
 }
 
 func TestExecutor_GetLastCall(t *testing.T) {
@@ -127,7 +113,7 @@ func TestExecutor_GetLastCall(t *testing.T) {
 	// Act
 	_ = mock.ExecuteInteractive("first")
 	_ = mock.ExecuteInteractive("second")
-	_ = mock.ExecuteInteractiveContinue()
+	_ = mock.ExecuteInteractiveWithSession("session-test")
 
 	// Assert
 	lastInteractive := mock.GetLastCall("ExecuteInteractive")
@@ -135,9 +121,9 @@ func TestExecutor_GetLastCall(t *testing.T) {
 	assert.Equal(t, "ExecuteInteractive", lastInteractive.Method)
 	assert.Equal(t, "second", lastInteractive.Args[0])
 
-	lastContinue := mock.GetLastCall("ExecuteInteractiveContinue")
-	require.NotNil(t, lastContinue)
-	assert.Equal(t, "ExecuteInteractiveContinue", lastContinue.Method)
+	lastSession := mock.GetLastCall("ExecuteInteractiveWithSession")
+	require.NotNil(t, lastSession)
+	assert.Equal(t, "ExecuteInteractiveWithSession", lastSession.Method)
 
 	nonExistent := mock.GetLastCall("NonExistentMethod")
 	assert.Nil(t, nonExistent)

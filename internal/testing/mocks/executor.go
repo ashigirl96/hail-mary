@@ -64,16 +64,6 @@ func (m *Executor) ExecuteInteractiveWithMode(prompt, mode string) error {
 	return nil
 }
 
-// ExecuteInteractiveContinue simulates continuing the most recent session
-func (m *Executor) ExecuteInteractiveContinue() error {
-	m.recordCall("ExecuteInteractiveContinue")
-
-	if m.ShouldFailInteractive {
-		return m.InteractiveResult
-	}
-	return nil
-}
-
 // ExecuteInteractiveWithSession simulates interactive execution with a specific session
 func (m *Executor) ExecuteInteractiveWithSession(sessionID string) error {
 	m.recordCall("ExecuteInteractiveWithSession", sessionID)

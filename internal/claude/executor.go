@@ -31,8 +31,6 @@ type Executor interface {
 	ExecuteInteractiveWithSystemPrompt(prompt, systemPrompt string) error
 	// ExecuteInteractiveWithModeAndSystemPrompt launches Claude CLI in interactive mode with permission mode and system prompt
 	ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) error
-	// ExecuteInteractiveContinue continues the most recent session
-	ExecuteInteractiveContinue() error
 	// ExecuteInteractiveWithSession launches interactive mode with a specific session
 	ExecuteInteractiveWithSession(sessionID string) error
 	// ExecuteInteractiveWithSessionAndMode launches interactive mode with a specific session and permission mode
@@ -213,24 +211,6 @@ func (e *ExecutorImpl) ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, s
 	// Run the command and wait for it to complete
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("execute interactive with mode and system prompt: failed to run Claude CLI: %w", err)
-	}
-	return nil
-}
-
-// ExecuteInteractiveContinue continues the most recent Claude session in interactive mode.
-// This is useful for resuming a conversation after the CLI has exited.
-func (e *ExecutorImpl) ExecuteInteractiveContinue() error {
-	// Create command for interactive Claude shell with --continue flag
-	cmd := e.buildCommand(continueFlag)
-
-	// Connect stdin, stdout, and stderr to the current terminal
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	// Run the command and wait for it to complete
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("execute interactive continue: failed to continue Claude session: %w", err)
 	}
 	return nil
 }

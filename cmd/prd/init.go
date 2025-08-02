@@ -138,13 +138,11 @@ Let's start with understanding what product we're building.`
 		logger.Info("Session established",
 			"session_id", sessionState.SessionID,
 			"transcript_path", sessionState.TranscriptPath)
-		fmt.Printf("\nTip: Session ID: %s\n", sessionState.SessionID[:8])
-		fmt.Println("Use 'hail-mary prd continue' to resume this conversation later.")
+		fmt.Printf("\nSession ID: %s\n", sessionState.SessionID[:8])
 
 	case <-time.After(30 * time.Second):
 		// Session tracking failed, but continue anyway
 		logger.Warn("Session tracking timeout, continuing without session ID")
-		fmt.Println("\nTip: Use 'hail-mary prd continue' to resume this conversation later.")
 
 	case err := <-errChan:
 		if err != nil {

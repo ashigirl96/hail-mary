@@ -18,8 +18,6 @@ const (
 	appendSystemPromptFlag = "--append-system-prompt"
 	// resumeFlag resumes a previous session
 	resumeFlag = "--resume"
-	// continueFlag continues the most recent session
-	continueFlag = "--continue"
 
 	// Environment variable names
 	envBackgroundTasks = "ENABLE_BACKGROUND_TASKS"

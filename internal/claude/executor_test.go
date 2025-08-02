@@ -95,13 +95,6 @@ func TestExecutorImpl_InterfaceCompliance(t *testing.T) {
 			},
 		},
 		{
-			name: "ExecuteInteractiveContinue method exists",
-			test: func(t *testing.T, executor claude.Executor) {
-				err := executor.ExecuteInteractiveContinue()
-				assert.NoError(t, err)
-			},
-		},
-		{
 			name: "ExecuteInteractiveWithSession method exists",
 			test: func(t *testing.T, executor claude.Executor) {
 				err := executor.ExecuteInteractiveWithSession("session-123")
