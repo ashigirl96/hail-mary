@@ -33,10 +33,6 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 ### Development Workflow
 ```bash
-# Run specific commands quickly
-make list      # Build and run list command
-make ui        # Build and run ui command
-
 # Cross-platform builds
 make build-linux
 make build-windows
@@ -55,7 +51,7 @@ Note: The fix-completion.sh script corrects a known Cobra bug where array append
 
 ## Architecture Overview
 
-This is a CLI application built with **Cobra** (command framework), **slog** (structured logging), and **Bubbletea** (TUI framework). The architecture follows a clean separation of concerns:
+This is a CLI application built with **Cobra** (command framework) and **slog** (structured logging). The architecture follows a clean separation of concerns:
 
 ### Claude Session Management
 
@@ -70,6 +66,38 @@ The `internal/claude/executor.go` provides enhanced session management capabilit
 - **Input Validation**: Security validation for prompts and session IDs
 
 Note: Session IDs are automatically returned in the JSON response when using print mode (`-p --output-format=json`).
+
+#### Hook-based Session Tracking (NEW!)
+
+The application now supports automatic session tracking through Claude Code's hook system:
+
+1. **Hook Command**: `hail-mary hook` processes Claude Code hook events
+2. **Session State**: Stored in `~/.hail-mary/sessions/{PID}.json`
+3. **Automatic Tracking**: `prd init` uses hooks to capture session IDs automatically
+
+To enable hook-based session tracking in your own Claude Code projects:
+
+1. Copy `.claude/settings.json.example` to `.claude/settings.json`
+2. Ensure `hail-mary` binary is built and accessible
+3. The hook will automatically track sessions when using supported commands
+
+Hook Configuration Example:
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/bin/hail-mary hook"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 #### Usage Example
 ```go
@@ -93,8 +121,6 @@ resumedInfo, err := executor.ResumeSession(sessionInfo.ID, "Add error handling")
 ### Command Structure
 - **main.go**: Entry point that calls cmd.Execute()
 - **cmd/root.go**: Root command setup with global flags (--log-level) and slog configuration
-- **cmd/list.go**: Standard CLI subcommand example with flags (--all, --format)
-- **cmd/ui.go**: TUI subcommand that launches Bubbletea interface with --text flag
 
 ### Key Design Patterns
 
@@ -102,18 +128,7 @@ resumedInfo, err := executor.ResumeSession(sessionInfo.ID, "Add error handling")
 
 2. **Command Initialization**: Each subcommand is registered in its init() function, keeping registration decoupled
 
-3. **TUI Separation**: The Bubbletea TUI logic is isolated in internal/ui/model.go, following the Elm architecture pattern with Init(), Update(), and View() methods
-
-4. **Flag Management**: Each command manages its own flags as package-level variables, with PersistentFlags on root for global options
-
-### TUI Model Architecture
-The internal/ui/model.go implements a text input field with:
-- Cursor movement and positioning
-- Character insertion/deletion at cursor position
-- Confirmation state tracking
-- Keyboard shortcuts (Enter to confirm, Esc to cancel)
-
-The model passes the logger through to enable debugging of TUI events without interfering with the terminal UI rendering.
+3. **Flag Management**: Each command manages its own flags as package-level variables, with PersistentFlags on root for global options
 
 ## Development Guidelines
 
