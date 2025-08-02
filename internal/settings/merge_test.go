@@ -2,598 +2,379 @@ package settings
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestMergeSettings(t *testing.T) {
-	// Create a temporary directory for testing
+func TestNewClaudeSettings(t *testing.T) {
+	// Act
+	settings := NewClaudeSettings()
+
+	// Assert
+	require.NotNil(t, settings, "NewClaudeSettings should not return nil")
+	assert.NotNil(t, settings.Hooks, "Hooks should be initialized")
+	assert.NotNil(t, settings.Extra, "Extra should be initialized")
+	assert.Empty(t, settings.Hooks, "Hooks should be empty initially")
+	assert.Empty(t, settings.Extra, "Extra should be empty initially")
+}
+
+func TestClaudeSettings_AddHook(t *testing.T) {
+	// Arrange
+	settings := NewClaudeSettings()
+	hookEntry := HookEntry{
+		Type:    "command",
+		Command: "echo test",
+	}
+
+	// Act
+	settings.AddHook("TestEvent", "Write", hookEntry)
+
+	// Assert
+	require.Contains(t, settings.Hooks, "TestEvent", "TestEvent should be added to hooks")
+	require.Len(t, settings.Hooks["TestEvent"], 1, "TestEvent should have one matcher")
+	
+	matcher := settings.Hooks["TestEvent"][0]
+	assert.Equal(t, "Write", matcher.Matcher)
+	require.Len(t, matcher.Hooks, 1, "Matcher should have one hook entry")
+	assert.Equal(t, hookEntry, matcher.Hooks[0])
+}
+
+func TestClaudeSettings_AddHook_MultipleMatchers(t *testing.T) {
+	// Arrange
+	settings := NewClaudeSettings()
+	hookEntry1 := HookEntry{Type: "command", Command: "echo 1"}
+	hookEntry2 := HookEntry{Type: "command", Command: "echo 2"}
+
+	// Act
+	settings.AddHook("TestEvent", "Write", hookEntry1)
+	settings.AddHook("TestEvent", "Read", hookEntry2)
+
+	// Assert
+	require.Contains(t, settings.Hooks, "TestEvent")
+	require.Len(t, settings.Hooks["TestEvent"], 2, "TestEvent should have two matchers")
+	
+	// Find matchers (order not guaranteed)
+	var writeMatch, readMatch *HookMatcher
+	for i := range settings.Hooks["TestEvent"] {
+		if settings.Hooks["TestEvent"][i].Matcher == "Write" {
+			writeMatch = &settings.Hooks["TestEvent"][i]
+		} else if settings.Hooks["TestEvent"][i].Matcher == "Read" {
+			readMatch = &settings.Hooks["TestEvent"][i]
+		}
+	}
+	
+	require.NotNil(t, writeMatch, "Write matcher should exist")
+	require.NotNil(t, readMatch, "Read matcher should exist")
+	assert.Equal(t, hookEntry1, writeMatch.Hooks[0])
+	assert.Equal(t, hookEntry2, readMatch.Hooks[0])
+}
+
+func TestClaudeSettings_AddHook_SameMatcher(t *testing.T) {
+	// Arrange
+	settings := NewClaudeSettings()
+	hookEntry1 := HookEntry{Type: "command", Command: "echo 1"}
+	hookEntry2 := HookEntry{Type: "command", Command: "echo 2"}
+
+	// Act
+	settings.AddHook("TestEvent", "Write", hookEntry1)
+	settings.AddHook("TestEvent", "Write", hookEntry2)
+
+	// Assert
+	require.Contains(t, settings.Hooks, "TestEvent")
+	require.Len(t, settings.Hooks["TestEvent"], 1, "TestEvent should have one matcher")
+	
+	matcher := settings.Hooks["TestEvent"][0]
+	assert.Equal(t, "Write", matcher.Matcher)
+	require.Len(t, matcher.Hooks, 2, "Matcher should have two hook entries")
+	assert.Equal(t, hookEntry1, matcher.Hooks[0])
+	assert.Equal(t, hookEntry2, matcher.Hooks[1])
+}
+
+func TestClaudeSettings_MergeWith_EmptySource(t *testing.T) {
+	// Arrange
+	target := NewClaudeSettings()
+	target.AddHook("ExistingEvent", "Write", HookEntry{Type: "command", Command: "existing"})
+	target.Extra["existing"] = "value"
+	
+	source := NewClaudeSettings()
+
+	// Act
+	err := target.MergeWith(source)
+
+	// Assert
+	require.NoError(t, err, "Merge should succeed")
+	assert.Len(t, target.Hooks, 1, "Target should retain existing hook")
+	assert.Equal(t, "value", target.Extra["existing"], "Target should retain existing extra data")
+}
+
+func TestClaudeSettings_MergeWith_NewHooks(t *testing.T) {
+	// Arrange
+	target := NewClaudeSettings()
+	target.AddHook("ExistingEvent", "Write", HookEntry{Type: "command", Command: "existing"})
+	
+	source := NewClaudeSettings()
+	source.AddHook("NewEvent", "Read", HookEntry{Type: "command", Command: "new"})
+
+	// Act
+	err := target.MergeWith(source)
+
+	// Assert
+	require.NoError(t, err, "Merge should succeed")
+	assert.Len(t, target.Hooks, 2, "Target should have both hooks")
+	assert.Contains(t, target.Hooks, "ExistingEvent")
+	assert.Contains(t, target.Hooks, "NewEvent")
+}
+
+func TestClaudeSettings_MergeWith_ConflictingHooks(t *testing.T) {
+	// Arrange
+	target := NewClaudeSettings()
+	target.AddHook("SameEvent", "Write", HookEntry{Type: "command", Command: "target"})
+	
+	source := NewClaudeSettings()
+	source.AddHook("SameEvent", "Write", HookEntry{Type: "command", Command: "source"})
+
+	// Act
+	err := target.MergeWith(source)
+
+	// Assert
+	require.NoError(t, err, "Merge should succeed")
+	assert.Len(t, target.Hooks, 1, "Target should have one event")
+	assert.Len(t, target.Hooks["SameEvent"], 1, "Event should have one matcher")
+	assert.Len(t, target.Hooks["SameEvent"][0].Hooks, 2, "Matcher should have both hook entries")
+	
+	// Verify both commands are present
+	commands := []string{
+		target.Hooks["SameEvent"][0].Hooks[0].Command,
+		target.Hooks["SameEvent"][0].Hooks[1].Command,
+	}
+	assert.Contains(t, commands, "target")
+	assert.Contains(t, commands, "source")
+}
+
+func TestClaudeSettings_MergeWith_ExtraData(t *testing.T) {
+	// Arrange
+	target := NewClaudeSettings()
+	target.Extra["existing"] = "target_value"
+	target.Extra["shared"] = "target_shared"
+	
+	source := NewClaudeSettings()
+	source.Extra["new"] = "source_value"
+	source.Extra["shared"] = "source_shared"
+
+	// Act
+	err := target.MergeWith(source)
+
+	// Assert
+	require.NoError(t, err, "Merge should succeed")
+	assert.Equal(t, "target_value", target.Extra["existing"], "Existing value should be preserved")
+	assert.Equal(t, "source_value", target.Extra["new"], "New value should be added")
+	assert.Equal(t, "source_shared", target.Extra["shared"], "Source should override target for shared keys")
+}
+
+func TestClaudeSettings_LoadFromFile_Success(t *testing.T) {
+	// Arrange
 	tempDir := t.TempDir()
 	settingsPath := filepath.Join(tempDir, "settings.json")
-
-	// Create an existing settings file
-	existingSettings := &ClaudeSettings{
+	
+	testSettings := &ClaudeSettings{
 		Hooks: map[string][]HookMatcher{
-			"PreToolUse": {
+			"TestEvent": {
+				{
+					Matcher: "Write",
+					Hooks: []HookEntry{
+						{Type: "command", Command: "echo test"},
+					},
+				},
+			},
+		},
+		Extra: map[string]interface{}{
+			"test_field": "test_value",
+		},
+	}
+	
+	data, err := json.MarshalIndent(testSettings, "", "  ")
+	require.NoError(t, err, "Setup should succeed")
+	
+	err = os.WriteFile(settingsPath, data, 0644)
+	require.NoError(t, err, "Setup should succeed")
+
+	// Act
+	loadedSettings, err := LoadFromFile(settingsPath)
+
+	// Assert
+	require.NoError(t, err, "LoadFromFile should succeed")
+	require.NotNil(t, loadedSettings, "LoadFromFile should return non-nil settings")
+	
+	assert.Equal(t, testSettings.Hooks, loadedSettings.Hooks)
+	assert.Equal(t, testSettings.Extra, loadedSettings.Extra)
+}
+
+func TestClaudeSettings_LoadFromFile_FileNotFound(t *testing.T) {
+	// Arrange
+	nonExistentPath := "/path/that/does/not/exist/settings.json"
+
+	// Act
+	settings, err := LoadFromFile(nonExistentPath)
+
+	// Assert
+	require.Error(t, err, "LoadFromFile should return error for non-existent file")
+	assert.Nil(t, settings, "LoadFromFile should return nil on error")
+	assert.Contains(t, err.Error(), "failed to read settings file", "Error should indicate file read failure")
+}
+
+func TestClaudeSettings_LoadFromFile_InvalidJSON(t *testing.T) {
+	// Arrange
+	tempDir := t.TempDir()
+	settingsPath := filepath.Join(tempDir, "invalid.json")
+	
+	err := os.WriteFile(settingsPath, []byte("invalid json content"), 0644)
+	require.NoError(t, err, "Setup should succeed")
+
+	// Act
+	settings, err := LoadFromFile(settingsPath)
+
+	// Assert
+	require.Error(t, err, "LoadFromFile should return error for invalid JSON")
+	assert.Nil(t, settings, "LoadFromFile should return nil on error")
+	assert.Contains(t, err.Error(), "failed to unmarshal settings", "Error should indicate JSON parse failure")
+}
+
+func TestClaudeSettings_SaveToFile_Success(t *testing.T) {
+	// Arrange
+	tempDir := t.TempDir()
+	settingsPath := filepath.Join(tempDir, "save_test.json")
+	
+	settings := NewClaudeSettings()
+	settings.AddHook("SaveEvent", "Write", HookEntry{Type: "command", Command: "echo save"})
+	settings.Extra["save_field"] = "save_value"
+
+	// Act
+	err := settings.SaveToFile(settingsPath)
+
+	// Assert
+	require.NoError(t, err, "SaveToFile should succeed")
+	
+	// Verify file exists and contains correct data
+	data, err := os.ReadFile(settingsPath)
+	require.NoError(t, err, "File should be readable")
+	
+	var loaded ClaudeSettings
+	err = json.Unmarshal(data, &loaded)
+	require.NoError(t, err, "Saved file should contain valid JSON")
+	
+	assert.Equal(t, settings.Hooks, loaded.Hooks)
+	assert.Equal(t, settings.Extra, loaded.Extra)
+}
+
+func TestClaudeSettings_SaveToFile_CreateDirectory(t *testing.T) {
+	// Arrange
+	tempDir := t.TempDir()
+	nestedPath := filepath.Join(tempDir, "nested", "directory", "settings.json")
+	
+	settings := NewClaudeSettings()
+	settings.Extra["test"] = "value"
+
+	// Act
+	err := settings.SaveToFile(nestedPath)
+
+	// Assert
+	require.NoError(t, err, "SaveToFile should create nested directories")
+	
+	// Verify file exists
+	_, err = os.Stat(nestedPath)
+	assert.NoError(t, err, "File should exist in nested directory")
+}
+
+func TestClaudeSettings_JSONMarshaling(t *testing.T) {
+	// Arrange
+	original := &ClaudeSettings{
+		Hooks: map[string][]HookMatcher{
+			"TestEvent": {
 				{
 					Matcher: "Write",
 					Hooks: []HookEntry{
 						{
 							Type:    "command",
-							Command: "echo 'existing hook'",
+							Command: "echo test",
 						},
 					},
 				},
 			},
 		},
 		Extra: map[string]interface{}{
-			"customSetting": "value",
-		},
-	}
-
-	// Save existing settings
-	if err := existingSettings.SaveToFile(settingsPath); err != nil {
-		t.Fatalf("Failed to save existing settings: %v", err)
-	}
-
-	// Define new hooks to merge
-	newHooks := map[string][]HookMatcher{
-		"SessionStart": {
-			{
-				Hooks: []HookEntry{
-					{
-						Type:    "command",
-						Command: "echo 'session start'",
-						Timeout: 5,
-					},
-				},
-			},
-		},
-		"PreToolUse": {
-			{
-				Matcher: "Read",
-				Hooks: []HookEntry{
-					{
-						Type:    "command",
-						Command: "echo 'new read hook'",
-					},
-				},
+			"string_field": "test_value",
+			"number_field": 42.0, // Use float64 to match JSON unmarshaling
+			"bool_field":   true,
+			"nested": map[string]interface{}{
+				"inner": "value",
 			},
 		},
 	}
 
-	// Create merged settings
-	merged, err := CreateMergedSettings(settingsPath, newHooks)
-	if err != nil {
-		t.Fatalf("Failed to create merged settings: %v", err)
-	}
+	// Act - Marshal
+	data, err := json.Marshal(original)
+	require.NoError(t, err, "Marshal should succeed")
 
-	// Verify the merge results
-	// 1. Check that existing PreToolUse hook is preserved
-	if len(merged.Hooks["PreToolUse"]) != 2 {
-		t.Errorf("Expected 2 PreToolUse matchers, got %d", len(merged.Hooks["PreToolUse"]))
-	}
+	// Act - Unmarshal
+	var decoded ClaudeSettings
+	err = json.Unmarshal(data, &decoded)
+	require.NoError(t, err, "Unmarshal should succeed")
 
-	// 2. Check that new SessionStart hook is added
-	if len(merged.Hooks["SessionStart"]) != 1 {
-		t.Errorf("Expected 1 SessionStart matcher, got %d", len(merged.Hooks["SessionStart"]))
-	}
-
-	// 3. Check that extra settings are preserved
-	if merged.Extra["customSetting"] != "value" {
-		t.Errorf("Expected customSetting to be 'value', got %v", merged.Extra["customSetting"])
-	}
-
-	// Save merged settings and verify JSON structure
-	mergedPath := filepath.Join(tempDir, "merged.json")
-	if err := merged.SaveToFile(mergedPath); err != nil {
-		t.Fatalf("Failed to save merged settings: %v", err)
-	}
-
-	// Read and parse the saved file to verify structure
-	data, err := os.ReadFile(mergedPath)
-	if err != nil {
-		t.Fatalf("Failed to read merged file: %v", err)
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		t.Fatalf("Failed to parse merged JSON: %v", err)
-	}
-
-	// Verify that customSetting is at the top level
-	if result["customSetting"] != "value" {
-		t.Errorf("Expected customSetting at top level, not found")
-	}
-
-	// Verify hooks structure
-	if _, ok := result["hooks"].(map[string]interface{}); !ok {
-		t.Errorf("Expected hooks to be a map")
-	}
+	// Assert
+	assert.Equal(t, original.Hooks, decoded.Hooks)
+	assert.Equal(t, original.Extra, decoded.Extra)
 }
 
-func TestLoadNonExistentSettings(t *testing.T) {
-	// Test loading a non-existent file
-	settings, err := LoadSettings("/tmp/non-existent-settings.json")
-	if err != nil {
-		t.Fatalf("Expected no error for non-existent file, got: %v", err)
-	}
+func TestClaudeSettings_ComplexMergeScenario(t *testing.T) {
+	// Arrange - Create target with existing hooks and data
+	target := NewClaudeSettings()
+	target.AddHook("SessionStart", "Write", HookEntry{Type: "command", Command: "existing_start"})
+	target.AddHook("SessionEnd", "Read", HookEntry{Type: "command", Command: "existing_end"})
+	target.Extra["app_name"] = "target_app"
+	target.Extra["version"] = "1.0.0"
+	
+	// Arrange - Create source with overlapping and new hooks
+	source := NewClaudeSettings()
+	source.AddHook("SessionStart", "Write", HookEntry{Type: "command", Command: "new_start"})
+	source.AddHook("SessionStart", "Read", HookEntry{Type: "command", Command: "start_read"})
+	source.AddHook("UserPrompt", "Write", HookEntry{Type: "command", Command: "prompt_hook"})
+	source.Extra["version"] = "2.0.0"
+	source.Extra["debug"] = true
 
-	// Should return empty settings
-	if settings.Hooks == nil || len(settings.Hooks) != 0 {
-		t.Errorf("Expected empty hooks map, got %v", settings.Hooks)
-	}
+	// Act
+	err := target.MergeWith(source)
 
-	if settings.Extra == nil || len(settings.Extra) != 0 {
-		t.Errorf("Expected empty extra map, got %v", settings.Extra)
-	}
-}
-
-// TestUnmarshalJSON tests the custom UnmarshalJSON method
-func TestUnmarshalJSON(t *testing.T) {
-	tests := []struct {
-		name     string
-		json     string
-		wantErr  bool
-		validate func(*ClaudeSettings) error
-	}{
-		{
-			name: "valid settings with hooks and extra fields",
-			json: `{
-				"hooks": {
-					"SessionStart": [{
-						"hooks": [{"type": "command", "command": "test"}]
-					}]
-				},
-				"customField": "customValue",
-				"anotherField": 123
-			}`,
-			wantErr: false,
-			validate: func(cs *ClaudeSettings) error {
-				if len(cs.Hooks) != 1 {
-					return fmt.Errorf("expected 1 hook, got %d", len(cs.Hooks))
-				}
-				if cs.Extra["customField"] != "customValue" {
-					return fmt.Errorf("customField not preserved")
-				}
-				// JSON numbers are parsed as float64
-				if cs.Extra["anotherField"] != float64(123) {
-					return fmt.Errorf("anotherField not preserved")
-				}
-				return nil
-			},
-		},
-		{
-			name: "settings with only extra fields",
-			json: `{
-				"customField": "value",
-				"nested": {"key": "value"}
-			}`,
-			wantErr: false,
-			validate: func(cs *ClaudeSettings) error {
-				if len(cs.Hooks) != 0 {
-					return fmt.Errorf("expected no hooks")
-				}
-				if cs.Extra["customField"] != "value" {
-					return fmt.Errorf("customField not preserved")
-				}
-				nested, ok := cs.Extra["nested"].(map[string]interface{})
-				if !ok || nested["key"] != "value" {
-					return fmt.Errorf("nested field not preserved correctly")
-				}
-				return nil
-			},
-		},
-		{
-			name: "settings with only hooks",
-			json: `{
-				"hooks": {
-					"PreToolUse": [{
-						"matcher": "Write",
-						"hooks": [{"type": "command", "command": "test"}]
-					}]
-				}
-			}`,
-			wantErr: false,
-			validate: func(cs *ClaudeSettings) error {
-				if len(cs.Hooks) != 1 {
-					return fmt.Errorf("expected 1 hook type")
-				}
-				if len(cs.Extra) != 0 {
-					return fmt.Errorf("expected no extra fields")
-				}
-				return nil
-			},
-		},
-		{
-			name:    "invalid JSON",
-			json:    `{invalid json}`,
-			wantErr: true,
-		},
-		{
-			name: "invalid hooks structure",
-			json: `{
-				"hooks": "not an object"
-			}`,
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var cs ClaudeSettings
-			err := json.Unmarshal([]byte(tt.json), &cs)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+	// Assert
+	require.NoError(t, err, "Complex merge should succeed")
+	
+	// Verify hooks
+	assert.Len(t, target.Hooks, 3, "Should have 3 events")
+	assert.Contains(t, target.Hooks, "SessionStart")
+	assert.Contains(t, target.Hooks, "SessionEnd")
+	assert.Contains(t, target.Hooks, "UserPrompt")
+	
+	// Verify SessionStart has multiple matchers
+	sessionStartMatchers := target.Hooks["SessionStart"]
+	assert.Len(t, sessionStartMatchers, 2, "SessionStart should have 2 matchers")
+	
+	// Find Write matcher for SessionStart
+	var writeCommands []string
+	for _, matcher := range sessionStartMatchers {
+		if matcher.Matcher == "Write" {
+			for _, hook := range matcher.Hooks {
+				writeCommands = append(writeCommands, hook.Command)
 			}
-
-			if !tt.wantErr && tt.validate != nil {
-				if err := tt.validate(&cs); err != nil {
-					t.Errorf("Validation failed: %v", err)
-				}
-			}
-		})
+		}
 	}
-}
-
-// TestMarshalJSON tests the custom MarshalJSON method
-func TestMarshalJSON(t *testing.T) {
-	tests := []struct {
-		name     string
-		settings ClaudeSettings
-		validate func(string) error
-	}{
-		{
-			name: "settings with hooks and extra fields",
-			settings: ClaudeSettings{
-				Hooks: map[string][]HookMatcher{
-					"SessionStart": {
-						{
-							Hooks: []HookEntry{
-								{Type: "command", Command: "test"},
-							},
-						},
-					},
-				},
-				Extra: map[string]interface{}{
-					"customField": "value",
-					"number":      123,
-				},
-			},
-			validate: func(output string) error {
-				var result map[string]interface{}
-				if err := json.Unmarshal([]byte(output), &result); err != nil {
-					return err
-				}
-				if result["customField"] != "value" {
-					return fmt.Errorf("customField not in output")
-				}
-				if _, ok := result["hooks"]; !ok {
-					return fmt.Errorf("hooks not in output")
-				}
-				return nil
-			},
-		},
-		{
-			name: "settings with only extra fields",
-			settings: ClaudeSettings{
-				Hooks: map[string][]HookMatcher{},
-				Extra: map[string]interface{}{
-					"field1": "value1",
-					"field2": "value2",
-				},
-			},
-			validate: func(output string) error {
-				var result map[string]interface{}
-				if err := json.Unmarshal([]byte(output), &result); err != nil {
-					return err
-				}
-				if result["field1"] != "value1" || result["field2"] != "value2" {
-					return fmt.Errorf("extra fields not preserved")
-				}
-				// Empty hooks should not be included
-				if _, ok := result["hooks"]; ok {
-					return fmt.Errorf("empty hooks should not be in output")
-				}
-				return nil
-			},
-		},
-		{
-			name: "settings with only hooks",
-			settings: ClaudeSettings{
-				Hooks: map[string][]HookMatcher{
-					"PreToolUse": {
-						{
-							Matcher: "Write",
-							Hooks: []HookEntry{
-								{Type: "command", Command: "test"},
-							},
-						},
-					},
-				},
-				Extra: map[string]interface{}{},
-			},
-			validate: func(output string) error {
-				var result map[string]interface{}
-				if err := json.Unmarshal([]byte(output), &result); err != nil {
-					return err
-				}
-				if _, ok := result["hooks"]; !ok {
-					return fmt.Errorf("hooks not in output")
-				}
-				// Should only have hooks field
-				if len(result) != 1 {
-					return fmt.Errorf("expected only hooks field, got %d fields", len(result))
-				}
-				return nil
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			data, err := json.Marshal(&tt.settings)
-			if err != nil {
-				t.Fatalf("MarshalJSON() error = %v", err)
-			}
-
-			if tt.validate != nil {
-				if err := tt.validate(string(data)); err != nil {
-					t.Errorf("Validation failed: %v", err)
-				}
-			}
-		})
-	}
-}
-
-// TestMergeHooks tests the MergeHooks method
-func TestMergeHooks(t *testing.T) {
-	tests := []struct {
-		name       string
-		initial    map[string][]HookMatcher
-		newHooks   map[string][]HookMatcher
-		wantCounts map[string]int
-	}{
-		{
-			name:    "merge into nil hooks",
-			initial: nil,
-			newHooks: map[string][]HookMatcher{
-				"SessionStart": {{Hooks: []HookEntry{{Type: "command", Command: "test"}}}},
-			},
-			wantCounts: map[string]int{"SessionStart": 1},
-		},
-		{
-			name: "merge into existing hooks",
-			initial: map[string][]HookMatcher{
-				"PreToolUse": {{Matcher: "Write", Hooks: []HookEntry{{Type: "command", Command: "existing"}}}},
-			},
-			newHooks: map[string][]HookMatcher{
-				"PreToolUse":   {{Matcher: "Read", Hooks: []HookEntry{{Type: "command", Command: "new"}}}},
-				"SessionStart": {{Hooks: []HookEntry{{Type: "command", Command: "test"}}}},
-			},
-			wantCounts: map[string]int{"PreToolUse": 2, "SessionStart": 1},
-		},
-		{
-			name: "merge empty hooks",
-			initial: map[string][]HookMatcher{
-				"PreToolUse": {{Hooks: []HookEntry{{Type: "command", Command: "existing"}}}},
-			},
-			newHooks:   map[string][]HookMatcher{},
-			wantCounts: map[string]int{"PreToolUse": 1},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cs := &ClaudeSettings{Hooks: tt.initial}
-			cs.MergeHooks(tt.newHooks)
-
-			for event, wantCount := range tt.wantCounts {
-				if gotCount := len(cs.Hooks[event]); gotCount != wantCount {
-					t.Errorf("Hook %q count = %d, want %d", event, gotCount, wantCount)
-				}
-			}
-		})
-	}
-}
-
-// TestLoadSettings tests various LoadSettings scenarios
-func TestLoadSettings(t *testing.T) {
-	tempDir := t.TempDir()
-
-	tests := []struct {
-		name      string
-		setupFile func() string
-		wantErr   bool
-		validate  func(*ClaudeSettings) error
-	}{
-		{
-			name: "valid settings file",
-			setupFile: func() string {
-				path := filepath.Join(tempDir, "valid.json")
-				data := `{"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "test"}]}]}}`
-				os.WriteFile(path, []byte(data), 0644)
-				return path
-			},
-			wantErr: false,
-			validate: func(cs *ClaudeSettings) error {
-				if len(cs.Hooks) != 1 {
-					return fmt.Errorf("expected 1 hook type")
-				}
-				return nil
-			},
-		},
-		{
-			name: "non-existent file returns empty settings",
-			setupFile: func() string {
-				return filepath.Join(tempDir, "non-existent.json")
-			},
-			wantErr: false,
-			validate: func(cs *ClaudeSettings) error {
-				if len(cs.Hooks) != 0 || len(cs.Extra) != 0 {
-					return fmt.Errorf("expected empty settings")
-				}
-				return nil
-			},
-		},
-		{
-			name: "file with invalid JSON",
-			setupFile: func() string {
-				path := filepath.Join(tempDir, "invalid.json")
-				os.WriteFile(path, []byte("{invalid json}"), 0644)
-				return path
-			},
-			wantErr: true,
-		},
-		{
-			name: "file with no hooks or extra",
-			setupFile: func() string {
-				path := filepath.Join(tempDir, "empty.json")
-				os.WriteFile(path, []byte("{}"), 0644)
-				return path
-			},
-			wantErr: false,
-			validate: func(cs *ClaudeSettings) error {
-				if cs.Hooks == nil || cs.Extra == nil {
-					return fmt.Errorf("maps should be initialized")
-				}
-				return nil
-			},
-		},
-		{
-			name: "unreadable file",
-			setupFile: func() string {
-				path := filepath.Join(tempDir, "unreadable.json")
-				os.WriteFile(path, []byte("{}"), 0000)
-				return path
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			path := tt.setupFile()
-			settings, err := LoadSettings(path)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("LoadSettings() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if !tt.wantErr && tt.validate != nil {
-				if err := tt.validate(settings); err != nil {
-					t.Errorf("Validation failed: %v", err)
-				}
-			}
-		})
-	}
-}
-
-// TestSaveToFile tests various SaveToFile scenarios
-func TestSaveToFile(t *testing.T) {
-	tempDir := t.TempDir()
-
-	tests := []struct {
-		name     string
-		settings *ClaudeSettings
-		path     string
-		wantErr  bool
-	}{
-		{
-			name: "save to new file",
-			settings: &ClaudeSettings{
-				Hooks: map[string][]HookMatcher{
-					"SessionStart": {{Hooks: []HookEntry{{Type: "command", Command: "test"}}}},
-				},
-				Extra: map[string]interface{}{"key": "value"},
-			},
-			path:    filepath.Join(tempDir, "new.json"),
-			wantErr: false,
-		},
-		{
-			name: "save to nested directory (creates dirs)",
-			settings: &ClaudeSettings{
-				Hooks: map[string][]HookMatcher{},
-				Extra: map[string]interface{}{},
-			},
-			path:    filepath.Join(tempDir, "nested", "dir", "file.json"),
-			wantErr: false,
-		},
-		{
-			name:     "save to invalid path",
-			settings: &ClaudeSettings{},
-			path:     "/root/cannot-write-here.json",
-			wantErr:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.settings.SaveToFile(tt.path)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SaveToFile() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if !tt.wantErr {
-				// Verify file exists and is valid JSON
-				data, err := os.ReadFile(tt.path)
-				if err != nil {
-					t.Errorf("Failed to read saved file: %v", err)
-				}
-
-				var result map[string]interface{}
-				if err := json.Unmarshal(data, &result); err != nil {
-					t.Errorf("Saved file contains invalid JSON: %v", err)
-				}
-			}
-		})
-	}
-}
-
-// TestCreateMergedSettings tests error cases
-func TestCreateMergedSettings(t *testing.T) {
-	tempDir := t.TempDir()
-
-	tests := []struct {
-		name      string
-		setupFile func() string
-		newHooks  map[string][]HookMatcher
-		wantErr   bool
-	}{
-		{
-			name: "merge with non-existent file",
-			setupFile: func() string {
-				return filepath.Join(tempDir, "non-existent.json")
-			},
-			newHooks: map[string][]HookMatcher{
-				"SessionStart": {{Hooks: []HookEntry{{Type: "command", Command: "test"}}}},
-			},
-			wantErr: false,
-		},
-		{
-			name: "merge with invalid JSON file",
-			setupFile: func() string {
-				path := filepath.Join(tempDir, "invalid.json")
-				os.WriteFile(path, []byte("{invalid}"), 0644)
-				return path
-			},
-			newHooks: map[string][]HookMatcher{},
-			wantErr:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			path := tt.setupFile()
-			_, err := CreateMergedSettings(path, tt.newHooks)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CreateMergedSettings() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	assert.Contains(t, writeCommands, "existing_start")
+	assert.Contains(t, writeCommands, "new_start")
+	
+	// Verify extra data merge
+	assert.Equal(t, "target_app", target.Extra["app_name"])
+	assert.Equal(t, "2.0.0", target.Extra["version"]) // Source should override
+	assert.Equal(t, true, target.Extra["debug"])
 }

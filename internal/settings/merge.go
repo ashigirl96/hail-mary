@@ -69,6 +69,91 @@ func (cs *ClaudeSettings) MarshalJSON() ([]byte, error) {
 	return json.Marshal(result)
 }
 
+// NewClaudeSettings creates a new ClaudeSettings instance with initialized maps
+func NewClaudeSettings() *ClaudeSettings {
+	return &ClaudeSettings{
+		Hooks: make(map[string][]HookMatcher),
+		Extra: make(map[string]interface{}),
+	}
+}
+
+// AddHook adds a hook to the settings
+func (cs *ClaudeSettings) AddHook(event, matcher string, hookEntry HookEntry) {
+	if cs.Hooks == nil {
+		cs.Hooks = make(map[string][]HookMatcher)
+	}
+
+	// Find existing matcher or create new one
+	var targetMatcher *HookMatcher
+	for i := range cs.Hooks[event] {
+		if cs.Hooks[event][i].Matcher == matcher {
+			targetMatcher = &cs.Hooks[event][i]
+			break
+		}
+	}
+
+	if targetMatcher == nil {
+		// Create new matcher
+		cs.Hooks[event] = append(cs.Hooks[event], HookMatcher{
+			Matcher: matcher,
+			Hooks:   []HookEntry{hookEntry},
+		})
+	} else {
+		// Add to existing matcher
+		targetMatcher.Hooks = append(targetMatcher.Hooks, hookEntry)
+	}
+}
+
+// MergeWith merges another ClaudeSettings into this one
+func (cs *ClaudeSettings) MergeWith(other *ClaudeSettings) error {
+	if other == nil {
+		return nil
+	}
+
+	// Merge hooks
+	if other.Hooks != nil {
+		if cs.Hooks == nil {
+			cs.Hooks = make(map[string][]HookMatcher)
+		}
+
+		for event, matchers := range other.Hooks {
+			for _, matcher := range matchers {
+				for _, hookEntry := range matcher.Hooks {
+					cs.AddHook(event, matcher.Matcher, hookEntry)
+				}
+			}
+		}
+	}
+
+	// Merge extra data
+	if other.Extra != nil {
+		if cs.Extra == nil {
+			cs.Extra = make(map[string]interface{})
+		}
+
+		for key, value := range other.Extra {
+			cs.Extra[key] = value
+		}
+	}
+
+	return nil
+}
+
+// LoadFromFile loads ClaudeSettings from a JSON file
+func LoadFromFile(path string) (*ClaudeSettings, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read settings file: %w", err)
+	}
+
+	var settings ClaudeSettings
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal settings: %w", err)
+	}
+
+	return &settings, nil
+}
+
 // LoadSettings loads Claude settings from a file
 func LoadSettings(path string) (*ClaudeSettings, error) {
 	data, err := os.ReadFile(path)
