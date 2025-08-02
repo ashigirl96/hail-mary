@@ -4,8 +4,10 @@
 package claude
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
@@ -63,6 +65,8 @@ type Config struct {
 	SkipPermissions bool
 	// MaxPromptLength is the maximum allowed prompt length
 	MaxPromptLength int
+	// SettingsPath is the path to a settings file to use with --settings flag
+	SettingsPath string
 }
 
 // DefaultConfig returns the default configuration
@@ -99,6 +103,11 @@ type Executor interface {
 // the Claude CLI command-line tool.
 type ExecutorImpl struct {
 	config *Config
+}
+
+// SetSettingsPath sets the path to a settings file to use with --settings flag
+func (e *ExecutorImpl) SetSettingsPath(path string) {
+	e.config.SettingsPath = path
 }
 
 // ensure ExecutorImpl implements Executor interface
@@ -164,6 +173,10 @@ func (e *ExecutorImpl) buildCommand(args ...string) *exec.Cmd {
 	if e.config.SkipPermissions {
 		cmdArgs = append(cmdArgs, dangerousFlag)
 	}
+	// Add settings flag if path is provided
+	if e.config.SettingsPath != "" {
+		cmdArgs = append(cmdArgs, "--settings", e.config.SettingsPath)
+	}
 	cmdArgs = append(cmdArgs, args...)
 
 	// Create command
@@ -178,6 +191,15 @@ func (e *ExecutorImpl) buildCommand(args ...string) *exec.Cmd {
 		env = append(env, fmt.Sprintf("%s=1", envMaintainWorkDir))
 	}
 	cmd.Env = env
+
+	// Log command details for debugging
+	logger := slog.Default()
+	logger.Debug("Building Claude command",
+		"command", e.config.Command,
+		"args", cmdArgs,
+		"settings_path", e.config.SettingsPath,
+		"enable_background_tasks", e.config.EnableBackgroundTasks,
+		"maintain_working_dir", e.config.MaintainWorkingDir)
 
 	return cmd
 }
@@ -234,10 +256,21 @@ func (e *ExecutorImpl) ExecuteWithSessionTracking(prompt string) (*SessionInfo, 
 	// Use print mode to get session info
 	cmd := e.buildCommand(printFlag, outputJSONFlag, prompt)
 
-	output, err := cmd.Output()
+	// Capture both stdout and stderr for better error diagnostics
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
 	if err != nil {
+		stderrOutput := stderr.String()
+		if stderrOutput != "" {
+			return nil, fmt.Errorf("execute with session tracking: failed to execute Claude command: %w\nstderr: %s", err, stderrOutput)
+		}
 		return nil, fmt.Errorf("execute with session tracking: failed to execute Claude command: %w", err)
 	}
+
+	output := stdout.Bytes()
 
 	var sessionInfo SessionInfo
 	if err := json.Unmarshal(output, &sessionInfo); err != nil {

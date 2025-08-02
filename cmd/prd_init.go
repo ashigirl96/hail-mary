@@ -1,10 +1,16 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
+	"github.com/ashigirl96/hail-mary/internal/session"
+	"github.com/ashigirl96/hail-mary/internal/settings"
 	"github.com/spf13/cobra"
 )
 
@@ -27,11 +33,32 @@ your product requirements document.`,
 			return fmt.Errorf("failed to create PRD directory: %w", err)
 		}
 
-		// Initialize Claude executor
-		executor := claude.NewExecutor()
+		// Use hook-based session tracking
+		ctx := context.Background()
+		return initPRDWithHooks(ctx, logger)
+	},
+}
 
-		// Prepare the initial prompt for PRD creation
-		prompt := `I need help creating a Product Requirements Document (PRD). 
+func init() {
+	prdCmd.AddCommand(prdInitCmd)
+}
+
+// initPRDWithHooks initializes PRD with hook-based session tracking
+func initPRDWithHooks(ctx context.Context, logger *slog.Logger) error {
+	// Setup hook configuration
+	hookConfigPath, cleanup, err := setupHookConfig(logger)
+	if err != nil {
+		return fmt.Errorf("failed to setup hooks: %w", err)
+	}
+	defer cleanup()
+
+	// Create Claude executor with settings path
+	config := claude.DefaultConfig()
+	config.SettingsPath = hookConfigPath
+	executor := claude.NewExecutorWithConfig(config)
+
+	// Prepare the initial prompt for PRD creation
+	prompt := `I need help creating a Product Requirements Document (PRD). 
 Please guide me through the process by asking relevant questions about:
 - The product vision and goals
 - Target users and their needs
@@ -42,21 +69,190 @@ Please guide me through the process by asking relevant questions about:
 
 Let's start with understanding what product we're building.`
 
-		// Launch Claude in interactive mode
+	// Start monitoring for session
+	sessionChan := make(chan *session.State, 1)
+	errChan := make(chan error, 1)
+
+	// Display merged settings content
+	settingsContent, err := os.ReadFile(hookConfigPath)
+	if err != nil {
+		logger.Warn("Failed to read merged settings", "error", err)
+	} else {
+		// Always show settings path
+		fmt.Printf("\nUsing merged settings: %s\n", hookConfigPath)
+
+		// Show settings content if debug logging is enabled
+		if logger.Enabled(context.Background(), slog.LevelDebug) {
+			fmt.Println("\n=== Merged Settings ===")
+			fmt.Println(string(settingsContent))
+			fmt.Println("======================")
+		}
+	}
+
+	// Launch Claude in a goroutine
+	go func() {
+		logger.Debug("Starting Claude interactive session")
 		fmt.Println("Launching Claude interactive shell for PRD creation...")
 		fmt.Println("Press Ctrl+C to exit the Claude shell.")
+
+		logger.Debug("Executing Claude with config",
+			"settings_path", hookConfigPath,
+			"executor_config", config)
+
+		if err := executor.ExecuteInteractive(prompt); err != nil {
+			logger.Error("Failed to execute Claude interactive session",
+				"error", err,
+				"prompt_length", len(prompt),
+				"settings_path", hookConfigPath)
+			errChan <- err
+			return
+		}
+		logger.Debug("Claude interactive session completed successfully")
+		errChan <- nil
+	}()
+
+	// Start monitoring for session establishment
+	go monitorSessionEstablishment(ctx, logger, sessionChan)
+
+	// Wait for session or error
+	select {
+	case sessionState := <-sessionChan:
+		logger.Info("Session established",
+			"session_id", sessionState.SessionID,
+			"transcript_path", sessionState.TranscriptPath)
+		fmt.Printf("\nTip: Session ID: %s\n", sessionState.SessionID[:8])
+		fmt.Println("Use 'hail-mary prd continue' to resume this conversation later.")
+
+	case <-time.After(30 * time.Second):
+		// Session tracking failed, but continue anyway
+		logger.Warn("Session tracking timeout, continuing without session ID")
 		fmt.Println("\nTip: Use 'hail-mary prd continue' to resume this conversation later.")
 
-		err := executor.ExecuteInteractive(prompt)
+	case err := <-errChan:
 		if err != nil {
-			return fmt.Errorf("failed to execute Claude: %w", err)
+			return fmt.Errorf("claude execution failed: %w", err)
 		}
-
 		fmt.Printf("\n\nPRD session completed.\n")
 		return nil
-	},
+	}
+
+	// Wait for Claude to finish
+	err = <-errChan
+	if err != nil {
+		return fmt.Errorf("claude execution failed: %w", err)
+	}
+
+	fmt.Printf("\n\nPRD session completed.\n")
+	return nil
 }
 
-func init() {
-	prdCmd.AddCommand(prdInitCmd)
+// setupHookConfig creates temporary hook configuration
+func setupHookConfig(logger *slog.Logger) (string, func(), error) {
+	// Get executable path for hook command
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	// Create hook configuration
+	hookCmd := fmt.Sprintf("HAIL_MARY_PARENT_PID=%d %s hook", os.Getpid(), execPath)
+
+	// Define our hooks
+	hailMaryHooks := map[string][]settings.HookMatcher{
+		"SessionStart": {
+			{
+				Hooks: []settings.HookEntry{
+					{
+						Type:    "command",
+						Command: hookCmd,
+						Timeout: 5,
+					},
+				},
+			},
+		},
+		"UserPromptSubmit": {
+			{
+				Hooks: []settings.HookEntry{
+					{
+						Type:    "command",
+						Command: hookCmd,
+						Timeout: 2,
+					},
+				},
+			},
+		},
+		"Stop": {
+			{
+				Hooks: []settings.HookEntry{
+					{
+						Type:    "command",
+						Command: hookCmd,
+						Timeout: 2,
+					},
+				},
+			},
+		},
+	}
+
+	// Check for existing .claude/settings.json
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get working directory: %w", err)
+	}
+	existingSettingsPath := filepath.Join(wd, ".claude", "settings.json")
+
+	// Create merged settings
+	mergedSettings, err := settings.CreateMergedSettings(existingSettingsPath, hailMaryHooks)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to create merged settings: %w", err)
+	}
+
+	// Write temporary merged settings
+	tempDir := os.TempDir()
+	tempHookPath := filepath.Join(tempDir, fmt.Sprintf("hail-mary-settings-%d.json", os.Getpid()))
+
+	if err := mergedSettings.SaveToFile(tempHookPath); err != nil {
+		return "", nil, fmt.Errorf("failed to save merged settings: %w", err)
+	}
+
+	// Cleanup function
+	cleanup := func() {
+		os.Remove(tempHookPath)
+		// Session files are preserved for future reference
+	}
+
+	logger.Debug("Merged settings created",
+		"config_path", tempHookPath,
+		"parent_pid", os.Getpid(),
+		"existing_settings", existingSettingsPath)
+
+	return tempHookPath, cleanup, nil
+}
+
+// monitorSessionEstablishment monitors for session file creation
+func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessionChan chan<- *session.State) {
+	processID := fmt.Sprintf("%d", os.Getpid())
+
+	sm, err := session.NewManager()
+	if err != nil {
+		logger.Error("Failed to create session manager", "error", err)
+		return
+	}
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-ticker.C:
+			state, err := sm.ReadSession(processID)
+			if err == nil {
+				sessionChan <- state
+				return
+			}
+		}
+	}
 }
