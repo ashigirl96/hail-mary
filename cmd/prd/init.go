@@ -68,16 +68,7 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) err
 	executor := claude.NewExecutorWithConfig(config)
 
 	// Prepare the initial prompt for PRD creation
-	initialPrompt := `I need help creating a Product Requirements Document (PRD). 
-Please guide me through the process by asking relevant questions about:
-- The product vision and goals
-- Target users and their needs
-- Key features and functionality
-- Technical requirements and constraints
-- Success metrics and KPIs
-- Timeline and milestones
-
-Let's start with understanding what product we're building.`
+	initialPrompt := ``
 
 	// Start monitoring for session
 	sessionChan := make(chan *session.State, 1)
