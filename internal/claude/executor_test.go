@@ -16,7 +16,7 @@ func TestNewExecutor(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, executor, "NewExecutor should not return nil")
-	
+
 	// Verify it implements the interface
 	var _ claude.Executor = executor
 }
@@ -62,7 +62,7 @@ func TestNewExecutorWithConfig(t *testing.T) {
 
 			// Assert
 			require.NotNil(t, executor, "NewExecutorWithConfig should not return nil")
-			
+
 			// This test verifies the executor was created successfully
 			// Configuration validation is done through the public interface
 			assert.NotNil(t, executor)
@@ -80,7 +80,7 @@ func TestExecutorImpl_ImplementsInterface(t *testing.T) {
 func TestExecutorImpl_InterfaceCompliance(t *testing.T) {
 	// Use MockExecutor to test interface compliance without executing external commands
 	var executor claude.Executor = mocks.NewExecutor()
-	
+
 	// Test that all interface methods can be called and work correctly
 	tests := []struct {
 		name string

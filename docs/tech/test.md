@@ -326,14 +326,22 @@ jobs:
 1. `internal/testing/mocks/executor.go` 作成完了
 2. `mocks.Executor` 実装とテスト完了
 
-### Phase 2: 既存テスト移行
-1. `executor_test.go` のモック化
+### Phase 2: 既存テスト移行 ✅
+1. `executor_test.go` のモック化完了
+   - **学習**: `package claude_test`による外部テストパッケージ採用
+   - **課題解決**: `TestExecutorImpl_InterfaceCompliance`の30秒タイムアウト問題
+   - **実装**: インターフェース適合性テストをMockExecutorで実行
 2. `prd_init_test.go` のモック化
 3. バリデーション・設定テストの分離
 
 ### Phase 3: 統合テスト整理
 1. 実際のclaudeプロセスが必要なテストを `//go:build integration` で分離
 2. CI環境での統合テスト実行戦略確立
+
+### 💡 実装時の学び
+- **テスト目的の明確化**: インターフェース適合性テストは実際の実行を含むべきではない
+- **外部テストパッケージの効果**: 公開APIのみのテストにより、実装詳細への依存を回避
+- **Mock配置戦略**: `internal/claude/mock_executor.go`と`internal/testing/mocks/executor.go`の使い分け
 
 ## 📚 参考資料
 
