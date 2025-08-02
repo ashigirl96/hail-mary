@@ -12,10 +12,6 @@ const (
 	claudePackage = "@anthropic-ai/claude-code@latest"
 	// dangerousFlag allows Claude to execute without permissions prompt
 	dangerousFlag = "--dangerously-skip-permissions"
-	// printFlag enables print mode for JSON output
-	printFlag = "-p"
-	// outputJSONFlag sets output format to JSON
-	outputJSONFlag = "--output-format=json"
 	// resumeFlag resumes a previous session
 	resumeFlag = "--resume"
 	// continueFlag continues the most recent session

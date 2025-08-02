@@ -39,24 +39,13 @@ func main() {
 		}
 	*/
 
-	// Example 3: Programmatic execution (non-interactive)
+	// Example 3: Interactive mode with specific session
 	/*
-		fmt.Println("\n=== Example 3: Programmatic Execution ===")
-		sessionInfo, err := executor.ExecuteWithSessionTracking("Explain Go interfaces")
+		fmt.Println("\n=== Example 3: Interactive Mode with Specific Session ===")
+		sessionID := "your-session-id-here"
+		err := executor.ExecuteInteractiveWithSession(sessionID)
 		if err != nil {
 			log.Printf("Error: %v", err)
-		} else {
-			fmt.Printf("Session ID: %s\n", sessionInfo.ID)
-			fmt.Printf("Cost: $%.6f\n", sessionInfo.CostUSD)
-			fmt.Printf("Result:\n%s\n", sessionInfo.Result)
-
-			// Resume the session programmatically
-			resumedInfo, err := executor.ResumeSession(sessionInfo.ID, "Give an example")
-			if err != nil {
-				log.Printf("Error resuming: %v", err)
-			} else {
-				fmt.Printf("\nResumed result:\n%s\n", resumedInfo.Result)
-			}
 		}
 	*/
 }

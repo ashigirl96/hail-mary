@@ -21,7 +21,6 @@ type Executor struct {
 	// Behavior control
 	ShouldFailInteractive bool
 	ShouldFailTracking    bool
-	ShouldFailResume      bool
 }
 
 // MethodCall represents a recorded method invocation
@@ -73,20 +72,6 @@ func (m *Executor) ExecuteWithSessionTracking(prompt string) (*claude.SessionInf
 		return nil, m.ExecuteError
 	}
 	return m.SessionResult, nil
-}
-
-// ResumeSession simulates resuming a specific session
-func (m *Executor) ResumeSession(sessionID, prompt string) (*claude.SessionInfo, error) {
-	m.recordCall("ResumeSession", sessionID, prompt)
-
-	if m.ShouldFailResume {
-		return nil, m.ExecuteError
-	}
-
-	// Return a modified session info with the provided session ID
-	result := *m.SessionResult
-	result.ID = sessionID
-	return &result, nil
 }
 
 // ExecuteInteractiveWithSession simulates interactive execution with a specific session
@@ -144,14 +129,12 @@ func (m *Executor) Reset() {
 	m.CallLog = make([]MethodCall, 0)
 	m.ShouldFailInteractive = false
 	m.ShouldFailTracking = false
-	m.ShouldFailResume = false
 }
 
 // SetupFailure configures the mock to fail for specific operations
-func (m *Executor) SetupFailure(interactive, tracking, resume bool, err error) {
+func (m *Executor) SetupFailure(interactive, tracking bool, err error) {
 	m.ShouldFailInteractive = interactive
 	m.ShouldFailTracking = tracking
-	m.ShouldFailResume = resume
 	m.ExecuteError = err
 	m.InteractiveResult = err
 }

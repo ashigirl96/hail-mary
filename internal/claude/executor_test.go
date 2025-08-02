@@ -102,22 +102,6 @@ func TestExecutorImpl_InterfaceCompliance(t *testing.T) {
 			},
 		},
 		{
-			name: "ExecuteWithSessionTracking method exists",
-			test: func(t *testing.T, executor claude.Executor) {
-				result, err := executor.ExecuteWithSessionTracking("test prompt")
-				assert.NoError(t, err)
-				assert.NotNil(t, result)
-			},
-		},
-		{
-			name: "ResumeSession method exists",
-			test: func(t *testing.T, executor claude.Executor) {
-				result, err := executor.ResumeSession("session-123", "test prompt")
-				assert.NoError(t, err)
-				assert.NotNil(t, result)
-			},
-		},
-		{
 			name: "ExecuteInteractiveWithSession method exists",
 			test: func(t *testing.T, executor claude.Executor) {
 				err := executor.ExecuteInteractiveWithSession("session-123")

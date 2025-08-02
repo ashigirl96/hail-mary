@@ -48,7 +48,7 @@ func TestExecutor_ExecuteInteractive_Failure(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
 	expectedError := errors.New("interactive execution failed")
-	mock.SetupFailure(true, false, false, expectedError)
+	mock.SetupFailure(true, false, expectedError)
 
 	// Act
 	err := mock.ExecuteInteractive("test")
@@ -83,7 +83,7 @@ func TestExecutor_ExecuteWithSessionTracking_Failure(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
 	expectedError := errors.New("tracking failed")
-	mock.SetupFailure(false, true, false, expectedError)
+	mock.SetupFailure(false, true, expectedError)
 
 	// Act
 	result, err := mock.ExecuteWithSessionTracking("test")
@@ -93,43 +93,6 @@ func TestExecutor_ExecuteWithSessionTracking_Failure(t *testing.T) {
 	assert.Equal(t, expectedError, err)
 	assert.Nil(t, result)
 	assert.Len(t, mock.CallLog, 1)
-}
-
-func TestExecutor_ResumeSession_Success(t *testing.T) {
-	// Arrange
-	mock := NewExecutor()
-	sessionID := "custom-session-456"
-	prompt := "Continue the conversation"
-
-	// Act
-	result, err := mock.ResumeSession(sessionID, prompt)
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	assert.Equal(t, sessionID, result.ID, "Result should use the provided session ID")
-	assert.Equal(t, mock.SessionResult.Result, result.Result)
-	assert.Equal(t, mock.SessionResult.CostUSD, result.CostUSD)
-
-	assert.Len(t, mock.CallLog, 1)
-	assert.Equal(t, "ResumeSession", mock.CallLog[0].Method)
-	assert.Equal(t, sessionID, mock.CallLog[0].Args[0])
-	assert.Equal(t, prompt, mock.CallLog[0].Args[1])
-}
-
-func TestExecutor_ResumeSession_Failure(t *testing.T) {
-	// Arrange
-	mock := NewExecutor()
-	expectedError := errors.New("resume failed")
-	mock.SetupFailure(false, false, true, expectedError)
-
-	// Act
-	result, err := mock.ResumeSession("session-123", "test")
-
-	// Assert
-	require.Error(t, err)
-	assert.Equal(t, expectedError, err)
-	assert.Nil(t, result)
 }
 
 func TestExecutor_ExecuteInteractiveContinue(t *testing.T) {
@@ -191,7 +154,6 @@ func TestExecutor_GetCallCount(t *testing.T) {
 	// Assert
 	assert.Equal(t, 2, mock.GetCallCount("ExecuteInteractive"))
 	assert.Equal(t, 1, mock.GetCallCount("ExecuteWithSessionTracking"))
-	assert.Equal(t, 0, mock.GetCallCount("ResumeSession"))
 }
 
 func TestExecutor_GetLastCall(t *testing.T) {
@@ -221,14 +183,13 @@ func TestExecutor_GetLastCall(t *testing.T) {
 func TestExecutor_Reset(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
-	mock.SetupFailure(true, true, true, errors.New("test error"))
+	mock.SetupFailure(true, true, errors.New("test error"))
 	_ = mock.ExecuteInteractive("test")
 
 	// Pre-condition checks
 	assert.Len(t, mock.CallLog, 1)
 	assert.True(t, mock.ShouldFailInteractive)
 	assert.True(t, mock.ShouldFailTracking)
-	assert.True(t, mock.ShouldFailResume)
 
 	// Act
 	mock.Reset()
@@ -237,7 +198,6 @@ func TestExecutor_Reset(t *testing.T) {
 	assert.Empty(t, mock.CallLog, "CallLog should be cleared")
 	assert.False(t, mock.ShouldFailInteractive, "ShouldFailInteractive should be reset")
 	assert.False(t, mock.ShouldFailTracking, "ShouldFailTracking should be reset")
-	assert.False(t, mock.ShouldFailResume, "ShouldFailResume should be reset")
 }
 
 func TestExecutor_SetupFailure(t *testing.T) {
@@ -246,12 +206,11 @@ func TestExecutor_SetupFailure(t *testing.T) {
 	testError := errors.New("custom test error")
 
 	// Act
-	mock.SetupFailure(true, false, true, testError)
+	mock.SetupFailure(true, false, testError)
 
 	// Assert
 	assert.True(t, mock.ShouldFailInteractive)
 	assert.False(t, mock.ShouldFailTracking)
-	assert.True(t, mock.ShouldFailResume)
 	assert.Equal(t, testError, mock.ExecuteError)
 	assert.Equal(t, testError, mock.InteractiveResult)
 }
@@ -296,24 +255,17 @@ func TestExecutor_ComplexScenario(t *testing.T) {
 	err2 := mock.ExecuteInteractiveWithSession(result1.ID)
 	require.NoError(t, err2)
 
-	// 3. Resume the session later
-	result2, err3 := mock.ResumeSession(result1.ID, "Follow-up prompt")
-	require.NoError(t, err3)
-
 	// Assert
-	assert.Len(t, mock.CallLog, 3, "Should have recorded 3 calls")
+	assert.Len(t, mock.CallLog, 2, "Should have recorded 2 calls")
 
 	// Verify call sequence
 	assert.Equal(t, "ExecuteWithSessionTracking", mock.CallLog[0].Method)
 	assert.Equal(t, "ExecuteInteractiveWithSession", mock.CallLog[1].Method)
-	assert.Equal(t, "ResumeSession", mock.CallLog[2].Method)
 
 	// Verify session ID consistency
 	assert.Equal(t, "complex-session", result1.ID)
-	assert.Equal(t, "complex-session", result2.ID)
 
 	// Verify call counts
 	assert.Equal(t, 1, mock.GetCallCount("ExecuteWithSessionTracking"))
 	assert.Equal(t, 1, mock.GetCallCount("ExecuteInteractiveWithSession"))
-	assert.Equal(t, 1, mock.GetCallCount("ResumeSession"))
 }

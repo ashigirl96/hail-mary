@@ -58,14 +58,13 @@ This is a CLI application built with **Cobra** (command framework) and **slog** 
 The `internal/claude/executor.go` provides enhanced session management capabilities:
 
 - **SessionInfo**: Struct containing session ID, result, cost, duration, and turns
-- **ExecuteInteractive**: Now automatically gets session ID and continues interactively (NEW!)
-- **ExecuteAndContinueInteractive**: Same as ExecuteInteractive but also returns SessionInfo
+- **ExecuteInteractive**: Launches Claude CLI in interactive mode with initial prompt (SIMPLIFIED!)
+- **ExecuteAndContinueInteractive**: Same as ExecuteInteractive but returns dummy SessionInfo for compatibility
 - **ExecuteWithSessionTracking**: Execute prompts and retrieve session information (print mode)
-- **ResumeSession**: Resume specific sessions by session ID (print mode)
 - **ExecuteInteractiveWithSession**: Resume specific sessions in interactive mode
 - **Input Validation**: Security validation for prompts and session IDs
 
-Note: Session IDs are automatically returned in the JSON response when using print mode (`-p --output-format=json`).
+Note: Session tracking is now handled automatically by the Claude Code hook system. The hooks capture session IDs and store them in `~/.hail-mary/sessions/{PID}.json`.
 
 #### Hook-based Session Tracking (NEW!)
 
@@ -103,19 +102,17 @@ Hook Configuration Example:
 ```go
 executor := claude.NewExecutor()
 
-// NEW: Interactive mode with automatic session tracking
+// SIMPLIFIED: Interactive mode with hook-based session tracking
 err := executor.ExecuteInteractive("Create a function")
-// This automatically:
-// 1. Executes the prompt and gets session ID
-// 2. Shows initial response
-// 3. Continues in interactive mode
+// This now simply:
+// 1. Launches Claude CLI with the initial prompt
+// 2. Session tracking is handled by hooks automatically
 
-// Alternative: Get SessionInfo while starting interactive mode
+// For backward compatibility (returns dummy SessionInfo)
 sessionInfo, err := executor.ExecuteAndContinueInteractive("Create a function")
 
 // Programmatic execution (non-interactive)
 sessionInfo, err := executor.ExecuteWithSessionTracking("Create a function")
-resumedInfo, err := executor.ResumeSession(sessionInfo.ID, "Add error handling")
 ```
 
 ### Command Structure
