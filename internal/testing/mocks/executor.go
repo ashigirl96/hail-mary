@@ -64,16 +64,6 @@ func (m *Executor) ExecuteInteractiveContinue() error {
 	return nil
 }
 
-// ExecuteWithSessionTracking simulates execution with session tracking
-func (m *Executor) ExecuteWithSessionTracking(prompt string) (*claude.SessionInfo, error) {
-	m.recordCall("ExecuteWithSessionTracking", prompt)
-
-	if m.ShouldFailTracking {
-		return nil, m.ExecuteError
-	}
-	return m.SessionResult, nil
-}
-
 // ExecuteInteractiveWithSession simulates interactive execution with a specific session
 func (m *Executor) ExecuteInteractiveWithSession(sessionID string) error {
 	m.recordCall("ExecuteInteractiveWithSession", sessionID)

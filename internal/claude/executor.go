@@ -126,7 +126,7 @@ func (e *ExecutorImpl) buildCommand(args ...string) *exec.Cmd {
 }
 
 // ExecuteInteractive launches Claude CLI in interactive mode with an initial prompt.
-// Session tracking is automatically handled by the Claude Code hook system.
+// Session management is automatically handled by the Claude Code hook system.
 func (e *ExecutorImpl) ExecuteInteractive(prompt string) error {
 	if err := e.validatePrompt(prompt); err != nil {
 		return fmt.Errorf("execute interactive: %w", err)
@@ -189,14 +189,14 @@ func (e *ExecutorImpl) ExecuteInteractiveWithSession(sessionID string) error {
 }
 
 // ExecuteAndContinueInteractive executes a prompt and then continues in interactive mode.
-// Session tracking is automatically handled by the Claude Code hook system.
+// Session management is automatically handled by the Claude Code hook system.
 // Returns dummy SessionInfo for backward compatibility.
 func (e *ExecutorImpl) ExecuteAndContinueInteractive(prompt string) (*SessionInfo, error) {
 	if err := e.validatePrompt(prompt); err != nil {
 		return nil, fmt.Errorf("execute and continue interactive: %w", err)
 	}
 
-	// Execute in interactive mode - session tracking handled by hooks
+	// Execute in interactive mode - session management handled by hooks
 	if err := e.ExecuteInteractive(prompt); err != nil {
 		return nil, fmt.Errorf("execute and continue interactive: failed to start interactive mode: %w", err)
 	}

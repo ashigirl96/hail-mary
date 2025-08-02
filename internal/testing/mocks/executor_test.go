@@ -59,42 +59,6 @@ func TestExecutor_ExecuteInteractive_Failure(t *testing.T) {
 	assert.Len(t, mock.CallLog, 1, "Should record the call even on failure")
 }
 
-func TestExecutor_ExecuteWithSessionTracking_Success(t *testing.T) {
-	// Arrange
-	mock := NewExecutor()
-	prompt := "Test prompt"
-
-	// Act
-	result, err := mock.ExecuteWithSessionTracking(prompt)
-
-	// Assert
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	assert.Equal(t, mock.SessionResult.ID, result.ID)
-	assert.Equal(t, mock.SessionResult.Result, result.Result)
-	assert.Equal(t, mock.SessionResult.CostUSD, result.CostUSD)
-
-	assert.Len(t, mock.CallLog, 1)
-	assert.Equal(t, "ExecuteWithSessionTracking", mock.CallLog[0].Method)
-	assert.Equal(t, prompt, mock.CallLog[0].Args[0])
-}
-
-func TestExecutor_ExecuteWithSessionTracking_Failure(t *testing.T) {
-	// Arrange
-	mock := NewExecutor()
-	expectedError := errors.New("tracking failed")
-	mock.SetupFailure(false, true, expectedError)
-
-	// Act
-	result, err := mock.ExecuteWithSessionTracking("test")
-
-	// Assert
-	require.Error(t, err)
-	assert.Equal(t, expectedError, err)
-	assert.Nil(t, result)
-	assert.Len(t, mock.CallLog, 1)
-}
-
 func TestExecutor_ExecuteInteractiveContinue(t *testing.T) {
 	// Arrange
 	mock := NewExecutor()
@@ -149,11 +113,11 @@ func TestExecutor_GetCallCount(t *testing.T) {
 	// Act
 	_ = mock.ExecuteInteractive("test1")
 	_ = mock.ExecuteInteractive("test2")
-	_, _ = mock.ExecuteWithSessionTracking("test3")
+	_ = mock.ExecuteInteractiveContinue()
 
 	// Assert
 	assert.Equal(t, 2, mock.GetCallCount("ExecuteInteractive"))
-	assert.Equal(t, 1, mock.GetCallCount("ExecuteWithSessionTracking"))
+	assert.Equal(t, 1, mock.GetCallCount("ExecuteInteractiveContinue"))
 }
 
 func TestExecutor_GetLastCall(t *testing.T) {
@@ -163,7 +127,7 @@ func TestExecutor_GetLastCall(t *testing.T) {
 	// Act
 	_ = mock.ExecuteInteractive("first")
 	_ = mock.ExecuteInteractive("second")
-	_, _ = mock.ExecuteWithSessionTracking("tracking")
+	_ = mock.ExecuteInteractiveContinue()
 
 	// Assert
 	lastInteractive := mock.GetLastCall("ExecuteInteractive")
@@ -171,10 +135,9 @@ func TestExecutor_GetLastCall(t *testing.T) {
 	assert.Equal(t, "ExecuteInteractive", lastInteractive.Method)
 	assert.Equal(t, "second", lastInteractive.Args[0])
 
-	lastTracking := mock.GetLastCall("ExecuteWithSessionTracking")
-	require.NotNil(t, lastTracking)
-	assert.Equal(t, "ExecuteWithSessionTracking", lastTracking.Method)
-	assert.Equal(t, "tracking", lastTracking.Args[0])
+	lastContinue := mock.GetLastCall("ExecuteInteractiveContinue")
+	require.NotNil(t, lastContinue)
+	assert.Equal(t, "ExecuteInteractiveContinue", lastContinue.Method)
 
 	nonExistent := mock.GetLastCall("NonExistentMethod")
 	assert.Nil(t, nonExistent)
@@ -223,7 +186,7 @@ func TestExecutor_CallTimestamps(t *testing.T) {
 	// Act
 	_ = mock.ExecuteInteractive("test")
 	time.Sleep(1 * time.Millisecond) // Ensure timestamp difference
-	_, _ = mock.ExecuteWithSessionTracking("test")
+	_, _ = mock.ExecuteAndContinueInteractive("test")
 
 	// Assert
 	require.Len(t, mock.CallLog, 2)
@@ -247,8 +210,8 @@ func TestExecutor_ComplexScenario(t *testing.T) {
 	}
 
 	// Act - Simulate a complex workflow
-	// 1. Start with session tracking
-	result1, err1 := mock.ExecuteWithSessionTracking("Initial prompt")
+	// 1. Start with interactive execution
+	result1, err1 := mock.ExecuteAndContinueInteractive("Initial prompt")
 	require.NoError(t, err1)
 
 	// 2. Continue with interactive mode
@@ -259,13 +222,13 @@ func TestExecutor_ComplexScenario(t *testing.T) {
 	assert.Len(t, mock.CallLog, 2, "Should have recorded 2 calls")
 
 	// Verify call sequence
-	assert.Equal(t, "ExecuteWithSessionTracking", mock.CallLog[0].Method)
+	assert.Equal(t, "ExecuteAndContinueInteractive", mock.CallLog[0].Method)
 	assert.Equal(t, "ExecuteInteractiveWithSession", mock.CallLog[1].Method)
 
 	// Verify session ID consistency
 	assert.Equal(t, "complex-session", result1.ID)
 
 	// Verify call counts
-	assert.Equal(t, 1, mock.GetCallCount("ExecuteWithSessionTracking"))
+	assert.Equal(t, 1, mock.GetCallCount("ExecuteAndContinueInteractive"))
 	assert.Equal(t, 1, mock.GetCallCount("ExecuteInteractiveWithSession"))
 }

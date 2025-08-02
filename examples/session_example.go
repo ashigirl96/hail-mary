@@ -13,8 +13,8 @@ import (
 func main() {
 	executor := claude.NewExecutor()
 
-	// Example 1: ExecuteInteractive - Now automatically tracks session!
-	fmt.Println("=== Example 1: Interactive Mode with Automatic Session Tracking ===")
+	// Example 1: ExecuteInteractive - Now automatically manages session!
+	fmt.Println("=== Example 1: Interactive Mode with Automatic Session Management ===")
 	fmt.Println("The new ExecuteInteractive automatically:")
 	fmt.Println("1. Executes your prompt and gets a session ID")
 	fmt.Println("2. Shows the initial response")
