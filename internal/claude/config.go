@@ -47,11 +47,6 @@ type Config struct {
 	MaxPromptLength int
 	// SettingsPath is the path to a settings file to use with --settings flag
 	SettingsPath string
-	// PermissionMode is the permission mode to use for the session
-	// Valid options: "acceptEdits", "bypassPermissions", "default", "plan"
-	PermissionMode string
-	// AppendSystemPrompt is the system prompt to append to the default system prompt
-	AppendSystemPrompt string
 }
 
 // DefaultConfig returns the default configuration
@@ -86,12 +81,39 @@ func (c *Config) BuildArgs(additionalArgs ...string) []string {
 	if c.SettingsPath != "" {
 		args = append(args, "--settings", c.SettingsPath)
 	}
-	if c.PermissionMode != "" {
-		args = append(args, permissionModeFlag, c.PermissionMode)
-	}
-	if c.AppendSystemPrompt != "" {
-		args = append(args, appendSystemPromptFlag, c.AppendSystemPrompt)
-	}
 	args = append(args, additionalArgs...)
 	return args
+}
+
+// NewConfigWithDefaults creates a Config with default values, applying any overrides
+func NewConfigWithDefaults(overrides Config) *Config {
+	// Start with default values
+	config := &Config{
+		Command:               claudeCommand,
+		Package:               claudePackage,
+		EnableBackgroundTasks: true,
+		MaintainWorkingDir:    true,
+		SkipPermissions:       true,
+		MaxPromptLength:       maxPromptLength,
+	}
+
+	// Apply overrides
+	if overrides.Command != "" {
+		config.Command = overrides.Command
+	}
+	if overrides.Package != "" {
+		config.Package = overrides.Package
+	}
+	if overrides.SettingsPath != "" {
+		config.SettingsPath = overrides.SettingsPath
+	}
+	if overrides.MaxPromptLength > 0 {
+		config.MaxPromptLength = overrides.MaxPromptLength
+	}
+	// Note: Boolean fields retain their default values (true)
+	// unless explicitly overridden. This is a limitation of Go's zero values.
+	// In production code, you might want to use pointers to distinguish
+	// between "not set" and "explicitly set to false"
+
+	return config
 }
