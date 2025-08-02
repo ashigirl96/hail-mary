@@ -45,7 +45,7 @@ func (sm *StateManager) SaveState(state *State) error {
 // LoadState loads a session state from disk
 func (sm *StateManager) LoadState(sessionID string) (*State, error) {
 	filePath := filepath.Join(sm.stateDir, sessionID+".json")
-	
+
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read state file: %w", err)
@@ -62,7 +62,7 @@ func (sm *StateManager) LoadState(sessionID string) (*State, error) {
 // DeleteState removes a session state from disk
 func (sm *StateManager) DeleteState(sessionID string) error {
 	filePath := filepath.Join(sm.stateDir, sessionID+".json")
-	
+
 	if err := os.Remove(filePath); err != nil {
 		return fmt.Errorf("failed to delete state file: %w", err)
 	}

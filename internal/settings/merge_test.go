@@ -36,7 +36,7 @@ func TestClaudeSettings_AddHook(t *testing.T) {
 	// Assert
 	require.Contains(t, settings.Hooks, "TestEvent", "TestEvent should be added to hooks")
 	require.Len(t, settings.Hooks["TestEvent"], 1, "TestEvent should have one matcher")
-	
+
 	matcher := settings.Hooks["TestEvent"][0]
 	assert.Equal(t, "Write", matcher.Matcher)
 	require.Len(t, matcher.Hooks, 1, "Matcher should have one hook entry")
@@ -56,7 +56,7 @@ func TestClaudeSettings_AddHook_MultipleMatchers(t *testing.T) {
 	// Assert
 	require.Contains(t, settings.Hooks, "TestEvent")
 	require.Len(t, settings.Hooks["TestEvent"], 2, "TestEvent should have two matchers")
-	
+
 	// Find matchers (order not guaranteed)
 	var writeMatch, readMatch *HookMatcher
 	for i := range settings.Hooks["TestEvent"] {
@@ -66,7 +66,7 @@ func TestClaudeSettings_AddHook_MultipleMatchers(t *testing.T) {
 			readMatch = &settings.Hooks["TestEvent"][i]
 		}
 	}
-	
+
 	require.NotNil(t, writeMatch, "Write matcher should exist")
 	require.NotNil(t, readMatch, "Read matcher should exist")
 	assert.Equal(t, hookEntry1, writeMatch.Hooks[0])
@@ -86,7 +86,7 @@ func TestClaudeSettings_AddHook_SameMatcher(t *testing.T) {
 	// Assert
 	require.Contains(t, settings.Hooks, "TestEvent")
 	require.Len(t, settings.Hooks["TestEvent"], 1, "TestEvent should have one matcher")
-	
+
 	matcher := settings.Hooks["TestEvent"][0]
 	assert.Equal(t, "Write", matcher.Matcher)
 	require.Len(t, matcher.Hooks, 2, "Matcher should have two hook entries")
@@ -99,7 +99,7 @@ func TestClaudeSettings_MergeWith_EmptySource(t *testing.T) {
 	target := NewClaudeSettings()
 	target.AddHook("ExistingEvent", "Write", HookEntry{Type: "command", Command: "existing"})
 	target.Extra["existing"] = "value"
-	
+
 	source := NewClaudeSettings()
 
 	// Act
@@ -115,7 +115,7 @@ func TestClaudeSettings_MergeWith_NewHooks(t *testing.T) {
 	// Arrange
 	target := NewClaudeSettings()
 	target.AddHook("ExistingEvent", "Write", HookEntry{Type: "command", Command: "existing"})
-	
+
 	source := NewClaudeSettings()
 	source.AddHook("NewEvent", "Read", HookEntry{Type: "command", Command: "new"})
 
@@ -133,7 +133,7 @@ func TestClaudeSettings_MergeWith_ConflictingHooks(t *testing.T) {
 	// Arrange
 	target := NewClaudeSettings()
 	target.AddHook("SameEvent", "Write", HookEntry{Type: "command", Command: "target"})
-	
+
 	source := NewClaudeSettings()
 	source.AddHook("SameEvent", "Write", HookEntry{Type: "command", Command: "source"})
 
@@ -145,7 +145,7 @@ func TestClaudeSettings_MergeWith_ConflictingHooks(t *testing.T) {
 	assert.Len(t, target.Hooks, 1, "Target should have one event")
 	assert.Len(t, target.Hooks["SameEvent"], 1, "Event should have one matcher")
 	assert.Len(t, target.Hooks["SameEvent"][0].Hooks, 2, "Matcher should have both hook entries")
-	
+
 	// Verify both commands are present
 	commands := []string{
 		target.Hooks["SameEvent"][0].Hooks[0].Command,
@@ -160,7 +160,7 @@ func TestClaudeSettings_MergeWith_ExtraData(t *testing.T) {
 	target := NewClaudeSettings()
 	target.Extra["existing"] = "target_value"
 	target.Extra["shared"] = "target_shared"
-	
+
 	source := NewClaudeSettings()
 	source.Extra["new"] = "source_value"
 	source.Extra["shared"] = "source_shared"
@@ -179,7 +179,7 @@ func TestClaudeSettings_LoadFromFile_Success(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	settingsPath := filepath.Join(tempDir, "settings.json")
-	
+
 	testSettings := &ClaudeSettings{
 		Hooks: map[string][]HookMatcher{
 			"TestEvent": {
@@ -195,10 +195,10 @@ func TestClaudeSettings_LoadFromFile_Success(t *testing.T) {
 			"test_field": "test_value",
 		},
 	}
-	
+
 	data, err := json.MarshalIndent(testSettings, "", "  ")
 	require.NoError(t, err, "Setup should succeed")
-	
+
 	err = os.WriteFile(settingsPath, data, 0644)
 	require.NoError(t, err, "Setup should succeed")
 
@@ -208,7 +208,7 @@ func TestClaudeSettings_LoadFromFile_Success(t *testing.T) {
 	// Assert
 	require.NoError(t, err, "LoadFromFile should succeed")
 	require.NotNil(t, loadedSettings, "LoadFromFile should return non-nil settings")
-	
+
 	assert.Equal(t, testSettings.Hooks, loadedSettings.Hooks)
 	assert.Equal(t, testSettings.Extra, loadedSettings.Extra)
 }
@@ -230,7 +230,7 @@ func TestClaudeSettings_LoadFromFile_InvalidJSON(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	settingsPath := filepath.Join(tempDir, "invalid.json")
-	
+
 	err := os.WriteFile(settingsPath, []byte("invalid json content"), 0644)
 	require.NoError(t, err, "Setup should succeed")
 
@@ -247,7 +247,7 @@ func TestClaudeSettings_SaveToFile_Success(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	settingsPath := filepath.Join(tempDir, "save_test.json")
-	
+
 	settings := NewClaudeSettings()
 	settings.AddHook("SaveEvent", "Write", HookEntry{Type: "command", Command: "echo save"})
 	settings.Extra["save_field"] = "save_value"
@@ -257,15 +257,15 @@ func TestClaudeSettings_SaveToFile_Success(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err, "SaveToFile should succeed")
-	
+
 	// Verify file exists and contains correct data
 	data, err := os.ReadFile(settingsPath)
 	require.NoError(t, err, "File should be readable")
-	
+
 	var loaded ClaudeSettings
 	err = json.Unmarshal(data, &loaded)
 	require.NoError(t, err, "Saved file should contain valid JSON")
-	
+
 	assert.Equal(t, settings.Hooks, loaded.Hooks)
 	assert.Equal(t, settings.Extra, loaded.Extra)
 }
@@ -274,7 +274,7 @@ func TestClaudeSettings_SaveToFile_CreateDirectory(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	nestedPath := filepath.Join(tempDir, "nested", "directory", "settings.json")
-	
+
 	settings := NewClaudeSettings()
 	settings.Extra["test"] = "value"
 
@@ -283,7 +283,7 @@ func TestClaudeSettings_SaveToFile_CreateDirectory(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err, "SaveToFile should create nested directories")
-	
+
 	// Verify file exists
 	_, err = os.Stat(nestedPath)
 	assert.NoError(t, err, "File should exist in nested directory")
@@ -336,7 +336,7 @@ func TestClaudeSettings_ComplexMergeScenario(t *testing.T) {
 	target.AddHook("SessionEnd", "Read", HookEntry{Type: "command", Command: "existing_end"})
 	target.Extra["app_name"] = "target_app"
 	target.Extra["version"] = "1.0.0"
-	
+
 	// Arrange - Create source with overlapping and new hooks
 	source := NewClaudeSettings()
 	source.AddHook("SessionStart", "Write", HookEntry{Type: "command", Command: "new_start"})
@@ -350,17 +350,17 @@ func TestClaudeSettings_ComplexMergeScenario(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err, "Complex merge should succeed")
-	
+
 	// Verify hooks
 	assert.Len(t, target.Hooks, 3, "Should have 3 events")
 	assert.Contains(t, target.Hooks, "SessionStart")
 	assert.Contains(t, target.Hooks, "SessionEnd")
 	assert.Contains(t, target.Hooks, "UserPrompt")
-	
+
 	// Verify SessionStart has multiple matchers
 	sessionStartMatchers := target.Hooks["SessionStart"]
 	assert.Len(t, sessionStartMatchers, 2, "SessionStart should have 2 matchers")
-	
+
 	// Find Write matcher for SessionStart
 	var writeCommands []string
 	for _, matcher := range sessionStartMatchers {
@@ -372,7 +372,7 @@ func TestClaudeSettings_ComplexMergeScenario(t *testing.T) {
 	}
 	assert.Contains(t, writeCommands, "existing_start")
 	assert.Contains(t, writeCommands, "new_start")
-	
+
 	// Verify extra data merge
 	assert.Equal(t, "target_app", target.Extra["app_name"])
 	assert.Equal(t, "2.0.0", target.Extra["version"]) // Source should override

@@ -13,7 +13,6 @@ import (
 	"strings"
 )
 
-
 // SessionInfo contains information about a Claude session
 type SessionInfo struct {
 	ID       string  `json:"session_id"`
@@ -22,7 +21,6 @@ type SessionInfo struct {
 	Duration string  `json:"duration,omitempty"`
 	Turns    int     `json:"turns,omitempty"`
 }
-
 
 // Executor defines the interface for Claude CLI operations.
 // This interface allows for easy mocking in tests and alternative implementations.

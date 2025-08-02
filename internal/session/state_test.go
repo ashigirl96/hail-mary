@@ -28,7 +28,7 @@ func TestStateManager_SaveState_CreatesDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	stateDir := filepath.Join(tempDir, "sessions")
 	manager := NewStateManager(stateDir)
-	
+
 	state := &State{
 		SessionID:      "test-session-123",
 		StartedAt:      time.Now(),
@@ -42,7 +42,7 @@ func TestStateManager_SaveState_CreatesDirectory(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err, "SaveState should not return error")
-	
+
 	// Verify directory was created
 	_, err = os.Stat(stateDir)
 	assert.NoError(t, err, "State directory should be created")
@@ -52,7 +52,7 @@ func TestStateManager_SaveAndLoadState_Success(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	manager := NewStateManager(tempDir)
-	
+
 	expectedState := &State{
 		SessionID:      "test-session-456",
 		StartedAt:      time.Now().Truncate(time.Second), // Truncate for JSON precision
@@ -71,7 +71,7 @@ func TestStateManager_SaveAndLoadState_Success(t *testing.T) {
 	// Assert
 	require.NoError(t, err, "LoadState should not return error")
 	require.NotNil(t, actualState, "LoadState should return non-nil state")
-	
+
 	assert.Equal(t, expectedState.SessionID, actualState.SessionID)
 	assert.True(t, expectedState.StartedAt.Equal(actualState.StartedAt), "StartedAt should match")
 	assert.True(t, expectedState.LastUpdated.Equal(actualState.LastUpdated), "LastUpdated should match")
@@ -97,7 +97,7 @@ func TestStateManager_LoadState_InvalidJSON(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	manager := NewStateManager(tempDir)
-	
+
 	// Create invalid JSON file
 	sessionID := "invalid-json-session"
 	filePath := filepath.Join(tempDir, sessionID+".json")
@@ -117,13 +117,13 @@ func TestStateManager_DeleteState_Success(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	manager := NewStateManager(tempDir)
-	
+
 	state := &State{
 		SessionID:   "deletable-session",
 		StartedAt:   time.Now(),
 		LastUpdated: time.Now(),
 	}
-	
+
 	// Save first
 	err := manager.SaveState(state)
 	require.NoError(t, err, "Setup should succeed")
@@ -133,12 +133,12 @@ func TestStateManager_DeleteState_Success(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err, "DeleteState should not return error")
-	
+
 	// Verify file is deleted
 	filePath := filepath.Join(tempDir, "deletable-session.json")
 	_, err = os.Stat(filePath)
 	assert.True(t, os.IsNotExist(err), "State file should be deleted")
-	
+
 	// Verify LoadState now fails
 	_, err = manager.LoadState("deletable-session")
 	assert.Error(t, err, "LoadState should fail after deletion")
@@ -174,7 +174,7 @@ func TestStateManager_ListStates_WithStates(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	manager := NewStateManager(tempDir)
-	
+
 	// Create test states
 	states := []*State{
 		{
@@ -188,7 +188,7 @@ func TestStateManager_ListStates_WithStates(t *testing.T) {
 			LastUpdated: time.Now(),
 		},
 	}
-	
+
 	for _, state := range states {
 		err := manager.SaveState(state)
 		require.NoError(t, err, "Setup should succeed")
@@ -200,7 +200,7 @@ func TestStateManager_ListStates_WithStates(t *testing.T) {
 	// Assert
 	require.NoError(t, err, "ListStates should not return error")
 	require.Len(t, actualStates, 2, "ListStates should return 2 states")
-	
+
 	// Verify session IDs are present (order might vary)
 	sessionIDs := make(map[string]bool)
 	for _, state := range actualStates {
@@ -214,7 +214,7 @@ func TestStateManager_ListStates_IgnoresNonJSONFiles(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	manager := NewStateManager(tempDir)
-	
+
 	// Create a valid state
 	state := &State{
 		SessionID:   "valid-session",
@@ -223,11 +223,11 @@ func TestStateManager_ListStates_IgnoresNonJSONFiles(t *testing.T) {
 	}
 	err := manager.SaveState(state)
 	require.NoError(t, err, "Setup should succeed")
-	
+
 	// Create non-JSON files
 	err = os.WriteFile(filepath.Join(tempDir, "readme.txt"), []byte("not a json file"), 0644)
 	require.NoError(t, err, "Setup should succeed")
-	
+
 	err = os.WriteFile(filepath.Join(tempDir, "config.yaml"), []byte("yaml: content"), 0644)
 	require.NoError(t, err, "Setup should succeed")
 
@@ -244,7 +244,7 @@ func TestStateManager_UpdateState(t *testing.T) {
 	// Arrange
 	tempDir := t.TempDir()
 	manager := NewStateManager(tempDir)
-	
+
 	// Create initial state
 	initialState := &State{
 		SessionID:      "update-session",
@@ -270,7 +270,7 @@ func TestStateManager_UpdateState(t *testing.T) {
 	// Assert
 	loadedState, err := manager.LoadState("update-session")
 	require.NoError(t, err, "Load should succeed")
-	
+
 	assert.Equal(t, updatedState.SessionID, loadedState.SessionID)
 	assert.True(t, updatedState.StartedAt.Equal(loadedState.StartedAt), "StartedAt should be preserved")
 	assert.True(t, updatedState.LastUpdated.After(initialState.LastUpdated), "LastUpdated should be newer")
@@ -308,11 +308,11 @@ func TestState_JSONMarshaling(t *testing.T) {
 func TestStateManager_ConcurrentAccess(t *testing.T) {
 	// This is a basic test for concurrent access patterns
 	// In a production system, you might want more sophisticated concurrent testing
-	
+
 	// Arrange
 	tempDir := t.TempDir()
 	manager := NewStateManager(tempDir)
-	
+
 	state := &State{
 		SessionID:   "concurrent-session",
 		StartedAt:   time.Now(),
@@ -325,7 +325,7 @@ func TestStateManager_ConcurrentAccess(t *testing.T) {
 		err := manager.SaveState(state)
 		assert.NoError(t, err, "Concurrent save should succeed")
 	}
-	
+
 	// Verify final state can be loaded
 	loadedState, err := manager.LoadState("concurrent-session")
 	require.NoError(t, err, "Final load should succeed")
