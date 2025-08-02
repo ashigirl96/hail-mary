@@ -55,7 +55,7 @@ clean:
 ## test: Run tests
 test:
 	@echo "Running tests..."
-	$(GOTEST) -v -race -timeout 30s ./...
+	$(GOTEST) -v -race -timeout 30s -cover ./...
 
 ## coverage: Run tests with coverage
 coverage:
@@ -82,7 +82,7 @@ lint:
 	fi
 	@echo "Running golangci-lint (with auto-fix)..."
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		$(GOLINT) run --enable=unused --fix ./...; \
+		$(GOLINT) run --fix ./...; \
 	else \
 		echo "golangci-lint not installed. Install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
 		exit 1; \
@@ -126,13 +126,6 @@ dev:
 		$(GOCMD) run $(MAIN_PATH); \
 	fi
 
-## list: Run the list command
-list: build
-	$(BINARY_PATH) list
-
-## ui: Run the UI command
-ui: build
-	$(BINARY_PATH) ui
 
 # Cross-compilation targets
 ## build-linux: Build for Linux
