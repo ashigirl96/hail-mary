@@ -12,6 +12,10 @@ const (
 	claudePackage = "@anthropic-ai/claude-code@latest"
 	// dangerousFlag allows Claude to execute without permissions prompt
 	dangerousFlag = "--dangerously-skip-permissions"
+	// permissionModeFlag sets the permission mode
+	permissionModeFlag = "--permission-mode"
+	// appendSystemPromptFlag appends a system prompt
+	appendSystemPromptFlag = "--append-system-prompt"
 	// resumeFlag resumes a previous session
 	resumeFlag = "--resume"
 	// continueFlag continues the most recent session
@@ -45,6 +49,11 @@ type Config struct {
 	MaxPromptLength int
 	// SettingsPath is the path to a settings file to use with --settings flag
 	SettingsPath string
+	// PermissionMode is the permission mode to use for the session
+	// Valid options: "acceptEdits", "bypassPermissions", "default", "plan"
+	PermissionMode string
+	// AppendSystemPrompt is the system prompt to append to the default system prompt
+	AppendSystemPrompt string
 }
 
 // DefaultConfig returns the default configuration
@@ -78,6 +87,12 @@ func (c *Config) BuildArgs(additionalArgs ...string) []string {
 	}
 	if c.SettingsPath != "" {
 		args = append(args, "--settings", c.SettingsPath)
+	}
+	if c.PermissionMode != "" {
+		args = append(args, permissionModeFlag, c.PermissionMode)
+	}
+	if c.AppendSystemPrompt != "" {
+		args = append(args, appendSystemPromptFlag, c.AppendSystemPrompt)
 	}
 	args = append(args, additionalArgs...)
 	return args

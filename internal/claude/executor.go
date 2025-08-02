@@ -25,12 +25,26 @@ type SessionInfo struct {
 type Executor interface {
 	// ExecuteInteractive launches Claude CLI in interactive mode
 	ExecuteInteractive(prompt string) error
+	// ExecuteInteractiveWithMode launches Claude CLI in interactive mode with a specific permission mode
+	ExecuteInteractiveWithMode(prompt, mode string) error
+	// ExecuteInteractiveWithSystemPrompt launches Claude CLI in interactive mode with a system prompt
+	ExecuteInteractiveWithSystemPrompt(prompt, systemPrompt string) error
+	// ExecuteInteractiveWithModeAndSystemPrompt launches Claude CLI in interactive mode with permission mode and system prompt
+	ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) error
 	// ExecuteInteractiveContinue continues the most recent session
 	ExecuteInteractiveContinue() error
 	// ExecuteInteractiveWithSession launches interactive mode with a specific session
 	ExecuteInteractiveWithSession(sessionID string) error
+	// ExecuteInteractiveWithSessionAndMode launches interactive mode with a specific session and permission mode
+	ExecuteInteractiveWithSessionAndMode(sessionID, mode string) error
 	// ExecuteAndContinueInteractive executes a prompt and then continues in interactive mode
 	ExecuteAndContinueInteractive(prompt string) (*SessionInfo, error)
+	// ExecuteAndContinueInteractiveWithMode executes a prompt with mode and then continues in interactive mode
+	ExecuteAndContinueInteractiveWithMode(prompt, mode string) (*SessionInfo, error)
+	// ExecuteAndContinueInteractiveWithSystemPrompt executes a prompt with system prompt and then continues in interactive mode
+	ExecuteAndContinueInteractiveWithSystemPrompt(prompt, systemPrompt string) (*SessionInfo, error)
+	// ExecuteAndContinueInteractiveWithModeAndSystemPrompt executes a prompt with mode and system prompt and then continues in interactive mode
+	ExecuteAndContinueInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) (*SessionInfo, error)
 }
 
 // ExecutorImpl handles Claude CLI execution with configurable options.
@@ -75,6 +89,25 @@ func validateSessionID(sessionID string) error {
 			len(trimmed), minSessionIDLength, maxSessionIDLength)
 	}
 	return nil
+}
+
+// validatePermissionMode validates the permission mode.
+// Valid modes are: "acceptEdits", "bypassPermissions", "default", "plan"
+func validatePermissionMode(mode string) error {
+	validModes := []string{"acceptEdits", "bypassPermissions", "default", "plan"}
+	trimmed := strings.TrimSpace(mode)
+	if trimmed == "" {
+		return fmt.Errorf("permission mode validation failed: mode cannot be empty or contain only whitespace")
+	}
+
+	for _, validMode := range validModes {
+		if trimmed == validMode {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("permission mode validation failed: invalid mode '%s', valid options are: %s",
+		trimmed, strings.Join(validModes, ", "))
 }
 
 // NewExecutor creates a new Claude executor with default configuration.
@@ -128,8 +161,45 @@ func (e *ExecutorImpl) buildCommand(args ...string) *exec.Cmd {
 // ExecuteInteractive launches Claude CLI in interactive mode with an initial prompt.
 // Session management is automatically handled by the Claude Code hook system.
 func (e *ExecutorImpl) ExecuteInteractive(prompt string) error {
+	return e.ExecuteInteractiveWithMode(prompt, "")
+}
+
+// ExecuteInteractiveWithMode launches Claude CLI in interactive mode with an initial prompt and permission mode.
+// Session management is automatically handled by the Claude Code hook system.
+func (e *ExecutorImpl) ExecuteInteractiveWithMode(prompt, mode string) error {
+	return e.ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, "")
+}
+
+// ExecuteInteractiveWithSystemPrompt launches Claude CLI in interactive mode with an initial prompt and system prompt.
+// Session management is automatically handled by the Claude Code hook system.
+func (e *ExecutorImpl) ExecuteInteractiveWithSystemPrompt(prompt, systemPrompt string) error {
+	return e.ExecuteInteractiveWithModeAndSystemPrompt(prompt, "", systemPrompt)
+}
+
+// ExecuteInteractiveWithModeAndSystemPrompt launches Claude CLI in interactive mode with an initial prompt, permission mode, and system prompt.
+// Session management is automatically handled by the Claude Code hook system.
+func (e *ExecutorImpl) ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) error {
 	if err := e.validatePrompt(prompt); err != nil {
-		return fmt.Errorf("execute interactive: %w", err)
+		return fmt.Errorf("execute interactive with mode and system prompt: %w", err)
+	}
+
+	// Validate permission mode if provided
+	if mode != "" {
+		if err := validatePermissionMode(mode); err != nil {
+			return fmt.Errorf("execute interactive with mode and system prompt: %w", err)
+		}
+	}
+
+	// Set the permission mode and system prompt temporarily if provided
+	originalMode := e.config.PermissionMode
+	originalSystemPrompt := e.config.AppendSystemPrompt
+	if mode != "" {
+		e.config.PermissionMode = mode
+		defer func() { e.config.PermissionMode = originalMode }()
+	}
+	if systemPrompt != "" {
+		e.config.AppendSystemPrompt = systemPrompt
+		defer func() { e.config.AppendSystemPrompt = originalSystemPrompt }()
 	}
 
 	// Create command for interactive Claude shell with initial prompt
@@ -142,7 +212,7 @@ func (e *ExecutorImpl) ExecuteInteractive(prompt string) error {
 
 	// Run the command and wait for it to complete
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("execute interactive: failed to run Claude CLI: %w", err)
+		return fmt.Errorf("execute interactive with mode and system prompt: failed to run Claude CLI: %w", err)
 	}
 	return nil
 }
@@ -169,8 +239,29 @@ func (e *ExecutorImpl) ExecuteInteractiveContinue() error {
 // This combines the benefits of interactive mode with the ability to resume a specific
 // previous session, allowing users to continue a conversation interactively.
 func (e *ExecutorImpl) ExecuteInteractiveWithSession(sessionID string) error {
+	return e.ExecuteInteractiveWithSessionAndMode(sessionID, "")
+}
+
+// ExecuteInteractiveWithSessionAndMode launches Claude CLI in interactive mode with a specific session ID and permission mode.
+// This combines the benefits of interactive mode with the ability to resume a specific
+// previous session, allowing users to continue a conversation interactively.
+func (e *ExecutorImpl) ExecuteInteractiveWithSessionAndMode(sessionID, mode string) error {
 	if err := validateSessionID(sessionID); err != nil {
-		return fmt.Errorf("execute interactive with session: %w", err)
+		return fmt.Errorf("execute interactive with session and mode: %w", err)
+	}
+
+	// Validate permission mode if provided
+	if mode != "" {
+		if err := validatePermissionMode(mode); err != nil {
+			return fmt.Errorf("execute interactive with session and mode: %w", err)
+		}
+	}
+
+	// Set the permission mode temporarily if provided
+	originalMode := e.config.PermissionMode
+	if mode != "" {
+		e.config.PermissionMode = mode
+		defer func() { e.config.PermissionMode = originalMode }()
 	}
 
 	// Create command for interactive Claude shell with --resume flag
@@ -183,7 +274,7 @@ func (e *ExecutorImpl) ExecuteInteractiveWithSession(sessionID string) error {
 
 	// Run the command and wait for it to complete
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("execute interactive with session %s: failed to run Claude CLI: %w", sessionID, err)
+		return fmt.Errorf("execute interactive with session %s and mode %s: failed to run Claude CLI: %w", sessionID, mode, err)
 	}
 	return nil
 }
@@ -192,13 +283,34 @@ func (e *ExecutorImpl) ExecuteInteractiveWithSession(sessionID string) error {
 // Session management is automatically handled by the Claude Code hook system.
 // Returns dummy SessionInfo for backward compatibility.
 func (e *ExecutorImpl) ExecuteAndContinueInteractive(prompt string) (*SessionInfo, error) {
+	return e.ExecuteAndContinueInteractiveWithMode(prompt, "")
+}
+
+// ExecuteAndContinueInteractiveWithMode executes a prompt with mode and then continues in interactive mode.
+// Session management is automatically handled by the Claude Code hook system.
+// Returns dummy SessionInfo for backward compatibility.
+func (e *ExecutorImpl) ExecuteAndContinueInteractiveWithMode(prompt, mode string) (*SessionInfo, error) {
+	return e.ExecuteAndContinueInteractiveWithModeAndSystemPrompt(prompt, mode, "")
+}
+
+// ExecuteAndContinueInteractiveWithSystemPrompt executes a prompt with system prompt and then continues in interactive mode.
+// Session management is automatically handled by the Claude Code hook system.
+// Returns dummy SessionInfo for backward compatibility.
+func (e *ExecutorImpl) ExecuteAndContinueInteractiveWithSystemPrompt(prompt, systemPrompt string) (*SessionInfo, error) {
+	return e.ExecuteAndContinueInteractiveWithModeAndSystemPrompt(prompt, "", systemPrompt)
+}
+
+// ExecuteAndContinueInteractiveWithModeAndSystemPrompt executes a prompt with mode and system prompt and then continues in interactive mode.
+// Session management is automatically handled by the Claude Code hook system.
+// Returns dummy SessionInfo for backward compatibility.
+func (e *ExecutorImpl) ExecuteAndContinueInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) (*SessionInfo, error) {
 	if err := e.validatePrompt(prompt); err != nil {
-		return nil, fmt.Errorf("execute and continue interactive: %w", err)
+		return nil, fmt.Errorf("execute and continue interactive with mode and system prompt: %w", err)
 	}
 
-	// Execute in interactive mode - session management handled by hooks
-	if err := e.ExecuteInteractive(prompt); err != nil {
-		return nil, fmt.Errorf("execute and continue interactive: failed to start interactive mode: %w", err)
+	// Execute in interactive mode with mode and system prompt - session management handled by hooks
+	if err := e.ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt); err != nil {
+		return nil, fmt.Errorf("execute and continue interactive with mode and system prompt: failed to start interactive mode: %w", err)
 	}
 
 	// Return dummy SessionInfo for backward compatibility

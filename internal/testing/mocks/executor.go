@@ -54,6 +54,16 @@ func (m *Executor) ExecuteInteractive(prompt string) error {
 	return nil
 }
 
+// ExecuteInteractiveWithMode simulates interactive execution with a permission mode
+func (m *Executor) ExecuteInteractiveWithMode(prompt, mode string) error {
+	m.recordCall("ExecuteInteractiveWithMode", prompt, mode)
+
+	if m.ShouldFailInteractive {
+		return m.InteractiveResult
+	}
+	return nil
+}
+
 // ExecuteInteractiveContinue simulates continuing the most recent session
 func (m *Executor) ExecuteInteractiveContinue() error {
 	m.recordCall("ExecuteInteractiveContinue")
@@ -74,9 +84,69 @@ func (m *Executor) ExecuteInteractiveWithSession(sessionID string) error {
 	return nil
 }
 
+// ExecuteInteractiveWithSessionAndMode simulates interactive execution with a specific session and permission mode
+func (m *Executor) ExecuteInteractiveWithSessionAndMode(sessionID, mode string) error {
+	m.recordCall("ExecuteInteractiveWithSessionAndMode", sessionID, mode)
+
+	if m.ShouldFailInteractive {
+		return m.InteractiveResult
+	}
+	return nil
+}
+
 // ExecuteAndContinueInteractive simulates execution followed by interactive continuation
 func (m *Executor) ExecuteAndContinueInteractive(prompt string) (*claude.SessionInfo, error) {
 	m.recordCall("ExecuteAndContinueInteractive", prompt)
+
+	if m.ShouldFailTracking {
+		return nil, m.ExecuteError
+	}
+	return m.SessionResult, nil
+}
+
+// ExecuteAndContinueInteractiveWithMode simulates execution with mode followed by interactive continuation
+func (m *Executor) ExecuteAndContinueInteractiveWithMode(prompt, mode string) (*claude.SessionInfo, error) {
+	m.recordCall("ExecuteAndContinueInteractiveWithMode", prompt, mode)
+
+	if m.ShouldFailTracking {
+		return nil, m.ExecuteError
+	}
+	return m.SessionResult, nil
+}
+
+// ExecuteInteractiveWithSystemPrompt simulates interactive execution with a system prompt
+func (m *Executor) ExecuteInteractiveWithSystemPrompt(prompt, systemPrompt string) error {
+	m.recordCall("ExecuteInteractiveWithSystemPrompt", prompt, systemPrompt)
+
+	if m.ShouldFailInteractive {
+		return m.InteractiveResult
+	}
+	return nil
+}
+
+// ExecuteInteractiveWithModeAndSystemPrompt simulates interactive execution with permission mode and system prompt
+func (m *Executor) ExecuteInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) error {
+	m.recordCall("ExecuteInteractiveWithModeAndSystemPrompt", prompt, mode, systemPrompt)
+
+	if m.ShouldFailInteractive {
+		return m.InteractiveResult
+	}
+	return nil
+}
+
+// ExecuteAndContinueInteractiveWithSystemPrompt simulates execution with system prompt followed by interactive continuation
+func (m *Executor) ExecuteAndContinueInteractiveWithSystemPrompt(prompt, systemPrompt string) (*claude.SessionInfo, error) {
+	m.recordCall("ExecuteAndContinueInteractiveWithSystemPrompt", prompt, systemPrompt)
+
+	if m.ShouldFailTracking {
+		return nil, m.ExecuteError
+	}
+	return m.SessionResult, nil
+}
+
+// ExecuteAndContinueInteractiveWithModeAndSystemPrompt simulates execution with mode and system prompt followed by interactive continuation
+func (m *Executor) ExecuteAndContinueInteractiveWithModeAndSystemPrompt(prompt, mode, systemPrompt string) (*claude.SessionInfo, error) {
+	m.recordCall("ExecuteAndContinueInteractiveWithModeAndSystemPrompt", prompt, mode, systemPrompt)
 
 	if m.ShouldFailTracking {
 		return nil, m.ExecuteError
