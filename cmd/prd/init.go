@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
-	"github.com/ashigirl96/hail-mary/internal/hooks"
 	"github.com/ashigirl96/hail-mary/internal/kiro"
 	"github.com/ashigirl96/hail-mary/internal/prompt"
 	"github.com/ashigirl96/hail-mary/internal/session"
@@ -74,8 +73,8 @@ func init() {
 
 // initPRDWithHooks initializes PRD with hook-based session tracking
 func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, featureTitle string, featurePath string, specManager *kiro.SpecManager) error {
-	// Setup hook configuration
-	hookConfigPath, cleanup, err := hooks.SetupConfig(logger)
+	// Setup hook configuration with feature path
+	hookConfigPath, cleanup, err := claude.SetupHookConfigWithFeature(logger, featurePath)
 	if err != nil {
 		return fmt.Errorf("failed to setup hooks: %w", err)
 	}

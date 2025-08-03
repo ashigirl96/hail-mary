@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
-	"github.com/ashigirl96/hail-mary/internal/hooks"
 	"github.com/ashigirl96/hail-mary/internal/kiro"
 	"github.com/ashigirl96/hail-mary/internal/prompt"
 	"github.com/ashigirl96/hail-mary/internal/ui"
@@ -100,8 +99,11 @@ func getFeatureList(specManager *kiro.SpecManager) ([]string, error) {
 
 // resumePRDSession resumes a Claude session for PRD editing
 func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle string, sessionID string, specManager *kiro.SpecManager) error {
-	// Setup hook configuration
-	hookConfigPath, cleanup, err := hooks.SetupConfig(logger)
+	// Get feature path
+	featurePath := filepath.Join(".kiro", "spec", featureTitle)
+
+	// Setup hook configuration with feature path
+	hookConfigPath, cleanup, err := claude.SetupHookConfigWithFeature(logger, featurePath)
 	if err != nil {
 		return fmt.Errorf("failed to setup hooks: %w", err)
 	}

@@ -1,4 +1,4 @@
-package hooks
+package claude
 
 import (
 	"fmt"
@@ -9,17 +9,21 @@ import (
 	"github.com/ashigirl96/hail-mary/internal/settings"
 )
 
-// SetupConfig creates temporary hook configuration for hail-mary commands
+// SetupHookConfigWithFeature creates temporary hook configuration with feature path
 // Returns the path to the temporary config file and a cleanup function
-func SetupConfig(logger *slog.Logger) (string, func(), error) {
+func SetupHookConfigWithFeature(logger *slog.Logger, featurePath string) (string, func(), error) {
 	// Get executable path for hook command
 	execPath, err := os.Executable()
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	// Create hook configuration
-	hookCmd := fmt.Sprintf("HAIL_MARY_PARENT_PID=%d %s hook", os.Getpid(), execPath)
+	// Create hook configuration with feature path if provided
+	envVars := fmt.Sprintf("HAIL_MARY_PARENT_PID=%d", os.Getpid())
+	if featurePath != "" {
+		envVars = fmt.Sprintf("%s HAIL_MARY_FEATURE_PATH=%s", envVars, featurePath)
+	}
+	hookCmd := fmt.Sprintf("%s %s hook", envVars, execPath)
 
 	// Define our hooks
 	hailMaryHooks := map[string][]settings.HookMatcher{
