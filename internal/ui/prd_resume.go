@@ -34,6 +34,8 @@ type PRDResumeModel struct {
 	markdownLines        []string // Rendered markdown lines
 	markdownScrollOffset int      // Scroll position in markdown preview
 	markdownLoading      bool     // Loading state for markdown
+	// Features scroll fields
+	featureScrollOffset int // Scroll position in features list
 }
 
 // UserInput represents a user input in a Claude session
@@ -128,8 +130,11 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+d":
 			// Scroll markdown preview down
 			if m.activePane == 0 && len(m.markdownLines) > 0 {
-				paneHeight := m.height - 6
-				maxScroll := len(m.markdownLines) - paneHeight
+				// Calculate markdown section height (bottom 80% of left pane)
+				leftPaneHeight := m.height - 4 // -4 for header and footer
+				markdownSectionHeight := leftPaneHeight - (leftPaneHeight * 2 / 10)
+				contentHeight := markdownSectionHeight - 4 // Account for title, border, and padding
+				maxScroll := len(m.markdownLines) - contentHeight
 				if maxScroll > 0 && m.markdownScrollOffset < maxScroll {
 					m.markdownScrollOffset += 5 // Scroll down by 5 lines
 					if m.markdownScrollOffset > maxScroll {
@@ -146,6 +151,7 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.featureIndex++
 					m.sessionIndex = 0         // Reset session selection
 					m.markdownScrollOffset = 0 // Reset scroll
+					m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
 					return m, tea.Batch(
 						m.loadSessionsCmd(m.features[m.featureIndex]),
 						m.loadMarkdownCmd(m.features[m.featureIndex]),
@@ -166,6 +172,7 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.featureIndex--
 					m.sessionIndex = 0         // Reset session selection
 					m.markdownScrollOffset = 0 // Reset scroll
+					m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
 					return m, tea.Batch(
 						m.loadSessionsCmd(m.features[m.featureIndex]),
 						m.loadMarkdownCmd(m.features[m.featureIndex]),
@@ -215,8 +222,8 @@ func (m PRDResumeModel) View() string {
 	paneWidth := (m.width - 3) / 2 // -3 for borders and separator
 	paneHeight := m.height - 4     // -4 for header and footer
 
-	// Render left pane (markdown preview)
-	leftPane := m.renderMarkdownPane(paneWidth, paneHeight)
+	// Render left pane (features + markdown preview)
+	leftPane := m.renderLeftPane(paneWidth, paneHeight)
 
 	// Render right pane (sessions with user inputs)
 	rightPane := m.renderSessionsPane(paneWidth, paneHeight)
@@ -244,7 +251,7 @@ func (m PRDResumeModel) View() string {
 
 	footer := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("241")).
-		Render("j/k: navigate features • h/l: switch panes • ctrl+u/d: scroll markdown • enter: select • q: quit")
+		Render("j/k: navigate features • h/l: switch panes • ctrl+u/d: scroll preview (left pane) • enter: select • q: quit")
 
 	// Combine all parts
 	return lipgloss.JoinVertical(lipgloss.Left,
@@ -256,13 +263,143 @@ func (m PRDResumeModel) View() string {
 	)
 }
 
-// renderMarkdownPane renders the left pane with markdown preview
-func (m PRDResumeModel) renderMarkdownPane(width, height int) string {
+// renderLeftPane renders the left pane with features list (top) and markdown preview (bottom)
+func (m PRDResumeModel) renderLeftPane(width, height int) string {
+	// Calculate heights for top and bottom sections (2:8 ratio)
+	topHeight := height * 2 / 10
+	bottomHeight := height - topHeight
+
+	// Render features section (top) without bottom border
+	featuresSection := m.renderFeaturesSection(width, topHeight, false)
+
+	// Render markdown preview section (bottom) without top border
+	markdownSection := m.renderMarkdownSection(width, bottomHeight, false)
+
+	// Create a separator line
+	separator := lipgloss.NewStyle().
+		Width(width - 2). // -2 for border padding
+		Foreground(lipgloss.Color(m.getPaneBorderColor(0))).
+		Render(strings.Repeat("─", width-2))
+
+	// Create the combined content with a unified border
+	combinedContent := lipgloss.JoinVertical(lipgloss.Left, featuresSection, separator, markdownSection)
+
+	// Apply unified border
 	paneStyle := lipgloss.NewStyle().
 		Width(width).
 		Height(height).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color(m.getPaneBorderColor(0)))
+
+	return paneStyle.Render(combinedContent)
+}
+
+// renderFeaturesSection renders the features list section
+func (m PRDResumeModel) renderFeaturesSection(width, topHeight int, withBorder bool) string {
+	var paneStyle lipgloss.Style
+	if withBorder {
+		paneStyle = lipgloss.NewStyle().
+			Width(width).
+			Height(topHeight).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color(m.getPaneBorderColor(0)))
+	} else {
+		paneStyle = lipgloss.NewStyle().
+			Width(width - 2).     // -2 to account for parent border
+			Height(topHeight - 2) // -2 to account for parent border
+	}
+
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("205")).
+		Render("Features")
+
+	var items []string
+	items = append(items, title)
+	items = append(items, "")
+
+	// Render feature list with scrolling
+	availableHeight := topHeight - 4 // Account for title and padding
+	if !withBorder {
+		availableHeight = topHeight - 2 // Less padding when no border
+	}
+	maxItems := availableHeight
+
+	// Calculate visible range based on scroll offset
+	startIdx := m.featureScrollOffset
+	endIdx := startIdx + maxItems
+	if endIdx > len(m.features) {
+		endIdx = len(m.features)
+	}
+
+	// Display visible features
+	for i := startIdx; i < endIdx; i++ {
+		feature := m.features[i]
+		style := lipgloss.NewStyle()
+		prefix := "  "
+
+		if i == m.featureIndex {
+			prefix = "> "
+			if m.activePane == 0 {
+				style = style.Bold(true).Foreground(lipgloss.Color("205"))
+			} else {
+				style = style.Foreground(lipgloss.Color("250"))
+			}
+		}
+
+		// Convert kebab-case back to readable format
+		displayName := strings.ReplaceAll(feature, "-", " ")
+		// Capitalize first letter of each word
+		words := strings.Fields(displayName)
+		for j, word := range words {
+			if len(word) > 0 {
+				words[j] = strings.ToUpper(word[:1]) + word[1:]
+			}
+		}
+		displayName = strings.Join(words, " ")
+
+		items = append(items, style.Render(prefix+displayName))
+	}
+
+	// Add scroll indicator if content is scrollable
+	if len(m.features) > maxItems {
+		scrollInfo := fmt.Sprintf("[%d-%d/%d]",
+			startIdx+1,
+			endIdx,
+			len(m.features))
+		indicator := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")).
+			Render(scrollInfo)
+
+		// Replace the title line to include scroll indicator
+		title := lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("205")).
+			Render("Features")
+		items[0] = lipgloss.JoinHorizontal(lipgloss.Left,
+			title,
+			" ",
+			indicator)
+	}
+
+	content := strings.Join(items, "\n")
+	return paneStyle.Render(content)
+}
+
+// renderMarkdownSection renders the markdown preview section
+func (m PRDResumeModel) renderMarkdownSection(width, bottomHeight int, withBorder bool) string {
+	var paneStyle lipgloss.Style
+	if withBorder {
+		paneStyle = lipgloss.NewStyle().
+			Width(width).
+			Height(bottomHeight).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color(m.getPaneBorderColor(0)))
+	} else {
+		paneStyle = lipgloss.NewStyle().
+			Width(width - 2).        // -2 to account for parent border
+			Height(bottomHeight - 2) // -2 to account for parent border
+	}
 
 	title := lipgloss.NewStyle().
 		Bold(true).
@@ -285,7 +422,10 @@ func (m PRDResumeModel) renderMarkdownPane(width, height int) string {
 			Render("Create one to see a preview here."))
 	} else {
 		// Render markdown with scrolling
-		contentHeight := height - 4 // Account for title, border, and padding
+		contentHeight := bottomHeight - 4 // Account for title, border, and padding
+		if !withBorder {
+			contentHeight = bottomHeight - 2 // Less padding when no border
+		}
 
 		startLine := m.markdownScrollOffset
 		endLine := startLine + contentHeight
@@ -413,6 +553,42 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 
 	content := strings.Join(items, "\n")
 	return paneStyle.Render(content)
+}
+
+// adjustFeatureScroll ensures the selected feature is visible in the features section
+func (m *PRDResumeModel) adjustFeatureScroll() {
+	// Calculate available height for features section (same logic as renderFeaturesSection)
+	leftPaneHeight := m.height - 4 // -4 for header and footer
+	topHeight := leftPaneHeight * 2 / 10
+	availableHeight := topHeight - 4 // Account for title and padding
+	maxItems := availableHeight      // This is the number of visible items
+
+	if maxItems <= 0 {
+		return // Not enough space to show items
+	}
+
+	// Adjust scroll offset to keep selected feature visible
+	if m.featureIndex < m.featureScrollOffset {
+		// Selected item is above visible area, scroll up
+		m.featureScrollOffset = m.featureIndex
+	} else if m.featureIndex >= m.featureScrollOffset+maxItems {
+		// Selected item is below visible area, scroll down
+		m.featureScrollOffset = m.featureIndex - maxItems + 1
+	}
+
+	// Ensure scroll offset doesn't go negative
+	if m.featureScrollOffset < 0 {
+		m.featureScrollOffset = 0
+	}
+
+	// Ensure scroll offset doesn't exceed reasonable bounds
+	maxScroll := len(m.features) - maxItems
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if m.featureScrollOffset > maxScroll {
+		m.featureScrollOffset = maxScroll
+	}
 }
 
 // getPaneBorderColor returns the border color for a pane
