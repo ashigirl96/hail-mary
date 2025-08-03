@@ -351,7 +351,7 @@ func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, e
 }
 
 // parseTranscriptFile parses a Claude transcript file using the session state
-func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.State) (*SessionInfo, error) {
+func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionState) (*SessionInfo, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err

@@ -27,7 +27,7 @@ func TestSessionStateManager_SaveState_CreatesDirectory(t *testing.T) {
 
 	manager := NewSessionStateManager(stateDir)
 
-	state := &State{
+	state := &SessionState{
 		SessionID:      "test-session-001",
 		StartedAt:      time.Now(),
 		LastUpdated:    time.Now(),
@@ -52,7 +52,7 @@ func TestSessionStateManager_SaveAndLoadState_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
-	originalState := &State{
+	originalState := &SessionState{
 		SessionID:      "test-session-002",
 		StartedAt:      time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
 		LastUpdated:    time.Date(2023, 1, 1, 12, 30, 0, 0, time.UTC),
@@ -109,7 +109,7 @@ func TestSessionStateManager_DeleteState_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
-	state := &State{
+	state := &SessionState{
 		SessionID:      "test-session-003",
 		StartedAt:      time.Now(),
 		LastUpdated:    time.Now(),
@@ -159,7 +159,7 @@ func TestSessionStateManager_ListStates_WithStates(t *testing.T) {
 	manager := NewSessionStateManager(tempDir)
 
 	// Create test states
-	states := []*State{
+	states := []*SessionState{
 		{
 			SessionID:      "session-001",
 			StartedAt:      time.Now(),
@@ -205,7 +205,7 @@ func TestSessionStateManager_ListStates_IgnoresNonJSONFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create valid JSON file
-	validState := &State{
+	validState := &SessionState{
 		SessionID:      "valid-session",
 		StartedAt:      time.Now(),
 		LastUpdated:    time.Now(),
@@ -253,7 +253,7 @@ func TestSessionStateManager_LoadSessions(t *testing.T) {
 			name: "Load from existing sessions.json",
 			setupFunc: func(manager *SessionStateManager) error {
 				// Create sessions.json directly
-				sessions := SessionsState{
+				sessions := FeatureSessions{
 					{
 						SessionID:      "session-1",
 						StartedAt:      time.Now(),
@@ -279,7 +279,7 @@ func TestSessionStateManager_LoadSessions(t *testing.T) {
 			name: "Load from individual files (migration)",
 			setupFunc: func(manager *SessionStateManager) error {
 				// Create individual session files
-				states := []*State{
+				states := []*SessionState{
 					{
 						SessionID:      "session-a",
 						StartedAt:      time.Now(),
@@ -347,7 +347,7 @@ func TestSessionStateManager_SaveSessions(t *testing.T) {
 	featureDir := filepath.Join(tempDir, "feature")
 	manager := NewFeatureSessionStateManager(featureDir)
 
-	sessions := SessionsState{
+	sessions := FeatureSessions{
 		{
 			SessionID:      "session-1",
 			StartedAt:      time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
@@ -374,7 +374,7 @@ func TestSessionStateManager_SaveSessions(t *testing.T) {
 	require.Len(t, loadedSessions, 2, "Should load 2 sessions")
 
 	// Verify session data
-	sessionMap := make(map[string]*State)
+	sessionMap := make(map[string]*SessionState)
 	for _, session := range loadedSessions {
 		sessionMap[session.SessionID] = session
 	}
@@ -394,7 +394,7 @@ func TestSessionStateManager_AddOrUpdateSession(t *testing.T) {
 		featureDir := filepath.Join(tempDir, "feature")
 		manager := NewFeatureSessionStateManager(featureDir)
 
-		state := &State{
+		state := &SessionState{
 			SessionID:      "new-session",
 			StartedAt:      time.Now(),
 			LastUpdated:    time.Now(),
@@ -418,7 +418,7 @@ func TestSessionStateManager_AddOrUpdateSession(t *testing.T) {
 		manager := NewFeatureSessionStateManager(featureDir)
 
 		// Add initial session
-		originalState := &State{
+		originalState := &SessionState{
 			SessionID:      "existing-session",
 			StartedAt:      time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
 			LastUpdated:    time.Date(2023, 1, 1, 12, 30, 0, 0, time.UTC),
@@ -429,7 +429,7 @@ func TestSessionStateManager_AddOrUpdateSession(t *testing.T) {
 		require.NoError(t, err)
 
 		// Update session
-		updatedState := &State{
+		updatedState := &SessionState{
 			SessionID:      "existing-session",
 			StartedAt:      time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
 			LastUpdated:    time.Date(2023, 1, 1, 13, 0, 0, 0, time.UTC),
@@ -453,7 +453,7 @@ func TestSessionStateManager_AddOrUpdateSession(t *testing.T) {
 		manager := NewFeatureSessionStateManager(featureDir)
 
 		// Add first session
-		state1 := &State{
+		state1 := &SessionState{
 			SessionID:      "session-1",
 			StartedAt:      time.Now(),
 			LastUpdated:    time.Now(),
@@ -464,7 +464,7 @@ func TestSessionStateManager_AddOrUpdateSession(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add second session
-		state2 := &State{
+		state2 := &SessionState{
 			SessionID:      "session-2",
 			StartedAt:      time.Now(),
 			LastUpdated:    time.Now(),
@@ -499,7 +499,7 @@ func TestSessionStateManager_ConcurrentAccess(t *testing.T) {
 	// Save states concurrently
 	for i := 0; i < numGoroutines; i++ {
 		go func(id int) {
-			state := &State{
+			state := &SessionState{
 				SessionID:      fmt.Sprintf("concurrent-session-%d", id),
 				StartedAt:      time.Now(),
 				LastUpdated:    time.Now(),

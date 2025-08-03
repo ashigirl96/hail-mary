@@ -106,7 +106,7 @@ func handleSessionStart(event *schemas.SessionStartEvent, parentPID string, logg
 	}
 
 	// Create session state
-	state := &claude.State{
+	state := &claude.SessionState{
 		SessionID:      event.SessionID,
 		StartedAt:      time.Now(),
 		LastUpdated:    time.Now(),

@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// State represents the state of a Claude session
-type State struct {
+// SessionState represents the state of a Claude session
+type SessionState struct {
 	SessionID      string    `json:"session_id"`
 	StartedAt      time.Time `json:"started_at"`
 	LastUpdated    time.Time `json:"last_updated"`
@@ -19,11 +19,11 @@ type State struct {
 	ProjectDir     string    `json:"project_dir"`
 }
 
-// SessionsState represents a collection of sessions for a feature
-type SessionsState []*State
+// FeatureSessions represents a collection of sessions for a feature
+type FeatureSessions []*SessionState
 
 // FindBySessionID finds a session by its ID
-func (ss SessionsState) FindBySessionID(sessionID string) (*State, int) {
+func (ss FeatureSessions) FindBySessionID(sessionID string) (*SessionState, int) {
 	for i, state := range ss {
 		if state.SessionID == sessionID {
 			return state, i
@@ -33,14 +33,14 @@ func (ss SessionsState) FindBySessionID(sessionID string) (*State, int) {
 }
 
 // AddOrUpdate adds a new session or updates an existing one
-func (ss *SessionsState) AddOrUpdate(newState *State) {
+func (ss *FeatureSessions) AddOrUpdate(newState *SessionState) {
 	existing, index := ss.FindBySessionID(newState.SessionID)
 	if existing != nil {
 		// Update existing session
 		(*ss)[index] = newState
 	} else {
 		// Add new session at the beginning
-		*ss = append([]*State{newState}, *ss...)
+		*ss = append([]*SessionState{newState}, *ss...)
 	}
 }
 
@@ -66,7 +66,7 @@ func NewFeatureSessionStateManager(featureDir string) *SessionStateManager {
 }
 
 // SaveState saves a session state to disk
-func (sm *SessionStateManager) SaveState(state *State) error {
+func (sm *SessionStateManager) SaveState(state *SessionState) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -91,7 +91,7 @@ func (sm *SessionStateManager) SaveState(state *State) error {
 }
 
 // LoadState loads a session state from disk
-func (sm *SessionStateManager) LoadState(sessionID string) (*State, error) {
+func (sm *SessionStateManager) LoadState(sessionID string) (*SessionState, error) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
@@ -102,7 +102,7 @@ func (sm *SessionStateManager) LoadState(sessionID string) (*State, error) {
 		return nil, fmt.Errorf("failed to read state file: %w", err)
 	}
 
-	var state State
+	var state SessionState
 	if err := json.Unmarshal(data, &state); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal state: %w", err)
 	}
@@ -125,19 +125,19 @@ func (sm *SessionStateManager) DeleteState(sessionID string) error {
 }
 
 // ListStates returns all session states in the directory
-func (sm *SessionStateManager) ListStates() ([]*State, error) {
+func (sm *SessionStateManager) ListStates() ([]*SessionState, error) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
 	entries, err := os.ReadDir(sm.stateDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []*State{}, nil
+			return []*SessionState{}, nil
 		}
 		return nil, fmt.Errorf("failed to read state directory: %w", err)
 	}
 
-	var states []*State
+	var states []*SessionState
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
@@ -157,7 +157,7 @@ func (sm *SessionStateManager) ListStates() ([]*State, error) {
 }
 
 // loadStateUnsafe loads state without acquiring mutex (for internal use when already locked)
-func (sm *SessionStateManager) loadStateUnsafe(sessionID string) (*State, error) {
+func (sm *SessionStateManager) loadStateUnsafe(sessionID string) (*SessionState, error) {
 	filePath := filepath.Join(sm.stateDir, sessionID+".json")
 
 	data, err := os.ReadFile(filePath)
@@ -165,7 +165,7 @@ func (sm *SessionStateManager) loadStateUnsafe(sessionID string) (*State, error)
 		return nil, fmt.Errorf("failed to read state file: %w", err)
 	}
 
-	var state State
+	var state SessionState
 	if err := json.Unmarshal(data, &state); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal state: %w", err)
 	}
@@ -174,7 +174,7 @@ func (sm *SessionStateManager) loadStateUnsafe(sessionID string) (*State, error)
 }
 
 // LoadSessions loads all sessions from a sessions.json file
-func (sm *SessionStateManager) LoadSessions() (SessionsState, error) {
+func (sm *SessionStateManager) LoadSessions() (FeatureSessions, error) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
@@ -190,7 +190,7 @@ func (sm *SessionStateManager) LoadSessions() (SessionsState, error) {
 		return nil, fmt.Errorf("failed to read sessions file: %w", err)
 	}
 
-	var sessions SessionsState
+	var sessions FeatureSessions
 	if err := json.Unmarshal(data, &sessions); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal sessions: %w", err)
 	}
@@ -199,7 +199,7 @@ func (sm *SessionStateManager) LoadSessions() (SessionsState, error) {
 }
 
 // SaveSessions saves all sessions to a sessions.json file
-func (sm *SessionStateManager) SaveSessions(sessions SessionsState) error {
+func (sm *SessionStateManager) SaveSessions(sessions FeatureSessions) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -234,7 +234,7 @@ func (sm *SessionStateManager) SaveSessions(sessions SessionsState) error {
 }
 
 // AddOrUpdateSession adds or updates a session in the sessions.json file
-func (sm *SessionStateManager) AddOrUpdateSession(state *State) error {
+func (sm *SessionStateManager) AddOrUpdateSession(state *SessionState) error {
 	// Load existing sessions
 	sessions, err := sm.LoadSessions()
 	if err != nil {
@@ -243,7 +243,7 @@ func (sm *SessionStateManager) AddOrUpdateSession(state *State) error {
 			return fmt.Errorf("failed to load sessions: %w", err)
 		}
 		// Initialize empty sessions if file doesn't exist
-		sessions = SessionsState{}
+		sessions = FeatureSessions{}
 	}
 
 	// Add or update the session
@@ -255,17 +255,17 @@ func (sm *SessionStateManager) AddOrUpdateSession(state *State) error {
 
 // migrateFromIndividualFilesUnsafe migrates from individual JSON files to sessions.json
 // This is the unsafe version that doesn't acquire locks (for internal use when already locked)
-func (sm *SessionStateManager) migrateFromIndividualFilesUnsafe() (SessionsState, error) {
+func (sm *SessionStateManager) migrateFromIndividualFilesUnsafe() (FeatureSessions, error) {
 	// List all individual session files
 	entries, err := os.ReadDir(sm.stateDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return SessionsState{}, nil
+			return FeatureSessions{}, nil
 		}
 		return nil, fmt.Errorf("failed to read state directory: %w", err)
 	}
 
-	var states []*State
+	var states []*SessionState
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
@@ -281,8 +281,8 @@ func (sm *SessionStateManager) migrateFromIndividualFilesUnsafe() (SessionsState
 		states = append(states, state)
 	}
 
-	// Convert to SessionsState
-	sessions := SessionsState(states)
+	// Convert to FeatureSessions
+	sessions := FeatureSessions(states)
 
 	// Note: Caller should handle saving to sessions.json if needed
 	// since this function is called from LoadSessions which already holds read lock
