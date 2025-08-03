@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ashigirl96/hail-mary/internal/hooks"
+	"github.com/ashigirl96/hail-mary/internal/schemas"
 	"github.com/ashigirl96/hail-mary/internal/session"
 )
 
@@ -48,11 +48,18 @@ func runHook(cmd *cobra.Command, args []string) error {
 
 	logger.Debug("Hook received input", "size", len(input))
 
-	// Parse base event to determine type
-	var baseEvent hooks.BaseHookEvent
-	if err := json.Unmarshal(input, &baseEvent); err != nil {
+	// Parse and validate the hook event
+	event, err := schemas.ParseHookEvent(input)
+	if err != nil {
 		logger.Error("Failed to parse hook event", "error", err)
 		return fmt.Errorf("failed to parse hook event: %w", err)
+	}
+
+	// Get base event info for logging
+	baseEvent := schemas.GetBaseHookEvent(event)
+	if baseEvent == nil {
+		logger.Error("Failed to get base event from parsed event")
+		return fmt.Errorf("failed to get base event from parsed event")
 	}
 
 	logger.Debug("Processing hook event",
@@ -68,19 +75,19 @@ func runHook(cmd *cobra.Command, args []string) error {
 	// Handle based on event type
 	switch baseEvent.HookEventName {
 	case "SessionStart":
-		return handleSessionStart(input, parentPID, logger)
+		return handleSessionStart(event.(*schemas.SessionStartEvent), parentPID, logger)
 
 	case "UserPromptSubmit":
-		return handleUserPromptSubmit(input, parentPID, logger)
+		return handleUserPromptSubmit(event.(*schemas.UserPromptSubmitEvent), parentPID, logger)
 
 	case "PreToolUse":
-		return handlePreToolUse(input, logger)
+		return handlePreToolUse(event.(*schemas.PreToolUseEvent), logger)
 
 	case "PostToolUse":
-		return handlePostToolUse(input, logger)
+		return handlePostToolUse(event.(*schemas.PostToolUseEvent), logger)
 
 	case "Stop":
-		return handleStop(input, parentPID, logger)
+		return handleStop(event.(*schemas.StopEvent), parentPID, logger)
 
 	default:
 		logger.Debug("Unhandled hook event type", "type", baseEvent.HookEventName)
@@ -89,15 +96,7 @@ func runHook(cmd *cobra.Command, args []string) error {
 	}
 }
 
-func handleSessionStart(input []byte, parentPID string, logger *slog.Logger) error {
-	var event hooks.SessionStartEvent
-	if err := json.Unmarshal(input, &event); err != nil {
-		return fmt.Errorf("failed to parse SessionStart event: %w", err)
-	}
-
-	if err := hooks.ValidateHookEvent(event); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
+func handleSessionStart(event *schemas.SessionStartEvent, parentPID string, logger *slog.Logger) error {
 
 	// If we have a parent PID, write session state
 	if parentPID != "" {
@@ -128,7 +127,7 @@ func handleSessionStart(input []byte, parentPID string, logger *slog.Logger) err
 
 	// Optionally add context to the session
 	if event.Source == "startup" {
-		output := hooks.HookOutput{
+		output := schemas.HookOutput{
 			HookSpecificOutput: map[string]interface{}{
 				"hookEventName":     "SessionStart",
 				"additionalContext": fmt.Sprintf("Hail Mary session tracking enabled (PID: %s)", parentPID),
@@ -141,15 +140,7 @@ func handleSessionStart(input []byte, parentPID string, logger *slog.Logger) err
 	return nil
 }
 
-func handleUserPromptSubmit(input []byte, parentPID string, logger *slog.Logger) error {
-	var event hooks.UserPromptSubmitEvent
-	if err := json.Unmarshal(input, &event); err != nil {
-		return fmt.Errorf("failed to parse UserPromptSubmit event: %w", err)
-	}
-
-	if err := hooks.ValidateHookEvent(event); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
+func handleUserPromptSubmit(event *schemas.UserPromptSubmitEvent, parentPID string, logger *slog.Logger) error {
 
 	// Update session timestamp if we're tracking
 	if parentPID != "" {
@@ -159,7 +150,7 @@ func handleUserPromptSubmit(input []byte, parentPID string, logger *slog.Logger)
 				_ = sm.UpdateSession(parentPID)
 
 				// Add session context
-				output := hooks.HookOutput{
+				output := schemas.HookOutput{
 					HookSpecificOutput: map[string]interface{}{
 						"hookEventName": "UserPromptSubmit",
 						"additionalContext": fmt.Sprintf("[Session: %s, Started: %s]",
@@ -175,15 +166,7 @@ func handleUserPromptSubmit(input []byte, parentPID string, logger *slog.Logger)
 	return nil
 }
 
-func handlePreToolUse(input []byte, logger *slog.Logger) error {
-	var event hooks.PreToolUseEvent
-	if err := json.Unmarshal(input, &event); err != nil {
-		return fmt.Errorf("failed to parse PreToolUse event: %w", err)
-	}
-
-	if err := hooks.ValidateHookEvent(event); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
+func handlePreToolUse(event *schemas.PreToolUseEvent, logger *slog.Logger) error {
 
 	logger.Debug("PreToolUse event",
 		"tool", event.ToolName,
@@ -194,15 +177,7 @@ func handlePreToolUse(input []byte, logger *slog.Logger) error {
 	return nil
 }
 
-func handlePostToolUse(input []byte, logger *slog.Logger) error {
-	var event hooks.PostToolUseEvent
-	if err := json.Unmarshal(input, &event); err != nil {
-		return fmt.Errorf("failed to parse PostToolUse event: %w", err)
-	}
-
-	if err := hooks.ValidateHookEvent(event); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
+func handlePostToolUse(event *schemas.PostToolUseEvent, logger *slog.Logger) error {
 
 	logger.Debug("PostToolUse event",
 		"tool", event.ToolName,
@@ -212,15 +187,7 @@ func handlePostToolUse(input []byte, logger *slog.Logger) error {
 	return nil
 }
 
-func handleStop(input []byte, parentPID string, logger *slog.Logger) error {
-	var event hooks.StopEvent
-	if err := json.Unmarshal(input, &event); err != nil {
-		return fmt.Errorf("failed to parse Stop event: %w", err)
-	}
-
-	if err := hooks.ValidateHookEvent(event); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
-	}
+func handleStop(event *schemas.StopEvent, parentPID string, logger *slog.Logger) error {
 
 	logger.Debug("Stop event",
 		"session_id", event.SessionID,
