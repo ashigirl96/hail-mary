@@ -331,3 +331,138 @@ func TestStateManager_ConcurrentAccess(t *testing.T) {
 	require.NoError(t, err, "Final load should succeed")
 	assert.Equal(t, "concurrent-session", loadedState.SessionID)
 }
+
+// Tests for SessionsState type
+
+func TestSessionsState_FindBySessionID(t *testing.T) {
+	// Arrange
+	sessions := SessionsState{
+		{SessionID: "session-1", StartedAt: time.Now()},
+		{SessionID: "session-2", StartedAt: time.Now()},
+		{SessionID: "session-3", StartedAt: time.Now()},
+	}
+
+	// Test cases
+	tests := []struct {
+		name          string
+		sessionID     string
+		expectedFound bool
+		expectedIndex int
+	}{
+		{
+			name:          "find existing session",
+			sessionID:     "session-2",
+			expectedFound: true,
+			expectedIndex: 1,
+		},
+		{
+			name:          "find first session",
+			sessionID:     "session-1",
+			expectedFound: true,
+			expectedIndex: 0,
+		},
+		{
+			name:          "find last session",
+			sessionID:     "session-3",
+			expectedFound: true,
+			expectedIndex: 2,
+		},
+		{
+			name:          "session not found",
+			sessionID:     "non-existent",
+			expectedFound: false,
+			expectedIndex: -1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Act
+			state, index := sessions.FindBySessionID(tt.sessionID)
+
+			// Assert
+			if tt.expectedFound {
+				require.NotNil(t, state, "State should be found")
+				assert.Equal(t, tt.sessionID, state.SessionID)
+				assert.Equal(t, tt.expectedIndex, index)
+			} else {
+				assert.Nil(t, state, "State should not be found")
+				assert.Equal(t, -1, index)
+			}
+		})
+	}
+}
+
+func TestSessionsState_AddOrUpdate(t *testing.T) {
+	// Test adding new sessions
+	t.Run("add new sessions", func(t *testing.T) {
+		// Arrange
+		sessions := SessionsState{}
+
+		session1 := &State{
+			SessionID:   "new-session-1",
+			StartedAt:   time.Now(),
+			LastUpdated: time.Now(),
+		}
+
+		session2 := &State{
+			SessionID:   "new-session-2",
+			StartedAt:   time.Now(),
+			LastUpdated: time.Now(),
+		}
+
+		// Act
+		sessions.AddOrUpdate(session1)
+		sessions.AddOrUpdate(session2)
+
+		// Assert
+		require.Len(t, sessions, 2, "Should have 2 sessions")
+		// New sessions are added at the beginning
+		assert.Equal(t, "new-session-2", sessions[0].SessionID)
+		assert.Equal(t, "new-session-1", sessions[1].SessionID)
+	})
+
+	// Test updating existing session
+	t.Run("update existing session", func(t *testing.T) {
+		// Arrange
+		originalTime := time.Now().Add(-1 * time.Hour)
+		sessions := SessionsState{
+			{
+				SessionID:      "update-me",
+				StartedAt:      originalTime,
+				LastUpdated:    originalTime,
+				TranscriptPath: "/old/path",
+			},
+			{
+				SessionID:   "keep-me",
+				StartedAt:   originalTime,
+				LastUpdated: originalTime,
+			},
+		}
+
+		updatedSession := &State{
+			SessionID:      "update-me",
+			StartedAt:      originalTime,
+			LastUpdated:    time.Now(),
+			TranscriptPath: "/new/path",
+		}
+
+		// Act
+		sessions.AddOrUpdate(updatedSession)
+
+		// Assert
+		require.Len(t, sessions, 2, "Should still have 2 sessions")
+
+		// Find the updated session
+		updated, index := sessions.FindBySessionID("update-me")
+		require.NotNil(t, updated)
+		assert.Equal(t, 0, index, "Updated session should remain at same position")
+		assert.Equal(t, "/new/path", updated.TranscriptPath)
+		assert.True(t, updated.LastUpdated.After(originalTime))
+
+		// Verify other session unchanged
+		other, _ := sessions.FindBySessionID("keep-me")
+		require.NotNil(t, other)
+		assert.True(t, other.LastUpdated.Equal(originalTime))
+	})
+}
