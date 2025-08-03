@@ -123,6 +123,24 @@ func handleSessionStart(event *schemas.SessionStartEvent, parentPID string, logg
 			"session_id", event.SessionID,
 			"parent_pid", parentPID,
 			"source", event.Source)
+
+		// Also save to feature sessions.json if feature path is provided
+		featurePath := os.Getenv("HAIL_MARY_FEATURE_PATH")
+		if featurePath != "" {
+			featureManager := session.NewFeatureStateManager(featurePath)
+			if err := featureManager.AddOrUpdateSession(state); err != nil {
+				logger.Error("Failed to save session to feature",
+					"error", err,
+					"feature_path", featurePath,
+					"session_id", event.SessionID)
+				// Don't return error - this is non-critical
+			} else {
+				logger.Info("Session saved to feature sessions.json",
+					"session_id", event.SessionID,
+					"feature_path", featurePath,
+					"source", event.Source)
+			}
+		}
 	}
 
 	// Optionally add context to the session

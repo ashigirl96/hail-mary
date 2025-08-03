@@ -321,15 +321,15 @@ func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, e
 	featureDir := filepath.Join(".kiro", "spec", feature)
 	featureManager := session.NewFeatureStateManager(featureDir)
 
-	// List all session states in the feature directory
-	states, err := featureManager.ListStates()
+	// Load all sessions from sessions.json
+	sessionsState, err := featureManager.LoadSessions()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list session states: %w", err)
+		return nil, fmt.Errorf("failed to load sessions: %w", err)
 	}
 
 	var sessions []SessionInfo
 
-	for _, state := range states {
+	for _, state := range sessionsState {
 		// Parse the transcript file to get session details
 		sessionInfo, err := m.parseTranscriptFile(state.TranscriptPath, state)
 		if err != nil {

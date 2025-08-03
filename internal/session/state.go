@@ -209,6 +209,31 @@ func (sm *Manager) WriteSessionToFeature(featureDir string, state *State) error 
 	// Create feature state manager
 	featureManager := NewFeatureStateManager(featureDir)
 
-	// Save state using the feature manager
-	return featureManager.SaveState(state)
+	// Use the new AddOrUpdateSession method to save to sessions.json
+	return featureManager.AddOrUpdateSession(state)
+}
+
+// SessionsState represents a collection of sessions for a feature
+type SessionsState []*State
+
+// FindBySessionID finds a session by its ID
+func (ss SessionsState) FindBySessionID(sessionID string) (*State, int) {
+	for i, state := range ss {
+		if state.SessionID == sessionID {
+			return state, i
+		}
+	}
+	return nil, -1
+}
+
+// AddOrUpdate adds a new session or updates an existing one
+func (ss *SessionsState) AddOrUpdate(newState *State) {
+	existing, index := ss.FindBySessionID(newState.SessionID)
+	if existing != nil {
+		// Update existing session
+		(*ss)[index] = newState
+	} else {
+		// Add new session at the beginning
+		*ss = append([]*State{newState}, *ss...)
+	}
 }
