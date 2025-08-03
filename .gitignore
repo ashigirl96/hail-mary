@@ -43,4 +43,4 @@ experimental/
 bin/
 .claude/
 tmp/
-
+.kiro/
