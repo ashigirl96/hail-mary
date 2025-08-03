@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/ashigirl96/hail-mary/internal/schemas"
+	"github.com/ashigirl96/hail-mary/internal/claude/schemas"
 )
 
 func main() {

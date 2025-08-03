@@ -10,7 +10,6 @@ import (
 	"github.com/ashigirl96/hail-mary/internal/claude"
 	"github.com/ashigirl96/hail-mary/internal/kiro"
 	"github.com/ashigirl96/hail-mary/internal/prompt"
-	"github.com/ashigirl96/hail-mary/internal/session"
 	"github.com/ashigirl96/hail-mary/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -92,7 +91,7 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, fea
 	initialPrompt := ``
 
 	// Start monitoring for session
-	sessionChan := make(chan *session.State, 1)
+	sessionChan := make(chan *claude.State, 1)
 	errChan := make(chan error, 1)
 
 	// Display merged settings content
@@ -190,11 +189,11 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, fea
 }
 
 // monitorSessionEstablishment monitors for session file creation
-func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessionChan chan<- *session.State, featurePath string) {
+func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessionChan chan<- *claude.State, featurePath string) {
 	processID := fmt.Sprintf("%d", os.Getpid())
 	fmt.Printf("Monitoring for session establishment (PID: %s)...\n", processID)
 
-	sm, err := session.NewManager()
+	sm, err := claude.NewManager()
 	if err != nil {
 		logger.Error("Failed to create session manager", "error", err)
 		return

@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ashigirl96/hail-mary/internal/schemas"
-	"github.com/ashigirl96/hail-mary/internal/session"
+	"github.com/ashigirl96/hail-mary/internal/claude"
+	"github.com/ashigirl96/hail-mary/internal/claude/schemas"
 )
 
 var Cmd = &cobra.Command{
@@ -100,13 +100,13 @@ func handleSessionStart(event *schemas.SessionStartEvent, parentPID string, logg
 
 	// If we have a parent PID, write session state
 	if parentPID != "" {
-		sm, err := session.NewManager()
+		sm, err := claude.NewManager()
 		if err != nil {
 			logger.Error("Failed to create session manager", "error", err)
 			return err
 		}
 
-		state := &session.State{
+		state := &claude.State{
 			SessionID:      event.SessionID,
 			StartedAt:      time.Now(),
 			LastUpdated:    time.Now(),
@@ -127,7 +127,7 @@ func handleSessionStart(event *schemas.SessionStartEvent, parentPID string, logg
 		// Also save to feature sessions.json if feature path is provided
 		featurePath := os.Getenv("HAIL_MARY_FEATURE_PATH")
 		if featurePath != "" {
-			featureManager := session.NewFeatureStateManager(featurePath)
+			featureManager := claude.NewFeatureStateManager(featurePath)
 			if err := featureManager.AddOrUpdateSession(state); err != nil {
 				logger.Error("Failed to save session to feature",
 					"error", err,
@@ -162,7 +162,7 @@ func handleUserPromptSubmit(event *schemas.UserPromptSubmitEvent, parentPID stri
 
 	// Update session timestamp if we're tracking
 	if parentPID != "" {
-		sm, err := session.NewManager()
+		sm, err := claude.NewManager()
 		if err == nil {
 			if state, err := sm.ReadSession(parentPID); err == nil {
 				_ = sm.UpdateSession(parentPID)
@@ -213,7 +213,7 @@ func handleStop(event *schemas.StopEvent, parentPID string, logger *slog.Logger)
 
 	// Update session timestamp on stop (but don't delete the session file)
 	if parentPID != "" && !event.StopHookActive {
-		sm, err := session.NewManager()
+		sm, err := claude.NewManager()
 		if err == nil {
 			if err := sm.UpdateSession(parentPID); err != nil {
 				logger.Debug("Failed to update session timestamp", "error", err)

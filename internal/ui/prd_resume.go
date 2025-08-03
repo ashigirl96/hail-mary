@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ashigirl96/hail-mary/internal/session"
+	"github.com/ashigirl96/hail-mary/internal/claude"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -319,7 +319,7 @@ func (m PRDResumeModel) loadSessionsCmd(feature string) tea.Cmd {
 func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, error) {
 	// Create feature state manager
 	featureDir := filepath.Join(".kiro", "spec", feature)
-	featureManager := session.NewFeatureStateManager(featureDir)
+	featureManager := claude.NewFeatureStateManager(featureDir)
 
 	// Load all sessions from sessions.json
 	sessionsState, err := featureManager.LoadSessions()
@@ -351,7 +351,7 @@ func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, e
 }
 
 // parseTranscriptFile parses a Claude transcript file using the session state
-func (m PRDResumeModel) parseTranscriptFile(path string, state *session.State) (*SessionInfo, error) {
+func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.State) (*SessionInfo, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
