@@ -49,7 +49,7 @@ Navigation:
 		}
 
 		// Launch the TUI
-		selectedFeature, selectedSession, err := ui.RunPRDResume(features)
+		selectedFeature, selectedSession, selectedInput, err := ui.RunPRDResume(features)
 		if err != nil {
 			return fmt.Errorf("failed to run PRD resume UI: %w", err)
 		}
@@ -63,8 +63,14 @@ Navigation:
 			slog.String("feature", selectedFeature),
 			slog.String("session", selectedSession))
 
+		if selectedInput != nil {
+			logger.Info("Resuming from specific input",
+				slog.Int("turn", selectedInput.TurnNumber),
+				slog.String("content_preview", truncateForLog(selectedInput.Content, 50)))
+		}
+
 		// Resume the session
-		return resumePRDSession(cmd.Context(), logger, selectedFeature, selectedSession, specManager)
+		return resumePRDSession(cmd.Context(), logger, selectedFeature, selectedSession, selectedInput, specManager)
 	},
 }
 
@@ -97,10 +103,61 @@ func getFeatureList(specManager *kiro.SpecManager) ([]string, error) {
 	return features, nil
 }
 
+// truncateForLog truncates a string for logging purposes
+func truncateForLog(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
+}
+
 // resumePRDSession resumes a Claude session for PRD editing
-func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle string, sessionID string, specManager *kiro.SpecManager) error {
+func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle string, sessionID string, selectedInput *ui.UserInput, specManager *kiro.SpecManager) error {
 	// Get feature path
 	featurePath := filepath.Join(".kiro", "spec", featureTitle)
+
+	// If a specific input was selected, we need to truncate the transcript
+	if selectedInput != nil {
+		// Load session state to get transcript path
+		sessionManager := claude.NewFeatureSessionStateManager(featurePath)
+		sessions, err := sessionManager.LoadSessions()
+		if err != nil {
+			return fmt.Errorf("failed to load sessions: %w", err)
+		}
+
+		// Find the session
+		sessionState, _ := sessions.FindBySessionID(sessionID)
+		if sessionState == nil {
+			return fmt.Errorf("session %s not found", sessionID)
+		}
+
+		// Show warning about truncation
+		fmt.Printf("\n⚠️  WARNING: This will truncate the session at Turn %d\n", selectedInput.TurnNumber)
+		fmt.Printf("Original transcript will be backed up, but the session will restart from:\n")
+		fmt.Printf("\"%s\"\n", truncateForLog(selectedInput.Content, 80))
+		fmt.Print("\nProceed? (y/N): ")
+
+		var response string
+		fmt.Scanln(&response)
+		if strings.ToLower(response) != "y" {
+			return fmt.Errorf("truncation cancelled by user")
+		}
+
+		// Truncate the transcript
+		truncatedPath, err := claude.TruncateTranscript(sessionState.TranscriptPath, selectedInput.TurnNumber)
+		if err != nil {
+			return fmt.Errorf("failed to truncate transcript: %w", err)
+		}
+
+		// Replace the original transcript with the truncated one
+		if err := os.Rename(truncatedPath, sessionState.TranscriptPath); err != nil {
+			return fmt.Errorf("failed to replace transcript: %w", err)
+		}
+
+		logger.Info("Transcript truncated successfully",
+			slog.Int("turn", selectedInput.TurnNumber),
+			slog.String("transcript", sessionState.TranscriptPath))
+	}
 
 	// Setup hook configuration with feature path
 	hookConfigPath, cleanup, err := claude.SetupHookConfigWithFeature(logger, featurePath)
@@ -119,11 +176,20 @@ func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle str
 	readableTitle := strings.ReplaceAll(featureTitle, "-", " ")
 
 	// Prepare the resume prompt
-	resumePrompt := fmt.Sprintf(`I'm resuming work on the Product Requirements Document (PRD) for the feature: "%s"
+	var resumePrompt string
+	if selectedInput != nil {
+		resumePrompt = fmt.Sprintf(`I'm resuming work on the Product Requirements Document (PRD) for the feature: "%s"
+
+We're resuming from Turn %d. The session ID is: %s
+
+Let's continue from where we left off.`, readableTitle, selectedInput.TurnNumber, sessionID[:8])
+	} else {
+		resumePrompt = fmt.Sprintf(`I'm resuming work on the Product Requirements Document (PRD) for the feature: "%s"
 
 Please continue helping me develop this PRD. The previous session ID is: %s
 
 Let's continue where we left off.`, readableTitle, sessionID[:8])
+	}
 
 	// Display merged settings content
 	settingsContent, err := os.ReadFile(hookConfigPath)
