@@ -6,30 +6,70 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
-// StateManager handles session state persistence with a configurable directory
-type StateManager struct {
-	stateDir string
+// State represents the state of a Claude session
+type State struct {
+	SessionID      string    `json:"session_id"`
+	StartedAt      time.Time `json:"started_at"`
+	LastUpdated    time.Time `json:"last_updated"`
+	TranscriptPath string    `json:"transcript_path"`
+	ProjectDir     string    `json:"project_dir"`
 }
 
-// NewStateManager creates a new session state manager with the specified directory
-func NewStateManager(stateDir string) *StateManager {
-	return &StateManager{
+// SessionsState represents a collection of sessions for a feature
+type SessionsState []*State
+
+// FindBySessionID finds a session by its ID
+func (ss SessionsState) FindBySessionID(sessionID string) (*State, int) {
+	for i, state := range ss {
+		if state.SessionID == sessionID {
+			return state, i
+		}
+	}
+	return nil, -1
+}
+
+// AddOrUpdate adds a new session or updates an existing one
+func (ss *SessionsState) AddOrUpdate(newState *State) {
+	existing, index := ss.FindBySessionID(newState.SessionID)
+	if existing != nil {
+		// Update existing session
+		(*ss)[index] = newState
+	} else {
+		// Add new session at the beginning
+		*ss = append([]*State{newState}, *ss...)
+	}
+}
+
+// SessionStateManager handles session state persistence with thread safety
+type SessionStateManager struct {
+	stateDir string
+	mu       sync.RWMutex
+}
+
+// NewSessionStateManager creates a new session state manager with the specified directory
+func NewSessionStateManager(stateDir string) *SessionStateManager {
+	return &SessionStateManager{
 		stateDir: stateDir,
 	}
 }
 
-// NewFeatureStateManager creates a state manager for a specific feature
-func NewFeatureStateManager(featureDir string) *StateManager {
+// NewFeatureSessionStateManager creates a session state manager for a specific feature
+func NewFeatureSessionStateManager(featureDir string) *SessionStateManager {
 	sessionsDir := filepath.Join(featureDir, "sessions")
-	return &StateManager{
+	return &SessionStateManager{
 		stateDir: sessionsDir,
 	}
 }
 
 // SaveState saves a session state to disk
-func (sm *StateManager) SaveState(state *State) error {
+func (sm *SessionStateManager) SaveState(state *State) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
 	// Ensure directory exists
 	if err := os.MkdirAll(sm.stateDir, 0755); err != nil {
 		return fmt.Errorf("failed to create state directory: %w", err)
@@ -51,7 +91,10 @@ func (sm *StateManager) SaveState(state *State) error {
 }
 
 // LoadState loads a session state from disk
-func (sm *StateManager) LoadState(sessionID string) (*State, error) {
+func (sm *SessionStateManager) LoadState(sessionID string) (*State, error) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
 	filePath := filepath.Join(sm.stateDir, sessionID+".json")
 
 	data, err := os.ReadFile(filePath)
@@ -68,7 +111,10 @@ func (sm *StateManager) LoadState(sessionID string) (*State, error) {
 }
 
 // DeleteState removes a session state from disk
-func (sm *StateManager) DeleteState(sessionID string) error {
+func (sm *SessionStateManager) DeleteState(sessionID string) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
 	filePath := filepath.Join(sm.stateDir, sessionID+".json")
 
 	if err := os.Remove(filePath); err != nil {
@@ -79,7 +125,10 @@ func (sm *StateManager) DeleteState(sessionID string) error {
 }
 
 // ListStates returns all session states in the directory
-func (sm *StateManager) ListStates() ([]*State, error) {
+func (sm *SessionStateManager) ListStates() ([]*State, error) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
 	entries, err := os.ReadDir(sm.stateDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -95,7 +144,7 @@ func (sm *StateManager) ListStates() ([]*State, error) {
 		}
 
 		sessionID := strings.TrimSuffix(entry.Name(), ".json")
-		state, err := sm.LoadState(sessionID)
+		state, err := sm.loadStateUnsafe(sessionID) // Use unsafe version since we already have read lock
 		if err != nil {
 			// Skip invalid files but continue processing
 			continue
@@ -107,8 +156,28 @@ func (sm *StateManager) ListStates() ([]*State, error) {
 	return states, nil
 }
 
+// loadStateUnsafe loads state without acquiring mutex (for internal use when already locked)
+func (sm *SessionStateManager) loadStateUnsafe(sessionID string) (*State, error) {
+	filePath := filepath.Join(sm.stateDir, sessionID+".json")
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read state file: %w", err)
+	}
+
+	var state State
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal state: %w", err)
+	}
+
+	return &state, nil
+}
+
 // LoadSessions loads all sessions from a sessions.json file
-func (sm *StateManager) LoadSessions() (SessionsState, error) {
+func (sm *SessionStateManager) LoadSessions() (SessionsState, error) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
 	// For feature state manager, use the parent directory
 	sessionsPath := filepath.Join(filepath.Dir(sm.stateDir), "sessions.json")
 
@@ -116,7 +185,7 @@ func (sm *StateManager) LoadSessions() (SessionsState, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			// If file doesn't exist, try to migrate from individual files
-			return sm.migrateFromIndividualFiles()
+			return sm.migrateFromIndividualFilesUnsafe()
 		}
 		return nil, fmt.Errorf("failed to read sessions file: %w", err)
 	}
@@ -130,7 +199,10 @@ func (sm *StateManager) LoadSessions() (SessionsState, error) {
 }
 
 // SaveSessions saves all sessions to a sessions.json file
-func (sm *StateManager) SaveSessions(sessions SessionsState) error {
+func (sm *SessionStateManager) SaveSessions(sessions SessionsState) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
 	// For feature state manager, use the parent directory
 	sessionsPath := filepath.Join(filepath.Dir(sm.stateDir), "sessions.json")
 
@@ -162,7 +234,7 @@ func (sm *StateManager) SaveSessions(sessions SessionsState) error {
 }
 
 // AddOrUpdateSession adds or updates a session in the sessions.json file
-func (sm *StateManager) AddOrUpdateSession(state *State) error {
+func (sm *SessionStateManager) AddOrUpdateSession(state *State) error {
 	// Load existing sessions
 	sessions, err := sm.LoadSessions()
 	if err != nil {
@@ -181,29 +253,39 @@ func (sm *StateManager) AddOrUpdateSession(state *State) error {
 	return sm.SaveSessions(sessions)
 }
 
-// migrateFromIndividualFiles migrates from individual JSON files to sessions.json
-func (sm *StateManager) migrateFromIndividualFiles() (SessionsState, error) {
+// migrateFromIndividualFilesUnsafe migrates from individual JSON files to sessions.json
+// This is the unsafe version that doesn't acquire locks (for internal use when already locked)
+func (sm *SessionStateManager) migrateFromIndividualFilesUnsafe() (SessionsState, error) {
 	// List all individual session files
-	states, err := sm.ListStates()
+	entries, err := os.ReadDir(sm.stateDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list states for migration: %w", err)
+		if os.IsNotExist(err) {
+			return SessionsState{}, nil
+		}
+		return nil, fmt.Errorf("failed to read state directory: %w", err)
+	}
+
+	var states []*State
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+
+		sessionID := strings.TrimSuffix(entry.Name(), ".json")
+		state, err := sm.loadStateUnsafe(sessionID)
+		if err != nil {
+			// Skip invalid files but continue processing
+			continue
+		}
+
+		states = append(states, state)
 	}
 
 	// Convert to SessionsState
 	sessions := SessionsState(states)
 
-	// Save to sessions.json
-	if len(sessions) > 0 {
-		if err := sm.SaveSessions(sessions); err != nil {
-			return nil, fmt.Errorf("failed to save migrated sessions: %w", err)
-		}
-
-		// Optionally clean up old individual files
-		for _, state := range states {
-			filePath := filepath.Join(sm.stateDir, state.SessionID+".json")
-			os.Remove(filePath)
-		}
-	}
+	// Note: Caller should handle saving to sessions.json if needed
+	// since this function is called from LoadSessions which already holds read lock
 
 	return sessions, nil
 }
