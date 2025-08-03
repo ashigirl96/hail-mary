@@ -317,12 +317,12 @@ func (m PRDResumeModel) loadSessionsCmd(feature string) tea.Cmd {
 
 // loadSessionsForFeature loads Claude sessions related to a feature
 func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, error) {
-	// Create feature state manager
+	// Create feature session state manager
 	featureDir := filepath.Join(".kiro", "spec", feature)
-	featureManager := claude.NewFeatureStateManager(featureDir)
+	sessionManager := claude.NewFeatureSessionStateManager(featureDir)
 
 	// Load all sessions from sessions.json
-	sessionsState, err := featureManager.LoadSessions()
+	sessionsState, err := sessionManager.LoadSessions()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load sessions: %w", err)
 	}

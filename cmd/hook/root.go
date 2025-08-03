@@ -98,50 +98,36 @@ func runHook(cmd *cobra.Command, args []string) error {
 
 func handleSessionStart(event *schemas.SessionStartEvent, parentPID string, logger *slog.Logger) error {
 
-	// If we have a parent PID, write session state
-	if parentPID != "" {
-		sm, err := claude.NewManager()
-		if err != nil {
-			logger.Error("Failed to create session manager", "error", err)
-			return err
-		}
-
-		state := &claude.State{
-			SessionID:      event.SessionID,
-			StartedAt:      time.Now(),
-			LastUpdated:    time.Now(),
-			TranscriptPath: event.TranscriptPath,
-			ProjectDir:     event.CWD,
-		}
-
-		if err := sm.WriteSession(parentPID, state); err != nil {
-			logger.Error("Failed to write session state", "error", err)
-			return fmt.Errorf("failed to write session state: %w", err)
-		}
-
-		logger.Info("Session state written",
-			"session_id", event.SessionID,
-			"parent_pid", parentPID,
-			"source", event.Source)
-
-		// Also save to feature sessions.json if feature path is provided
-		featurePath := os.Getenv("HAIL_MARY_FEATURE_PATH")
-		if featurePath != "" {
-			featureManager := claude.NewFeatureStateManager(featurePath)
-			if err := featureManager.AddOrUpdateSession(state); err != nil {
-				logger.Error("Failed to save session to feature",
-					"error", err,
-					"feature_path", featurePath,
-					"session_id", event.SessionID)
-				// Don't return error - this is non-critical
-			} else {
-				logger.Info("Session saved to feature sessions.json",
-					"session_id", event.SessionID,
-					"feature_path", featurePath,
-					"source", event.Source)
-			}
-		}
+	// Require feature path to be set
+	featurePath := os.Getenv("HAIL_MARY_FEATURE_PATH")
+	if featurePath == "" {
+		logger.Error("HAIL_MARY_FEATURE_PATH environment variable is required")
+		return fmt.Errorf("HAIL_MARY_FEATURE_PATH environment variable is required")
 	}
+
+	// Create session state
+	state := &claude.State{
+		SessionID:      event.SessionID,
+		StartedAt:      time.Now(),
+		LastUpdated:    time.Now(),
+		TranscriptPath: event.TranscriptPath,
+		ProjectDir:     event.CWD,
+	}
+
+	// Save directly to feature directory
+	sessionManager := claude.NewFeatureSessionStateManager(featurePath)
+	if err := sessionManager.AddOrUpdateSession(state); err != nil {
+		logger.Error("Failed to save session to feature",
+			"error", err,
+			"feature_path", featurePath,
+			"session_id", event.SessionID)
+		return fmt.Errorf("failed to save session to feature: %w", err)
+	}
+
+	logger.Info("Session saved to feature sessions.json",
+		"session_id", event.SessionID,
+		"feature_path", featurePath,
+		"source", event.Source)
 
 	// Optionally add context to the session
 	if event.Source == "startup" {
@@ -160,24 +146,42 @@ func handleSessionStart(event *schemas.SessionStartEvent, parentPID string, logg
 
 func handleUserPromptSubmit(event *schemas.UserPromptSubmitEvent, parentPID string, logger *slog.Logger) error {
 
-	// Update session timestamp if we're tracking
-	if parentPID != "" {
-		sm, err := claude.NewManager()
-		if err == nil {
-			if state, err := sm.ReadSession(parentPID); err == nil {
-				_ = sm.UpdateSession(parentPID)
+	// Require feature path to be set
+	featurePath := os.Getenv("HAIL_MARY_FEATURE_PATH")
+	if featurePath == "" {
+		logger.Error("HAIL_MARY_FEATURE_PATH environment variable is required")
+		return fmt.Errorf("HAIL_MARY_FEATURE_PATH environment variable is required")
+	}
 
-				// Add session context
-				output := schemas.HookOutput{
-					HookSpecificOutput: map[string]interface{}{
-						"hookEventName": "UserPromptSubmit",
-						"additionalContext": fmt.Sprintf("[Session: %s, Started: %s]",
-							state.SessionID[:8], state.StartedAt.Format("15:04:05")),
-					},
-				}
-				outputJSON, _ := json.Marshal(output)
-				fmt.Println(string(outputJSON))
+	// Load and update session state
+	sessionManager := claude.NewFeatureSessionStateManager(featurePath)
+	sessions, err := sessionManager.LoadSessions()
+	if err != nil {
+		logger.Debug("Failed to load sessions for context", "error", err)
+		return nil // Non-critical for UserPromptSubmit
+	}
+
+	// Find the current session and add context
+	for _, state := range sessions {
+		if state.SessionID == event.SessionID {
+			// Update last updated timestamp
+			state.LastUpdated = time.Now()
+			if err := sessionManager.AddOrUpdateSession(state); err != nil {
+				logger.Debug("Failed to update session timestamp", "error", err)
+				// Continue anyway for context output
 			}
+
+			// Add session context
+			output := schemas.HookOutput{
+				HookSpecificOutput: map[string]interface{}{
+					"hookEventName": "UserPromptSubmit",
+					"additionalContext": fmt.Sprintf("[Session: %s, Started: %s]",
+						state.SessionID[:8], state.StartedAt.Format("15:04:05")),
+				},
+			}
+			outputJSON, _ := json.Marshal(output)
+			fmt.Println(string(outputJSON))
+			break
 		}
 	}
 
@@ -211,14 +215,25 @@ func handleStop(event *schemas.StopEvent, parentPID string, logger *slog.Logger)
 		"session_id", event.SessionID,
 		"stop_hook_active", event.StopHookActive)
 
-	// Update session timestamp on stop (but don't delete the session file)
-	if parentPID != "" && !event.StopHookActive {
-		sm, err := claude.NewManager()
-		if err == nil {
-			if err := sm.UpdateSession(parentPID); err != nil {
-				logger.Debug("Failed to update session timestamp", "error", err)
-			} else {
-				logger.Debug("Session timestamp updated", "parent_pid", parentPID)
+	// Update session timestamp on stop if stop hook is not active and feature path is available
+	if !event.StopHookActive {
+		featurePath := os.Getenv("HAIL_MARY_FEATURE_PATH")
+		if featurePath != "" {
+			sessionManager := claude.NewFeatureSessionStateManager(featurePath)
+			sessions, err := sessionManager.LoadSessions()
+			if err == nil {
+				// Find and update the session
+				for _, state := range sessions {
+					if state.SessionID == event.SessionID {
+						state.LastUpdated = time.Now()
+						if err := sessionManager.AddOrUpdateSession(state); err != nil {
+							logger.Debug("Failed to update session timestamp", "error", err)
+						} else {
+							logger.Debug("Session timestamp updated", "session_id", event.SessionID)
+						}
+						break
+					}
+				}
 			}
 		}
 	}
