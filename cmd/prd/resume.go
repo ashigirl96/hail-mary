@@ -138,7 +138,7 @@ func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle str
 		fmt.Print("\nProceed? (y/N): ")
 
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if strings.ToLower(response) != "y" {
 			return fmt.Errorf("truncation cancelled by user")
 		}

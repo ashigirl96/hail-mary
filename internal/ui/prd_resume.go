@@ -37,12 +37,12 @@ type PRDResumeModel struct {
 	// Features scroll fields
 	featureScrollOffset int // Scroll position in features list
 	// Enhanced navigation fields
-	inputIndex         int  // Current selection in user inputs list within a session
-	sessionScrollOffset int  // Scroll position in sessions list
-	inputScrollOffset  int  // Scroll position in user inputs within a session
-	activeInputLevel   bool // true = navigating inputs within session, false = navigating sessions
-	expandedSession    int  // Index of currently expanded session (-1 if none)
-	selectedInput      *UserInput // Currently selected user input for resuming
+	inputIndex          int        // Current selection in user inputs list within a session
+	sessionScrollOffset int        // Scroll position in sessions list
+	inputScrollOffset   int        // Scroll position in user inputs within a session
+	activeInputLevel    bool       // true = navigating inputs within session, false = navigating sessions
+	expandedSession     int        // Index of currently expanded session (-1 if none)
+	selectedInput       *UserInput // Currently selected user input for resuming
 }
 
 // UserInput represents a user input in a Claude session
@@ -65,13 +65,13 @@ type SessionInfo struct {
 // NewPRDResumeModel creates a new TUI model for PRD resume
 func NewPRDResumeModel(features []string) PRDResumeModel {
 	return PRDResumeModel{
-		features:        features,
-		sessions:        []SessionInfo{},
-		featureIndex:    0,
-		sessionIndex:    0,
-		activePane:      0,  // Start with features pane active
-		expandedSession: -1, // No session expanded initially
-		inputIndex:      0,
+		features:         features,
+		sessions:         []SessionInfo{},
+		featureIndex:     0,
+		sessionIndex:     0,
+		activePane:       0,  // Start with features pane active
+		expandedSession:  -1, // No session expanded initially
+		inputIndex:       0,
 		activeInputLevel: false, // Start at session level navigation
 	}
 }
@@ -969,7 +969,7 @@ func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionSt
 							}
 
 							currentTurn++
-							
+
 							// Add to user inputs list
 							userInputs = append(userInputs, UserInput{
 								Content:    content,

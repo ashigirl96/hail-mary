@@ -13,23 +13,23 @@ import (
 // TranscriptEntry represents a single line in a Claude transcript JSONL file
 type TranscriptEntry struct {
 	ParentUUID            string                 `json:"parentUuid"`
-	IsSidechain          bool                   `json:"isSidechain"`
-	UserType             string                 `json:"userType"`
-	CWD                  string                 `json:"cwd"`
-	SessionID            string                 `json:"sessionId"`
-	Version              string                 `json:"version"`
-	GitBranch            string                 `json:"gitBranch"`
-	Type                 string                 `json:"type"`
-	Message              map[string]interface{} `json:"message,omitempty"`
-	UUID                 string                 `json:"uuid"`
-	Timestamp            string                 `json:"timestamp"`
-	IsVisibleInTranscript *bool                 `json:"isVisibleInTranscriptOnly,omitempty"`
-	Content              string                 `json:"content,omitempty"`
-	IsMeta               *bool                  `json:"isMeta,omitempty"`
-	ToolUseID            string                 `json:"toolUseID,omitempty"`
-	Level                string                 `json:"level,omitempty"`
-	RequestID            string                 `json:"requestId,omitempty"`
-	ToolUseResult        map[string]interface{} `json:"toolUseResult,omitempty"`
+	IsSidechain           bool                   `json:"isSidechain"`
+	UserType              string                 `json:"userType"`
+	CWD                   string                 `json:"cwd"`
+	SessionID             string                 `json:"sessionId"`
+	Version               string                 `json:"version"`
+	GitBranch             string                 `json:"gitBranch"`
+	Type                  string                 `json:"type"`
+	Message               map[string]interface{} `json:"message,omitempty"`
+	UUID                  string                 `json:"uuid"`
+	Timestamp             string                 `json:"timestamp"`
+	IsVisibleInTranscript *bool                  `json:"isVisibleInTranscriptOnly,omitempty"`
+	Content               string                 `json:"content,omitempty"`
+	IsMeta                *bool                  `json:"isMeta,omitempty"`
+	ToolUseID             string                 `json:"toolUseID,omitempty"`
+	Level                 string                 `json:"level,omitempty"`
+	RequestID             string                 `json:"requestId,omitempty"`
+	ToolUseResult         map[string]interface{} `json:"toolUseResult,omitempty"`
 }
 
 // TruncateTranscript creates a new transcript file truncated at the specified turn number
@@ -67,10 +67,10 @@ func TruncateTranscript(originalPath string, turnNumber int) (string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		var entry TranscriptEntry
-		
+
 		if err := json.Unmarshal([]byte(line), &entry); err != nil {
 			// If we can't parse it, still write it (might be metadata)
-			writer.WriteString(line + "\n")
+			_, _ = writer.WriteString(line + "\n")
 			continue
 		}
 
@@ -106,7 +106,7 @@ func TruncateTranscript(originalPath string, turnNumber int) (string, error) {
 		}
 
 		// Write the entry
-		writer.WriteString(line + "\n")
+		_, _ = writer.WriteString(line + "\n")
 
 		// If we've found the target turn and this entry's parent is the target turn,
 		// we've written the immediate response and should stop
