@@ -65,8 +65,8 @@ func NewFeatureSessionStateManager(featureDir string) *SessionStateManager {
 	}
 }
 
-// SaveState saves a session state to disk
-func (sm *SessionStateManager) SaveState(state *SessionState) error {
+// SaveSessionState saves a session state to disk
+func (sm *SessionStateManager) SaveSessionState(state *SessionState) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -90,8 +90,8 @@ func (sm *SessionStateManager) SaveState(state *SessionState) error {
 	return nil
 }
 
-// LoadState loads a session state from disk
-func (sm *SessionStateManager) LoadState(sessionID string) (*SessionState, error) {
+// LoadSessionState loads a session state from disk
+func (sm *SessionStateManager) LoadSessionState(sessionID string) (*SessionState, error) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
@@ -110,8 +110,8 @@ func (sm *SessionStateManager) LoadState(sessionID string) (*SessionState, error
 	return &state, nil
 }
 
-// DeleteState removes a session state from disk
-func (sm *SessionStateManager) DeleteState(sessionID string) error {
+// DeleteSessionState removes a session state from disk
+func (sm *SessionStateManager) DeleteSessionState(sessionID string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -124,8 +124,8 @@ func (sm *SessionStateManager) DeleteState(sessionID string) error {
 	return nil
 }
 
-// ListStates returns all session states in the directory
-func (sm *SessionStateManager) ListStates() ([]*SessionState, error) {
+// ListSessionStates returns all session states in the directory
+func (sm *SessionStateManager) ListSessionStates() ([]*SessionState, error) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 

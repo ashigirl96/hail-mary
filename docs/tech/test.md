@@ -169,8 +169,8 @@ func TestSessionStateManager(t *testing.T) {
     }
     
     // Act
-    err := manager.SaveState(expectedState)
-    actualState, err2 := manager.LoadState("test-123")
+    err := manager.SaveSessionState(expectedState)
+    actualState, err2 := manager.LoadSessionState("test-123")
     
     // Assert
     require.NoError(t, err)

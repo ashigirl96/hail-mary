@@ -21,7 +21,7 @@ func TestNewSessionStateManager(t *testing.T) {
 	assert.Equal(t, stateDir, manager.stateDir, "StateDir should match input")
 }
 
-func TestSessionStateManager_SaveState_CreatesDirectory(t *testing.T) {
+func TestSessionStateManager_SaveSessionState_CreatesDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	stateDir := filepath.Join(tempDir, "nonexistent", "sessions")
 
@@ -35,20 +35,20 @@ func TestSessionStateManager_SaveState_CreatesDirectory(t *testing.T) {
 		ProjectDir:     "/path/to/project",
 	}
 
-	err := manager.SaveState(state)
-	require.NoError(t, err, "SaveState should create directory and save successfully")
+	err := manager.SaveSessionState(state)
+	require.NoError(t, err, "SaveSessionState should create directory and save successfully")
 
 	// Check that directory exists
 	_, err = os.Stat(stateDir)
-	require.NoError(t, err, "State directory should exist after SaveState")
+	require.NoError(t, err, "State directory should exist after SaveSessionState")
 
 	// Check that file exists
 	filePath := filepath.Join(stateDir, "test-session-001.json")
 	_, err = os.Stat(filePath)
-	require.NoError(t, err, "State file should exist after SaveState")
+	require.NoError(t, err, "State file should exist after SaveSessionState")
 }
 
-func TestSessionStateManager_SaveAndLoadState_Success(t *testing.T) {
+func TestSessionStateManager_SaveAndLoadSessionState_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
@@ -61,12 +61,12 @@ func TestSessionStateManager_SaveAndLoadState_Success(t *testing.T) {
 	}
 
 	// Save state
-	err := manager.SaveState(originalState)
-	require.NoError(t, err, "SaveState should succeed")
+	err := manager.SaveSessionState(originalState)
+	require.NoError(t, err, "SaveSessionState should succeed")
 
 	// Load state
-	loadedState, err := manager.LoadState("test-session-002")
-	require.NoError(t, err, "LoadState should succeed")
+	loadedState, err := manager.LoadSessionState("test-session-002")
+	require.NoError(t, err, "LoadSessionState should succeed")
 
 	// Compare states
 	assert.Equal(t, originalState.SessionID, loadedState.SessionID)
@@ -76,17 +76,17 @@ func TestSessionStateManager_SaveAndLoadState_Success(t *testing.T) {
 	assert.Equal(t, originalState.ProjectDir, loadedState.ProjectDir)
 }
 
-func TestSessionStateManager_LoadState_FileNotFound(t *testing.T) {
+func TestSessionStateManager_LoadSessionState_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
 	// Try to load non-existent state
-	_, err := manager.LoadState("nonexistent-session")
-	require.Error(t, err, "LoadState should fail for non-existent file")
+	_, err := manager.LoadSessionState("nonexistent-session")
+	require.Error(t, err, "LoadSessionState should fail for non-existent file")
 	assert.Contains(t, err.Error(), "failed to read state file")
 }
 
-func TestSessionStateManager_LoadState_InvalidJSON(t *testing.T) {
+func TestSessionStateManager_LoadSessionState_InvalidJSON(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
@@ -100,12 +100,12 @@ func TestSessionStateManager_LoadState_InvalidJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to load invalid state
-	_, err = manager.LoadState("invalid-session")
-	require.Error(t, err, "LoadState should fail for invalid JSON")
+	_, err = manager.LoadSessionState("invalid-session")
+	require.Error(t, err, "LoadSessionState should fail for invalid JSON")
 	assert.Contains(t, err.Error(), "failed to unmarshal state")
 }
 
-func TestSessionStateManager_DeleteState_Success(t *testing.T) {
+func TestSessionStateManager_DeleteSessionState_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
@@ -118,8 +118,8 @@ func TestSessionStateManager_DeleteState_Success(t *testing.T) {
 	}
 
 	// Save state first
-	err := manager.SaveState(state)
-	require.NoError(t, err, "SaveState should succeed")
+	err := manager.SaveSessionState(state)
+	require.NoError(t, err, "SaveSessionState should succeed")
 
 	// Verify file exists
 	filePath := filepath.Join(tempDir, "test-session-003.json")
@@ -127,34 +127,34 @@ func TestSessionStateManager_DeleteState_Success(t *testing.T) {
 	require.NoError(t, err, "State file should exist before deletion")
 
 	// Delete state
-	err = manager.DeleteState("test-session-003")
-	require.NoError(t, err, "DeleteState should succeed")
+	err = manager.DeleteSessionState("test-session-003")
+	require.NoError(t, err, "DeleteSessionState should succeed")
 
 	// Verify file is deleted
 	_, err = os.Stat(filePath)
 	require.True(t, os.IsNotExist(err), "State file should not exist after deletion")
 }
 
-func TestSessionStateManager_DeleteState_FileNotFound(t *testing.T) {
+func TestSessionStateManager_DeleteSessionState_FileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
 	// Try to delete non-existent state
-	err := manager.DeleteState("nonexistent-session")
-	require.Error(t, err, "DeleteState should fail for non-existent file")
+	err := manager.DeleteSessionState("nonexistent-session")
+	require.Error(t, err, "DeleteSessionState should fail for non-existent file")
 	assert.Contains(t, err.Error(), "failed to delete state file")
 }
 
-func TestSessionStateManager_ListStates_EmptyDirectory(t *testing.T) {
+func TestSessionStateManager_ListSessionStates_EmptyDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
-	states, err := manager.ListStates()
-	require.NoError(t, err, "ListStates should succeed for empty directory")
+	states, err := manager.ListSessionStates()
+	require.NoError(t, err, "ListSessionStates should succeed for empty directory")
 	assert.Empty(t, states, "States list should be empty for empty directory")
 }
 
-func TestSessionStateManager_ListStates_WithStates(t *testing.T) {
+func TestSessionStateManager_ListSessionStates_WithStates(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
@@ -178,13 +178,13 @@ func TestSessionStateManager_ListStates_WithStates(t *testing.T) {
 
 	// Save states
 	for _, state := range states {
-		err := manager.SaveState(state)
+		err := manager.SaveSessionState(state)
 		require.NoError(t, err, "SaveState should succeed")
 	}
 
 	// List states
-	loadedStates, err := manager.ListStates()
-	require.NoError(t, err, "ListStates should succeed")
+	loadedStates, err := manager.ListSessionStates()
+	require.NoError(t, err, "ListSessionStates should succeed")
 	assert.Len(t, loadedStates, 2, "Should load 2 states")
 
 	// Verify session IDs exist (order might be different)
@@ -196,7 +196,7 @@ func TestSessionStateManager_ListStates_WithStates(t *testing.T) {
 	assert.True(t, sessionIDs["session-002"], "session-002 should be present")
 }
 
-func TestSessionStateManager_ListStates_IgnoresNonJSONFiles(t *testing.T) {
+func TestSessionStateManager_ListSessionStates_IgnoresNonJSONFiles(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
@@ -212,7 +212,7 @@ func TestSessionStateManager_ListStates_IgnoresNonJSONFiles(t *testing.T) {
 		TranscriptPath: "/path/to/transcript.txt",
 		ProjectDir:     "/path/to/project",
 	}
-	err = manager.SaveState(validState)
+	err = manager.SaveSessionState(validState)
 	require.NoError(t, err)
 
 	// Create non-JSON files
@@ -222,7 +222,7 @@ func TestSessionStateManager_ListStates_IgnoresNonJSONFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// List states
-	states, err := manager.ListStates()
+	states, err := manager.ListSessionStates()
 	require.NoError(t, err, "ListStates should succeed")
 	assert.Len(t, states, 1, "Should only load valid JSON states")
 	assert.Equal(t, "valid-session", states[0].SessionID)
@@ -296,7 +296,7 @@ func TestSessionStateManager_LoadSessions(t *testing.T) {
 					},
 				}
 				for _, state := range states {
-					if err := manager.SaveState(state); err != nil {
+					if err := manager.SaveSessionState(state); err != nil {
 						return err
 					}
 				}
@@ -493,7 +493,7 @@ func TestSessionStateManager_ConcurrentAccess(t *testing.T) {
 	tempDir := t.TempDir()
 	manager := NewSessionStateManager(tempDir)
 
-	// Test concurrent SaveState and LoadState operations
+	// Test concurrent SaveSessionState and LoadSessionState operations
 	const numGoroutines = 10
 
 	// Save states concurrently
@@ -506,8 +506,8 @@ func TestSessionStateManager_ConcurrentAccess(t *testing.T) {
 				TranscriptPath: fmt.Sprintf("/path/to/transcript-%d.txt", id),
 				ProjectDir:     fmt.Sprintf("/path/to/project-%d", id),
 			}
-			err := manager.SaveState(state)
-			require.NoError(t, err, "Concurrent SaveState should succeed")
+			err := manager.SaveSessionState(state)
+			require.NoError(t, err, "Concurrent SaveSessionState should succeed")
 		}(i)
 	}
 
@@ -517,10 +517,10 @@ func TestSessionStateManager_ConcurrentAccess(t *testing.T) {
 	// Load states concurrently
 	for i := 0; i < numGoroutines; i++ {
 		go func(id int) {
-			_, err := manager.LoadState(fmt.Sprintf("concurrent-session-%d", id))
+			_, err := manager.LoadSessionState(fmt.Sprintf("concurrent-session-%d", id))
 			if err != nil {
 				// Some might fail due to timing, but shouldn't cause data corruption
-				t.Logf("Concurrent LoadState failed for session %d: %v", id, err)
+				t.Logf("Concurrent LoadSessionState failed for session %d: %v", id, err)
 			}
 		}(i)
 	}
@@ -529,8 +529,8 @@ func TestSessionStateManager_ConcurrentAccess(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Verify final state
-	states, err := manager.ListStates()
-	require.NoError(t, err, "ListStates should succeed after concurrent operations")
+	states, err := manager.ListSessionStates()
+	require.NoError(t, err, "ListSessionStates should succeed after concurrent operations")
 	// We should have at least some states (timing might cause some to be missed)
 	assert.True(t, len(states) > 0, "Should have some states after concurrent operations")
 }
