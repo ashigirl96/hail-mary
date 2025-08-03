@@ -36,6 +36,13 @@ type PRDResumeModel struct {
 	markdownLoading      bool     // Loading state for markdown
 	// Features scroll fields
 	featureScrollOffset int // Scroll position in features list
+	// Enhanced navigation fields
+	inputIndex         int  // Current selection in user inputs list within a session
+	sessionScrollOffset int  // Scroll position in sessions list
+	inputScrollOffset  int  // Scroll position in user inputs within a session
+	activeInputLevel   bool // true = navigating inputs within session, false = navigating sessions
+	expandedSession    int  // Index of currently expanded session (-1 if none)
+	selectedInput      *UserInput // Currently selected user input for resuming
 }
 
 // UserInput represents a user input in a Claude session
@@ -58,11 +65,14 @@ type SessionInfo struct {
 // NewPRDResumeModel creates a new TUI model for PRD resume
 func NewPRDResumeModel(features []string) PRDResumeModel {
 	return PRDResumeModel{
-		features:     features,
-		sessions:     []SessionInfo{},
-		featureIndex: 0,
-		sessionIndex: 0,
-		activePane:   0, // Start with features pane active
+		features:        features,
+		sessions:        []SessionInfo{},
+		featureIndex:    0,
+		sessionIndex:    0,
+		activePane:      0,  // Start with features pane active
+		expandedSession: -1, // No session expanded initially
+		inputIndex:      0,
+		activeInputLevel: false, // Start at session level navigation
 	}
 }
 
@@ -88,16 +98,49 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q", "esc":
+		case "ctrl+c", "q":
+			return m, tea.Quit
+
+		case "esc":
+			if m.activePane == 1 && m.activeInputLevel {
+				// Exit input level navigation, go back to session level
+				m.activeInputLevel = false
+				m.inputIndex = 0
+				m.inputScrollOffset = 0
+				return m, nil
+			}
 			return m, tea.Quit
 
 		case "enter":
-			if m.activePane == 1 && m.sessionIndex < len(m.sessions) {
-				// Select the current session
-				m.selectedFeature = m.features[m.featureIndex]
-				m.selectedSession = m.sessions[m.sessionIndex].ID
-				m.confirmed = true
-				return m, tea.Quit
+			if m.activePane == 1 {
+				if !m.activeInputLevel {
+					// At session level - expand/collapse session
+					if m.sessionIndex < len(m.sessions) && len(m.sessions[m.sessionIndex].UserInputs) > 0 {
+						if m.expandedSession == m.sessionIndex {
+							// Collapse if already expanded
+							m.expandedSession = -1
+							m.activeInputLevel = false
+						} else {
+							// Expand session and enter input level navigation
+							m.expandedSession = m.sessionIndex
+							m.activeInputLevel = true
+							m.inputIndex = 0
+							m.inputScrollOffset = 0
+						}
+					}
+				} else {
+					// At input level - select this input for resume
+					if m.expandedSession >= 0 && m.expandedSession < len(m.sessions) {
+						session := m.sessions[m.expandedSession]
+						if m.inputIndex < len(session.UserInputs) {
+							m.selectedFeature = m.features[m.featureIndex]
+							m.selectedSession = session.ID
+							m.selectedInput = &session.UserInputs[m.inputIndex]
+							m.confirmed = true
+							return m, tea.Quit
+						}
+					}
+				}
 			}
 			return m, nil
 
@@ -105,6 +148,7 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Move to left pane (features)
 			if m.activePane == 1 {
 				m.activePane = 0
+				m.activeInputLevel = false
 			}
 			return m, nil
 
@@ -116,21 +160,27 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "ctrl+u":
-			// Scroll markdown preview up
 			if m.activePane == 0 && len(m.markdownLines) > 0 {
+				// Scroll markdown preview up
 				if m.markdownScrollOffset > 0 {
 					m.markdownScrollOffset -= 5 // Scroll up by 5 lines
 					if m.markdownScrollOffset < 0 {
 						m.markdownScrollOffset = 0
 					}
 				}
+			} else if m.activePane == 1 && m.activeInputLevel && m.expandedSession >= 0 {
+				// Navigate inputs up
+				session := m.sessions[m.expandedSession]
+				if m.inputIndex > 0 {
+					m.inputIndex--
+					m.adjustInputScroll(len(session.UserInputs))
+				}
 			}
 			return m, nil
 
 		case "ctrl+d":
-			// Scroll markdown preview down
 			if m.activePane == 0 && len(m.markdownLines) > 0 {
-				// Calculate markdown section height (bottom 80% of left pane)
+				// Scroll markdown preview down
 				leftPaneHeight := m.height - 4 // -4 for header and footer
 				markdownSectionHeight := leftPaneHeight - (leftPaneHeight * 2 / 10)
 				contentHeight := markdownSectionHeight - 4 // Account for title, border, and padding
@@ -140,6 +190,13 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					if m.markdownScrollOffset > maxScroll {
 						m.markdownScrollOffset = maxScroll
 					}
+				}
+			} else if m.activePane == 1 && m.activeInputLevel && m.expandedSession >= 0 {
+				// Navigate inputs down
+				session := m.sessions[m.expandedSession]
+				if m.inputIndex < len(session.UserInputs)-1 {
+					m.inputIndex++
+					m.adjustInputScroll(len(session.UserInputs))
 				}
 			}
 			return m, nil
@@ -151,16 +208,20 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.featureIndex++
 					m.sessionIndex = 0         // Reset session selection
 					m.markdownScrollOffset = 0 // Reset scroll
-					m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
+					m.expandedSession = -1     // Reset expanded session
+					m.activeInputLevel = false // Reset input level
+					m.inputIndex = 0
+					m.adjustFeatureScroll() // Adjust feature scroll to keep selection visible
 					return m, tea.Batch(
 						m.loadSessionsCmd(m.features[m.featureIndex]),
 						m.loadMarkdownCmd(m.features[m.featureIndex]),
 					)
 				}
-			} else if m.activePane == 1 {
-				// Navigate sessions
+			} else if m.activePane == 1 && !m.activeInputLevel {
+				// Navigate sessions (only at session level)
 				if m.sessionIndex < len(m.sessions)-1 {
 					m.sessionIndex++
+					m.adjustSessionScroll()
 				}
 			}
 			return m, nil
@@ -172,16 +233,20 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.featureIndex--
 					m.sessionIndex = 0         // Reset session selection
 					m.markdownScrollOffset = 0 // Reset scroll
-					m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
+					m.expandedSession = -1     // Reset expanded session
+					m.activeInputLevel = false // Reset input level
+					m.inputIndex = 0
+					m.adjustFeatureScroll() // Adjust feature scroll to keep selection visible
 					return m, tea.Batch(
 						m.loadSessionsCmd(m.features[m.featureIndex]),
 						m.loadMarkdownCmd(m.features[m.featureIndex]),
 					)
 				}
-			} else if m.activePane == 1 {
-				// Navigate sessions
+			} else if m.activePane == 1 && !m.activeInputLevel {
+				// Navigate sessions (only at session level)
 				if m.sessionIndex > 0 {
 					m.sessionIndex--
+					m.adjustSessionScroll()
 				}
 			}
 			return m, nil
@@ -249,9 +314,19 @@ func (m PRDResumeModel) View() string {
 		Foreground(lipgloss.Color("205")).
 		Render(fmt.Sprintf("PRD Resume - %s", currentFeature))
 
+	// Build footer based on current state
+	var footerText string
+	if m.activePane == 0 {
+		footerText = "j/k: navigate features • l: sessions • ctrl+u/d: scroll preview • q: quit"
+	} else if m.activeInputLevel {
+		footerText = "ctrl+u/d: navigate inputs • enter: resume from input • esc: back to sessions • q: quit"
+	} else {
+		footerText = "j/k: navigate sessions • enter: expand/collapse • h: features • q: quit"
+	}
+
 	footer := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("241")).
-		Render("j/k: navigate features • h/l: switch panes • ctrl+u/d: scroll preview (left pane) • enter: select • q: quit")
+		Render(footerText)
 
 	// Combine all parts
 	return lipgloss.JoinVertical(lipgloss.Left,
@@ -461,7 +536,7 @@ func (m PRDResumeModel) renderMarkdownSection(width, bottomHeight int, withBorde
 	return paneStyle.Render(content)
 }
 
-// renderSessionsPane renders the right pane with session list and user inputs
+// renderSessionsPane renders the right pane with enhanced session blocks
 func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 	paneStyle := lipgloss.NewStyle().
 		Width(width).
@@ -472,7 +547,7 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 	title := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("205")).
-		Render("Session History")
+		Render("Sessions")
 
 	var items []string
 	items = append(items, title)
@@ -485,74 +560,196 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 			Foreground(lipgloss.Color("241")).
 			Render("No sessions found for this feature"))
 	} else {
-		// Render session list with user inputs
-		for i, session := range m.sessions {
-			style := lipgloss.NewStyle()
-			prefix := "  "
+		// Calculate visible range with scrolling
+		contentHeight := height - 4 // Account for title and padding
+		visibleSessions := 0
+		currentHeight := 0
 
-			if i == m.sessionIndex {
-				prefix = "> "
-				if m.activePane == 1 {
-					style = style.Bold(true).Foreground(lipgloss.Color("205"))
-				} else {
-					style = style.Foreground(lipgloss.Color("250"))
+		// Render session blocks with scrolling support
+		startIdx := m.sessionScrollOffset
+		for i := startIdx; i < len(m.sessions) && currentHeight < contentHeight; i++ {
+			session := m.sessions[i]
+			sessionBlock := m.renderSessionBlock(session, i, width-4) // -4 for padding
+			blockLines := strings.Count(sessionBlock, "\n") + 1
+
+			if currentHeight+blockLines <= contentHeight {
+				items = append(items, sessionBlock)
+				currentHeight += blockLines
+				visibleSessions++
+
+				// Add spacing between blocks
+				if i < len(m.sessions)-1 && currentHeight < contentHeight-1 {
+					items = append(items, "")
+					currentHeight++
 				}
 			}
+		}
 
-			// Format session info
-			timeStr := session.StartTime.Format("Jan 02 15:04")
-			sessionInfo := fmt.Sprintf("%s... (%s, %d turns)",
-				session.ID[:8], timeStr, session.TurnCount)
+		// Add scroll indicator if needed
+		if len(m.sessions) > visibleSessions || m.sessionScrollOffset > 0 {
+			scrollInfo := fmt.Sprintf("[Sessions %d-%d/%d]",
+				m.sessionScrollOffset+1,
+				m.sessionScrollOffset+visibleSessions,
+				len(m.sessions))
+			indicator := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("241")).
+				Render(scrollInfo)
 
-			items = append(items, style.Render(prefix+sessionInfo))
-
-			// Add user inputs if we're on this item
-			if i == m.sessionIndex && len(session.UserInputs) > 0 {
-				items = append(items, "")
-
-				inputStyle := lipgloss.NewStyle().
-					Foreground(lipgloss.Color("250")).
-					PaddingLeft(4)
-
-				inputHeaderStyle := lipgloss.NewStyle().
-					Foreground(lipgloss.Color("33")).
-					PaddingLeft(4).
-					Bold(true)
-
-				items = append(items, inputHeaderStyle.Render("User Inputs:"))
-
-				// Show up to 5 most recent inputs
-				maxInputs := 5
-				startIdx := 0
-				if len(session.UserInputs) > maxInputs {
-					startIdx = len(session.UserInputs) - maxInputs
-				}
-
-				for j := startIdx; j < len(session.UserInputs); j++ {
-					input := session.UserInputs[j]
-
-					// Truncate and format the input
-					maxWidth := width - 8 // Account for padding and borders
-					truncated := truncateString(input.Content, maxWidth)
-
-					inputLine := fmt.Sprintf("• %s", truncated)
-					items = append(items, inputStyle.Render(inputLine))
-				}
-
-				// Show count if there are more inputs
-				if len(session.UserInputs) > maxInputs {
-					moreStyle := lipgloss.NewStyle().
-						Foreground(lipgloss.Color("241")).
-						PaddingLeft(4).
-						Italic(true)
-					items = append(items, moreStyle.Render(fmt.Sprintf("... and %d more inputs", len(session.UserInputs)-maxInputs)))
-				}
-			}
+			// Update title with scroll indicator
+			items[0] = lipgloss.JoinHorizontal(lipgloss.Left,
+				title,
+				" ",
+				indicator)
 		}
 	}
 
 	content := strings.Join(items, "\n")
 	return paneStyle.Render(content)
+}
+
+// renderSessionBlock renders an individual session block with modern styling
+func (m PRDResumeModel) renderSessionBlock(session SessionInfo, index int, width int) string {
+	isSelected := index == m.sessionIndex
+	isExpanded := index == m.expandedSession
+	isActive := m.activePane == 1 && !m.activeInputLevel
+
+	// Determine block style based on state
+	var blockStyle lipgloss.Style
+	var borderColor string
+	var prefix string
+
+	if isSelected && isActive {
+		borderColor = "205" // Pink for active selection
+		prefix = "▶ "
+	} else if isSelected {
+		borderColor = "250" // Light gray for inactive selection
+		prefix = "▶ "
+	} else {
+		borderColor = "238" // Dark gray for unselected
+		prefix = "  "
+	}
+
+	if isExpanded {
+		prefix = "▼ "
+	}
+
+	blockStyle = lipgloss.NewStyle().
+		Width(width).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(borderColor)).
+		Padding(0, 1)
+
+	// Build session header
+	timeStr := session.StartTime.Format("Jan 02 15:04")
+	duration := session.LastUpdated.Sub(session.StartTime)
+	durationStr := formatDuration(duration)
+
+	headerLine1 := lipgloss.NewStyle().
+		Bold(isSelected && isActive).
+		Foreground(lipgloss.Color("250")).
+		Render(fmt.Sprintf("%sSession: %s", prefix, session.ID[:8]))
+
+	headerLine2 := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("241")).
+		Render(fmt.Sprintf("  %s │ %d turns │ %s", timeStr, session.TurnCount, durationStr))
+
+	var blockContent []string
+	blockContent = append(blockContent, headerLine1)
+	blockContent = append(blockContent, headerLine2)
+
+	// If expanded, show user inputs
+	if isExpanded && len(session.UserInputs) > 0 {
+		blockContent = append(blockContent, "")
+		blockContent = append(blockContent, m.renderUserInputs(session, width-4))
+	}
+
+	content := strings.Join(blockContent, "\n")
+	return blockStyle.Render(content)
+}
+
+// renderUserInputs renders the user input timeline within a session block
+func (m PRDResumeModel) renderUserInputs(session SessionInfo, width int) string {
+	var items []string
+
+	// Separator line
+	separator := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("238")).
+		Render(strings.Repeat("─", width-2))
+	items = append(items, separator)
+
+	// Calculate visible inputs based on scroll offset
+	maxVisibleInputs := 5
+	startIdx := m.inputScrollOffset
+	endIdx := startIdx + maxVisibleInputs
+	if endIdx > len(session.UserInputs) {
+		endIdx = len(session.UserInputs)
+	}
+
+	// Render visible inputs
+	for i := startIdx; i < endIdx; i++ {
+		input := session.UserInputs[i]
+		isSelectedInput := i == m.inputIndex && m.activeInputLevel
+
+		var inputStyle lipgloss.Style
+		var inputPrefix string
+
+		if isSelectedInput {
+			inputStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("205"))
+			inputPrefix = "> "
+		} else {
+			inputStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("250"))
+			inputPrefix = "  "
+		}
+
+		// Format input with turn number
+		truncated := truncateString(input.Content, width-10)
+		inputLine := fmt.Sprintf("%sTurn %d: %s", inputPrefix, input.TurnNumber, truncated)
+
+		items = append(items, inputStyle.Render(inputLine))
+	}
+
+	// Add scroll indicator if there are more inputs
+	if len(session.UserInputs) > maxVisibleInputs {
+		scrollInfo := fmt.Sprintf("  [Inputs %d-%d/%d]",
+			startIdx+1,
+			endIdx,
+			len(session.UserInputs))
+		indicator := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")).
+			Italic(true).
+			Render(scrollInfo)
+		items = append(items, indicator)
+	}
+
+	// Navigation hint
+	if m.activeInputLevel {
+		hint := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")).
+			Italic(true).
+			Render("  ctrl+u/d: navigate • enter: resume from here • esc: back")
+		items = append(items, "", hint)
+	}
+
+	return strings.Join(items, "\n")
+}
+
+// formatDuration formats a duration into a human-readable string
+func formatDuration(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	} else if d < time.Hour {
+		return fmt.Sprintf("%dm", int(d.Minutes()))
+	} else {
+		hours := int(d.Hours())
+		minutes := int(d.Minutes()) % 60
+		if minutes > 0 {
+			return fmt.Sprintf("%dh %dm", hours, minutes)
+		}
+		return fmt.Sprintf("%dh", hours)
+	}
 }
 
 // adjustFeatureScroll ensures the selected feature is visible in the features section
@@ -588,6 +785,69 @@ func (m *PRDResumeModel) adjustFeatureScroll() {
 	}
 	if m.featureScrollOffset > maxScroll {
 		m.featureScrollOffset = maxScroll
+	}
+}
+
+// adjustSessionScroll ensures the selected session is visible in the sessions pane
+func (m *PRDResumeModel) adjustSessionScroll() {
+	// Calculate available height for sessions
+	paneHeight := m.height - 4 // -4 for header and footer
+	maxItems := paneHeight / 4 // Rough estimate: each session block takes ~4 lines
+
+	if maxItems <= 0 {
+		return // Not enough space to show items
+	}
+
+	// Adjust scroll offset to keep selected session visible
+	if m.sessionIndex < m.sessionScrollOffset {
+		m.sessionScrollOffset = m.sessionIndex
+	} else if m.sessionIndex >= m.sessionScrollOffset+maxItems {
+		m.sessionScrollOffset = m.sessionIndex - maxItems + 1
+	}
+
+	// Ensure scroll offset doesn't go negative
+	if m.sessionScrollOffset < 0 {
+		m.sessionScrollOffset = 0
+	}
+
+	// Ensure scroll offset doesn't exceed reasonable bounds
+	maxScroll := len(m.sessions) - maxItems
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if m.sessionScrollOffset > maxScroll {
+		m.sessionScrollOffset = maxScroll
+	}
+}
+
+// adjustInputScroll ensures the selected input is visible within an expanded session
+func (m *PRDResumeModel) adjustInputScroll(totalInputs int) {
+	// Estimate how many inputs can be shown
+	maxVisibleInputs := 5 // Show up to 5 inputs at a time
+
+	if maxVisibleInputs <= 0 {
+		return
+	}
+
+	// Adjust scroll offset to keep selected input visible
+	if m.inputIndex < m.inputScrollOffset {
+		m.inputScrollOffset = m.inputIndex
+	} else if m.inputIndex >= m.inputScrollOffset+maxVisibleInputs {
+		m.inputScrollOffset = m.inputIndex - maxVisibleInputs + 1
+	}
+
+	// Ensure scroll offset doesn't go negative
+	if m.inputScrollOffset < 0 {
+		m.inputScrollOffset = 0
+	}
+
+	// Ensure scroll offset doesn't exceed reasonable bounds
+	maxScroll := totalInputs - maxVisibleInputs
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if m.inputScrollOffset > maxScroll {
+		m.inputScrollOffset = maxScroll
 	}
 }
 
@@ -708,6 +968,8 @@ func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionSt
 								firstUserMessage = content
 							}
 
+							currentTurn++
+							
 							// Add to user inputs list
 							userInputs = append(userInputs, UserInput{
 								Content:    content,
@@ -716,7 +978,6 @@ func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionSt
 							})
 
 							turnCount++
-							currentTurn++
 						}
 					}
 				}
@@ -774,21 +1035,29 @@ func (m PRDResumeModel) GetSelectedSession() string {
 	return ""
 }
 
-// RunPRDResume runs the PRD resume UI and returns the selected feature and session
-func RunPRDResume(features []string) (string, string, error) {
+// GetSelectedInput returns the selected user input if any
+func (m PRDResumeModel) GetSelectedInput() *UserInput {
+	if m.confirmed {
+		return m.selectedInput
+	}
+	return nil
+}
+
+// RunPRDResume runs the PRD resume UI and returns the selected feature, session, and optional input
+func RunPRDResume(features []string) (string, string, *UserInput, error) {
 	model := NewPRDResumeModel(features)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	finalModel, err := p.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("failed to run PRD resume UI: %w", err)
+		return "", "", nil, fmt.Errorf("failed to run PRD resume UI: %w", err)
 	}
 
 	if m, ok := finalModel.(PRDResumeModel); ok {
-		return m.GetSelectedFeature(), m.GetSelectedSession(), nil
+		return m.GetSelectedFeature(), m.GetSelectedSession(), m.GetSelectedInput(), nil
 	}
 
-	return "", "", fmt.Errorf("unexpected model type")
+	return "", "", nil, fmt.Errorf("unexpected model type")
 }
 
 // Markdown rendering functions
