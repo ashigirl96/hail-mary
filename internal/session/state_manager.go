@@ -20,6 +20,14 @@ func NewStateManager(stateDir string) *StateManager {
 	}
 }
 
+// NewFeatureStateManager creates a state manager for a specific feature
+func NewFeatureStateManager(featureDir string) *StateManager {
+	sessionsDir := filepath.Join(featureDir, "sessions")
+	return &StateManager{
+		stateDir: sessionsDir,
+	}
+}
+
 // SaveState saves a session state to disk
 func (sm *StateManager) SaveState(state *State) error {
 	// Ensure directory exists

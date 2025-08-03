@@ -9,8 +9,10 @@ import (
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
 	"github.com/ashigirl96/hail-mary/internal/hooks"
+	"github.com/ashigirl96/hail-mary/internal/kiro"
 	"github.com/ashigirl96/hail-mary/internal/prompt"
 	"github.com/ashigirl96/hail-mary/internal/session"
+	"github.com/ashigirl96/hail-mary/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -36,6 +38,23 @@ Note: This command automatically runs in plan mode for non-destructive analysis 
 		logger := GetLogger()
 		logger.Info("Initializing PRD with Claude assistance")
 
+		// Get feature title from user
+		featureTitle, err := ui.RunFeatureInput()
+		if err != nil {
+			return fmt.Errorf("failed to get feature title: %w", err)
+		}
+
+		logger.Info("Feature title received", slog.String("feature_title", featureTitle))
+
+		// Create spec manager and feature directory
+		specManager := kiro.NewSpecManager()
+		featurePath, err := specManager.CreateFeatureDir(featureTitle)
+		if err != nil {
+			return fmt.Errorf("failed to create feature directory: %w", err)
+		}
+
+		logger.Info("Feature directory created", slog.String("path", featurePath))
+
 		// Create PRD directory if it doesn't exist
 		prdDir := "prd"
 		if err := os.MkdirAll(prdDir, 0755); err != nil {
@@ -44,7 +63,7 @@ Note: This command automatically runs in plan mode for non-destructive analysis 
 
 		// Use hook-based session tracking with plan mode
 		ctx := context.Background()
-		return initPRDWithHooks(ctx, logger, "plan")
+		return initPRDWithHooks(ctx, logger, "plan", featureTitle, featurePath, specManager)
 	},
 }
 
@@ -54,7 +73,7 @@ func init() {
 }
 
 // initPRDWithHooks initializes PRD with hook-based session tracking
-func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) error {
+func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, featureTitle string, featurePath string, specManager *kiro.SpecManager) error {
 	// Setup hook configuration
 	hookConfigPath, cleanup, err := hooks.SetupConfig(logger)
 	if err != nil {
@@ -64,11 +83,13 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) err
 
 	// Create Claude executor with settings path
 	config := claude.DefaultConfig()
-	config.SkipPermissions = false // TODO: refactoring
 	config.SettingsPath = hookConfigPath
 	executor := claude.NewExecutorWithConfig(config)
 
-	// Prepare the initial prompt for PRD creation
+	// Prepare the initial prompt for PRD creation with feature context
+	//	initialPrompt := fmt.Sprintf(`I'm creating a Product Requirements Document (PRD) for a feature titled: "%s"
+	//
+	//Please help me develop a comprehensive PRD for this feature. Let's start by understanding the problem space and requirements.`, featureTitle)
 	initialPrompt := ``
 
 	// Start monitoring for session
@@ -128,7 +149,7 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) err
 	}()
 
 	// Start monitoring for session establishment
-	go monitorSessionEstablishment(ctx, logger, sessionChan)
+	go monitorSessionEstablishment(ctx, logger, sessionChan, featurePath)
 
 	// Wait for session or error
 	select {
@@ -157,11 +178,20 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string) err
 	}
 
 	fmt.Printf("\n\nPRD session completed.\n")
+
+	// Display where to save the PRD
+	requirementsPath, err := specManager.GetRequirementsPath(featureTitle)
+	if err == nil {
+		fmt.Printf("\nPlease save your PRD to: %s\n", requirementsPath)
+		fmt.Printf("\nYou can copy the PRD content from the Claude session and save it using:\n")
+		fmt.Printf("  echo 'YOUR_PRD_CONTENT' > %s\n", requirementsPath)
+	}
+
 	return nil
 }
 
 // monitorSessionEstablishment monitors for session file creation
-func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessionChan chan<- *session.State) {
+func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessionChan chan<- *session.State, featurePath string) {
 	processID := fmt.Sprintf("%d", os.Getpid())
 	fmt.Printf("Monitoring for session establishment (PID: %s)...\n", processID)
 
@@ -182,6 +212,16 @@ func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessi
 		case <-ticker.C:
 			state, err := sm.ReadSession(processID)
 			if err == nil {
+				// Save session to feature directory
+				if err := sm.WriteSessionToFeature(featurePath, state); err != nil {
+					logger.Error("Failed to write session to feature directory",
+						"error", err,
+						"feature_path", featurePath)
+				} else {
+					logger.Info("Session saved to feature directory",
+						"session_id", state.SessionID,
+						"feature_path", featurePath)
+				}
 				sessionChan <- state
 				return
 			}

@@ -200,3 +200,15 @@ func (sm *Manager) CleanupStale(maxAge time.Duration) error {
 
 	return nil
 }
+
+// WriteSessionToFeature writes session state to a feature-specific directory
+func (sm *Manager) WriteSessionToFeature(featureDir string, state *State) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	// Create feature state manager
+	featureManager := NewFeatureStateManager(featureDir)
+
+	// Save state using the feature manager
+	return featureManager.SaveState(state)
+}
