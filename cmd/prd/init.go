@@ -90,8 +90,7 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, fea
 	//Please help me develop a comprehensive PRD for this feature. Let's start by understanding the problem space and requirements.`, featureTitle)
 	initialPrompt := ``
 
-	// Start monitoring for session
-	sessionChan := make(chan *claude.State, 1)
+	// Create error channel for Claude execution
 	errChan := make(chan error, 1)
 
 	// Display merged settings content
@@ -146,27 +145,17 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, fea
 		errChan <- nil
 	}()
 
-	// Start monitoring for session establishment
-	go monitorSessionEstablishment(ctx, logger, sessionChan, featurePath)
-
-	// Wait for session or error
+	// Wait for Claude execution to complete
 	select {
-	case sessionState := <-sessionChan:
-		logger.Info("Session established",
-			"session_id", sessionState.SessionID,
-			"transcript_path", sessionState.TranscriptPath)
-		fmt.Printf("\nSession ID: %s\n", sessionState.SessionID[:8])
-
-	case <-time.After(30 * time.Second):
-		// Session tracking failed, but continue anyway
-		logger.Warn("Session tracking timeout, continuing without session ID")
-
 	case err := <-errChan:
 		if err != nil {
 			return fmt.Errorf("claude execution failed: %w", err)
 		}
 		fmt.Printf("\n\nPRD session completed.\n")
-		return nil
+
+	case <-time.After(5 * time.Minute):
+		logger.Warn("Claude execution timeout")
+		return fmt.Errorf("claude execution timeout")
 	}
 
 	// Wait for Claude to finish
@@ -186,43 +175,4 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, fea
 	}
 
 	return nil
-}
-
-// monitorSessionEstablishment monitors for session file creation
-func monitorSessionEstablishment(ctx context.Context, logger *slog.Logger, sessionChan chan<- *claude.State, featurePath string) {
-	processID := fmt.Sprintf("%d", os.Getpid())
-	fmt.Printf("Monitoring for session establishment (PID: %s)...\n", processID)
-
-	sm, err := claude.NewManager()
-	if err != nil {
-		logger.Error("Failed to create session manager", "error", err)
-		return
-	}
-
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-
-		case <-ticker.C:
-			state, err := sm.ReadSession(processID)
-			if err == nil {
-				// Save session to feature directory
-				if err := sm.WriteSessionToFeature(featurePath, state); err != nil {
-					logger.Error("Failed to write session to feature directory",
-						"error", err,
-						"feature_path", featurePath)
-				} else {
-					logger.Info("Session saved to feature directory",
-						"session_id", state.SessionID,
-						"feature_path", featurePath)
-				}
-				sessionChan <- state
-				return
-			}
-		}
-	}
 }
