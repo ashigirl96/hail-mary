@@ -161,49 +161,49 @@ func ParseHookEvent(data []byte) (interface{}, error) {
 		if err := json.Unmarshal(data, &e); err != nil {
 			return nil, fmt.Errorf("failed to parse SessionStart event: %w", err)
 		}
-		event = e
+		event = &e
 	case "UserPromptSubmit":
 		var e UserPromptSubmitEvent
 		if err := json.Unmarshal(data, &e); err != nil {
 			return nil, fmt.Errorf("failed to parse UserPromptSubmit event: %w", err)
 		}
-		event = e
+		event = &e
 	case "PreToolUse":
 		var e PreToolUseEvent
 		if err := json.Unmarshal(data, &e); err != nil {
 			return nil, fmt.Errorf("failed to parse PreToolUse event: %w", err)
 		}
-		event = e
+		event = &e
 	case "PostToolUse":
 		var e PostToolUseEvent
 		if err := json.Unmarshal(data, &e); err != nil {
 			return nil, fmt.Errorf("failed to parse PostToolUse event: %w", err)
 		}
-		event = e
+		event = &e
 	case "Notification":
 		var e NotificationEvent
 		if err := json.Unmarshal(data, &e); err != nil {
 			return nil, fmt.Errorf("failed to parse Notification event: %w", err)
 		}
-		event = e
+		event = &e
 	case "Stop":
 		var e StopEvent
 		if err := json.Unmarshal(data, &e); err != nil {
 			return nil, fmt.Errorf("failed to parse Stop event: %w", err)
 		}
-		event = e
+		event = &e
 	case "SubagentStop":
 		var e SubagentStopEvent
 		if err := json.Unmarshal(data, &e); err != nil {
 			return nil, fmt.Errorf("failed to parse SubagentStop event: %w", err)
 		}
-		event = e
+		event = &e
 	case "PreCompact":
 		var e PreCompactEvent
 		if err := json.Unmarshal(data, &e); err != nil {
 			return nil, fmt.Errorf("failed to parse PreCompact event: %w", err)
 		}
-		event = e
+		event = &e
 	default:
 		return nil, fmt.Errorf("unknown hook event type: %s", base.HookEventName)
 	}
