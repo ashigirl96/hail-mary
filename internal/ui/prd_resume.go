@@ -21,7 +21,7 @@ type PRDResumeModel struct {
 	sessions        []SessionInfo // List of sessions for selected feature
 	featureIndex    int           // Current selection in features list
 	sessionIndex    int           // Current selection in sessions list
-	activePane      int           // 0 = left (features), 1 = right (sessions)
+	activePane      int           // 0 = left (markdown), 1 = right (sessions)
 	selectedFeature string        // Selected feature name
 	selectedSession string        // Selected session ID
 	width           int           // Terminal width
@@ -29,15 +29,28 @@ type PRDResumeModel struct {
 	err             error         // Error state
 	loading         bool          // Loading state for sessions
 	confirmed       bool          // Whether selection is confirmed
+	// Markdown preview fields
+	markdownContent      string   // Content of requirement.md
+	markdownLines        []string // Rendered markdown lines
+	markdownScrollOffset int      // Scroll position in markdown preview
+	markdownLoading      bool     // Loading state for markdown
+}
+
+// UserInput represents a user input in a Claude session
+type UserInput struct {
+	Content    string    // The user input content
+	Timestamp  time.Time // When the input was made
+	TurnNumber int       // Turn number in the session
 }
 
 // SessionInfo represents a Claude session
 type SessionInfo struct {
-	ID          string
-	StartTime   time.Time
-	LastUpdated time.Time
-	TurnCount   int
-	Summary     string // First user message as summary
+	ID          string      // Session ID
+	StartTime   time.Time   // When the session started
+	LastUpdated time.Time   // Last update time
+	TurnCount   int         // Number of turns
+	Summary     string      // First user message as summary
+	UserInputs  []UserInput // All user inputs in the session
 }
 
 // NewPRDResumeModel creates a new TUI model for PRD resume
@@ -53,9 +66,12 @@ func NewPRDResumeModel(features []string) PRDResumeModel {
 
 // Init initializes the model
 func (m PRDResumeModel) Init() tea.Cmd {
-	// Load sessions for the first feature if available
+	// Load sessions and markdown for the first feature if available
 	if len(m.features) > 0 {
-		return m.loadSessionsCmd(m.features[0])
+		return tea.Batch(
+			m.loadSessionsCmd(m.features[0]),
+			m.loadMarkdownCmd(m.features[0]),
+		)
 	}
 	return nil
 }
@@ -97,13 +113,43 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case "ctrl+u":
+			// Scroll markdown preview up
+			if m.activePane == 0 && len(m.markdownLines) > 0 {
+				if m.markdownScrollOffset > 0 {
+					m.markdownScrollOffset -= 5 // Scroll up by 5 lines
+					if m.markdownScrollOffset < 0 {
+						m.markdownScrollOffset = 0
+					}
+				}
+			}
+			return m, nil
+
+		case "ctrl+d":
+			// Scroll markdown preview down
+			if m.activePane == 0 && len(m.markdownLines) > 0 {
+				paneHeight := m.height - 6
+				maxScroll := len(m.markdownLines) - paneHeight
+				if maxScroll > 0 && m.markdownScrollOffset < maxScroll {
+					m.markdownScrollOffset += 5 // Scroll down by 5 lines
+					if m.markdownScrollOffset > maxScroll {
+						m.markdownScrollOffset = maxScroll
+					}
+				}
+			}
+			return m, nil
+
 		case "j", "down":
 			if m.activePane == 0 {
 				// Navigate features
 				if m.featureIndex < len(m.features)-1 {
 					m.featureIndex++
-					m.sessionIndex = 0 // Reset session selection
-					return m, m.loadSessionsCmd(m.features[m.featureIndex])
+					m.sessionIndex = 0         // Reset session selection
+					m.markdownScrollOffset = 0 // Reset scroll
+					return m, tea.Batch(
+						m.loadSessionsCmd(m.features[m.featureIndex]),
+						m.loadMarkdownCmd(m.features[m.featureIndex]),
+					)
 				}
 			} else if m.activePane == 1 {
 				// Navigate sessions
@@ -118,8 +164,12 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Navigate features
 				if m.featureIndex > 0 {
 					m.featureIndex--
-					m.sessionIndex = 0 // Reset session selection
-					return m, m.loadSessionsCmd(m.features[m.featureIndex])
+					m.sessionIndex = 0         // Reset session selection
+					m.markdownScrollOffset = 0 // Reset scroll
+					return m, tea.Batch(
+						m.loadSessionsCmd(m.features[m.featureIndex]),
+						m.loadMarkdownCmd(m.features[m.featureIndex]),
+					)
 				}
 			} else if m.activePane == 1 {
 				// Navigate sessions
@@ -135,9 +185,16 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		return m, nil
 
+	case markdownLoadedMsg:
+		m.markdownContent = msg.content
+		m.markdownLines = msg.lines
+		m.markdownLoading = false
+		return m, nil
+
 	case errorMsg:
 		m.err = msg.err
 		m.loading = false
+		m.markdownLoading = false
 		return m, nil
 	}
 
@@ -158,24 +215,36 @@ func (m PRDResumeModel) View() string {
 	paneWidth := (m.width - 3) / 2 // -3 for borders and separator
 	paneHeight := m.height - 4     // -4 for header and footer
 
-	// Render left pane (features)
-	leftPane := m.renderFeaturesPane(paneWidth, paneHeight)
+	// Render left pane (markdown preview)
+	leftPane := m.renderMarkdownPane(paneWidth, paneHeight)
 
-	// Render right pane (sessions)
+	// Render right pane (sessions with user inputs)
 	rightPane := m.renderSessionsPane(paneWidth, paneHeight)
 
 	// Join panes horizontally
 	content := lipgloss.JoinHorizontal(lipgloss.Top, leftPane, " │ ", rightPane)
 
-	// Add header and footer
+	// Add header and footer with current feature info
+	currentFeature := ""
+	if len(m.features) > 0 && m.featureIndex < len(m.features) {
+		currentFeature = strings.ReplaceAll(m.features[m.featureIndex], "-", " ")
+		words := strings.Fields(currentFeature)
+		for i, word := range words {
+			if len(word) > 0 {
+				words[i] = strings.ToUpper(word[:1]) + word[1:]
+			}
+		}
+		currentFeature = strings.Join(words, " ")
+	}
+
 	header := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("205")).
-		Render("PRD Resume - Select Feature and Session")
+		Render(fmt.Sprintf("PRD Resume - %s", currentFeature))
 
 	footer := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("241")).
-		Render("j/k: navigate • h/l: switch panes • enter: select • q: quit")
+		Render("j/k: navigate features • h/l: switch panes • ctrl+u/d: scroll markdown • enter: select • q: quit")
 
 	// Combine all parts
 	return lipgloss.JoinVertical(lipgloss.Left,
@@ -187,8 +256,8 @@ func (m PRDResumeModel) View() string {
 	)
 }
 
-// renderFeaturesPane renders the left pane with feature list
-func (m PRDResumeModel) renderFeaturesPane(width, height int) string {
+// renderMarkdownPane renders the left pane with markdown preview
+func (m PRDResumeModel) renderMarkdownPane(width, height int) string {
 	paneStyle := lipgloss.NewStyle().
 		Width(width).
 		Height(height).
@@ -198,45 +267,61 @@ func (m PRDResumeModel) renderFeaturesPane(width, height int) string {
 	title := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("205")).
-		Render("Features")
+		Render("Requirements Preview")
 
 	var items []string
 	items = append(items, title)
 	items = append(items, "")
 
-	// Render feature list
-	for i, feature := range m.features {
-		style := lipgloss.NewStyle()
-		prefix := "  "
+	if m.markdownLoading {
+		items = append(items, "Loading markdown...")
+	} else if len(m.markdownLines) == 0 {
+		items = append(items, lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")).
+			Render("No requirements.md found for this feature"))
+		items = append(items, "")
+		items = append(items, lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")).
+			Render("Create one to see a preview here."))
+	} else {
+		// Render markdown with scrolling
+		contentHeight := height - 4 // Account for title, border, and padding
 
-		if i == m.featureIndex {
-			prefix = "> "
-			if m.activePane == 0 {
-				style = style.Bold(true).Foreground(lipgloss.Color("205"))
-			} else {
-				style = style.Foreground(lipgloss.Color("250"))
-			}
+		startLine := m.markdownScrollOffset
+		endLine := startLine + contentHeight
+
+		if endLine > len(m.markdownLines) {
+			endLine = len(m.markdownLines)
 		}
 
-		// Convert kebab-case back to readable format
-		displayName := strings.ReplaceAll(feature, "-", " ")
-		// Capitalize first letter of each word
-		words := strings.Fields(displayName)
-		for i, word := range words {
-			if len(word) > 0 {
-				words[i] = strings.ToUpper(word[:1]) + word[1:]
-			}
+		if startLine < len(m.markdownLines) {
+			displayLines := m.markdownLines[startLine:endLine]
+			items = append(items, displayLines...)
 		}
-		displayName = strings.Join(words, " ")
 
-		items = append(items, style.Render(prefix+displayName))
+		// Add scroll indicator if content is scrollable
+		if len(m.markdownLines) > contentHeight {
+			scrollInfo := fmt.Sprintf("[%d-%d/%d]",
+				startLine+1,
+				endLine,
+				len(m.markdownLines))
+			indicator := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("241")).
+				Render(scrollInfo)
+
+			// Replace the title line to include scroll indicator
+			items[0] = lipgloss.JoinHorizontal(lipgloss.Left,
+				title,
+				" ",
+				indicator)
+		}
 	}
 
 	content := strings.Join(items, "\n")
 	return paneStyle.Render(content)
 }
 
-// renderSessionsPane renders the right pane with session list
+// renderSessionsPane renders the right pane with session list and user inputs
 func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 	paneStyle := lipgloss.NewStyle().
 		Width(width).
@@ -247,7 +332,7 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 	title := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("205")).
-		Render("Sessions")
+		Render("Session History")
 
 	var items []string
 	items = append(items, title)
@@ -260,7 +345,7 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 			Foreground(lipgloss.Color("241")).
 			Render("No sessions found for this feature"))
 	} else {
-		// Render session list
+		// Render session list with user inputs
 		for i, session := range m.sessions {
 			style := lipgloss.NewStyle()
 			prefix := "  "
@@ -281,13 +366,47 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 
 			items = append(items, style.Render(prefix+sessionInfo))
 
-			// Add summary if we're on this item
-			if i == m.sessionIndex && session.Summary != "" {
-				summaryStyle := lipgloss.NewStyle().
-					Foreground(lipgloss.Color("241")).
+			// Add user inputs if we're on this item
+			if i == m.sessionIndex && len(session.UserInputs) > 0 {
+				items = append(items, "")
+
+				inputStyle := lipgloss.NewStyle().
+					Foreground(lipgloss.Color("250")).
 					PaddingLeft(4)
-				summary := truncateString(session.Summary, width-6)
-				items = append(items, summaryStyle.Render(summary))
+
+				inputHeaderStyle := lipgloss.NewStyle().
+					Foreground(lipgloss.Color("33")).
+					PaddingLeft(4).
+					Bold(true)
+
+				items = append(items, inputHeaderStyle.Render("User Inputs:"))
+
+				// Show up to 5 most recent inputs
+				maxInputs := 5
+				startIdx := 0
+				if len(session.UserInputs) > maxInputs {
+					startIdx = len(session.UserInputs) - maxInputs
+				}
+
+				for j := startIdx; j < len(session.UserInputs); j++ {
+					input := session.UserInputs[j]
+
+					// Truncate and format the input
+					maxWidth := width - 8 // Account for padding and borders
+					truncated := truncateString(input.Content, maxWidth)
+
+					inputLine := fmt.Sprintf("• %s", truncated)
+					items = append(items, inputStyle.Render(inputLine))
+				}
+
+				// Show count if there are more inputs
+				if len(session.UserInputs) > maxInputs {
+					moreStyle := lipgloss.NewStyle().
+						Foreground(lipgloss.Color("241")).
+						PaddingLeft(4).
+						Italic(true)
+					items = append(items, moreStyle.Render(fmt.Sprintf("... and %d more inputs", len(session.UserInputs)-maxInputs)))
+				}
 			}
 		}
 	}
@@ -312,6 +431,21 @@ func (m PRDResumeModel) loadSessionsCmd(feature string) tea.Cmd {
 			return errorMsg{err: err}
 		}
 		return sessionsLoadedMsg{sessions: sessions}
+	}
+}
+
+// loadMarkdownCmd returns a command to load markdown content for a feature
+func (m PRDResumeModel) loadMarkdownCmd(feature string) tea.Cmd {
+	return func() tea.Msg {
+		content, lines, err := m.loadMarkdownForFeature(feature, m.width/2-6)
+		if err != nil {
+			// Return empty content if file doesn't exist or can't be read
+			return markdownLoadedMsg{
+				content: "No requirements.md found for this feature.\n\nCreate one to see a preview here.",
+				lines:   []string{"No requirements.md found for this feature.", "", "Create one to see a preview here."},
+			}
+		}
+		return markdownLoadedMsg{content: content, lines: lines}
 	}
 }
 
@@ -350,6 +484,23 @@ func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, e
 	return sessions, nil
 }
 
+// loadMarkdownForFeature loads and renders markdown content for a feature
+func (m PRDResumeModel) loadMarkdownForFeature(feature string, width int) (string, []string, error) {
+	// Build path to requirements.md
+	requirementsPath := filepath.Join(".kiro", "spec", feature, "requirements.md")
+
+	// Read file content
+	content, err := os.ReadFile(requirementsPath)
+	if err != nil {
+		return "", nil, err
+	}
+
+	contentStr := string(content)
+	lines := renderMarkdown(contentStr, width)
+
+	return contentStr, lines, nil
+}
+
 // parseTranscriptFile parses a Claude transcript file using the session state
 func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionState) (*SessionInfo, error) {
 	file, err := os.Open(path)
@@ -360,7 +511,9 @@ func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionSt
 
 	scanner := bufio.NewScanner(file)
 	var firstUserMessage string
+	var userInputs []UserInput
 	var turnCount int
+	currentTurn := 0
 
 	for scanner.Scan() {
 		var entry map[string]interface{}
@@ -374,11 +527,20 @@ func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionSt
 				if role, ok := message["role"].(string); ok && role == "user" {
 					if content, ok := message["content"].(string); ok {
 						// Skip hook messages
-						if !strings.Contains(content, "-hook>") && firstUserMessage == "" {
-							firstUserMessage = content
-						}
 						if !strings.Contains(content, "-hook>") {
+							if firstUserMessage == "" {
+								firstUserMessage = content
+							}
+
+							// Add to user inputs list
+							userInputs = append(userInputs, UserInput{
+								Content:    content,
+								Timestamp:  state.StartedAt, // Use session start time as approximation
+								TurnNumber: currentTurn,
+							})
+
 							turnCount++
+							currentTurn++
 						}
 					}
 				}
@@ -394,6 +556,7 @@ func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionSt
 		LastUpdated: state.LastUpdated,
 		TurnCount:   turnCount,
 		Summary:     truncateString(firstUserMessage, 100),
+		UserInputs:  userInputs,
 	}, nil
 }
 
@@ -408,6 +571,11 @@ func truncateString(s string, maxLen int) string {
 // Message types for async operations
 type sessionsLoadedMsg struct {
 	sessions []SessionInfo
+}
+
+type markdownLoadedMsg struct {
+	content string
+	lines   []string
 }
 
 type errorMsg struct {
@@ -445,4 +613,172 @@ func RunPRDResume(features []string) (string, string, error) {
 	}
 
 	return "", "", fmt.Errorf("unexpected model type")
+}
+
+// Markdown rendering functions
+
+// renderMarkdown renders basic markdown to styled strings
+func renderMarkdown(content string, width int) []string {
+	lines := strings.Split(content, "\n")
+	var rendered []string
+
+	for _, line := range lines {
+		rendered = append(rendered, renderMarkdownLine(line, width)...)
+	}
+
+	return rendered
+}
+
+// renderMarkdownLine renders a single markdown line with basic formatting
+func renderMarkdownLine(line string, width int) []string {
+	line = strings.TrimRight(line, " \t")
+
+	// Handle different markdown elements
+	if strings.HasPrefix(line, "# ") {
+		// H1 header
+		text := strings.TrimPrefix(line, "# ")
+		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("205"))
+		return wrapText(style.Render("# "+text), width)
+	} else if strings.HasPrefix(line, "## ") {
+		// H2 header
+		text := strings.TrimPrefix(line, "## ")
+		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("33"))
+		return wrapText(style.Render("## "+text), width)
+	} else if strings.HasPrefix(line, "### ") {
+		// H3 header
+		text := strings.TrimPrefix(line, "### ")
+		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("39"))
+		return wrapText(style.Render("### "+text), width)
+	} else if strings.HasPrefix(line, "- ") || strings.HasPrefix(line, "* ") {
+		// Bullet list
+		text := line[2:]
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
+		bullet := lipgloss.NewStyle().Foreground(lipgloss.Color("33")).Render("•")
+		return wrapText(bullet+" "+style.Render(text), width)
+	} else if strings.HasPrefix(line, "```") {
+		// Code block
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Background(lipgloss.Color("234"))
+		return []string{style.Render(line)}
+	} else if strings.HasPrefix(line, "> ") {
+		// Blockquote
+		text := strings.TrimPrefix(line, "> ")
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Italic(true)
+		prefix := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("│ ")
+		return wrapText(prefix+style.Render(text), width)
+	} else if line == "" {
+		// Empty line
+		return []string{""}
+	} else {
+		// Regular text with inline formatting
+		rendered := renderInlineMarkdown(line)
+		return wrapText(rendered, width)
+	}
+}
+
+// renderInlineMarkdown handles inline markdown formatting
+func renderInlineMarkdown(text string) string {
+	// Handle bold text **text**
+	for {
+		if !strings.Contains(text, "**") {
+			break
+		}
+		start := strings.Index(text, "**")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(text[start+2:], "**")
+		if end == -1 {
+			break
+		}
+		end += start + 2
+
+		before := text[:start]
+		content := text[start+2 : end]
+		after := text[end+2:]
+
+		styled := lipgloss.NewStyle().Bold(true).Render(content)
+		text = before + styled + after
+	}
+
+	// Handle italic text *text*
+	for {
+		if !strings.Contains(text, "*") {
+			break
+		}
+		start := strings.Index(text, "*")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(text[start+1:], "*")
+		if end == -1 {
+			break
+		}
+		end += start + 1
+
+		before := text[:start]
+		content := text[start+1 : end]
+		after := text[end+1:]
+
+		styled := lipgloss.NewStyle().Italic(true).Render(content)
+		text = before + styled + after
+	}
+
+	// Handle code `text`
+	for {
+		if !strings.Contains(text, "`") {
+			break
+		}
+		start := strings.Index(text, "`")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(text[start+1:], "`")
+		if end == -1 {
+			break
+		}
+		end += start + 1
+
+		before := text[:start]
+		content := text[start+1 : end]
+		after := text[end+1:]
+
+		styled := lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Background(lipgloss.Color("234")).Render(content)
+		text = before + styled + after
+	}
+
+	return text
+}
+
+// wrapText wraps text to fit within the specified width
+func wrapText(text string, width int) []string {
+	if width <= 0 {
+		return []string{text}
+	}
+
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return []string{text}
+	}
+
+	var lines []string
+	var currentLine []string
+	currentLength := 0
+
+	for _, word := range words {
+		wordLen := len(word)
+		if currentLength+wordLen+len(currentLine) > width && len(currentLine) > 0 {
+			lines = append(lines, strings.Join(currentLine, " "))
+			currentLine = []string{word}
+			currentLength = wordLen
+		} else {
+			currentLine = append(currentLine, word)
+			currentLength += wordLen
+		}
+	}
+
+	if len(currentLine) > 0 {
+		lines = append(lines, strings.Join(currentLine, " "))
+	}
+
+	return lines
 }
