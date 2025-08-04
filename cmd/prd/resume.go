@@ -29,7 +29,7 @@ This command displays a TUI with two panes:
 Navigation:
 - j/k: Move up/down within the current pane
 - h/l: Switch between left and right panes
-- Enter: Select and resume a session
+- Enter: Select and redo conversation from this point (removes selected input and everything after)
 - q/Esc: Quit`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger := GetLogger()
@@ -49,7 +49,7 @@ Navigation:
 		}
 
 		// Launch the TUI
-		selectedFeature, selectedSession, selectedInput, err := ui.RunPRDResume(features)
+		selectedFeature, selectedSession, selectedInput, isContinue, err := ui.RunPRDResume(features)
 		if err != nil {
 			return fmt.Errorf("failed to run PRD resume UI: %w", err)
 		}
@@ -61,16 +61,19 @@ Navigation:
 
 		logger.Info("Feature and session selected",
 			slog.String("feature", selectedFeature),
-			slog.String("session", selectedSession))
+			slog.String("session", selectedSession),
+			slog.Bool("is_continue", isContinue))
 
-		if selectedInput != nil {
-			logger.Info("Resuming from specific input",
-				slog.Int("turn", selectedInput.TurnNumber),
-				slog.String("content_preview", truncateForLog(selectedInput.Content, 50)))
+		if selectedInput != nil && !isContinue {
+			logger.Info("Redoing conversation from specific input",
+				slog.Int("redo_from_turn", selectedInput.TurnNumber),
+				slog.String("removed_content", truncateForLog(selectedInput.Content, 50)))
+		} else if isContinue {
+			logger.Info("Continuing from latest session")
 		}
 
 		// Resume the session
-		return resumePRDSession(cmd.Context(), logger, selectedFeature, selectedSession, selectedInput, specManager)
+		return resumePRDSession(cmd.Context(), logger, selectedFeature, selectedSession, selectedInput, isContinue, specManager)
 	},
 }
 
@@ -112,12 +115,12 @@ func truncateForLog(s string, maxLen int) string {
 }
 
 // resumePRDSession resumes a Claude session for PRD editing
-func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle string, sessionID string, selectedInput *ui.UserInput, specManager *kiro.SpecManager) error {
+func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle string, sessionID string, selectedInput *ui.UserInput, isContinue bool, specManager *kiro.SpecManager) error {
 	// Get feature path
 	featurePath := filepath.Join(".kiro", "spec", featureTitle)
 
-	// If a specific input was selected, we need to truncate the transcript
-	if selectedInput != nil {
+	// If a specific input was selected (and not continue), we need to truncate the transcript
+	if selectedInput != nil && !isContinue {
 		// Load session state to get transcript path
 		sessionManager := claude.NewFeatureSessionStateManager(featurePath)
 		sessions, err := sessionManager.LoadSessions()
@@ -131,20 +134,16 @@ func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle str
 			return fmt.Errorf("session %s not found", sessionID)
 		}
 
-		// Show warning about truncation
-		fmt.Printf("\n⚠️  WARNING: This will truncate the session at Turn %d\n", selectedInput.TurnNumber)
-		fmt.Printf("Original transcript will be backed up, but the session will restart from:\n")
-		fmt.Printf("\"%s\"\n", truncateForLog(selectedInput.Content, 80))
-		fmt.Print("\nProceed? (y/N): ")
+		// Truncate without warning - user already confirmed selection in UI
+		// Remove the selected input and everything after it (redo from that point)
+		truncateAtTurn := selectedInput.TurnNumber - 1 // Exclude the selected user input itself
+		logger.Info("Truncating session to redo from selected turn",
+			slog.Int("selected_turn", selectedInput.TurnNumber),
+			slog.Int("truncate_at_turn", truncateAtTurn),
+			slog.String("redo_content", truncateForLog(selectedInput.Content, 80)))
 
-		var response string
-		_, _ = fmt.Scanln(&response)
-		if strings.ToLower(response) != "y" {
-			return fmt.Errorf("truncation cancelled by user")
-		}
-
-		// Truncate the transcript
-		truncatedPath, err := claude.TruncateTranscript(sessionState.TranscriptPath, selectedInput.TurnNumber)
+		// Truncate the transcript (everything from selected turn onwards will be removed)
+		truncatedPath, err := claude.TruncateTranscript(sessionState.TranscriptPath, truncateAtTurn)
 		if err != nil {
 			return fmt.Errorf("failed to truncate transcript: %w", err)
 		}
@@ -154,8 +153,8 @@ func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle str
 			return fmt.Errorf("failed to replace transcript: %w", err)
 		}
 
-		logger.Info("Transcript truncated successfully",
-			slog.Int("turn", selectedInput.TurnNumber),
+		logger.Info("Transcript truncated successfully for redo",
+			slog.Int("removed_from_turn", selectedInput.TurnNumber),
 			slog.String("transcript", sessionState.TranscriptPath))
 	}
 
@@ -168,7 +167,7 @@ func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle str
 
 	// Create Claude executor with settings path
 	config := claude.DefaultConfig()
-	config.SkipPermissions = false
+	config.SkipPermissions = true
 	config.SettingsPath = hookConfigPath
 	executor := claude.NewExecutorWithConfig(config)
 
@@ -177,12 +176,14 @@ func resumePRDSession(ctx context.Context, logger *slog.Logger, featureTitle str
 
 	// Prepare the resume prompt
 	var resumePrompt string
-	if selectedInput != nil {
+	if selectedInput != nil && !isContinue {
 		resumePrompt = fmt.Sprintf(`I'm resuming work on the Product Requirements Document (PRD) for the feature: "%s"
 
-We're resuming from Turn %d. The session ID is: %s
+I want to redo the conversation from Turn %d onwards. The session ID is: %s
+The conversation was truncated, removing the following input and everything after it:
+"%s"
 
-Let's continue from where we left off.`, readableTitle, selectedInput.TurnNumber, sessionID[:8])
+Let's continue with a fresh approach from where we left off.`, readableTitle, selectedInput.TurnNumber, sessionID[:8], truncateForLog(selectedInput.Content, 120))
 	} else {
 		resumePrompt = fmt.Sprintf(`I'm resuming work on the Product Requirements Document (PRD) for the feature: "%s"
 
