@@ -549,7 +549,6 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 
 		// Render items with scrolling support
 		startIdx := m.inputScrollOffset
-		itemIndex := 0
 
 		// Render continue block if available and in visible range
 		if m.latestSession != nil && startIdx == 0 {
@@ -564,10 +563,9 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 				// Add spacing
 				if len(m.flatInputs) > 0 && currentHeight < contentHeight-1 {
 					items = append(items, "")
-					currentHeight++
+					currentHeight += 1
 				}
 			}
-			itemIndex = 1 // Continue block takes index 0
 		}
 
 		// Render user input blocks
@@ -581,7 +579,13 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 				continue
 			}
 			flatInput := m.flatInputs[i]
-			inputBlock := m.renderUserInputBlock(flatInput, itemIndex, width-4) // -4 for padding
+			// Calculate the correct logical index for this FlatUserInput
+			// flatInputs[i] corresponds to m.inputIndex = i + 1 (if Continue block exists) or i (if no Continue block)
+			logicalIndex := i
+			if m.latestSession != nil {
+				logicalIndex = i + 1 // Account for Continue block at index 0
+			}
+			inputBlock := m.renderUserInputBlock(flatInput, logicalIndex, width-4) // -4 for padding
 			blockLines := strings.Count(inputBlock, "\n") + 1
 
 			if currentHeight+blockLines <= contentHeight {
@@ -592,10 +596,9 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 				// Add spacing between blocks
 				if i < len(m.flatInputs)-1 && currentHeight < contentHeight-1 {
 					items = append(items, "")
-					currentHeight++
+					currentHeight += 1
 				}
 			}
-			itemIndex++
 		}
 
 		// Add scroll indicator if needed
@@ -685,8 +688,10 @@ func (m PRDResumeModel) renderContinueBlock(width int) string {
 }
 
 // renderUserInputBlock renders an individual user input block with markdown styling
-func (m PRDResumeModel) renderUserInputBlock(flatInput FlatUserInput, index int, width int) string {
-	isSelected := index == m.inputIndex
+func (m PRDResumeModel) renderUserInputBlock(flatInput FlatUserInput, displayIndex int, width int) string {
+	// displayIndex is the visual index in the UI (accounting for Continue block)
+	// m.inputIndex is the logical index (0 = Continue, 1+ = FlatUserInputs)
+	isSelected := displayIndex == m.inputIndex
 	isActive := m.activePane == 1
 
 	// Determine block style based on state
@@ -778,30 +783,53 @@ func (m *PRDResumeModel) adjustInputScroll() {
 		return
 	}
 
+	// Special handling for Continue block (inputIndex = 0)
+	if m.inputIndex == 0 && m.latestSession != nil {
+		// Continue block is only visible when scroll offset is 0
+		m.inputScrollOffset = 0
+		return
+	}
+
+	// For FlatInputs (inputIndex > 0), we need to calculate the correct scroll position
+	// inputIndex=1 corresponds to flatInputs[0], inputIndex=2 to flatInputs[1], etc.
+	flatInputIdx := m.inputIndex - 1
+	if m.latestSession == nil {
+		// No continue block, direct mapping
+		flatInputIdx = m.inputIndex
+	}
+
+	if flatInputIdx < 0 || flatInputIdx >= len(m.flatInputs) {
+		return
+	}
+
 	// Calculate actual visible items using the same logic as renderSessionsPane
 	paneWidth := (m.width - 3) / 2      // Same calculation as renderSessionsPane
 	contentHeight := (m.height - 4) - 4 // Account for pane header, footer, title and padding
-	visibleItems := m.calculateVisibleInputs(paneWidth, contentHeight)
 
-	if visibleItems <= 0 {
-		return // Not enough space to show items
+	// Try different scroll offsets to find one where the target flatInput is visible
+	for testScrollOffset := 0; testScrollOffset <= totalItems; testScrollOffset++ {
+		if m.isInputIndexVisibleWithScroll(testScrollOffset, paneWidth, contentHeight) {
+			m.inputScrollOffset = testScrollOffset
+			return
+		}
 	}
 
-	// Adjust scroll offset to keep selected input visible
+	// Fallback: use simple linear calculation
+	visibleItems := m.calculateVisibleInputs(paneWidth, contentHeight)
+	if visibleItems <= 0 {
+		return
+	}
+
 	if m.inputIndex < m.inputScrollOffset {
-		// Selected item is above visible area, scroll up
 		m.inputScrollOffset = m.inputIndex
 	} else if m.inputIndex >= m.inputScrollOffset+visibleItems {
-		// Selected item is below visible area, scroll down
 		m.inputScrollOffset = m.inputIndex - visibleItems + 1
 	}
 
-	// Ensure scroll offset doesn't go negative
+	// Ensure scroll offset bounds
 	if m.inputScrollOffset < 0 {
 		m.inputScrollOffset = 0
 	}
-
-	// Ensure scroll offset doesn't exceed reasonable bounds
 	maxScroll := totalItems - visibleItems
 	if maxScroll < 0 {
 		maxScroll = 0
@@ -813,16 +841,37 @@ func (m *PRDResumeModel) adjustInputScroll() {
 
 // calculateVisibleInputs dynamically calculates how many input blocks can fit in the visible area
 func (m *PRDResumeModel) calculateVisibleInputs(width, contentHeight int) int {
-	if len(m.flatInputs) == 0 || contentHeight <= 0 {
+	if contentHeight <= 0 {
 		return 0
 	}
 
 	visibleItems := 0
 	currentHeight := 0
+	startIdx := m.inputScrollOffset
+
+	// Handle Continue block if available and in visible range (same logic as renderSessionsPane)
+	if m.latestSession != nil && startIdx == 0 {
+		continueBlock := m.renderContinueBlock(width - 4) // -4 for padding
+		blockLines := strings.Count(continueBlock, "\n") + 1
+
+		if currentHeight+blockLines <= contentHeight {
+			visibleItems++
+			currentHeight += blockLines
+
+			// Add spacing
+			if len(m.flatInputs) > 0 && currentHeight < contentHeight-1 {
+				currentHeight += 1
+			}
+		}
+	}
 
 	// Calculate starting from current scroll offset to simulate actual rendering
-	startIdx := m.inputScrollOffset
-	for i := startIdx; i < len(m.flatInputs) && currentHeight < contentHeight; i++ {
+	flatInputStartIdx := startIdx
+	if m.latestSession != nil && startIdx > 0 {
+		flatInputStartIdx = startIdx - 1 // Adjust for continue block
+	}
+
+	for i := flatInputStartIdx; i < len(m.flatInputs) && currentHeight < contentHeight; i++ {
 		flatInput := m.flatInputs[i]
 
 		// Calculate block height the same way as renderUserInputBlock
@@ -833,9 +882,9 @@ func (m *PRDResumeModel) calculateVisibleInputs(width, contentHeight int) int {
 			visibleItems++
 			currentHeight += blockLines
 
-			// Add spacing between blocks (same as renderSessionsPane)
+			// Add spacing between blocks
 			if i < len(m.flatInputs)-1 && currentHeight < contentHeight-1 {
-				currentHeight++
+				currentHeight += 1
 			}
 		} else {
 			break
@@ -843,6 +892,70 @@ func (m *PRDResumeModel) calculateVisibleInputs(width, contentHeight int) int {
 	}
 
 	return visibleItems
+}
+
+// isInputIndexVisibleWithScroll checks if the current inputIndex would be visible with a given scroll offset
+func (m *PRDResumeModel) isInputIndexVisibleWithScroll(scrollOffset int, width, contentHeight int) bool {
+	if contentHeight <= 0 {
+		return false
+	}
+
+	visibleItems := 0
+	currentHeight := 0
+
+	// Handle Continue block if available and in visible range
+	if m.latestSession != nil && scrollOffset == 0 {
+		continueBlock := m.renderContinueBlock(width - 4)
+		blockLines := strings.Count(continueBlock, "\n") + 1
+
+		if currentHeight+blockLines <= contentHeight {
+			// Continue block is visible
+			if m.inputIndex == 0 {
+				return true // Target is the continue block
+			}
+			visibleItems++
+			currentHeight += blockLines
+			if len(m.flatInputs) > 0 && currentHeight < contentHeight-1 {
+				currentHeight += 1
+			}
+		}
+	}
+
+	// Handle FlatInputs
+	flatInputStartIdx := scrollOffset
+	if m.latestSession != nil && scrollOffset > 0 {
+		flatInputStartIdx = scrollOffset - 1
+	}
+
+	for i := flatInputStartIdx; i < len(m.flatInputs) && currentHeight < contentHeight; i++ {
+		if i < 0 {
+			continue
+		}
+		flatInput := m.flatInputs[i]
+		// Calculate the correct logical index for this FlatUserInput
+		logicalIndex := i
+		if m.latestSession != nil {
+			logicalIndex = i + 1 // Account for Continue block at index 0
+		}
+		inputBlock := m.renderUserInputBlock(flatInput, logicalIndex, width-4)
+		blockLines := strings.Count(inputBlock, "\n") + 1
+
+		if currentHeight+blockLines <= contentHeight {
+			// This flatInput is visible, check if it matches our target
+			if m.inputIndex == logicalIndex {
+				return true
+			}
+			visibleItems++
+			currentHeight += blockLines
+			if i < len(m.flatInputs)-1 && currentHeight < contentHeight-1 {
+				currentHeight += 1
+			}
+		} else {
+			break
+		}
+	}
+
+	return false
 }
 
 // getPaneBorderColor returns the border color for a pane
