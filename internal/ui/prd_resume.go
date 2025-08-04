@@ -15,6 +15,28 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// UI Constants
+const (
+	// Monokai color scheme
+	ColorPrimary    = "208" // Orange for headers and active selections (Monokai orange)
+	ColorSecondary  = "81"  // Cyan for session info and secondary headers (Monokai cyan)
+	ColorSuccess    = "118" // Green for continue option (Monokai green)
+	ColorTertiary   = "141" // Purple for H3 headers (Monokai purple)
+	ColorCode       = "197" // Pink for code spans (Monokai pink)
+	ColorMuted      = "102" // Dark gray for inactive elements and scroll indicators
+	ColorInactive   = "145" // Medium gray for inactive selections
+	ColorBorder     = "59"  // Darker gray for unselected borders
+	ColorBackground = "235" // Very dark gray background for code blocks
+
+	// Layout constants
+	FeatureSectionRatio = 0.2 // Features section takes 20% of left pane height
+	DefaultPadding      = 4   // Standard padding for UI elements
+	BorderPadding       = 2   // Padding adjustment for bordered elements
+	ScrollStepSize      = 5   // Number of lines to scroll at once
+	MaxSessionIDLength  = 8   // Maximum length for displayed session IDs
+	MaxSummaryLength    = 100 // Maximum length for session summaries
+)
+
 // PRDResumeModel represents the TUI state for PRD resume interface
 type PRDResumeModel struct {
 	features        []string        // List of feature directories
@@ -92,142 +114,141 @@ func (m PRDResumeModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles incoming events
-func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		return m, nil
+// handleKeyboardInput processes keyboard input events
+func (m PRDResumeModel) handleKeyboardInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c", "q":
+		return m, tea.Quit
 
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
+	case "esc":
+		return m, tea.Quit
 
-		case "esc":
-			return m, tea.Quit
-
-		case "enter":
-			if m.activePane == 1 {
-				if m.inputIndex == 0 && m.latestSession != nil {
-					// Continue from latest session
+	case "enter":
+		if m.activePane == 1 {
+			if m.inputIndex == 0 && m.latestSession != nil {
+				// Continue from latest session
+				m.selectedFeature = m.features[m.featureIndex]
+				m.selectedSession = m.latestSession.ID
+				m.selectedInput = nil // No specific input = continue
+				m.selectedContinue = true
+				m.confirmed = true
+				return m, tea.Quit
+			} else if len(m.flatInputs) > 0 {
+				// Redo from specific user input
+				adjustedIndex := m.inputIndex
+				if m.latestSession != nil {
+					adjustedIndex = m.inputIndex - 1 // Adjust for continue block
+				}
+				if adjustedIndex >= 0 && adjustedIndex < len(m.flatInputs) {
+					flatInput := m.flatInputs[adjustedIndex]
 					m.selectedFeature = m.features[m.featureIndex]
-					m.selectedSession = m.latestSession.ID
-					m.selectedInput = nil // No specific input = continue
-					m.selectedContinue = true
+					m.selectedSession = flatInput.SessionID
+					m.selectedInput = &flatInput.UserInput
+					m.selectedContinue = false
 					m.confirmed = true
 					return m, tea.Quit
-				} else if len(m.flatInputs) > 0 {
-					// Redo from specific user input
-					adjustedIndex := m.inputIndex
-					if m.latestSession != nil {
-						adjustedIndex = m.inputIndex - 1 // Adjust for continue block
-					}
-					if adjustedIndex >= 0 && adjustedIndex < len(m.flatInputs) {
-						flatInput := m.flatInputs[adjustedIndex]
-						m.selectedFeature = m.features[m.featureIndex]
-						m.selectedSession = flatInput.SessionID
-						m.selectedInput = &flatInput.UserInput
-						m.selectedContinue = false
-						m.confirmed = true
-						return m, tea.Quit
-					}
 				}
 			}
-			return m, nil
-
-		case "h", "left":
-			// Move to left pane (features)
-			if m.activePane == 1 {
-				m.activePane = 0
-			}
-			return m, nil
-
-		case "l", "right":
-			// Move to right pane (user inputs)
-			if m.activePane == 0 && (len(m.flatInputs) > 0 || m.latestSession != nil) {
-				m.activePane = 1
-			}
-			return m, nil
-
-		case "ctrl+u":
-			if m.activePane == 0 && len(m.markdownLines) > 0 {
-				// Scroll markdown preview up
-				if m.markdownScrollOffset > 0 {
-					m.markdownScrollOffset -= 5 // Scroll up by 5 lines
-					if m.markdownScrollOffset < 0 {
-						m.markdownScrollOffset = 0
-					}
-				}
-			}
-			return m, nil
-
-		case "ctrl+d":
-			if m.activePane == 0 && len(m.markdownLines) > 0 {
-				// Scroll markdown preview down
-				leftPaneHeight := m.height - 4 // -4 for header and footer
-				markdownSectionHeight := leftPaneHeight - (leftPaneHeight * 2 / 10)
-				contentHeight := markdownSectionHeight - 4 // Account for title, border, and padding
-				maxScroll := len(m.markdownLines) - contentHeight
-				if maxScroll > 0 && m.markdownScrollOffset < maxScroll {
-					m.markdownScrollOffset += 5 // Scroll down by 5 lines
-					if m.markdownScrollOffset > maxScroll {
-						m.markdownScrollOffset = maxScroll
-					}
-				}
-			}
-			return m, nil
-
-		case "j", "down":
-			if m.activePane == 0 {
-				// Navigate features
-				if m.featureIndex < len(m.features)-1 {
-					m.featureIndex++
-					m.inputIndex = 0           // Reset input selection
-					m.markdownScrollOffset = 0 // Reset scroll
-					m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
-					return m, tea.Batch(
-						m.loadSessionsCmd(m.features[m.featureIndex]),
-						m.loadMarkdownCmd(m.features[m.featureIndex]),
-					)
-				}
-			} else if m.activePane == 1 {
-				// Navigate user inputs (including continue option)
-				totalItems := len(m.flatInputs)
-				if m.latestSession != nil {
-					totalItems++ // +1 for continue option
-				}
-				if m.inputIndex < totalItems-1 {
-					m.inputIndex++
-					m.adjustInputScroll()
-				}
-			}
-			return m, nil
-
-		case "k", "up":
-			if m.activePane == 0 {
-				// Navigate features
-				if m.featureIndex > 0 {
-					m.featureIndex--
-					m.inputIndex = 0           // Reset input selection
-					m.markdownScrollOffset = 0 // Reset scroll
-					m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
-					return m, tea.Batch(
-						m.loadSessionsCmd(m.features[m.featureIndex]),
-						m.loadMarkdownCmd(m.features[m.featureIndex]),
-					)
-				}
-			} else if m.activePane == 1 {
-				// Navigate user inputs
-				if m.inputIndex > 0 {
-					m.inputIndex--
-					m.adjustInputScroll()
-				}
-			}
-			return m, nil
 		}
+		return m, nil
 
+	case "h", "left":
+		// Move to left pane (features)
+		if m.activePane == 1 {
+			m.activePane = 0
+		}
+		return m, nil
+
+	case "l", "right":
+		// Move to right pane (user inputs)
+		if m.activePane == 0 && (len(m.flatInputs) > 0 || m.latestSession != nil) {
+			m.activePane = 1
+		}
+		return m, nil
+
+	case "ctrl+u":
+		if m.activePane == 0 && len(m.markdownLines) > 0 {
+			// Scroll markdown preview up
+			if m.markdownScrollOffset > 0 {
+				m.markdownScrollOffset -= ScrollStepSize // Scroll up by step size
+				if m.markdownScrollOffset < 0 {
+					m.markdownScrollOffset = 0
+				}
+			}
+		}
+		return m, nil
+
+	case "ctrl+d":
+		if m.activePane == 0 && len(m.markdownLines) > 0 {
+			// Scroll markdown preview down
+			leftPaneHeight := m.height - DefaultPadding // -4 for header and footer
+			markdownSectionHeight := leftPaneHeight - (leftPaneHeight * int(FeatureSectionRatio*10) / 10)
+			contentHeight := markdownSectionHeight - DefaultPadding // Account for title, border, and padding
+			maxScroll := len(m.markdownLines) - contentHeight
+			if maxScroll > 0 && m.markdownScrollOffset < maxScroll {
+				m.markdownScrollOffset += ScrollStepSize // Scroll down by step size
+				if m.markdownScrollOffset > maxScroll {
+					m.markdownScrollOffset = maxScroll
+				}
+			}
+		}
+		return m, nil
+
+	case "j", "down":
+		if m.activePane == 0 {
+			// Navigate features
+			if m.featureIndex < len(m.features)-1 {
+				m.featureIndex++
+				m.inputIndex = 0           // Reset input selection
+				m.markdownScrollOffset = 0 // Reset scroll
+				m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
+				return m, tea.Batch(
+					m.loadSessionsCmd(m.features[m.featureIndex]),
+					m.loadMarkdownCmd(m.features[m.featureIndex]),
+				)
+			}
+		} else if m.activePane == 1 {
+			// Navigate user inputs (including continue option)
+			totalItems := len(m.flatInputs)
+			if m.latestSession != nil {
+				totalItems++ // +1 for continue option
+			}
+			if m.inputIndex < totalItems-1 {
+				m.inputIndex++
+				m.adjustInputScroll()
+			}
+		}
+		return m, nil
+
+	case "k", "up":
+		if m.activePane == 0 {
+			// Navigate features
+			if m.featureIndex > 0 {
+				m.featureIndex--
+				m.inputIndex = 0           // Reset input selection
+				m.markdownScrollOffset = 0 // Reset scroll
+				m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
+				return m, tea.Batch(
+					m.loadSessionsCmd(m.features[m.featureIndex]),
+					m.loadMarkdownCmd(m.features[m.featureIndex]),
+				)
+			}
+		} else if m.activePane == 1 {
+			// Navigate user inputs
+			if m.inputIndex > 0 {
+				m.inputIndex--
+				m.adjustInputScroll()
+			}
+		}
+		return m, nil
+	}
+
+	return m, nil
+}
+
+// handleAsyncMessages processes async loading messages
+func (m PRDResumeModel) handleAsyncMessages(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
 	case sessionsLoadedMsg:
 		m.sessions = msg.sessions
 		m.flatInputs = msg.flatInputs
@@ -251,6 +272,22 @@ func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// Update handles incoming events
+func (m PRDResumeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
+
+	case tea.KeyMsg:
+		return m.handleKeyboardInput(msg)
+
+	default:
+		return m.handleAsyncMessages(msg)
+	}
+}
+
 // View renders the UI
 func (m PRDResumeModel) View() string {
 	if m.err != nil {
@@ -262,8 +299,8 @@ func (m PRDResumeModel) View() string {
 	}
 
 	// Calculate pane dimensions
-	paneWidth := (m.width - 3) / 2 // -3 for borders and separator
-	paneHeight := m.height - 4     // -4 for header and footer
+	paneWidth := (m.width - 3) / 2          // -3 for borders and separator
+	paneHeight := m.height - DefaultPadding // -4 for header and footer
 
 	// Render left pane (features + markdown preview)
 	leftPane := m.renderLeftPane(paneWidth, paneHeight)
@@ -289,7 +326,7 @@ func (m PRDResumeModel) View() string {
 
 	header := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("205")).
+		Foreground(lipgloss.Color(ColorPrimary)).
 		Render(fmt.Sprintf("PRD Resume - %s", currentFeature))
 
 	// Build footer based on current state
@@ -301,7 +338,7 @@ func (m PRDResumeModel) View() string {
 	}
 
 	footer := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
+		Foreground(lipgloss.Color(ColorMuted)).
 		Render(footerText)
 
 	// Combine all parts
@@ -317,7 +354,7 @@ func (m PRDResumeModel) View() string {
 // renderLeftPane renders the left pane with features list (top) and markdown preview (bottom)
 func (m PRDResumeModel) renderLeftPane(width, height int) string {
 	// Calculate heights for top and bottom sections (2:8 ratio)
-	topHeight := height * 2 / 10
+	topHeight := height * int(FeatureSectionRatio*10) / 10
 	bottomHeight := height - topHeight
 
 	// Render features section (top) without bottom border
@@ -328,7 +365,7 @@ func (m PRDResumeModel) renderLeftPane(width, height int) string {
 
 	// Create a separator line
 	separator := lipgloss.NewStyle().
-		Width(width - 2). // -2 for border padding
+		Width(width - BorderPadding). // -2 for border padding
 		Foreground(lipgloss.Color(m.getPaneBorderColor(0))).
 		Render(strings.Repeat("─", width-2))
 
@@ -356,13 +393,13 @@ func (m PRDResumeModel) renderFeaturesSection(width, topHeight int, withBorder b
 			BorderForeground(lipgloss.Color(m.getPaneBorderColor(0)))
 	} else {
 		paneStyle = lipgloss.NewStyle().
-			Width(width - 2).     // -2 to account for parent border
-			Height(topHeight - 2) // -2 to account for parent border
+			Width(width - BorderPadding).     // -2 to account for parent border
+			Height(topHeight - BorderPadding) // -2 to account for parent border
 	}
 
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("205")).
+		Foreground(lipgloss.Color(ColorPrimary)).
 		Render("Features")
 
 	var items []string
@@ -370,9 +407,9 @@ func (m PRDResumeModel) renderFeaturesSection(width, topHeight int, withBorder b
 	items = append(items, "")
 
 	// Render feature list with scrolling
-	availableHeight := topHeight - 4 // Account for title and padding
+	availableHeight := topHeight - DefaultPadding // Account for title and padding
 	if !withBorder {
-		availableHeight = topHeight - 2 // Less padding when no border
+		availableHeight = topHeight - BorderPadding // Less padding when no border
 	}
 	maxItems := availableHeight
 
@@ -392,9 +429,9 @@ func (m PRDResumeModel) renderFeaturesSection(width, topHeight int, withBorder b
 		if i == m.featureIndex {
 			prefix = "> "
 			if m.activePane == 0 {
-				style = style.Bold(true).Foreground(lipgloss.Color("205"))
+				style = style.Bold(true).Foreground(lipgloss.Color(ColorPrimary))
 			} else {
-				style = style.Foreground(lipgloss.Color("250"))
+				style = style.Foreground(lipgloss.Color(ColorInactive))
 			}
 		}
 
@@ -419,13 +456,13 @@ func (m PRDResumeModel) renderFeaturesSection(width, topHeight int, withBorder b
 			endIdx,
 			len(m.features))
 		indicator := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
+			Foreground(lipgloss.Color(ColorMuted)).
 			Render(scrollInfo)
 
 		// Replace the title line to include scroll indicator
 		title := lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("205")).
+			Foreground(lipgloss.Color(ColorPrimary)).
 			Render("Features")
 		items[0] = lipgloss.JoinHorizontal(lipgloss.Left,
 			title,
@@ -448,13 +485,13 @@ func (m PRDResumeModel) renderMarkdownSection(width, bottomHeight int, withBorde
 			BorderForeground(lipgloss.Color(m.getPaneBorderColor(0)))
 	} else {
 		paneStyle = lipgloss.NewStyle().
-			Width(width - 2).        // -2 to account for parent border
-			Height(bottomHeight - 2) // -2 to account for parent border
+			Width(width - BorderPadding).        // -2 to account for parent border
+			Height(bottomHeight - BorderPadding) // -2 to account for parent border
 	}
 
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("205")).
+		Foreground(lipgloss.Color(ColorPrimary)).
 		Render("Requirements Preview")
 
 	var items []string
@@ -465,17 +502,17 @@ func (m PRDResumeModel) renderMarkdownSection(width, bottomHeight int, withBorde
 		items = append(items, "Loading markdown...")
 	} else if len(m.markdownLines) == 0 {
 		items = append(items, lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
+			Foreground(lipgloss.Color(ColorMuted)).
 			Render("No requirements.md found for this feature"))
 		items = append(items, "")
 		items = append(items, lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
+			Foreground(lipgloss.Color(ColorMuted)).
 			Render("Create one to see a preview here."))
 	} else {
 		// Render markdown with scrolling
-		contentHeight := bottomHeight - 4 // Account for title, border, and padding
+		contentHeight := bottomHeight - DefaultPadding // Account for title, border, and padding
 		if !withBorder {
-			contentHeight = bottomHeight - 2 // Less padding when no border
+			contentHeight = bottomHeight - BorderPadding // Less padding when no border
 		}
 
 		startLine := m.markdownScrollOffset
@@ -497,7 +534,7 @@ func (m PRDResumeModel) renderMarkdownSection(width, bottomHeight int, withBorde
 				endLine,
 				len(m.markdownLines))
 			indicator := lipgloss.NewStyle().
-				Foreground(lipgloss.Color("241")).
+				Foreground(lipgloss.Color(ColorMuted)).
 				Render(scrollInfo)
 
 			// Replace the title line to include scroll indicator
@@ -522,7 +559,7 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("205")).
+		Foreground(lipgloss.Color(ColorPrimary)).
 		Render("User Input History")
 
 	var items []string
@@ -533,11 +570,11 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 		items = append(items, "Loading user inputs...")
 	} else if len(m.flatInputs) == 0 && m.latestSession == nil {
 		items = append(items, lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
+			Foreground(lipgloss.Color(ColorMuted)).
 			Render("No user inputs found for this feature"))
 	} else {
 		// Calculate visible range with scrolling
-		contentHeight := height - 4 // Account for title and padding
+		contentHeight := height - DefaultPadding // Account for title and padding
 		visibleInputs := 0
 		currentHeight := 0
 		totalItems := len(m.flatInputs)
@@ -552,7 +589,7 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 
 		// Render continue block if available and in visible range
 		if m.latestSession != nil && startIdx == 0 {
-			continueBlock := m.renderContinueBlock(width - 4) // -4 for padding
+			continueBlock := m.renderContinueBlock(width - DefaultPadding) // -4 for padding
 			blockLines := strings.Count(continueBlock, "\n") + 1
 
 			if currentHeight+blockLines <= contentHeight {
@@ -560,11 +597,7 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 				currentHeight += blockLines
 				visibleInputs++
 
-				// Add spacing
-				if len(m.flatInputs) > 0 && currentHeight < contentHeight-1 {
-					items = append(items, "")
-					currentHeight += 1
-				}
+				// Remove spacing between continue and first input for tighter layout
 			}
 		}
 
@@ -593,11 +626,7 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 				currentHeight += blockLines
 				visibleInputs++
 
-				// Add spacing between blocks
-				if i < len(m.flatInputs)-1 && currentHeight < contentHeight-1 {
-					items = append(items, "")
-					currentHeight += 1
-				}
+				// Remove spacing between blocks for tighter layout
 			}
 		}
 
@@ -608,7 +637,7 @@ func (m PRDResumeModel) renderSessionsPane(width, height int) string {
 				m.inputScrollOffset+visibleInputs,
 				totalItems)
 			indicator := lipgloss.NewStyle().
-				Foreground(lipgloss.Color("241")).
+				Foreground(lipgloss.Color(ColorMuted)).
 				Render(scrollInfo)
 
 			// Update title with scroll indicator
@@ -653,15 +682,15 @@ func (m PRDResumeModel) renderContinueBlock(width int) string {
 	// Build continue block content
 	headerLine := lipgloss.NewStyle().
 		Bold(isSelected && isActive).
-		Foreground(lipgloss.Color("46")).
+		Foreground(lipgloss.Color(ColorSuccess)).
 		Render(fmt.Sprintf("%s[Continue Latest Session]", prefix))
 
 	var sessionInfo string
 	if m.latestSession != nil {
 		timeStr := m.latestSession.StartTime.Format("2006-01-02 15:04")
 		sessionIdShort := m.latestSession.ID
-		if len(sessionIdShort) > 8 {
-			sessionIdShort = sessionIdShort[:8]
+		if len(sessionIdShort) > MaxSessionIDLength {
+			sessionIdShort = sessionIdShort[:MaxSessionIDLength]
 		}
 		sessionInfo = fmt.Sprintf("  %s │ Session %s │ %d turns", timeStr, sessionIdShort, m.latestSession.TurnCount)
 	} else {
@@ -669,11 +698,11 @@ func (m PRDResumeModel) renderContinueBlock(width int) string {
 	}
 
 	infoLine := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
+		Foreground(lipgloss.Color(ColorMuted)).
 		Render(sessionInfo)
 
 	descLine := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("250")).
+		Foreground(lipgloss.Color(ColorInactive)).
 		Italic(true).
 		Render("  Continue from the end of the most recent session")
 
@@ -725,7 +754,7 @@ func (m PRDResumeModel) renderUserInputBlock(flatInput FlatUserInput, displayInd
 
 	headerLine := lipgloss.NewStyle().
 		Bold(isSelected && isActive).
-		Foreground(lipgloss.Color("33")).
+		Foreground(lipgloss.Color(ColorSecondary)).
 		Render(fmt.Sprintf("%s%s │ Session %s │ Turn %d", prefix, timeStr, sessionIdShort, flatInput.TurnNumber))
 
 	// Render user input content as markdown
@@ -744,10 +773,10 @@ func (m PRDResumeModel) renderUserInputBlock(flatInput FlatUserInput, displayInd
 // adjustFeatureScroll ensures the selected feature is visible in the features section
 func (m *PRDResumeModel) adjustFeatureScroll() {
 	// Calculate available height for features section (same logic as renderFeaturesSection)
-	leftPaneHeight := m.height - 4 // -4 for header and footer
-	topHeight := leftPaneHeight * 2 / 10
-	availableHeight := topHeight - 4 // Account for title and padding
-	maxItems := availableHeight      // This is the number of visible items
+	leftPaneHeight := m.height - DefaultPadding // -4 for header and footer
+	topHeight := leftPaneHeight * int(FeatureSectionRatio*10) / 10
+	availableHeight := topHeight - DefaultPadding // Account for title and padding
+	maxItems := availableHeight                   // This is the number of visible items
 	// Adjust scroll offset to keep selected feature visible
 	if m.featureIndex < m.featureScrollOffset {
 		// Selected item is above visible area, scroll up
@@ -803,8 +832,8 @@ func (m *PRDResumeModel) adjustInputScroll() {
 	}
 
 	// Calculate actual visible items using the same logic as renderSessionsPane
-	paneWidth := (m.width - 3) / 2      // Same calculation as renderSessionsPane
-	contentHeight := (m.height - 4) - 4 // Account for pane header, footer, title and padding
+	paneWidth := (m.width - 3) / 2                                // Same calculation as renderSessionsPane
+	contentHeight := (m.height - DefaultPadding) - DefaultPadding // Account for pane header, footer, title and padding
 
 	// Try different scroll offsets to find one where the target flatInput is visible
 	for testScrollOffset := 0; testScrollOffset <= totalItems; testScrollOffset++ {
@@ -851,17 +880,14 @@ func (m *PRDResumeModel) calculateVisibleInputs(width, contentHeight int) int {
 
 	// Handle Continue block if available and in visible range (same logic as renderSessionsPane)
 	if m.latestSession != nil && startIdx == 0 {
-		continueBlock := m.renderContinueBlock(width - 4) // -4 for padding
+		continueBlock := m.renderContinueBlock(width - DefaultPadding) // -4 for padding
 		blockLines := strings.Count(continueBlock, "\n") + 1
 
 		if currentHeight+blockLines <= contentHeight {
 			visibleItems++
 			currentHeight += blockLines
 
-			// Add spacing
-			if len(m.flatInputs) > 0 && currentHeight < contentHeight-1 {
-				currentHeight += 1
-			}
+			// Remove spacing calculation for tighter layout
 		}
 	}
 
@@ -882,10 +908,7 @@ func (m *PRDResumeModel) calculateVisibleInputs(width, contentHeight int) int {
 			visibleItems++
 			currentHeight += blockLines
 
-			// Add spacing between blocks
-			if i < len(m.flatInputs)-1 && currentHeight < contentHeight-1 {
-				currentHeight += 1
-			}
+			// Remove spacing calculation between blocks for tighter layout
 		} else {
 			break
 		}
@@ -905,7 +928,7 @@ func (m *PRDResumeModel) isInputIndexVisibleWithScroll(scrollOffset int, width, 
 
 	// Handle Continue block if available and in visible range
 	if m.latestSession != nil && scrollOffset == 0 {
-		continueBlock := m.renderContinueBlock(width - 4)
+		continueBlock := m.renderContinueBlock(width - DefaultPadding)
 		blockLines := strings.Count(continueBlock, "\n") + 1
 
 		if currentHeight+blockLines <= contentHeight {
@@ -915,9 +938,7 @@ func (m *PRDResumeModel) isInputIndexVisibleWithScroll(scrollOffset int, width, 
 			}
 			visibleItems++
 			currentHeight += blockLines
-			if len(m.flatInputs) > 0 && currentHeight < contentHeight-1 {
-				currentHeight += 1
-			}
+			// Remove spacing calculation for tighter layout
 		}
 	}
 
@@ -947,9 +968,7 @@ func (m *PRDResumeModel) isInputIndexVisibleWithScroll(scrollOffset int, width, 
 			}
 			visibleItems++
 			currentHeight += blockLines
-			if i < len(m.flatInputs)-1 && currentHeight < contentHeight-1 {
-				currentHeight += 1
-			}
+			// Remove spacing calculation between blocks for tighter layout
 		} else {
 			break
 		}
@@ -961,9 +980,9 @@ func (m *PRDResumeModel) isInputIndexVisibleWithScroll(scrollOffset int, width, 
 // getPaneBorderColor returns the border color for a pane
 func (m PRDResumeModel) getPaneBorderColor(pane int) string {
 	if m.activePane == pane {
-		return "205" // Pink for active
+		return ColorPrimary // Pink for active
 	}
-	return "241" // Gray for inactive
+	return ColorMuted // Gray for inactive
 }
 
 // loadSessionsCmd returns a command to load sessions for a feature
@@ -1011,7 +1030,9 @@ func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, [
 		// Parse the transcript file to get session details
 		sessionInfo, err := m.parseTranscriptFile(state.TranscriptPath, state)
 		if err != nil {
-			// Skip files that can't be parsed
+			// Log warning for skipped files but continue processing other sessions
+			// Note: In a production version, this should use proper structured logging
+			fmt.Fprintf(os.Stderr, "Warning: Failed to parse transcript file %s: %v\n", state.TranscriptPath, err)
 			continue
 		}
 
@@ -1059,7 +1080,7 @@ func (m PRDResumeModel) loadMarkdownForFeature(feature string, width int) (strin
 	// Read file content
 	content, err := os.ReadFile(requirementsPath)
 	if err != nil {
-		return "", nil, err
+		return "", nil, fmt.Errorf("failed to read requirements.md from %s: %w", requirementsPath, err)
 	}
 
 	contentStr := string(content)
@@ -1072,7 +1093,7 @@ func (m PRDResumeModel) loadMarkdownForFeature(feature string, width int) (strin
 func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionState) (*SessionInfo, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open transcript file %s: %w", path, err)
 	}
 	defer file.Close()
 
@@ -1123,7 +1144,7 @@ func (m PRDResumeModel) parseTranscriptFile(path string, state *claude.SessionSt
 		StartTime:   state.StartedAt,
 		LastUpdated: state.LastUpdated,
 		TurnCount:   turnCount,
-		Summary:     truncateString(firstUserMessage, 100),
+		Summary:     truncateString(firstUserMessage, MaxSummaryLength),
 		UserInputs:  userInputs,
 	}, nil
 }
@@ -1223,33 +1244,33 @@ func renderMarkdownLine(line string, width int) []string {
 	if strings.HasPrefix(line, "# ") {
 		// H1 header
 		text := strings.TrimPrefix(line, "# ")
-		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("205"))
+		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(ColorPrimary))
 		return wrapText(style.Render("# "+text), width)
 	} else if strings.HasPrefix(line, "## ") {
 		// H2 header
 		text := strings.TrimPrefix(line, "## ")
-		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("33"))
+		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(ColorSecondary))
 		return wrapText(style.Render("## "+text), width)
 	} else if strings.HasPrefix(line, "### ") {
 		// H3 header
 		text := strings.TrimPrefix(line, "### ")
-		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("39"))
+		style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(ColorTertiary))
 		return wrapText(style.Render("### "+text), width)
 	} else if strings.HasPrefix(line, "- ") || strings.HasPrefix(line, "* ") {
 		// Bullet list
 		text := line[2:]
-		style := lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
-		bullet := lipgloss.NewStyle().Foreground(lipgloss.Color("33")).Render("•")
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color(ColorInactive))
+		bullet := lipgloss.NewStyle().Foreground(lipgloss.Color(ColorSecondary)).Render("•")
 		return wrapText(bullet+" "+style.Render(text), width)
 	} else if strings.HasPrefix(line, "```") {
 		// Code block
-		style := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Background(lipgloss.Color("234"))
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color(ColorMuted)).Background(lipgloss.Color("234"))
 		return []string{style.Render(line)}
 	} else if strings.HasPrefix(line, "> ") {
 		// Blockquote
 		text := strings.TrimPrefix(line, "> ")
-		style := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Italic(true)
-		prefix := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("│ ")
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color(ColorMuted)).Italic(true)
+		prefix := lipgloss.NewStyle().Foreground(lipgloss.Color(ColorMuted)).Render("│ ")
 		return wrapText(prefix+style.Render(text), width)
 	} else if line == "" {
 		// Empty line
@@ -1328,7 +1349,7 @@ func renderInlineMarkdown(text string) string {
 		content := text[start+1 : end]
 		after := text[end+1:]
 
-		styled := lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Background(lipgloss.Color("234")).Render(content)
+		styled := lipgloss.NewStyle().Foreground(lipgloss.Color(ColorCode)).Background(lipgloss.Color("234")).Render(content)
 		text = before + styled + after
 	}
 
