@@ -59,6 +59,16 @@ Note: This command automatically runs in plan mode for non-destructive analysis 
 			return fmt.Errorf("failed to create PRD directory: %w", err)
 		}
 
+		// Generate and save the requirements.md template
+		requirementsContent := kiro.GetRequirementsTemplate(featureTitle)
+		if err := specManager.SaveRequirements(featureTitle, requirementsContent); err != nil {
+			return fmt.Errorf("failed to create requirements.md: %w", err)
+		}
+
+		requirementsPath, _ := specManager.GetRequirementsPath(featureTitle)
+		logger.Info("Requirements file created", slog.String("path", requirementsPath))
+		fmt.Printf("Created requirements template at: %s\n", requirementsPath)
+
 		// Use hook-based session tracking with plan mode
 		ctx := context.Background()
 		return initPRDWithHooks(ctx, logger, "plan", featureTitle, featurePath, specManager)
@@ -166,12 +176,12 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, fea
 
 	fmt.Printf("\n\nPRD session completed.\n")
 
-	// Display where to save the PRD
+	// Display where the requirements file was created
 	requirementsPath, err := specManager.GetRequirementsPath(featureTitle)
 	if err == nil {
-		fmt.Printf("\nPlease save your PRD to: %s\n", requirementsPath)
-		fmt.Printf("\nYou can copy the PRD content from the Claude session and save it using:\n")
-		fmt.Printf("  echo 'YOUR_PRD_CONTENT' > %s\n", requirementsPath)
+		fmt.Printf("\nRequirements template has been created at: %s\n", requirementsPath)
+		fmt.Printf("\nYou can now edit this file to update your PRD based on the Claude session.\n")
+		fmt.Printf("  vim %s  # or use your preferred editor\n", requirementsPath)
 	}
 
 	return nil
