@@ -11,7 +11,6 @@ import (
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
 	"github.com/ashigirl96/hail-mary/internal/kiro"
-	"github.com/ashigirl96/hail-mary/internal/prompt"
 	"github.com/ashigirl96/hail-mary/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -212,12 +211,16 @@ Let's continue where we left off.`, readableTitle, sessionID[:8])
 	fmt.Println("Resuming Claude interactive shell for PRD editing...")
 	fmt.Println("Press Ctrl+C to exit the Claude shell.")
 
-	// Read system prompt from file if it exists
-	systemPrompt, err := prompt.ReadPRDSystemPrompt(logger)
+	// Get requirements path for the feature
+	requirementsPath, err := specManager.GetRequirementsPath(readableTitle)
 	if err != nil {
-		logger.Warn("Failed to read system prompt file, continuing without it", "error", err)
-		systemPrompt = ""
+		logger.Warn("Failed to get requirements path", "error", err)
+		requirementsPath = fmt.Sprintf(".kiro/spec/%s/requirements.md", featureTitle)
 	}
+
+	// Get system prompt with the requirements path
+	systemPrompt := kiro.GetRequirementsTemplate(requirementsPath)
+	logger.Debug("Loaded PRD system prompt", "length", len(systemPrompt))
 
 	// Create execution options for resuming
 	opts := claude.ExecuteOptions{
@@ -236,13 +239,10 @@ Let's continue where we left off.`, readableTitle, sessionID[:8])
 
 	fmt.Printf("\n\nPRD session completed.\n")
 
-	// Display where to save the PRD
-	requirementsPath, err := specManager.GetRequirementsPath(readableTitle)
-	if err == nil {
-		fmt.Printf("\nPlease save your PRD to: %s\n", requirementsPath)
-		fmt.Printf("\nYou can copy the PRD content from the Claude session and save it using:\n")
-		fmt.Printf("  echo 'YOUR_PRD_CONTENT' > %s\n", requirementsPath)
-	}
+	// Display where to save the PRD (reuse requirementsPath from above)
+	fmt.Printf("\nPlease save your PRD to: %s\n", requirementsPath)
+	fmt.Printf("\nYou can copy the PRD content from the Claude session and save it using:\n")
+	fmt.Printf("  echo 'YOUR_PRD_CONTENT' > %s\n", requirementsPath)
 
 	return nil
 }

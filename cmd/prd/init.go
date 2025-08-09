@@ -9,7 +9,6 @@ import (
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
 	"github.com/ashigirl96/hail-mary/internal/kiro"
-	"github.com/ashigirl96/hail-mary/internal/prompt"
 	"github.com/ashigirl96/hail-mary/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -53,15 +52,8 @@ Note: This command automatically runs in plan mode for non-destructive analysis 
 
 		logger.Info("Feature directory created", slog.String("path", featurePath))
 
-		// Create PRD directory if it doesn't exist
-		prdDir := "prd"
-		if err := os.MkdirAll(prdDir, 0755); err != nil {
-			return fmt.Errorf("failed to create PRD directory: %w", err)
-		}
-
-		// Generate and save the requirements.md template
-		requirementsContent := kiro.GetRequirementsTemplate(featureTitle)
-		if err := specManager.SaveRequirements(featureTitle, requirementsContent); err != nil {
+		// Save the initial requirements.md file (empty content triggers default template)
+		if err := specManager.SaveRequirements(featureTitle, ""); err != nil {
 			return fmt.Errorf("failed to create requirements.md: %w", err)
 		}
 
@@ -71,7 +63,7 @@ Note: This command automatically runs in plan mode for non-destructive analysis 
 
 		// Use hook-based session tracking with plan mode
 		ctx := context.Background()
-		return initPRDWithHooks(ctx, logger, "plan", featureTitle, featurePath, specManager)
+		return initPRDWithHooks(ctx, logger, "plan", featureTitle, featurePath, requirementsPath, specManager)
 	},
 }
 
@@ -81,7 +73,7 @@ func init() {
 }
 
 // initPRDWithHooks initializes PRD with hook-based session tracking
-func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, featureTitle string, featurePath string, specManager *kiro.SpecManager) error {
+func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, featureTitle string, featurePath string, requirementsPath string, specManager *kiro.SpecManager) error {
 	// Setup hook configuration with feature path
 	hookConfigPath, cleanup, err := claude.SetupHookConfigWithFeature(logger, featurePath)
 	if err != nil {
@@ -129,12 +121,9 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, fea
 			"settings_path", hookConfigPath,
 			"executor_config", config)
 
-		// Read system prompt from file if it exists
-		systemPrompt, err := prompt.ReadPRDSystemPrompt(logger)
-		if err != nil {
-			logger.Warn("Failed to read system prompt file, continuing without it", "error", err)
-			systemPrompt = ""
-		}
+		// Get system prompt with the actual requirements path
+		systemPrompt := kiro.GetRequirementsTemplate(requirementsPath)
+		logger.Debug("Loaded PRD system prompt", "length", len(systemPrompt))
 
 		// Create execution options
 		opts := claude.ExecuteOptions{
@@ -168,21 +157,10 @@ func initPRDWithHooks(ctx context.Context, logger *slog.Logger, mode string, fea
 		return fmt.Errorf("claude execution timeout")
 	}
 
-	// Wait for Claude to finish
-	err = <-errChan
-	if err != nil {
-		return fmt.Errorf("claude execution failed: %w", err)
-	}
-
-	fmt.Printf("\n\nPRD session completed.\n")
-
 	// Display where the requirements file was created
-	requirementsPath, err := specManager.GetRequirementsPath(featureTitle)
-	if err == nil {
-		fmt.Printf("\nRequirements template has been created at: %s\n", requirementsPath)
-		fmt.Printf("\nYou can now edit this file to update your PRD based on the Claude session.\n")
-		fmt.Printf("  vim %s  # or use your preferred editor\n", requirementsPath)
-	}
+	fmt.Printf("\nRequirements template has been created at: %s\n", requirementsPath)
+	fmt.Printf("\nYou can now edit this file to update your PRD based on the Claude session.\n")
+	fmt.Printf("  vim %s  # or use your preferred editor\n", requirementsPath)
 
 	return nil
 }

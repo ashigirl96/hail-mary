@@ -66,11 +66,17 @@ func (sm *SpecManager) GetRequirementsPath(featureTitle string) (string, error) 
 }
 
 // SaveRequirements saves the requirements content to the appropriate file
+// If content is empty, it automatically generates a default template
 func (sm *SpecManager) SaveRequirements(featureTitle string, content string) error {
 	// Ensure the feature directory exists
 	featurePath, err := sm.CreateFeatureDir(featureTitle)
 	if err != nil {
 		return err
+	}
+
+	// If content is empty, use the default template
+	if content == "" {
+		content = GetInitialRequirementsContent(featureTitle)
 	}
 
 	// Write the requirements file
