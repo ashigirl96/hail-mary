@@ -11,7 +11,7 @@ const (
 	// KiroDir is the base directory for all kiro-related files
 	KiroDir = ".kiro"
 	// SpecDir is the subdirectory for specifications
-	SpecDir = "spec"
+	SpecDir = "specs"
 	// RequirementsFile is the name of the requirements file
 	RequirementsFile = "requirements.md"
 )
