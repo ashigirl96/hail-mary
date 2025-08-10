@@ -13,9 +13,18 @@ import (
 //go:embed templates/requirements.md
 var requirementsTemplateFile string
 
+//go:embed templates/requirements_template.md
+var initialRequirementsTemplateFile string
+
 // TemplateData holds the data for rendering the requirements template
 type TemplateData struct {
 	RequirementsPath string
+}
+
+// InitialTemplateData holds the data for rendering the initial requirements template
+type InitialTemplateData struct {
+	FeatureTitle string
+	Date         string
 }
 
 // GetRequirementsTemplate returns the rendered requirements template
@@ -53,15 +62,36 @@ func getFallbackTemplate(requirementsPath string) string {
 
 // GetInitialRequirementsContent returns the initial content for a new requirements.md file
 func GetInitialRequirementsContent(featureTitle string) string {
-	timestamp := time.Now().Format("2006-01-02")
+	// Parse the embedded template
+	tmpl, err := template.New("initial_requirements").Parse(initialRequirementsTemplateFile)
+	if err != nil {
+		// Fallback to a simple template if parsing fails
+		return getInitialRequirementsFallback(featureTitle)
+	}
 
+	// Prepare the data
+	data := InitialTemplateData{
+		FeatureTitle: featureTitle,
+		Date:         time.Now().Format("2006-01-02"),
+	}
+
+	// Execute the template
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		// Fallback if execution fails
+		return getInitialRequirementsFallback(featureTitle)
+	}
+
+	return buf.String()
+}
+
+// getInitialRequirementsFallback returns a simple fallback template if the main template fails
+func getInitialRequirementsFallback(featureTitle string) string {
+	timestamp := time.Now().Format("2006-01-02")
 	return fmt.Sprintf(`# 要件定義書: %s
 
 ## 概要
 - Date: %s
-
-## 問題定義
-[この機能が解決する問題を記述]
 
 ## 要件
 (要件は機能の説明後に記載されます)
