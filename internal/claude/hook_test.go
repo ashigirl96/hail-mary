@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ashigirl96/hail-mary/internal/kiro"
 	"github.com/ashigirl96/hail-mary/internal/settings"
 )
 
@@ -63,7 +64,7 @@ func TestSetupHookConfigWithFeature(t *testing.T) {
 		},
 		{
 			name:             "hook configuration with feature path",
-			featurePath:      ".kiro/spec/my-feature",
+			featurePath:      filepath.Join(kiro.KiroDir, kiro.SpecDir, "my-feature"),
 			existingSettings: false,
 			wantErr:          false,
 			checkConfig: func(t *testing.T, configPath string) {
@@ -75,7 +76,7 @@ func TestSetupHookConfigWithFeature(t *testing.T) {
 
 				// Check that the hook command contains HAIL_MARY_FEATURE_PATH
 				content := string(data)
-				if !strings.Contains(content, "HAIL_MARY_FEATURE_PATH=.kiro/spec/my-feature") {
+				if !strings.Contains(content, fmt.Sprintf("HAIL_MARY_FEATURE_PATH=%s", filepath.Join(kiro.KiroDir, kiro.SpecDir, "my-feature"))) {
 					t.Error("HAIL_MARY_FEATURE_PATH not found in hook command")
 				}
 			},
@@ -232,18 +233,18 @@ func TestSetupHookConfigWithFeature_HookCommand(t *testing.T) {
 		},
 		{
 			name:        "with feature path",
-			featurePath: ".kiro/spec/test-feature",
+			featurePath: filepath.Join(kiro.KiroDir, kiro.SpecDir, "test-feature"),
 			wantEnvVars: []string{
 				"HAIL_MARY_PARENT_PID=",
-				"HAIL_MARY_FEATURE_PATH=.kiro/spec/test-feature",
+				fmt.Sprintf("HAIL_MARY_FEATURE_PATH=%s", filepath.Join(kiro.KiroDir, kiro.SpecDir, "test-feature")),
 			},
 		},
 		{
 			name:        "with special characters in path",
-			featurePath: ".kiro/spec/feature with spaces",
+			featurePath: filepath.Join(kiro.KiroDir, kiro.SpecDir, "feature with spaces"),
 			wantEnvVars: []string{
 				"HAIL_MARY_PARENT_PID=",
-				"HAIL_MARY_FEATURE_PATH=.kiro/spec/feature with spaces",
+				fmt.Sprintf("HAIL_MARY_FEATURE_PATH=%s", filepath.Join(kiro.KiroDir, kiro.SpecDir, "feature with spaces")),
 			},
 		},
 	}
