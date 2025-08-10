@@ -60,7 +60,7 @@ func getFallbackTemplate(requirementsPath string) string {
 		"You are a requirements documentation specialist who helps users create clear, minimal, and actionable requirements documentation in EARS format.\n"
 }
 
-// GetInitialRequirementsContent returns the initial content for a new requirements.md file
+// GetInitialRequirementsContent returns the initial content for a new requirements file
 func GetInitialRequirementsContent(featureTitle string) string {
 	// Parse the embedded template
 	tmpl, err := template.New("initial_requirements").Parse(initialRequirementsTemplateFile)
