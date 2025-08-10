@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Overview
+
+**Hail Mary** is a comprehensive PRD (Product Requirements Document) management system with deep Claude Code integration. It provides an intuitive TUI interface for managing requirements documentation using the EARS (Easy Approach to Requirements Syntax) format.
+
+### Key Features
+- **PRD Management**: Create and manage product requirements documents with EARS format
+- **Claude Code Integration**: Automatic session tracking through hook system
+- **Interactive TUI**: Rich terminal interface built with Bubbletea and Lipgloss
+- **Session Resume**: Continue or redo conversations from any point in history
+- **Template System**: Embedded templates with mermaid diagram support
+- **Japanese/English Support**: Mixed language documentation with proper formatting
+
 ## Build and Development Commands
 
 ### Essential Commands
@@ -27,17 +39,26 @@ make all
 # Clean build artifacts
 make clean
 
-# Install golangci-lint if needed
+# Install required tools
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+go install golang.org/x/tools/cmd/goimports@latest
+go install honnef.co/go/tools/cmd/staticcheck@latest
 ```
 
 ### Development Workflow
 ```bash
+# Live development with file watching
+make dev     # Requires air
+make watch   # Alternative file watchers
+
 # Cross-platform builds
 make build-linux
 make build-windows
 make build-mac
 make build-all
+
+# Parallel test and build
+make parallel-checks
 ```
 
 ### Post-Build Requirements
@@ -51,80 +72,280 @@ Note: The fix-completion.sh script corrects a known Cobra bug where array append
 
 ## Architecture Overview
 
-This is a CLI application built with **Cobra** (command framework) and **slog** (structured logging). The architecture follows a clean separation of concerns:
+### Technology Stack
+- **Framework**: Cobra (CLI framework) with structured command hierarchy
+- **Logging**: slog with configurable log levels
+- **TUI**: Bubbletea (TUI framework) with Lipgloss (styling)
+- **Testing**: testify for assertions and mocking
+- **Validation**: go-playground/validator for input validation
 
-### Claude Session Management
-
-The `internal/claude/executor.go` provides enhanced session management capabilities:
-
-- **SessionInfo**: Struct containing session ID, result, cost, duration, and turns
-- **ExecuteInteractive**: Launches Claude CLI in interactive mode with initial prompt (SIMPLIFIED!)
-- **ExecuteAndContinueInteractive**: Same as ExecuteInteractive but returns dummy SessionInfo for compatibility
-- **ExecuteInteractiveWithSession**: Resume specific sessions in interactive mode
-- **Input Validation**: Security validation for prompts and session IDs
-
-Note: Session management is now handled automatically by the Claude Code hook system. The hooks capture session IDs and store them in `~/.hail-mary/sessions/{PID}.json`.
-
-#### Hook-based Session Management (NEW!)
-
-The application now supports automatic session management through Claude Code's hook system:
-
-1. **Hook Command**: `hail-mary hook` processes Claude Code hook events
-2. **Session State**: Stored in `~/.hail-mary/sessions/{PID}.json`
-3. **Automatic Management**: `prd init` uses hooks to capture session IDs automatically
-
-To enable hook-based session management in your own Claude Code projects:
-
-1. Copy `.claude/settings.json.example` to `.claude/settings.json`
-2. Ensure `hail-mary` binary is built and accessible
-3. The hook will automatically manage sessions when using supported commands
-
-Hook Configuration Example:
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/bin/hail-mary hook"
-          }
-        ]
-      }
-    ]
-  }
-}
+### Project Structure
+```
+.
+├── cmd/                    # Command definitions
+│   ├── root.go            # Root command and global configuration
+│   ├── prd/               # PRD management command
+│   └── hook/              # Claude Code hook handler
+├── internal/              # Internal packages
+│   ├── claude/            # Claude CLI integration
+│   │   ├── executor.go    # Claude CLI executor
+│   │   ├── hook.go        # Hook configuration
+│   │   ├── session_state_manager.go  # Session state management
+│   │   └── schemas/       # Hook event schemas
+│   ├── prd/               # PRD business logic
+│   │   ├── service.go     # PRD service layer
+│   │   ├── types.go       # Domain types
+│   │   └── constants.go   # PRD constants
+│   ├── kiro/              # Template and spec management
+│   │   ├── spec.go        # Specification management
+│   │   ├── templates.go   # Template rendering
+│   │   └── templates/     # Embedded templates
+│   ├── ui/                # Terminal UI components
+│   │   ├── prd_resume.go  # PRD resume interface
+│   │   └── feature_input.go  # Feature input interface
+│   ├── settings/          # Settings management
+│   └── testing/           # Test utilities and mocks
+├── docs/                  # Documentation
+├── reference/             # External references
+├── scripts/               # Utility scripts
+└── Makefile              # Build automation
 ```
 
-#### Usage Example
-```go
-executor := claude.NewExecutor()
+## Command Reference
 
-// SIMPLIFIED: Interactive mode with hook-based session management
-err := executor.ExecuteInteractive("Create a function")
-// This now simply:
-// 1. Launches Claude CLI with the initial prompt
-// 2. Session management is handled by hooks automatically
+### PRD Command
+The main command for managing Product Requirements Documents:
 
-// For backward compatibility (returns dummy SessionInfo)
-sessionInfo, err := executor.ExecuteAndContinueInteractive("Create a function")
+```bash
+# Launch PRD management interface
+hail-mary prd
 
+# Features:
+# - Create new requirements documents
+# - Resume existing sessions
+# - Redo conversations from any point
+# - Automatic session tracking
+
+# Navigation:
+# - j/k: Move up/down
+# - h/l: Switch panes
+# - Enter: Select
+# - q/Esc: Quit
 ```
 
-### Command Structure
-- **main.go**: Entry point that calls cmd.Execute()
-- **cmd/root.go**: Root command setup with global flags (--log-level) and slog configuration
+### Hook Command (Hidden)
+Processes Claude Code hook events for session management:
 
-### Key Design Patterns
+```bash
+# Automatically called by Claude Code
+hail-mary hook
+```
 
-1. **Centralized Logging**: All commands use slog through GetLogger() with configurable log levels (debug, info, warn, error)
+## Claude Code Integration
 
-2. **Command Initialization**: Each subcommand is registered in its init() function, keeping registration decoupled
+### Hook-based Session Management
 
-3. **Flag Management**: Each command manages its own flags as package-level variables, with PersistentFlags on root for global options
+The application integrates with Claude Code's hook system for automatic session tracking:
+
+1. **Hook Events Handled**:
+   - `SessionStart`: Captures new session IDs
+   - `UserPromptSubmit`: Updates session timestamps
+   - `Stop`: Finalizes session state
+   - `PreToolUse`/`PostToolUse`: Tool usage tracking
+
+2. **Session Storage**:
+   - Feature-specific: `.kiro/spec/{feature}/sessions/sessions.json`
+   - Contains session IDs, timestamps, and transcript paths
+
+3. **Hook Configuration**:
+   - Automatic merging with existing `.claude/settings.json`
+   - Temporary configuration for Claude CLI execution
+   - Environment variables for process tracking
+
+### Claude Executor
+
+The `internal/claude/executor.go` provides Claude CLI integration:
+
+- **Execute**: Launch Claude with initial prompt and options
+- **ExecuteWithSession**: Resume specific sessions
+- **Configuration**: Customizable CLI options and environment
+- **Validation**: Input validation for security
+
+### Session State Management
+
+The `internal/claude/session_state_manager.go` handles session persistence:
+
+- **Thread-safe**: Concurrent access protection
+- **Feature-based**: Sessions organized by feature
+- **JSON persistence**: Human-readable session files
+
+## PRD System Architecture
+
+### Service Layer (`internal/prd/service.go`)
+
+- **Feature Management**: Create and list feature directories
+- **Session Execution**: Handle new and resumed sessions
+- **Hook Integration**: Automatic hook configuration
+- **Transcript Management**: Handle redo operations
+
+### Template System (`internal/kiro/`)
+
+1. **Requirements Template**: System prompt for PRD specialist persona
+2. **Initial Template**: Starting structure for new requirements
+3. **Dynamic Rendering**: Template variables for paths and configuration
+
+### EARS Format
+
+The system uses EARS (Easy Approach to Requirements Syntax) format:
+
+- **Event-Driven**: `<u>WHEN</u> [event] <u>THEN</u> [system] <u>SHALL</u> [response]`
+- **State-Based**: `<u>IF</u> [condition] <u>THEN</u> [system] <u>SHALL</u> [response]`
+- **Continuous**: `<u>WHILE</u> [condition] <u>THE SYSTEM</u> <u>SHALL</u> [behavior]`
+- **Contextual**: `<u>WHERE</u> [context] <u>THE SYSTEM</u> <u>SHALL</u> [behavior]`
+
+### Language Convention
+
+- **Documentation**: Japanese content
+- **EARS Keywords**: English with `<u>` tags for emphasis
+- **Mermaid Diagrams**: Support for flowcharts and sequence diagrams
+
+## TUI Components
+
+### PRD Resume Interface (`internal/ui/prd_resume.go`)
+
+- **Three-pane Layout**:
+  - Left: Markdown preview of requirements
+  - Right Top: Feature list
+  - Right Bottom: Session inputs
+- **Monokai Color Scheme**: Professional dark theme
+- **Keyboard Navigation**: Vim-like bindings
+- **Dynamic Content**: Real-time markdown rendering
+
+### Feature Input Interface (`internal/ui/feature_input.go`)
+
+- **Text Input**: Feature title entry
+- **Validation**: Input sanitization
+- **Confirmation**: Enter to confirm, Esc to cancel
+
+## Testing Strategy
+
+### Test Organization
+
+- **Unit Tests**: Package-level `*_test.go` files
+- **Mocks**: `internal/testing/mocks/` for interfaces
+- **Integration**: Hook and session management tests
+- **Coverage**: Target 80% coverage minimum
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run with coverage
+make coverage
+
+# Run specific package
+go test ./internal/prd/...
+
+# Run with race detection
+go test -race ./...
+```
 
 ## Development Guidelines
 
-### Code Best Practices
+### Code Organization
+
+1. **Domain-Driven Design**: Separate business logic from infrastructure
+2. **Interface-Based**: Define interfaces for testability
+3. **Error Handling**: Wrap errors with context
+4. **Logging**: Use structured logging with slog
+
+### Best Practices
+
+- **Comments**: All code comments in English
+- **Error Messages**: Descriptive with context
+- **Validation**: Input validation at boundaries
+- **Thread Safety**: Use sync primitives for shared state
+- **Resource Cleanup**: Always defer cleanup functions
+
+### Git Workflow
+
+```bash
+# Feature branch
+git checkout -b feature/your-feature
+
+# Make changes and test
+make all
+
+# Commit with conventional commits
+git commit -m "feat(prd): add new feature"
+
+# Push and create PR
+git push origin feature/your-feature
+```
+
+### Adding New Commands
+
+1. Create command file in `cmd/yourcommand/root.go`
+2. Define command structure with cobra.Command
+3. Implement Init() function for registration
+4. Add to initSubcommands() in `cmd/root.go`
+5. Add tests in `cmd/yourcommand/root_test.go`
+
+### Extending PRD System
+
+1. **New Templates**: Add to `internal/kiro/templates/`
+2. **New Modes**: Update constants in `internal/prd/constants.go`
+3. **New UI Components**: Create in `internal/ui/`
+4. **New Hooks**: Update `internal/claude/hook.go`
+
+## Environment Variables
+
+- `HAIL_MARY_PARENT_PID`: Parent process ID for hook tracking
+- `HAIL_MARY_FEATURE_PATH`: Current feature directory path
+- `CLAUDE_*`: Claude CLI environment variables
+
+## Security Considerations
+
+1. **Input Validation**: All user inputs are validated
+2. **Path Traversal**: Absolute paths only, no traversal
+3. **Command Injection**: Proper argument escaping
+4. **Session Security**: Session IDs validated for format
+
+## Performance Considerations
+
+1. **Lazy Loading**: Load sessions on demand
+2. **Caching**: Template caching for performance
+3. **Parallel Operations**: Tests and builds run in parallel
+4. **Resource Management**: Proper cleanup and limits
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Hook Not Working**: Check executable path and permissions
+2. **Session Not Found**: Verify feature path and session files
+3. **TUI Rendering Issues**: Check terminal capabilities
+4. **Build Failures**: Ensure Go 1.24.4+ and dependencies
+
+### Debug Mode
+
+```bash
+# Enable debug logging
+hail-mary --log-level debug prd
+
+# Check hook execution
+tail -f /tmp/hail-mary-*.log
+
+# Verify session files
+ls -la .kiro/spec/*/sessions/
+```
+
+## Additional Notes
+
+### Code Style
+- Follow Go conventions and idioms
+- Use gofmt and goimports for formatting
+- Run staticcheck and golangci-lint before commits
 - プログラムにコメントを残すときはすべて英語にする
