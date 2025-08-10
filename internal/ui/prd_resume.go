@@ -359,14 +359,7 @@ func (m PRDResumeModel) View() string {
 	} else {
 		actualFeatureIdx := m.featureIndex - 1
 		if actualFeatureIdx >= 0 && actualFeatureIdx < len(m.features) {
-			currentFeature = strings.ReplaceAll(m.features[actualFeatureIdx], "-", " ")
-			words := strings.Fields(currentFeature)
-			for i, word := range words {
-				if len(word) > 0 {
-					words[i] = strings.ToUpper(word[:1]) + word[1:]
-				}
-			}
-			currentFeature = strings.Join(words, " ")
+			currentFeature = m.features[actualFeatureIdx]
 		}
 	}
 
@@ -500,16 +493,7 @@ func (m PRDResumeModel) renderFeaturesSection(width, topHeight int, withBorder b
 					}
 				}
 
-				// Convert kebab-case back to readable format
-				displayName = strings.ReplaceAll(feature, "-", " ")
-				// Capitalize first letter of each word
-				words := strings.Fields(displayName)
-				for j, word := range words {
-					if len(word) > 0 {
-						words[j] = strings.ToUpper(word[:1]) + word[1:]
-					}
-				}
-				displayName = strings.Join(words, " ")
+				displayName = feature
 			}
 		}
 
