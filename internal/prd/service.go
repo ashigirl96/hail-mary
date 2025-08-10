@@ -28,7 +28,7 @@ func NewService(logger *slog.Logger) *Service {
 	}
 }
 
-// GetFeatureList returns a list of feature directories from .kiro/spec/
+// GetFeatureList returns a list of feature directories from the spec directory
 func (s *Service) GetFeatureList() ([]string, error) {
 	specDir := filepath.Join(kiro.KiroDir, kiro.SpecDir)
 
@@ -71,15 +71,15 @@ func (s *Service) CreateNewPRD(ctx context.Context) error {
 
 	s.logger.Info("Feature directory created", slog.String("path", featurePath))
 
-	// Save the initial requirements.md file
+	// Save the initial requirements file
 	if err := s.specManager.SaveRequirements(featureTitle, ""); err != nil {
-		return fmt.Errorf("failed to create requirements.md: %w", err)
+		return fmt.Errorf("failed to create %s: %w", kiro.RequirementsFile, err)
 	}
 
 	requirementsPath, err := s.specManager.GetRequirementsPath(featureTitle)
 	if err != nil {
 		s.logger.Warn("Failed to get requirements path", "error", err)
-		requirementsPath = filepath.Join(featurePath, "requirements.md")
+		requirementsPath = filepath.Join(featurePath, kiro.RequirementsFile)
 	}
 
 	s.logger.Info("Requirements file created", slog.String("path", requirementsPath))
@@ -91,7 +91,7 @@ func (s *Service) CreateNewPRD(ctx context.Context) error {
 
 // ResumePRDSession resumes an existing PRD session
 func (s *Service) ResumePRDSession(ctx context.Context, featureTitle string, sessionID string, selectedInput *ui.UserInput, isContinue bool) error {
-	featurePath := filepath.Join(".kiro", "spec", featureTitle)
+	featurePath := filepath.Join(kiro.KiroDir, kiro.SpecDir, featureTitle)
 
 	// Handle transcript truncation if needed
 	if err := s.handleTranscriptTruncation(featurePath, sessionID, selectedInput, isContinue); err != nil {
@@ -103,7 +103,7 @@ func (s *Service) ResumePRDSession(ctx context.Context, featureTitle string, ses
 	requirementsPath, err := s.specManager.GetRequirementsPath(readableTitle)
 	if err != nil {
 		s.logger.Warn("Failed to get requirements path", "error", err)
-		requirementsPath = fmt.Sprintf(".kiro/spec/%s/requirements.md", featureTitle)
+		requirementsPath = filepath.Join(kiro.KiroDir, kiro.SpecDir, featureTitle, kiro.RequirementsFile)
 	}
 
 	opts := &SessionOptions{
