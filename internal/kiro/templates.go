@@ -3,6 +3,7 @@ package kiro
 import (
 	"bytes"
 	_ "embed"
+	"fmt"
 	"text/template"
 	"time"
 )
@@ -54,19 +55,15 @@ func getFallbackTemplate(requirementsPath string) string {
 func GetInitialRequirementsContent(featureTitle string) string {
 	timestamp := time.Now().Format("2006-01-02")
 
-	return `# 要件定義書: ` + featureTitle + `
+	return fmt.Sprintf(`# 要件定義書: %s
 
 ## 概要
-Date: ` + timestamp + `
-
-Feature: ` + featureTitle + `
-
-Status: Draft
+- Date: %s
 
 ## 問題定義
 [この機能が解決する問題を記述]
 
 ## 要件
 (要件は機能の説明後に記載されます)
-`
+`, featureTitle, timestamp)
 }

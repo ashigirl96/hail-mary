@@ -35,6 +35,9 @@ const (
 	ScrollStepSize      = 5   // Number of lines to scroll at once
 	MaxSessionIDLength  = 8   // Maximum length for displayed session IDs
 	MaxSummaryLength    = 100 // Maximum length for session summaries
+
+	// Option labels
+	CreateNewOption = "Create New Requirements" // Label for create new option
 )
 
 // PRDResumeModel represents the TUI state for PRD resume interface
@@ -64,6 +67,7 @@ type PRDResumeModel struct {
 	selectedInput     *UserInput   // Currently selected user input for resuming
 	selectedContinue  bool         // True if continue option is selected
 	latestSession     *SessionInfo // Latest session for continue functionality
+	createNewSelected bool         // True if "Create New Requirements" was selected
 }
 
 // UserInput represents a user input in a Claude session
@@ -104,13 +108,8 @@ func NewPRDResumeModel(features []string) PRDResumeModel {
 
 // Init initializes the model
 func (m PRDResumeModel) Init() tea.Cmd {
-	// Load sessions and markdown for the first feature if available
-	if len(m.features) > 0 {
-		return tea.Batch(
-			m.loadSessionsCmd(m.features[0]),
-			m.loadMarkdownCmd(m.features[0]),
-		)
-	}
+	// Don't load anything initially since we start on "Create New" option
+	// Sessions will be loaded when user navigates to an actual feature
 	return nil
 }
 
@@ -124,15 +123,24 @@ func (m PRDResumeModel) handleKeyboardInput(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 		return m, tea.Quit
 
 	case "enter":
-		if m.activePane == 1 {
+		if m.activePane == 0 && m.featureIndex == 0 {
+			// "Create New Requirements" was selected
+			m.createNewSelected = true
+			m.confirmed = true
+			return m, tea.Quit
+		} else if m.activePane == 1 {
 			if m.inputIndex == 0 && m.latestSession != nil {
 				// Continue from latest session
-				m.selectedFeature = m.features[m.featureIndex]
-				m.selectedSession = m.latestSession.ID
-				m.selectedInput = nil // No specific input = continue
-				m.selectedContinue = true
-				m.confirmed = true
-				return m, tea.Quit
+				// Adjust for Create New option when getting feature
+				actualFeatureIdx := m.featureIndex - 1
+				if actualFeatureIdx >= 0 && actualFeatureIdx < len(m.features) {
+					m.selectedFeature = m.features[actualFeatureIdx]
+					m.selectedSession = m.latestSession.ID
+					m.selectedInput = nil // No specific input = continue
+					m.selectedContinue = true
+					m.confirmed = true
+					return m, tea.Quit
+				}
 			} else if len(m.flatInputs) > 0 {
 				// Redo from specific user input
 				adjustedIndex := m.inputIndex
@@ -141,12 +149,16 @@ func (m PRDResumeModel) handleKeyboardInput(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 				}
 				if adjustedIndex >= 0 && adjustedIndex < len(m.flatInputs) {
 					flatInput := m.flatInputs[adjustedIndex]
-					m.selectedFeature = m.features[m.featureIndex]
-					m.selectedSession = flatInput.SessionID
-					m.selectedInput = &flatInput.UserInput
-					m.selectedContinue = false
-					m.confirmed = true
-					return m, tea.Quit
+					// Adjust for Create New option when getting feature
+					actualFeatureIdx := m.featureIndex - 1
+					if actualFeatureIdx >= 0 && actualFeatureIdx < len(m.features) {
+						m.selectedFeature = m.features[actualFeatureIdx]
+						m.selectedSession = flatInput.SessionID
+						m.selectedInput = &flatInput.UserInput
+						m.selectedContinue = false
+						m.confirmed = true
+						return m, tea.Quit
+					}
 				}
 			}
 		}
@@ -196,16 +208,31 @@ func (m PRDResumeModel) handleKeyboardInput(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 
 	case "j", "down":
 		if m.activePane == 0 {
-			// Navigate features
-			if m.featureIndex < len(m.features)-1 {
+			// Navigate features (including Create New option)
+			totalFeatures := len(m.features) + 1 // +1 for Create New
+			if m.featureIndex < totalFeatures-1 {
 				m.featureIndex++
 				m.inputIndex = 0           // Reset input selection
 				m.markdownScrollOffset = 0 // Reset scroll
 				m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
-				return m, tea.Batch(
-					m.loadSessionsCmd(m.features[m.featureIndex]),
-					m.loadMarkdownCmd(m.features[m.featureIndex]),
-				)
+
+				// Only load sessions if not on Create New option
+				if m.featureIndex > 0 {
+					actualFeatureIdx := m.featureIndex - 1
+					if actualFeatureIdx < len(m.features) {
+						return m, tea.Batch(
+							m.loadSessionsCmd(m.features[actualFeatureIdx]),
+							m.loadMarkdownCmd(m.features[actualFeatureIdx]),
+						)
+					}
+				} else {
+					// Clear sessions when on Create New
+					m.sessions = []SessionInfo{}
+					m.flatInputs = []FlatUserInput{}
+					m.latestSession = nil
+					m.markdownContent = ""
+					m.markdownLines = []string{}
+				}
 			}
 		} else if m.activePane == 1 {
 			// Navigate user inputs (including continue option)
@@ -222,16 +249,30 @@ func (m PRDResumeModel) handleKeyboardInput(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 
 	case "k", "up":
 		if m.activePane == 0 {
-			// Navigate features
+			// Navigate features (including Create New option)
 			if m.featureIndex > 0 {
 				m.featureIndex--
 				m.inputIndex = 0           // Reset input selection
 				m.markdownScrollOffset = 0 // Reset scroll
 				m.adjustFeatureScroll()    // Adjust feature scroll to keep selection visible
-				return m, tea.Batch(
-					m.loadSessionsCmd(m.features[m.featureIndex]),
-					m.loadMarkdownCmd(m.features[m.featureIndex]),
-				)
+
+				// Only load sessions if not on Create New option
+				if m.featureIndex > 0 {
+					actualFeatureIdx := m.featureIndex - 1
+					if actualFeatureIdx < len(m.features) {
+						return m, tea.Batch(
+							m.loadSessionsCmd(m.features[actualFeatureIdx]),
+							m.loadMarkdownCmd(m.features[actualFeatureIdx]),
+						)
+					}
+				} else {
+					// Clear sessions when on Create New
+					m.sessions = []SessionInfo{}
+					m.flatInputs = []FlatUserInput{}
+					m.latestSession = nil
+					m.markdownContent = ""
+					m.markdownLines = []string{}
+				}
 			}
 		} else if m.activePane == 1 {
 			// Navigate user inputs
@@ -313,15 +354,20 @@ func (m PRDResumeModel) View() string {
 
 	// Add header and footer with current feature info
 	currentFeature := ""
-	if len(m.features) > 0 && m.featureIndex < len(m.features) {
-		currentFeature = strings.ReplaceAll(m.features[m.featureIndex], "-", " ")
-		words := strings.Fields(currentFeature)
-		for i, word := range words {
-			if len(word) > 0 {
-				words[i] = strings.ToUpper(word[:1]) + word[1:]
+	if m.featureIndex == 0 {
+		currentFeature = CreateNewOption
+	} else {
+		actualFeatureIdx := m.featureIndex - 1
+		if actualFeatureIdx >= 0 && actualFeatureIdx < len(m.features) {
+			currentFeature = strings.ReplaceAll(m.features[actualFeatureIdx], "-", " ")
+			words := strings.Fields(currentFeature)
+			for i, word := range words {
+				if len(word) > 0 {
+					words[i] = strings.ToUpper(word[:1]) + word[1:]
+				}
 			}
+			currentFeature = strings.Join(words, " ")
 		}
-		currentFeature = strings.Join(words, " ")
 	}
 
 	header := lipgloss.NewStyle().
@@ -414,47 +460,70 @@ func (m PRDResumeModel) renderFeaturesSection(width, topHeight int, withBorder b
 	maxItems := availableHeight
 
 	// Calculate visible range based on scroll offset
+	// Total items = features + 1 (for Create New option)
+	totalItems := len(m.features) + 1
 	startIdx := m.featureScrollOffset
 	endIdx := startIdx + maxItems
-	if endIdx > len(m.features) {
-		endIdx = len(m.features)
+	if endIdx > totalItems {
+		endIdx = totalItems
 	}
 
-	// Display visible features
+	// Display visible features (with Create New option first)
 	for i := startIdx; i < endIdx; i++ {
-		feature := m.features[i]
 		style := lipgloss.NewStyle()
 		prefix := "  "
+		var displayName string
 
-		if i == m.featureIndex {
-			prefix = "> "
-			if m.activePane == 0 {
-				style = style.Bold(true).Foreground(lipgloss.Color(ColorPrimary))
-			} else {
-				style = style.Foreground(lipgloss.Color(ColorInactive))
+		// Check if this is the Create New option (index 0)
+		if i == 0 {
+			displayName = "✨ " + CreateNewOption
+			if i == m.featureIndex {
+				prefix = "> "
+				if m.activePane == 0 {
+					style = style.Bold(true).Foreground(lipgloss.Color(ColorSuccess))
+				} else {
+					style = style.Foreground(lipgloss.Color(ColorInactive))
+				}
+			}
+		} else {
+			// Regular feature (adjust index by -1 for the Create New option)
+			actualFeatureIdx := i - 1
+			if actualFeatureIdx < len(m.features) {
+				feature := m.features[actualFeatureIdx]
+
+				if i == m.featureIndex {
+					prefix = "> "
+					if m.activePane == 0 {
+						style = style.Bold(true).Foreground(lipgloss.Color(ColorPrimary))
+					} else {
+						style = style.Foreground(lipgloss.Color(ColorInactive))
+					}
+				}
+
+				// Convert kebab-case back to readable format
+				displayName = strings.ReplaceAll(feature, "-", " ")
+				// Capitalize first letter of each word
+				words := strings.Fields(displayName)
+				for j, word := range words {
+					if len(word) > 0 {
+						words[j] = strings.ToUpper(word[:1]) + word[1:]
+					}
+				}
+				displayName = strings.Join(words, " ")
 			}
 		}
 
-		// Convert kebab-case back to readable format
-		displayName := strings.ReplaceAll(feature, "-", " ")
-		// Capitalize first letter of each word
-		words := strings.Fields(displayName)
-		for j, word := range words {
-			if len(word) > 0 {
-				words[j] = strings.ToUpper(word[:1]) + word[1:]
-			}
+		if displayName != "" {
+			items = append(items, style.Render(prefix+displayName))
 		}
-		displayName = strings.Join(words, " ")
-
-		items = append(items, style.Render(prefix+displayName))
 	}
 
 	// Add scroll indicator if content is scrollable
-	if len(m.features) > maxItems {
+	if totalItems > maxItems {
 		scrollInfo := fmt.Sprintf("[%d-%d/%d]",
 			startIdx+1,
 			endIdx,
-			len(m.features))
+			totalItems)
 		indicator := lipgloss.NewStyle().
 			Foreground(lipgloss.Color(ColorMuted)).
 			Render(scrollInfo)
@@ -792,7 +861,8 @@ func (m *PRDResumeModel) adjustFeatureScroll() {
 	}
 
 	// Ensure scroll offset doesn't exceed reasonable bounds
-	maxScroll := len(m.features) - maxItems
+	totalItems := len(m.features) + 1 // +1 for Create New option
+	maxScroll := totalItems - maxItems
 	if maxScroll < 0 {
 		maxScroll = 0
 	}
@@ -1205,6 +1275,18 @@ func (m PRDResumeModel) GetSelectedContinue() bool {
 	return false
 }
 
+// IsCreateNewSelected returns true if "Create New Requirements" was selected
+func (m PRDResumeModel) IsCreateNewSelected() bool {
+	return m.confirmed && m.createNewSelected
+}
+
+// CreateNewSelectedError is returned when "Create New Requirements" is selected
+type CreateNewSelectedError struct{}
+
+func (e *CreateNewSelectedError) Error() string {
+	return "create new requirements selected"
+}
+
 // RunPRDResume runs the PRD resume UI and returns the selected feature, session, optional input, and continue flag
 func RunPRDResume(features []string) (string, string, *UserInput, bool, error) {
 	model := NewPRDResumeModel(features)
@@ -1216,6 +1298,11 @@ func RunPRDResume(features []string) (string, string, *UserInput, bool, error) {
 	}
 
 	if m, ok := finalModel.(PRDResumeModel); ok {
+		// Check if Create New was selected
+		if m.IsCreateNewSelected() {
+			return "", "", nil, false, &CreateNewSelectedError{}
+		}
+
 		return m.GetSelectedFeature(), m.GetSelectedSession(), m.GetSelectedInput(), m.GetSelectedContinue(), nil
 	}
 
