@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ashigirl96/hail-mary/internal/claude"
+	"github.com/ashigirl96/hail-mary/internal/kiro"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -556,7 +557,7 @@ func (m PRDResumeModel) renderMarkdownSection(width, bottomHeight int, withBorde
 	} else if len(m.markdownLines) == 0 {
 		items = append(items, lipgloss.NewStyle().
 			Foreground(lipgloss.Color(ColorMuted)).
-			Render("No requirements.md found for this feature"))
+			Render(fmt.Sprintf("No %s found for this feature", kiro.RequirementsFile)))
 		items = append(items, "")
 		items = append(items, lipgloss.NewStyle().
 			Foreground(lipgloss.Color(ColorMuted)).
@@ -1057,8 +1058,8 @@ func (m PRDResumeModel) loadMarkdownCmd(feature string) tea.Cmd {
 		if err != nil {
 			// Return empty content if file doesn't exist or can't be read
 			return markdownLoadedMsg{
-				content: "No requirements.md found for this feature.\n\nCreate one to see a preview here.",
-				lines:   []string{"No requirements.md found for this feature.", "", "Create one to see a preview here."},
+				content: fmt.Sprintf("No %s found for this feature.\n\nCreate one to see a preview here.", kiro.RequirementsFile),
+				lines:   []string{fmt.Sprintf("No %s found for this feature.", kiro.RequirementsFile), "", "Create one to see a preview here."},
 			}
 		}
 		return markdownLoadedMsg{content: content, lines: lines}
@@ -1068,7 +1069,7 @@ func (m PRDResumeModel) loadMarkdownCmd(feature string) tea.Cmd {
 // loadSessionsForFeature loads Claude sessions related to a feature and creates flat input list
 func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, []FlatUserInput, *SessionInfo, error) {
 	// Create feature session state manager
-	featureDir := filepath.Join(".kiro", "spec", feature)
+	featureDir := filepath.Join(kiro.KiroDir, kiro.SpecDir, feature)
 	sessionManager := claude.NewFeatureSessionStateManager(featureDir)
 
 	// Load all sessions from sessions.json
@@ -1128,13 +1129,13 @@ func (m PRDResumeModel) loadSessionsForFeature(feature string) ([]SessionInfo, [
 
 // loadMarkdownForFeature loads and renders markdown content for a feature
 func (m PRDResumeModel) loadMarkdownForFeature(feature string, width int) (string, []string, error) {
-	// Build path to requirements.md
-	requirementsPath := filepath.Join(".kiro", "spec", feature, "requirements.md")
+	// Build path to requirements file
+	requirementsPath := filepath.Join(kiro.KiroDir, kiro.SpecDir, feature, kiro.RequirementsFile)
 
 	// Read file content
 	content, err := os.ReadFile(requirementsPath)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to read requirements.md from %s: %w", requirementsPath, err)
+		return "", nil, fmt.Errorf("failed to read %s from %s: %w", kiro.RequirementsFile, requirementsPath, err)
 	}
 
 	contentStr := string(content)
