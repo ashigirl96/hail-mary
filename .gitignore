@@ -44,3 +44,11 @@ bin/
 .claude/
 tmp/
 .kiro/
+
+# Rust
+rust-wasm/target/
+rust-wasm/Cargo.lock
+*.wasm
+
+# Just
+.just/
