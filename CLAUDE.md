@@ -13,56 +13,73 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Session Resume**: Continue or redo conversations from any point in history
 - **Template System**: Embedded templates with mermaid diagram support
 - **Japanese/English Support**: Mixed language documentation with proper formatting
+- **WASM Integration**: Rust WebAssembly modules for performance-critical operations
 
 ## Build and Development Commands
 
 ### Essential Commands
 ```bash
-# Build the binary
-make build
+# Build the binary (includes WASM)
+just build
 
-# Run tests
-make test
+# Build Go only (no WASM rebuild)
+just build-go
+
+# Run tests (Go and Rust)
+just test
 
 # Run tests with coverage
-make coverage
+just coverage
 
-# Format code
-make fmt
+# Format code (Go and Rust)
+just fmt
 
-# Run linter (requires golangci-lint)
-make lint
+# Run linters (Go and Rust)
+just lint
 
 # Run all checks (fmt, lint, test, build)
-make all
+just all
 
 # Clean build artifacts
-make clean
+just clean
 
-# Install required tools
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-go install golang.org/x/tools/cmd/goimports@latest
-go install honnef.co/go/tools/cmd/staticcheck@latest
+# Install all required tools
+just install-tools
 ```
 
 ### Development Workflow
 ```bash
 # Live development with file watching
-make dev     # Requires air
-make watch   # Alternative file watchers
+just dev     # Requires air
+just watch   # Alternative file watchers
 
 # Cross-platform builds
-make build-linux
-make build-windows
-make build-mac
-make build-all
+just build-linux
+just build-windows
+just build-mac
+just build-all
 
 # Parallel test and build
-make parallel-checks
+just parallel-checks
+```
+
+### WASM Development
+```bash
+# Build WASM module only
+just wasm-build
+
+# Run WASM example
+just run-wasm-example
+
+# Format Rust code
+just wasm-fmt
+
+# Lint Rust code
+just wasm-lint
 ```
 
 ### Post-Build Requirements
-After running `make build`, always execute the following commands to update zsh completions:
+After running `just build`, always execute the following commands to update zsh completions:
 ```bash
 ./bin/hail-mary completion zsh > ~/.local/share/zinit/completions/_hm
 ./scripts/fix-completion.sh ~/.local/share/zinit/completions/_hm
@@ -74,6 +91,9 @@ Note: The fix-completion.sh script corrects a known Cobra bug where array append
 
 ### Technology Stack
 - **Framework**: Cobra (CLI framework) with structured command hierarchy
+- **Build System**: Just (command runner) with Rust/Go integration
+- **WebAssembly Runtime**: Wazero for running WASM modules
+- **Rust Integration**: WASM modules for performance-critical operations
 - **Logging**: slog with configurable log levels
 - **TUI**: Bubbletea (TUI framework) with Lipgloss (styling)
 - **Testing**: testify for assertions and mocking
@@ -103,12 +123,21 @@ Note: The fix-completion.sh script corrects a known Cobra bug where array append
 │   ├── ui/                # Terminal UI components
 │   │   ├── prd_resume.go  # PRD resume interface
 │   │   └── feature_input.go  # Feature input interface
+│   ├── wasm/              # WebAssembly integration
+│   │   ├── loader.go      # WASM module loader
+│   │   └── module.wasm    # Compiled WASM module
 │   ├── settings/          # Settings management
 │   └── testing/           # Test utilities and mocks
+├── rust-wasm/             # Rust WASM module source
+│   ├── Cargo.toml         # Rust project configuration
+│   └── src/
+│       └── lib.rs         # Rust WASM implementation
+├── examples/              # Example programs
+│   └── wasm-hello/        # WASM integration example
 ├── docs/                  # Documentation
 ├── reference/             # External references
 ├── scripts/               # Utility scripts
-└── Makefile              # Build automation
+└── justfile              # Build automation with Just
 ```
 
 ## Command Reference
@@ -239,17 +268,20 @@ The system uses EARS (Easy Approach to Requirements Syntax) format:
 ### Running Tests
 
 ```bash
-# Run all tests
-make test
+# Run all tests (Go and Rust)
+just test
 
 # Run with coverage
-make coverage
+just coverage
 
 # Run specific package
 go test ./internal/prd/...
 
 # Run with race detection
 go test -race ./...
+
+# Run Rust tests only
+cd rust-wasm && cargo test
 ```
 
 ## Development Guidelines
@@ -276,7 +308,7 @@ go test -race ./...
 git checkout -b feature/your-feature
 
 # Make changes and test
-make all
+just all
 
 # Commit with conventional commits
 git commit -m "feat(prd): add new feature"
@@ -299,6 +331,78 @@ git push origin feature/your-feature
 2. **New Modes**: Update constants in `internal/prd/constants.go`
 3. **New UI Components**: Create in `internal/ui/`
 4. **New Hooks**: Update `internal/claude/hook.go`
+
+## Installation and Setup
+
+### Prerequisites
+- Go 1.24.4 or later
+- Rust and Cargo (for WASM development)
+- Just command runner
+
+### Installing Just
+```bash
+# macOS
+brew install just
+
+# Linux
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+
+# Cargo
+cargo install just
+```
+
+### Installing Required Tools
+```bash
+# Install all required tools (Go linters, Rust target, wasm-opt)
+just install-tools
+
+# Install Rust WASM target only
+just install-rust-target
+
+# Install dependencies
+just deps
+
+# Tidy dependencies
+just tidy
+```
+
+## WASM Development
+
+### Overview
+The project includes Rust WebAssembly modules for performance-critical operations, running on the Wazero runtime (pure Go WebAssembly runtime).
+
+### Rust WASM Module Structure
+- **Location**: `rust-wasm/` directory
+- **Target**: `wasm32-unknown-unknown`
+- **Runtime**: Wazero (no CGO dependencies)
+- **Integration**: Embedded in Go binary via `go:embed`
+
+### WASM Development Commands
+```bash
+# Build WASM module
+just wasm-build
+
+# Run WASM example
+just run-wasm-example
+
+# Format Rust code
+just wasm-fmt
+
+# Lint Rust code
+just wasm-lint
+
+# Build everything (WASM + Go)
+just build
+
+# Build Go only (skip WASM)
+just build-go
+```
+
+### Adding New WASM Functions
+1. Add function to `rust-wasm/src/lib.rs` with `#[no_mangle]` and `extern "C"`
+2. Update `internal/wasm/loader.go` to expose the new function
+3. Run `just wasm-build` to compile
+4. Test with example in `examples/` directory
 
 ## Environment Variables
 
@@ -349,3 +453,41 @@ ls -la .kiro/spec/*/sessions/
 - Use gofmt and goimports for formatting
 - Run staticcheck and golangci-lint before commits
 - プログラムにコメントを残すときはすべて英語にする
+
+## Just Build System
+
+### Why Just?
+- **Simple Syntax**: No tabs vs spaces issues like Make
+- **Cross-Platform**: Works consistently on Windows, macOS, and Linux
+- **Better for Multi-Language**: Native support for both Rust and Go workflows
+- **Parameter Support**: Easy command parameterization
+- **Built-in Functions**: Rich set of built-in functions and string manipulation
+
+### Key Just Commands
+```bash
+# Show all available commands
+just --list
+just help
+
+# Run default recipe
+just
+
+# Run specific recipe
+just build
+
+# See what a recipe would do (dry run)
+just --dry-run build
+
+# Pass arguments to recipes
+just build-linux
+
+# Choose a specific justfile
+just --justfile path/to/justfile build
+```
+
+### Justfile Organization
+- **Variables**: Defined at the top for reusability
+- **Default Recipe**: `default: all` runs when no recipe specified
+- **Dependencies**: Recipes can depend on other recipes
+- **Conditional Logic**: Support for if/else and OS detection
+- **Shell Commands**: Direct shell command execution with error handling
