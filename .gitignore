@@ -46,9 +46,16 @@ tmp/
 .kiro/
 
 # Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
 rust-wasm/target/
 rust-wasm/Cargo.lock
 *.wasm
 
 # Just
 .just/
+
+# Logs
+*.log
