@@ -12,9 +12,14 @@ An official Rust Model Context Protocol SDK implementation with tokio async runt
 Add to your `Cargo.toml`:
 
 ```toml
-rmcp = { version = "0.2.0", features = ["server"] }
-## or development channel
-rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "main" }
+# Basic server setup
+rmcp = { version = "0.5.0", features = ["server", "macros"] }
+
+# With stdio transport support
+rmcp = { version = "0.5.0", features = ["server", "macros", "transport-io"] }
+
+# Development channel
+rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "main", features = ["server", "macros", "transport-io"] }
 ```
 
 ## Dependencies
@@ -22,278 +27,533 @@ rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", branch = "mai
 Basic dependencies:
 - [tokio](https://github.com/tokio-rs/tokio) (required)
 - [serde](https://github.com/serde-rs/serde) (required)
-
-## Building a Client
-
-```rust
-use rmcp::{ServiceExt, transport::{TokioChildProcess, ConfigureCommandExt}};
-use tokio::process::Command;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = ().serve(TokioChildProcess::new(Command::new("npx").configure(|cmd| {
-        cmd.arg("-y").arg("@modelcontextprotocol/server-everything");
-    }))?).await?;
-    Ok(())
-}
-```
+- [schemars](https://github.com/GREsau/schemars) (for structured output schemas)
 
 ## Building a Server
 
-### Build a transport
-```rust
-use tokio::io::{stdin, stdout};
-let transport = (stdin(), stdout());
-```
+### Complete Server Implementation
 
-### Build a service
-You can easily build a service by using [`ServerHandler`] or [`ClientHandler`].
-
-```rust
-let service = common::counter::Counter::new();
-```
-
-### Start the server
-```rust
-// this call will finish the initialization process
-let server = service.serve(transport).await?;
-```
-
-### Interact with the server
-Once the server is initialized, you can send requests or notifications:
-
-```rust
-// request
-let roots = server.list_roots().await?;
-
-// or send notification
-server.notify_cancelled(...).await?;
-```
-
-### Waiting for service shutdown
-```rust
-let quit_reason = server.waiting().await?;
-// or cancel it
-let quit_reason = server.cancel().await?;
-```
-
-## Examples
-
-### Example 1: Simple Server with stdin/stdout
-
-```rust
-use std::error::Error;
-mod common;
-use common::generic_service::{GenericService, MemoryDataService};
-use rmcp::serve_server;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let memory_service = MemoryDataService::new("initial data");
-
-    let generic_service = GenericService::new(memory_service);
-
-    println!("start server, connect to standard input/output");
-
-    let io = (tokio::io::stdin(), tokio::io::stdout());
-
-    serve_server(generic_service, io).await?;
-    Ok(())
-}
-```
-
-### Example 2: HTTP Server with Local Session Management
-
-```rust
-mod common;
-use common::counter::Counter;
-use hyper_util::{
-    rt::{TokioExecutor, TokioIo},
-    server::conn::auto::Builder,
-    service::TowerToHyperService,
-};
-use rmcp::transport::streamable_http_server::{
-    StreamableHttpService, session::local::LocalSessionManager,
-};
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let service = TowerToHyperService::new(StreamableHttpService::new(
-        || Ok(Counter::new()),
-        LocalSessionManager::default().into(),
-        Default::default(),
-    ));
-    let listener = tokio::net::TcpListener::bind("[::1]:8080").await?;
-    loop {
-        let io = tokio::select! {
-            _ = tokio::signal::ctrl_c() => break,
-            accept = listener.accept() => {
-                TokioIo::new(accept?.0)
-            }
-        };
-        let service = service.clone();
-        tokio::spawn(async move {
-            let _result = Builder::new(TokioExecutor::default())
-                .serve_connection(io, service)
-                .await;
-        });
-    }
-    Ok(())
-}
-```
-
-### Example 3: Structured Output Server with Tool Router
+Here's a complete implementation of a Memory MCP server using the latest patterns:
 
 ```rust
 use rmcp::{
-    Json, ServiceExt,
+    ErrorData as McpError, Json, ServiceExt,
     handler::server::{router::tool::ToolRouter, tool::Parameters},
+    model::*,
     tool, tool_handler, tool_router,
     transport::stdio,
+    serve_server,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::{future::Future, sync::Arc};
+use tokio::sync::Mutex;
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub struct WeatherRequest {
-    pub city: String,
-    pub units: Option<String>,
+pub struct RememberParams {
+    pub r#type: String,
+    pub topic: String,
+    pub content: String,
+    pub tags: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub struct WeatherResponse {
-    pub temperature: f64,
-    pub description: String,
-    pub humidity: u8,
-    pub wind_speed: f64,
+pub struct RememberResponse {
+    pub memory_id: String,
+    pub action: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub struct CalculationRequest {
+pub struct RecallParams {
+    pub query: String,
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct RecallResponse {
+    pub memories: Vec<Memory>,
+    pub total_count: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct Memory {
+    pub id: String,
+    pub topic: String,
+    pub content: String,
+    pub tags: Vec<String>,
+}
+
+#[derive(Clone)]
+pub struct MemoryServer {
+    memories: Arc<Mutex<Vec<Memory>>>,
+    tool_router: ToolRouter<Self>,
+}
+
+#[tool_handler(router = self.tool_router)]
+impl rmcp::ServerHandler for MemoryServer {}
+
+#[tool_router(router = tool_router)]
+impl MemoryServer {
+    pub fn new() -> Self {
+        Self {
+            memories: Arc::new(Mutex::new(Vec::new())),
+            tool_router: Self::tool_router(),
+        }
+    }
+
+    /// Store a memory for future recall
+    #[tool(name = "remember", description = "Store a memory for future recall")]
+    pub async fn remember(
+        &self,
+        params: Parameters<RememberParams>,
+    ) -> Result<Json<RememberResponse>, McpError> {
+        let mut memories = self.memories.lock().await;
+        let memory_id = format!("mem_{}", memories.len() + 1);
+        
+        let memory = Memory {
+            id: memory_id.clone(),
+            topic: params.0.topic,
+            content: params.0.content,
+            tags: params.0.tags.unwrap_or_default(),
+        };
+        
+        memories.push(memory);
+        
+        Ok(Json(RememberResponse {
+            memory_id,
+            action: "created".to_string(),
+        }))
+    }
+
+    /// Search and retrieve stored memories
+    #[tool(name = "recall", description = "Search and retrieve stored memories")]
+    pub async fn recall(
+        &self,
+        params: Parameters<RecallParams>,
+    ) -> Result<Json<RecallResponse>, McpError> {
+        let memories = self.memories.lock().await;
+        let limit = params.0.limit.unwrap_or(10) as usize;
+        
+        let filtered: Vec<Memory> = memories
+            .iter()
+            .filter(|m| {
+                m.content.contains(&params.0.query) || 
+                m.topic.contains(&params.0.query) ||
+                m.tags.iter().any(|tag| tag.contains(&params.0.query))
+            })
+            .take(limit)
+            .cloned()
+            .collect();
+        
+        Ok(Json(RecallResponse {
+            total_count: filtered.len(),
+            memories: filtered,
+        }))
+    }
+
+    /// Get server information
+    #[tool(name = "get_info", description = "Get server information")]
+    pub async fn get_info(&self) -> String {
+        "Memory MCP Server v1.0 - Store and retrieve memories".to_string()
+    }
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let server = MemoryServer::new();
+    
+    // Method 1: Using serve_server function
+    serve_server(server, stdio()).await?;
+    
+    // Method 2: Using ServiceExt trait
+    // let service = server.serve(stdio()).await?;
+    // service.waiting().await?;
+    
+    Ok(())
+}
+```
+
+### Key Components Explained
+
+#### 1. Tool Router Pattern
+```rust
+#[derive(Clone)]
+pub struct MyServer {
+    tool_router: ToolRouter<Self>,  // Required for tool routing
+}
+
+#[tool_router(router = tool_router)]  // Generates the tool_router() method
+impl MyServer {
+    pub fn new() -> Self {
+        Self {
+            tool_router: Self::tool_router(),  // Auto-generated method
+        }
+    }
+}
+```
+
+#### 2. ServerHandler Implementation
+```rust
+#[tool_handler(router = self.tool_router)]
+impl rmcp::ServerHandler for MyServer {}
+```
+
+#### 3. Tool Definition
+```rust
+#[tool(name = "tool_name", description = "Tool description")]
+pub async fn my_tool(
+    &self,
+    params: Parameters<MyParams>,
+) -> Result<Json<MyResponse>, McpError> {
+    // Tool implementation
+    Ok(Json(MyResponse { /* ... */ }))
+}
+```
+
+## Structured Output
+
+### JSON Schema Generation
+
+The SDK automatically generates JSON schemas for structured output:
+
+```rust
+use rmcp::{Json, tool, handler::server::tool::Parameters};
+use schemars::JsonSchema;
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize, JsonSchema)]
+struct CalculationRequest {
     pub numbers: Vec<i32>,
-    pub operation: String,
+    pub operation: String,  // "sum", "average", "product"
 }
 
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub struct CalculationResult {
+#[derive(Serialize, Deserialize, JsonSchema)]
+struct CalculationResult {
     pub result: f64,
     pub operation: String,
     pub input_count: usize,
 }
 
+#[tool(name = "calculate", description = "Perform calculations on numbers")]
+pub async fn calculate(
+    &self,
+    params: Parameters<CalculationRequest>,
+) -> Result<Json<CalculationResult>, String> {
+    let numbers = &params.0.numbers;
+    if numbers.is_empty() {
+        return Err("No numbers provided".to_string());
+    }
+
+    let result = match params.0.operation.as_str() {
+        "sum" => numbers.iter().sum::<i32>() as f64,
+        "average" => numbers.iter().sum::<i32>() as f64 / numbers.len() as f64,
+        "product" => numbers.iter().product::<i32>() as f64,
+        _ => return Err(format!("Unknown operation: {}", params.0.operation)),
+    };
+
+    Ok(Json(CalculationResult {
+        result,
+        operation: params.0.operation,
+        input_count: numbers.len(),
+    }))
+}
+```
+
+### Mixed Output Types
+
+Tools can return either structured JSON or plain text:
+
+```rust
+// Structured output
+#[tool(name = "get_weather")]
+pub async fn get_weather(&self, params: Parameters<WeatherRequest>) 
+    -> Result<Json<WeatherResponse>, String> {
+    // Returns structured JSON with schema
+}
+
+// Plain text output  
+#[tool(name = "get_info")]
+pub async fn get_info(&self) -> String {
+    "Server information as plain text".to_string()
+}
+```
+
+## Transport Options
+
+### Standard I/O (Most Common)
+```rust
+use rmcp::transport::stdio;
+
+let service = server.serve(stdio()).await?;
+```
+
+### Manual Transport Setup
+```rust
+use tokio::io::{stdin, stdout};
+
+let transport = (stdin(), stdout());
+let service = server.serve(transport).await?;
+```
+
+## Building a Client
+
+```rust
+use rmcp::{
+    model::CallToolRequestParam,
+    service::ServiceExt,
+    transport::{TokioChildProcess, ConfigureCommandExt}
+};
+use tokio::process::Command;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Connect to a server via child process
+    let service = ().serve(TokioChildProcess::new(Command::new("uvx").configure(|cmd| {
+        cmd.arg("mcp-server-git");
+    }))?).await?;
+
+    // Initialize
+    let server_info = service.peer_info();
+    println!("Connected to server: {server_info:#?}");
+
+    // List available tools
+    let tools = service.list_tools(Default::default()).await?;
+    println!("Available tools: {tools:#?}");
+
+    // Call a tool
+    let tool_result = service
+        .call_tool(CallToolRequestParam {
+            name: "git_status".into(),
+            arguments: serde_json::json!({ "repo_path": "." }).as_object().cloned(),
+        })
+        .await?;
+    println!("Tool result: {tool_result:#?}");
+
+    service.cancel().await?;
+    Ok(())
+}
+```
+
+## Server Lifecycle
+
+### Starting the Server
+```rust
+// Option 1: serve_server function (recommended)
+serve_server(server, stdio()).await?;
+
+// Option 2: ServiceExt trait
+let service = server.serve(stdio()).await?;
+service.waiting().await?;
+```
+
+### Graceful Shutdown
+```rust
+let service = server.serve(stdio()).await?;
+
+// Wait for shutdown signal
+tokio::select! {
+    _ = tokio::signal::ctrl_c() => {
+        println!("Received shutdown signal");
+    }
+    result = service.waiting() => {
+        println!("Service ended: {:?}", result);
+    }
+}
+```
+
+## Error Handling
+
+### Tool Errors
+```rust
+use rmcp::ErrorData as McpError;
+
+#[tool(name = "my_tool")]
+pub async fn my_tool(&self, params: Parameters<MyParams>) 
+    -> Result<Json<MyResponse>, McpError> {
+    
+    if params.0.value < 0 {
+        return Err(McpError {
+            code: -32602,  // Invalid params
+            message: "Value must be non-negative".to_string(),
+            data: None,
+        });
+    }
+    
+    Ok(Json(MyResponse { /* ... */ }))
+}
+```
+
+### String Errors (Simpler)
+```rust
+#[tool(name = "simple_tool")]
+pub async fn simple_tool(&self, params: Parameters<MyParams>) 
+    -> Result<String, String> {
+    
+    if params.0.value < 0 {
+        return Err("Value must be non-negative".to_string());
+    }
+    
+    Ok("Success".to_string())
+}
+```
+
+## Advanced Features
+
+### Tool Schema Introspection
+```rust
+// List all tools with their schemas
+for tool in server.tool_router.list_all() {
+    println!("Tool: {}", tool.name);
+    println!("Description: {}", tool.description.unwrap_or_default());
+    
+    if let Some(input_schema) = &tool.input_schema {
+        println!("Input schema: {}", serde_json::to_string_pretty(input_schema)?);
+    }
+    
+    if let Some(output_schema) = &tool.output_schema {
+        println!("Output schema: {}", serde_json::to_string_pretty(output_schema)?);
+    }
+}
+```
+
+### Custom Error Types
+```rust
+use rmcp::ErrorData as McpError;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+enum MyError {
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+    #[error("Database error: {0}")]
+    Database(String),
+}
+
+impl From<MyError> for McpError {
+    fn from(err: MyError) -> Self {
+        McpError {
+            code: -32603,  // Internal error
+            message: err.to_string(),
+            data: None,
+        }
+    }
+}
+```
+
+## Best Practices
+
+### 1. Structure Organization
+```rust
+// Separate request/response types
+mod types {
+    use serde::{Deserialize, Serialize};
+    use schemars::JsonSchema;
+    
+    #[derive(Debug, Serialize, Deserialize, JsonSchema)]
+    pub struct RememberParams { /* ... */ }
+    
+    #[derive(Debug, Serialize, Deserialize, JsonSchema)]
+    pub struct RememberResponse { /* ... */ }
+}
+
+// Main server implementation
+use types::*;
+```
+
+### 2. Error Handling
+```rust
+// Use specific error types for better debugging
+#[tool(name = "my_tool")]
+pub async fn my_tool(&self, params: Parameters<MyParams>) 
+    -> Result<Json<MyResponse>, McpError> {
+    
+    let value = params.0.value
+        .ok_or_else(|| McpError {
+            code: -32602,
+            message: "Missing required field 'value'".to_string(),
+            data: None,
+        })?;
+    
+    // ... tool logic
+}
+```
+
+### 3. Async State Management
+```rust
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
 #[derive(Clone)]
-pub struct StructuredOutputServer {
+pub struct MyServer {
+    state: Arc<Mutex<MyState>>,
+    tool_router: ToolRouter<Self>,
+}
+
+// Always use Arc<Mutex<T>> for shared state
+```
+
+## Integration with Existing Memory MCP
+
+For integrating with the existing hail-mary Memory MCP implementation:
+
+```rust
+// Replace the custom JSON-RPC implementation with rmcp
+use rmcp::{serve_server, transport::stdio};
+
+// Use existing MemoryService but wrap in rmcp server
+#[derive(Clone)]
+pub struct MemoryMcpServer {
+    service: Arc<Mutex<MemoryService<SqliteMemoryRepository>>>,
     tool_router: ToolRouter<Self>,
 }
 
 #[tool_handler(router = self.tool_router)]
-impl rmcp::ServerHandler for StructuredOutputServer {}
-
-impl Default for StructuredOutputServer {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+impl rmcp::ServerHandler for MemoryMcpServer {}
 
 #[tool_router(router = tool_router)]
-impl StructuredOutputServer {
-    pub fn new() -> Self {
-        Self {
+impl MemoryMcpServer {
+    pub fn new(db_path: impl AsRef<Path>) -> Result<Self> {
+        let repository = SqliteMemoryRepository::new(db_path)?;
+        let service = MemoryService::new(repository);
+        
+        Ok(Self {
+            service: Arc::new(Mutex::new(service)),
             tool_router: Self::tool_router(),
-        }
+        })
     }
-
-    /// Get weather information for a city (returns structured data)
-    #[tool(name = "get_weather", description = "Get current weather for a city")]
-    pub async fn get_weather(
-        &self,
-        params: Parameters<WeatherRequest>,
-    ) -> Result<Json<WeatherResponse>, String> {
-        // Simulate weather API call
-        let weather = WeatherResponse {
-            temperature: match params.0.units.as_deref() {
-                Some("fahrenheit") => 72.5,
-                _ => 22.5, // celsius by default
-            },
-            description: "Partly cloudy".to_string(),
-            humidity: 65,
-            wind_speed: 12.5,
-        };
-
-        Ok(Json(weather))
+    
+    #[tool(name = "remember", description = "Store a memory")]
+    pub async fn remember(&self, params: Parameters<RememberParams>) 
+        -> Result<Json<RememberResponse>, McpError> {
+        let mut service = self.service.lock().await;
+        let response = service.remember(params.0.into()).await
+            .map_err(|e| McpError {
+                code: -32603,
+                message: e.to_string(),
+                data: None,
+            })?;
+        Ok(Json(response.into()))
     }
-
-    /// Perform calculations on a list of numbers (returns structured data)
-    #[tool(name = "calculate", description = "Perform calculations on numbers")]
-    pub async fn calculate(
-        &self,
-        params: Parameters<CalculationRequest>,
-    ) -> Result<Json<CalculationResult>, String> {
-        let numbers = &params.0.numbers;
-        if numbers.is_empty() {
-            return Err("No numbers provided".to_string());
-        }
-
-        let result = match params.0.operation.as_str() {
-            "sum" => numbers.iter().sum::<i32>() as f64,
-            "average" => numbers.iter().sum::<i32>() as f64 / numbers.len() as f64,
-            "product" => numbers.iter().product::<i32>() as f64,
-            _ => return Err(format!("Unknown operation: {}", params.0.operation)),
-        };
-
-        Ok(Json(CalculationResult {
-            result,
-            operation: params.0.operation,
-            input_count: numbers.len(),
-        }))
-    }
-
-    /// Get server info (returns unstructured text)
-    #[tool(name = "get_info", description = "Get server information")]
-    pub async fn get_info(&self) -> String {
-        "Structured Output Example Server v1.0".to_string()
+    
+    #[tool(name = "recall", description = "Search memories")]
+    pub async fn recall(&self, params: Parameters<RecallParams>) 
+        -> Result<Json<RecallResponse>, McpError> {
+        let service = self.service.lock().await;
+        let response = service.recall(params.0.into()).await
+            .map_err(|e| McpError {
+                code: -32603,
+                message: e.to_string(),
+                data: None,
+            })?;
+        Ok(Json(response.into()))
     }
 }
 
+// In main function
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    eprintln!("Starting structured output example server...");
-    eprintln!();
-    eprintln!("This server demonstrates:");
-    eprintln!("- Tools that return structured JSON data");
-    eprintln!("- Automatic output schema generation");
-    eprintln!("- Mixed structured and unstructured outputs");
-    eprintln!();
-    eprintln!("Tools available:");
-    eprintln!("- get_weather: Returns structured weather data");
-    eprintln!("- calculate: Returns structured calculation results");
-    eprintln!("- get_info: Returns plain text");
-    eprintln!();
-
-    let server = StructuredOutputServer::new();
-
-    // Print the tools with their schemas for demonstration
-    eprintln!("Tool schemas:");
-    for tool in server.tool_router.list_all() {
-        eprintln!("\n{}: {}", tool.name, tool.description.unwrap_or_default());
-        if let Some(output_schema) = &tool.output_schema {
-            eprintln!(
-                "  Output schema: {}",
-                serde_json::to_string_pretty(output_schema).unwrap()
-            );
-        } else {
-            eprintln!("  Output: Unstructured text");
-        }
-    }
-    eprintln!();
-
-    // Start the server
-    eprintln!("Starting server. Connect with an MCP client to test the tools.");
-    eprintln!("Press Ctrl+C to stop.");
-
-    let service = server.serve(stdio()).await?;
-    service.waiting().await?;
-
+    let server = MemoryMcpServer::new("memory.db")?;
+    serve_server(server, stdio()).await?;
     Ok(())
 }
 ```
@@ -302,3 +562,5 @@ async fn main() -> anyhow::Result<()> {
 
 - [MCP Specification](https://spec.modelcontextprotocol.io/specification/2024-11-05/)
 - [Schema](https://github.com/modelcontextprotocol/specification/blob/main/schema/2024-11-05/schema.ts)
+- [Official Rust SDK Repository](https://github.com/modelcontextprotocol/rust-sdk)
+- [Examples Directory](https://github.com/modelcontextprotocol/rust-sdk/tree/main/examples)
