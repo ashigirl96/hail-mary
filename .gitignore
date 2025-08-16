@@ -43,7 +43,6 @@ experimental/
 bin/
 .claude/
 tmp/
-.kiro/
 
 # Rust
 /target/
