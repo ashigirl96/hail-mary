@@ -82,6 +82,11 @@ update:
 install:
     cargo install --path .
 
+# Auto-fix format and lint issues
+fix:
+    cargo fmt
+    cargo clippy --fix --allow-dirty --allow-staged
+
 # Run all checks (format, lint, test)
 ci: fmt-check lint test
 
