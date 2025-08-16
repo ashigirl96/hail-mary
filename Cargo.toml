@@ -4,10 +4,33 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# 既存の依存関係
 clap = { version = "4.5", features = ["derive"] }
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 anyhow = "1.0"
+regex = "1.0"
+
+# Phase 1: Memory MCP基本機能 - Updated to rmcp 0.5.0
+rmcp = { version = "0.5.0", features = ["server", "macros", "transport-io"] }
+schemars = "1"  # For structured output schemas
+rusqlite = { version = "0.31", features = ["bundled", "vtab"] }
+rusqlite_migration = "1.0"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+dirs = "5.0"
+
+# Phase 3: Embeddings and Vector Search
+# Note: fastembed requires ONNX runtime which has compatibility issues
+# Using a simpler embedding approach for now
+# fastembed = "3"
+zerocopy = "0.8"
+# sqlite-vec = "0.1"
+rand = "0.8"
 
 [dev-dependencies]
 tempfile = "3.8"

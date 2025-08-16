@@ -1,8 +1,11 @@
 mod commands;
 mod core;
+mod mcp;
+mod memory;
 mod utils;
 
 use clap::{Parser, Subcommand};
+use commands::memory::MemoryCommand;
 use commands::new::NewCommand;
 use utils::error::Result;
 
@@ -19,6 +22,8 @@ struct Cli {
 enum Commands {
     /// Create a new feature specification directory and files
     New(NewCommand),
+    /// Memory management commands (MCP server, document generation)
+    Memory(MemoryCommand),
 }
 
 fn main() -> Result<()> {
@@ -27,6 +32,9 @@ fn main() -> Result<()> {
     match cli.command {
         Commands::New(new_command) => {
             new_command.execute()?;
+        }
+        Commands::Memory(memory_command) => {
+            memory_command.execute()?;
         }
     }
 
