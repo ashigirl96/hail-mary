@@ -22,6 +22,8 @@ Memory MCP v3は、**クリーンアーキテクチャ**と**SOLID原則**に基
 - 🚀 **段階的実装**: 各フェーズで動く価値を提供
 - 🏗️ **クリーンアーキテクチャ**: 4層構造による責任の明確な分離
 - 💉 **依存性注入**: トレイトによる抽象化とテスタビリティ向上
+- 🔒 **Immutableテーブル**: INSERTのみでシンプルな設計
+- 📦 **バッチ保存**: 複数の記憶を一度に保存可能
 
 ## 2. アーキテクチャ
 
@@ -142,7 +144,7 @@ graph TB
 - **MCP Client**: Claude Codeからの接続を受け付ける
 
 #### Service Layer（サービス層）
-- **Memory Service**: ビジネスロジックの実装（重複チェック、信頼度計算など）
+- **Memory Service**: ビジネスロジックの実装（信頼度計算、Markdown生成など）
 - **MCP Service**: MCPプロトコルのハンドリング（remember/recallツール）
 
 #### Repository Layer（リポジトリ層）
@@ -167,7 +169,7 @@ CREATE TABLE memories (
     type TEXT NOT NULL CHECK(         -- 記憶のカテゴリ
         type IN ('tech', 'project-tech', 'domain')
     ),
-    topic TEXT NOT NULL,              -- タイトル/要約（人間が読みやすい）
+    title TEXT NOT NULL,              -- タイトル/要約（人間が読みやすい）
     tags TEXT,                        -- カンマ区切りのタグ（例: "rust,async,tokio"）
     content TEXT NOT NULL,            -- 本文
     examples TEXT,                    -- JSON配列でコード例などを保存
@@ -176,14 +178,13 @@ CREATE TABLE memories (
         CHECK(confidence >= 0 AND confidence <= 1),
     created_at INTEGER DEFAULT (unixepoch()), -- 作成日時
     last_accessed INTEGER,            -- 最終アクセス日時
-    source TEXT,                      -- 情報源（オプション）
     deleted INTEGER DEFAULT 0         -- 論理削除フラグ
 );
 
 -- FTS5全文検索インデックス
 CREATE VIRTUAL TABLE memories_fts USING fts5(
     memory_id UNINDEXED,              -- 検索対象外
-    topic,                            -- 検索対象
+    title,                            -- 検索対象
     tags,                             -- 検索対象
     content,                          -- 検索対象
     tokenize = 'porter unicode61'     -- 日本語対応トークナイザー
@@ -206,15 +207,15 @@ CREATE INDEX idx_memories_created
 CREATE TRIGGER memories_ai AFTER INSERT ON memories
 WHEN NEW.deleted = 0
 BEGIN
-    INSERT INTO memories_fts(memory_id, topic, tags, content)
-    VALUES (NEW.id, NEW.topic, NEW.tags, NEW.content);
+    INSERT INTO memories_fts(memory_id, title, tags, content)
+    VALUES (NEW.id, NEW.title, NEW.tags, NEW.content);
 END;
 
 CREATE TRIGGER memories_au AFTER UPDATE ON memories
 WHEN NEW.deleted = 0 AND OLD.deleted = 0
 BEGIN
     UPDATE memories_fts 
-    SET topic = NEW.topic, tags = NEW.tags, content = NEW.content
+    SET title = NEW.title, tags = NEW.tags, content = NEW.content
     WHERE memory_id = NEW.id;
 END;
 
@@ -235,9 +236,9 @@ END;
 
 ```
 migrations/
-├── V1__initial_schema.sql         # 初期スキーマ
-├── V2__add_fts5_index.sql        # FTS5インデックス追加
-└── V3__add_triggers.sql          # トリガー追加
+├── V001__initial_schema.sql       # 初期スキーマ
+├── V002__add_fts5_index.sql       # FTS5インデックス追加
+└── V003__add_triggers.sql         # トリガー追加
 ```
 
 ### 3.3 データ型の説明
@@ -245,7 +246,7 @@ migrations/
 | フィールド | 型 | 説明 | 例 |
 |-----------|-----|------|-----|
 | type | TEXT | 記憶の分類 | 'tech', 'project-tech', 'domain' |
-| topic | TEXT | 人間が読みやすいタイトル | "Rustの非同期プログラミング" |
+| title | TEXT | 人間が読みやすいタイトル | "Rustの非同期プログラミング" |
 | tags | TEXT | 検索用キーワード | "rust,async,tokio,futures" |
 | content | TEXT | 詳細な内容 | "Rustでは async/await を使って..." |
 | examples | TEXT | JSON配列のコード例 | '["async fn main() {}", "tokio::spawn"]' |
@@ -257,18 +258,18 @@ migrations/
 #### 4.1.1 remember
 ```typescript
 interface RememberParams {
-  type: 'tech' | 'project-tech' | 'domain';
-  topic: string;        // タイトル（必須）
-  content: string;      // 本文（必須）
-  tags?: string[];      // タグリスト
-  examples?: string[];  // コード例など
-  source?: string;      // 情報源
+  memories: Array<{
+    type: 'tech' | 'project-tech' | 'domain';
+    title: string;        // タイトル（必須）
+    content: string;      // 本文（必須）
+    tags?: string[];      // タグリスト
+    examples?: string[];  // コード例など
+  }>;
 }
 
 interface RememberResponse {
-  memory_id: string;
-  action: 'created' | 'updated';
-  similar_count?: number;  // 類似記憶の数（Phase 3で追加）
+  memory_ids: string[];
+  created_count: number;
 }
 ```
 
@@ -282,20 +283,8 @@ interface RecallParams {
 }
 
 interface RecallResponse {
-  memories: Memory[];
+  content: string;      // Markdown形式の統合された記憶
   total_count: number;
-}
-
-interface Memory {
-  id: string;
-  type: string;
-  topic: string;
-  tags: string[];
-  content: string;
-  examples?: string[];
-  reference_count: number;
-  confidence: number;
-  created_at: number;
 }
 ```
 
@@ -316,15 +305,12 @@ $ hail-mary memory serve --daemon
 $ hail-mary memory document
 
 # 出力:
-# - ./memory-docs/tech.md
-# - ./memory-docs/project-tech.md
-# - ./memory-docs/domain.md
+# - .kiro/memory/tech.md
+# - .kiro/memory/project-tech.md
+# - .kiro/memory/domain.md
 
 # 特定のタイプのみ
 $ hail-mary memory document --type tech
-
-# 出力先を指定
-$ hail-mary memory document --output ./docs/
 ```
 
 #### 4.2.3 Reindex（Phase 3）
@@ -358,19 +344,15 @@ flowchart TD
     A[Claude: remember request] --> B[MCP Service Layer]
     B --> C[Memory Service]
     C --> D{Input Validation}
-    D -->|Valid| E[Business Logic<br/>Duplicate Check]
+    D -->|Valid| E[Batch Processing]
     D -->|Invalid| Z[Error Response]
     
-    E -->|Exists| F[Update Existing]
-    E -->|New| G[Create New Memory]
+    E --> F[For Each Memory]
+    F --> G[Generate UUID]
+    G --> H[Repository.save]
     
-    F --> H[Repository.update]
-    G --> I[Repository.save]
-    
-    H --> J[SQLite + FTS5]
-    I --> J
-    
-    J --> K[Success Response]
+    H --> I[SQLite + FTS5]
+    I --> J[Success Response]
     
     style A fill:#F92672
     style K fill:#A6E22E
@@ -401,9 +383,9 @@ flowchart TD
     F --> G[Apply Filters<br/>type, tags]
     G --> H[Business Logic<br/>Sort by confidence]
     H --> I[Apply Limit]
-    I --> J[Update last_accessed]
-    J --> K[Format Response]
-    K --> L[Return Results]
+    I --> J[Update reference_count]
+    J --> K[Format as Markdown]
+    K --> L[Return Markdown string]
     
     style A fill:#F92672
     style L fill:#A6E22E
@@ -440,7 +422,7 @@ flowchart TD
     J --> M[Generate project-tech.md]
     K --> N[Generate domain.md]
     
-    L --> O[Write to ./memory-docs/]
+    L --> O[Write to .kiro/memory/]
     M --> O
     N --> O
     
@@ -508,22 +490,30 @@ hail-mary/
 │   │   └── memory_mcp.rs     # MCP統合サービス
 │   ├── models/                # ドメインモデル層
 │   │   ├── memory.rs         # Memory構造体とバリデーション
+│   │   ├── kiro.rs           # .kiroディレクトリ管理
 │   │   └── error.rs          # エラー定義
 │   ├── repositories/          # リポジトリ層（データアクセス）
 │   │   └── memory.rs         # trait定義とSQLite/InMemory実装
+│   ├── tests/                 # E2Eテスト
+│   │   ├── e2e/
+│   │   │   ├── fixtures/
+│   │   │   │   └── memories.yaml  # テストデータ
+│   │   │   └── memory_test.rs
+│   │   └── common/
+│   │       └── mod.rs        # テストユーティリティ
 │   └── poc/                   # 実験用コード
 ├── migrations/                 # Refineryマイグレーション
-│   ├── V1__initial_schema.sql
-│   ├── V2__add_fts5_index.sql
-│   └── V3__add_triggers.sql
-├── data/
-│   ├── memory.db              # 現在のデータベース
-│   └── archive/               # 旧DBのアーカイブ
-│       └── memory_20250116.db
-└── memory-docs/               # 生成されたドキュメント
-    ├── tech.md
-    ├── project-tech.md
-    └── domain.md
+│   ├── V001__initial_schema.sql
+│   ├── V002__add_fts5_index.sql
+│   └── V003__add_triggers.sql
+└── .kiro/                      # プロジェクト固有データ
+    └── memory/
+        ├── memory.db          # 現在のデータベース
+        ├── archive/           # 旧DBのアーカイブ
+        │   └── memory_20250818.db
+        ├── tech.md            # 生成されたドキュメント
+        ├── project-tech.md
+        └── domain.md
 ```
 
 ### 6.2 依存関係（Cargo.toml）
@@ -564,10 +554,10 @@ use crate::models::memory::Memory;
 // トレイトによる抽象化
 pub trait MemoryRepository: Send + Sync {
     fn save(&mut self, memory: &Memory) -> Result<()>;
+    fn save_batch(&mut self, memories: &[Memory]) -> Result<()>;
     fn find_by_id(&self, id: &str) -> Result<Option<Memory>>;
-    fn find_by_topic(&self, topic: &str) -> Result<Option<Memory>>;
     fn search_fts(&self, query: &str, limit: usize) -> Result<Vec<Memory>>;
-    fn update_reference_count(&mut self, id: &str) -> Result<()>;
+    fn increment_reference_count(&mut self, id: &str) -> Result<()>;
     fn find_all(&self) -> Result<Vec<Memory>>;
 }
 
@@ -577,7 +567,8 @@ pub struct SqliteMemoryRepository {
 }
 
 impl SqliteMemoryRepository {
-    pub fn new(db_path: impl AsRef<Path>) -> Result<Self> {
+    pub fn new(kiro_config: &KiroConfig) -> Result<Self> {
+        let db_path = kiro_config.memory_db_path();
         let mut conn = rusqlite::Connection::open(db_path)?;
         
         // Refineryでマイグレーション実行
@@ -696,39 +687,32 @@ impl<R: MemoryRepository> MemoryService<R> {
         Self { repository }
     }
     
-    pub async fn remember(
+    pub async fn remember_batch(
         &mut self,
-        memory_type: MemoryType,
-        topic: String,
-        content: String,
-        tags: Vec<String>,
-        examples: Vec<String>,
-        source: Option<String>,
-    ) -> Result<Memory> {
-        // ビジネスロジック: 重複チェック
-        if let Some(existing) = self.repository.find_by_topic(&topic)? {
-            // 既存の記憶を更新
-            self.repository.update_reference_count(&existing.id)?;
-            return Ok(existing);
+        memories: Vec<MemoryInput>,
+    ) -> Result<Vec<Memory>> {
+        let mut created_memories = Vec::new();
+        
+        for input in memories {
+            // Immutableテーブルなので重複チェック不要
+            let memory = Memory::new(input.memory_type, input.title, input.content)
+                .with_tags(input.tags)
+                .with_examples(input.examples);
+                
+            self.repository.save(&memory)?;
+            created_memories.push(memory);
         }
         
-        // 新規作成
-        let memory = Memory::new(memory_type, topic, content)
-            .with_tags(tags)
-            .with_examples(examples)
-            .with_source(source);
-            
-        self.repository.save(&memory)?;
-        Ok(memory)
+        Ok(created_memories)
     }
     
     pub async fn recall(
-        &self,
+        &mut self,
         query: &str,
         limit: usize,
         type_filter: Option<MemoryType>,
         tag_filter: Vec<String>,
-    ) -> Result<Vec<Memory>> {
+    ) -> Result<String> {
         // FTS5検索実行
         let mut memories = self.repository.search_fts(query, limit)?;
         
@@ -749,10 +733,21 @@ impl<R: MemoryRepository> MemoryService<R> {
                 .then(b.reference_count.cmp(&a.reference_count))
         });
         
-        Ok(memories)
+        // 参照カウントを非同期で更新
+        let ids: Vec<String> = memories.iter().map(|m| m.id.clone()).collect();
+        let repo = self.repository.clone();
+        tokio::spawn(async move {
+            for id in ids {
+                let _ = repo.increment_reference_count(&id);
+            }
+        });
+        
+        // Markdown形式で返却
+        Ok(self.format_as_markdown(&memories))
     }
     
-    pub async fn generate_documents(&self, output_dir: &Path) -> Result<()> {
+    pub async fn generate_documents(&self, kiro_config: &KiroConfig) -> Result<()> {
+        let output_dir = kiro_config.memory_docs_dir();
         let memories = self.repository.find_all()?;
         
         // タイプ別にグループ化
@@ -783,9 +778,28 @@ impl<R: MemoryRepository> MemoryService<R> {
         Ok(())
     }
     
-    fn format_as_markdown(&self, memories: &[Memory]) -> String {
-        // Markdown生成ロジック
-        // ...
+    pub fn format_as_markdown(&self, memories: &[Memory]) -> String {
+        let mut output = String::new();
+        
+        for memory in memories {
+            output.push_str(&format!("## {}\n", memory.title));
+            output.push_str(&format!("*Tags: {}*\n", memory.tags.join(", ")));
+            output.push_str(&format!("*References: {}, Confidence: {:.2}*\n\n", 
+                memory.reference_count, memory.confidence));
+            output.push_str(&memory.content);
+            output.push_str("\n\n");
+            
+            if !memory.examples.is_empty() {
+                output.push_str("### Examples:\n");
+                for example in &memory.examples {
+                    output.push_str(&format!("```\n{}\n```\n", example));
+                }
+            }
+            
+            output.push_str("---\n\n");
+        }
+        
+        output
     }
 }
 
@@ -1032,7 +1046,7 @@ impl std::str::FromStr for MemoryType {
 pub struct Memory {
     pub id: String,
     pub memory_type: MemoryType,
-    pub topic: String,
+    pub title: String,
     pub tags: Vec<String>,
     pub content: String,
     pub examples: Vec<String>,
@@ -1040,7 +1054,6 @@ pub struct Memory {
     pub confidence: f32,
     pub created_at: i64,
     pub last_accessed: Option<i64>,
-    pub source: Option<String>,
     pub deleted: bool,
 }
 
@@ -1208,65 +1221,9 @@ pub fn process_data() -> Result<()> {
 （以下続く）
 ```
 
-## 8. 実装計画
+## 8. パフォーマンス目標
 
-### 8.0 Phase 0: アーキテクチャ基盤（1日）
-
-**目標**: クリーンアーキテクチャの基盤構築
-
-- [ ] ディレクトリ構造の作成
-- [ ] 基本的なトレイト定義（MemoryRepository）
-- [ ] エラー型定義（thiserror使用）
-- [ ] データモデル定義（Memory, MemoryType）
-- [ ] Cargo.toml設定
-
-**成果物**: コンパイル可能な基本構造
-
-### 8.1 Phase 1: 基本機能（2日）
-
-**目標**: 最小限のMCPサーバーを動かす
-
-- [ ] Refineryマイグレーション設定
-- [ ] SQLiteデータベースの初期化
-- [ ] memoriesテーブルとFTS5インデックスの作成
-- [ ] SqliteMemoryRepository実装
-- [ ] InMemoryRepository実装（テスト用）
-- [ ] MemoryService実装
-- [ ] MemoryMcpServer実装
-- [ ] rememberツールの実装
-- [ ] recallツールの実装（FTS5検索）
-- [ ] 単体テスト作成
-
-**成果物**: `hail-mary memory serve` で起動し、Claudeから記憶の保存と検索が可能
-
-### 8.2 Phase 2: ドキュメント生成（1日）
-
-**目標**: 記憶をMarkdownで参照可能にする
-
-- [ ] `hail-mary memory document` コマンドの実装
-- [ ] Markdown生成ロジック
-- [ ] タイプ別のファイル分割
-- [ ] フォーマッティングとソート
-- [ ] Claude Codeから `@tech.md` で参照可能に
-
-**成果物**: 生成されたMarkdownファイルを直接参照可能
-
-### 8.3 Phase 3: Reindex機能（2日）
-
-**目標**: 定期的な最適化と重複排除
-
-- [ ] `hail-mary memory reindex` コマンドの実装
-- [ ] fastembed統合
-- [ ] sqlite-vec統合
-- [ ] 類似度計算とマージロジック
-- [ ] データベースのバックアップとアーカイブ
-- [ ] 論理削除の物理削除
-
-**成果物**: データベースの自動最適化機能
-
-## 9. パフォーマンス目標
-
-### 9.1 レスポンスタイム
+### 8.1 レスポンスタイム
 
 | 操作 | 目標時間 | 備考 |
 |------|---------|---------|
@@ -1275,29 +1232,29 @@ pub fn process_data() -> Result<()> {
 | document生成 | < 1s | 1000件での生成 |
 | reindex | < 30s | 1000件での再構築 |
 
-### 9.2 スケーラビリティ
+### 8.2 スケーラビリティ
 
 - 10,000件の記憶まで問題なく動作
 - データベースサイズ: < 100MB（10,000件時）
 - メモリ使用量: < 50MB（通常運用時）
 
-## 10. セキュリティとプライバシー
+## 9. セキュリティとプライバシー
 
-### 10.1 基本方針
+### 9.1 基本方針
 
 - **完全ローカル処理**: 外部APIを一切使用しない
 - **データ保護**: SQLiteファイルへの適切なアクセス権限
 - **センシティブ情報**: 自動検出と警告（Phase 4で検討）
 
-### 10.2 データ管理
+### 9.2 データ管理
 
 - データベースファイルは `~/.local/share/hail-mary/` に保存
 - アーカイブは自動的に圧縮（Phase 4で検討）
 - エクスポート時のフィルタリング機能
 
-## 11. テスト戦略
+## 10. テスト戦略
 
-### 11.1 単体テスト
+### 10.1 単体テスト
 
 ```rust
 #[cfg(test)]
@@ -1347,16 +1304,16 @@ mod tests {
 }
 ```
 
-### 11.2 統合テスト
+### 10.2 統合テスト
 
 - MCPプロトコル準拠テスト
 - エンドツーエンドシナリオ
 - ドキュメント生成の確認
 - マイグレーションテスト
 
-## 12. 将来の拡張可能性
+## 11. 将来の拡張可能性
 
-### 12.1 Phase 4以降の機能候補
+### 11.1 Phase 4以降の機能候補
 
 - **関係性グラフ**: memories間の関連を管理
 - **自動タグ生成**: contentから自動的にタグを抽出
@@ -1364,16 +1321,16 @@ mod tests {
 - **Web UI**: ブラウザから記憶を管理
 - **同期機能**: 複数デバイス間での同期（暗号化付き）
 
-### 12.2 拡張ポイント
+### 11.2 拡張ポイント
 
 - MemoryTypeの追加（例: personal, team）
 - 検索アルゴリズムの改善
 - より高度な重複検出
 - マルチユーザー対応
 
-## 13. v2からv3への主な変更点
+## 12. v2からv3への主な変更点
 
-### 13.1 アーキテクチャ改善
+### 12.1 アーキテクチャ改善
 
 | 項目 | v2 | v3 | 改善点 |
 |------|-----|-----|--------|
@@ -1382,20 +1339,20 @@ mod tests {
 | **テスト** | 統合テストのみ | 単体テスト + 統合テスト | 高速なフィードバック |
 | **マイグレーション** | rusqlite_migration | Refinery | より柔軟な管理 |
 
-### 13.2 コード品質向上
+### 12.2 コード品質向上
 
 - **SOLID原則の適用**: 特にDIP（依存性逆転の原則）
 - **エラーハンドリング**: thiserrorによる構造化
 - **ビルダーパターン**: Memoryの柔軟な構築
 - **ファクトリ関数**: サービスの依存性注入
 
-### 13.3 保守性向上
+### 12.3 保守性向上
 
 - **明確な層分離**: 各層の責任が明確
 - **テスト容易性**: InMemoryRepositoryによる高速テスト
 - **拡張容易性**: 新しいRepositoryの追加が容易
 
-## 14. まとめ
+## 13. まとめ
 
 Memory MCP v3は、**クリーンアーキテクチャ**と**SOLID原則**を適用することで、v2の設計を大幅に改善しました。
 
