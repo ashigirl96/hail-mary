@@ -35,6 +35,7 @@ impl<R: MemoryRepository> MemoryService<R> {
     }
 
     /// 埋め込み自動生成を有効/無効にする
+    #[allow(dead_code)] // Reserved for future automatic embedding configuration
     pub fn set_auto_embeddings(&mut self, enabled: bool) {
         self.auto_generate_embeddings = enabled;
     }
@@ -158,29 +159,77 @@ impl<R: MemoryRepository> MemoryService<R> {
 
     /// 記憶を検索
     pub async fn recall(&mut self, params: RecallParams) -> Result<RecallResponse> {
+        use tracing::info;
+
         let limit = params.limit.unwrap_or(10);
+        info!(
+            "Service recall: query='{}', memory_type={:?}, tags={:?}, limit={}",
+            params.query, params.memory_type, params.tags, limit
+        );
 
         // 検索戦略の選択
         let mut memories = if params.query.is_empty() {
+            info!("Empty query - browsing by type");
             // クエリがない場合はタイプでブラウズ
             if let Some(memory_type) = params.memory_type {
-                self.repository.browse_by_type(&memory_type, limit)?
+                let results = self.repository.browse_by_type(&memory_type, limit)?;
+                info!(
+                    "Browse by type {} returned {} memories",
+                    memory_type,
+                    results.len()
+                );
+                results
             } else {
                 // デフォルトはTechタイプをブラウズ
-                self.repository.browse_by_type(&MemoryType::Tech, limit)?
+                let results = self.repository.browse_by_type(&MemoryType::Tech, limit)?;
+                info!(
+                    "Browse by default Tech type returned {} memories",
+                    results.len()
+                );
+                results
             }
         } else {
+            info!("Non-empty query - using FTS search");
             // FTS5検索を実行
-            let mut results = self.repository.search(&params.query, limit)?;
+            let mut results = if let Some(memory_type) = params.memory_type {
+                info!(
+                    "Calling search_with_type with query='{}', type={}, limit={}",
+                    params.query, memory_type, limit
+                );
+                // タイプ指定がある場合はSQL側でフィルタリング
+                let search_results =
+                    self.repository
+                        .search_with_type(&params.query, &memory_type, limit)?;
+                info!(
+                    "search_with_type returned {} memories",
+                    search_results.len()
+                );
+                search_results
+            } else {
+                info!(
+                    "Calling search with query='{}', limit={}",
+                    params.query, limit
+                );
+                // タイプ指定がない場合は通常の検索
+                let search_results = self.repository.search(&params.query, limit)?;
+                info!("search returned {} memories", search_results.len());
+                search_results
+            };
 
-            // タイプフィルタを適用
-            if let Some(memory_type) = params.memory_type {
-                results.retain(|m| m.memory_type == memory_type);
-            }
-
-            // タグフィルタを適用
+            // タグフィルタを適用（空の配列の場合は適用しない）
             if let Some(tags) = params.tags {
-                results.retain(|m| tags.iter().any(|tag| m.tags.contains(tag)));
+                if !tags.is_empty() {
+                    info!("Applying tag filter: {:?}", tags);
+                    let before_count = results.len();
+                    results.retain(|m| tags.iter().any(|tag| m.tags.contains(tag)));
+                    info!(
+                        "Tag filter reduced {} -> {} memories",
+                        before_count,
+                        results.len()
+                    );
+                } else {
+                    info!("Empty tag array provided - skipping tag filter");
+                }
             }
 
             results
@@ -200,6 +249,7 @@ impl<R: MemoryRepository> MemoryService<R> {
         });
 
         let total_count = memories.len();
+        info!("Final recall result: {} memories", total_count);
 
         Ok(RecallResponse {
             memories,

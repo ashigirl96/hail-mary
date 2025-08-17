@@ -221,12 +221,7 @@ impl BulkDeleteCommand {
 
             if self.verbose && memories.len() <= 20 {
                 for (i, memory) in memories.iter().enumerate() {
-                    println!(
-                        "{}. {} [{}]",
-                        i + 1,
-                        memory.topic,
-                        memory.memory_type
-                    );
+                    println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
                     if !memory.tags.is_empty() {
                         println!("   Tags: {}", memory.tags.join(", "));
                     }
@@ -239,12 +234,7 @@ impl BulkDeleteCommand {
             } else if memories.len() > 20 {
                 // Show first 10 and last 10
                 for (i, memory) in memories.iter().take(10).enumerate() {
-                    println!(
-                        "{}. {} [{}]",
-                        i + 1,
-                        memory.topic,
-                        memory.memory_type
-                    );
+                    println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
                 }
 
                 if memories.len() > 20 {
@@ -386,7 +376,7 @@ impl BulkDeleteCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::memory::models::{Memory, MemoryType};
+    use crate::memory::models::MemoryType;
 
     #[test]
     fn test_build_filter_criteria() {

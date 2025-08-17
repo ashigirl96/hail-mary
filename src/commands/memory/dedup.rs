@@ -534,6 +534,7 @@ impl DedupCommand {
 
 /// A group of duplicate memories
 struct DuplicateGroup {
+    #[allow(dead_code)]
     primary_index: usize,
     primary_memory: Memory,
     duplicates: Vec<Memory>,

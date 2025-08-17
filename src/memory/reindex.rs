@@ -21,6 +21,7 @@ pub struct ReindexConfig {
     /// Whether to show progress
     pub verbose: bool,
     /// Whether to generate embeddings during reindex
+    #[allow(dead_code)] // Reserved for future embedding generation during reindex
     pub generate_embeddings: bool,
     /// Batch size for embedding generation
     pub embedding_batch_size: usize,

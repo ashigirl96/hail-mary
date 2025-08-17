@@ -107,7 +107,7 @@ impl MemoryCommand {
 
             metrics.push(AnalyticsMetric {
                 name: format!("{} Memories", memory_type.to_uppercase()),
-                value: MetricValue::Integer((*count).try_into().unwrap_or(0)),
+                value: MetricValue::Integer((*count).into()),
                 description: Some(format!("{:.1}% of total memories", percentage)),
                 unit: Some("count".to_string()),
             });

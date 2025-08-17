@@ -100,8 +100,7 @@ impl IndexCommand {
         runtime.block_on(async {
             let mut repository =
                 SqliteMemoryRepository::new(db_path).map_err(HailMaryError::General)?;
-            let embedding_service =
-                EmbeddingService::new().map_err(HailMaryError::General)?;
+            let embedding_service = EmbeddingService::new().map_err(HailMaryError::General)?;
 
             // Load memories
             let memories = if let Some(ref memory_type) = self.r#type {
@@ -132,10 +131,11 @@ impl IndexCommand {
                 for memory in batch {
                     // Check if embedding already exists
                     if !self.force
-                        && let Ok(Some(_)) = repository.get_embedding(&memory.id) {
-                            cache_hits += 1;
-                            continue;
-                        }
+                        && let Ok(Some(_)) = repository.get_embedding(&memory.id)
+                    {
+                        cache_hits += 1;
+                        continue;
+                    }
 
                     cache_misses += 1;
 
@@ -239,8 +239,7 @@ impl IndexCommand {
             println!("📊 Found {} memories to index", memories_to_index.len());
 
             // Generate and store embeddings
-            let embedding_service =
-                EmbeddingService::new().map_err(HailMaryError::General)?;
+            let embedding_service = EmbeddingService::new().map_err(HailMaryError::General)?;
             let mut indexed_count = 0;
 
             for batch in memories_to_index.chunks(self.batch_size) {

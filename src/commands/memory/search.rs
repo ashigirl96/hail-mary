@@ -108,10 +108,11 @@ impl SearchCommand {
     pub fn execute(self) -> Result<()> {
         // Validate input
         if let Some(confidence) = self.min_confidence
-            && (!(0.0..=1.0).contains(&confidence)) {
-                eprintln!("Error: Confidence score must be between 0.0 and 1.0");
-                return Ok(());
-            }
+            && (!(0.0..=1.0).contains(&confidence))
+        {
+            eprintln!("Error: Confidence score must be between 0.0 and 1.0");
+            return Ok(());
+        }
 
         if self.min_similarity < 0.0 || self.min_similarity > 1.0 {
             eprintln!("Error: Similarity score must be between 0.0 and 1.0");
@@ -458,12 +459,7 @@ impl SearchCommand {
         println!();
 
         for (i, memory) in memories.iter().enumerate() {
-            println!(
-                "{}. {} [{}]",
-                i + 1,
-                memory.topic,
-                memory.memory_type
-            );
+            println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
 
             if self.verbose {
                 println!("   ID: {}", memory.id);
@@ -734,7 +730,7 @@ fn format_timestamp(timestamp: i64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
+    // tempdir removed - not used in tests
 
     #[test]
     fn test_search_command_validation() {
@@ -766,7 +762,7 @@ mod tests {
 
     #[test]
     fn test_sort_by_enum() {
-        let sort_options = vec![
+        let sort_options = [
             SortBy::Relevance,
             SortBy::Created,
             SortBy::Modified,

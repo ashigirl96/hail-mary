@@ -21,15 +21,13 @@ pub struct HealthCommand {
 impl HealthCommand {
     /// Execute health analytics
     pub fn execute(&self, _context: &AnalyticsContext) -> Result<Vec<AnalyticsMetric>> {
-        let mut metrics = Vec::new();
-
         // TODO: Phase 3.4.3 - Implement health analytics
-        metrics.push(AnalyticsMetric {
+        let metrics = vec![AnalyticsMetric {
             name: "Health Analytics".to_string(),
             value: MetricValue::String("Coming in Phase 3.4.3!".to_string()),
             description: Some("Database health and data quality metrics".to_string()),
             unit: None,
-        });
+        }];
 
         Ok(metrics)
     }

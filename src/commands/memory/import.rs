@@ -416,12 +416,7 @@ impl ImportCommand {
         if self.verbose && memories.len() <= 10 {
             println!("\nMemory previews:");
             for (i, memory) in memories.iter().enumerate() {
-                println!(
-                    "{}. {} [{}]",
-                    i + 1,
-                    memory.topic,
-                    memory.memory_type
-                );
+                println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
                 if !memory.tags.is_empty() {
                     println!("   Tags: {}", memory.tags.join(", "));
                 }

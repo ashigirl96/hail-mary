@@ -342,12 +342,7 @@ impl BulkUpdateCommand {
 
             if self.verbose && memories.len() <= 20 {
                 for (i, memory) in memories.iter().enumerate() {
-                    println!(
-                        "{}. {} [{}]",
-                        i + 1,
-                        memory.topic,
-                        memory.memory_type
-                    );
+                    println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
                     if !memory.tags.is_empty() {
                         println!("   Current tags: {}", memory.tags.join(", "));
                     }
@@ -364,12 +359,7 @@ impl BulkUpdateCommand {
             } else if memories.len() > 20 {
                 // Show first 10 and last 10
                 for (i, memory) in memories.iter().take(10).enumerate() {
-                    println!(
-                        "{}. {} [{}]",
-                        i + 1,
-                        memory.topic,
-                        memory.memory_type
-                    );
+                    println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
                 }
 
                 if memories.len() > 20 {
@@ -430,17 +420,11 @@ impl BulkUpdateCommand {
         }
 
         if let Some(ref memory_type) = operations.set_type {
-            println!(
-                "   → Type: {} → {}",
-                memory.memory_type,
-                memory_type
-            );
+            println!("   → Type: {} → {}", memory.memory_type, memory_type);
         }
 
         if let Some(ref source) = operations.set_source {
-            let current = memory
-                .source.as_deref()
-                .unwrap_or("(none)");
+            let current = memory.source.as_deref().unwrap_or("(none)");
             println!("   → Source: {} → {}", current, source);
         }
 
@@ -594,7 +578,7 @@ impl BulkUpdateCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::memory::models::{Memory, MemoryType};
+    use crate::memory::models::MemoryType;
 
     #[test]
     fn test_build_update_operations() {

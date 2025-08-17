@@ -21,15 +21,13 @@ pub struct PerformanceCommand {
 impl PerformanceCommand {
     /// Execute performance analytics
     pub fn execute(&self, _context: &AnalyticsContext) -> Result<Vec<AnalyticsMetric>> {
-        let mut metrics = Vec::new();
-
         // TODO: Phase 3.4.3 - Implement performance analytics
-        metrics.push(AnalyticsMetric {
+        let metrics = vec![AnalyticsMetric {
             name: "Performance Analytics".to_string(),
             value: MetricValue::String("Coming in Phase 3.4.3!".to_string()),
             description: Some("Performance metrics and optimization insights".to_string()),
             unit: None,
-        });
+        }];
 
         Ok(metrics)
     }

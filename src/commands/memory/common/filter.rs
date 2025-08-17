@@ -87,11 +87,12 @@ impl FilterCriteria {
     /// Validate the filter criteria
     pub fn validate(&self) -> Result<()> {
         if let Some(confidence) = self.min_confidence
-            && (!(0.0..=1.0).contains(&confidence)) {
-                return Err(crate::utils::error::HailMaryError::General(
-                    anyhow::anyhow!("Confidence score must be between 0.0 and 1.0"),
-                ));
-            }
+            && (!(0.0..=1.0).contains(&confidence))
+        {
+            return Err(crate::utils::error::HailMaryError::General(
+                anyhow::anyhow!("Confidence score must be between 0.0 and 1.0"),
+            ));
+        }
 
         if self.topic_only && self.content_only {
             return Err(crate::utils::error::HailMaryError::General(
@@ -101,19 +102,20 @@ impl FilterCriteria {
 
         // Validate regex if provided
         if let Some(ref query) = self.query
-            && self.regex {
-                let regex_pattern = if self.case_sensitive {
-                    query.clone()
-                } else {
-                    format!("(?i){}", query)
-                };
+            && self.regex
+        {
+            let regex_pattern = if self.case_sensitive {
+                query.clone()
+            } else {
+                format!("(?i){}", query)
+            };
 
-                if let Err(e) = Regex::new(&regex_pattern) {
-                    return Err(crate::utils::error::HailMaryError::General(
-                        anyhow::anyhow!("Invalid regex pattern: {}", e),
-                    ));
-                }
+            if let Err(e) = Regex::new(&regex_pattern) {
+                return Err(crate::utils::error::HailMaryError::General(
+                    anyhow::anyhow!("Invalid regex pattern: {}", e),
+                ));
             }
+        }
 
         Ok(())
     }
@@ -162,10 +164,11 @@ impl FilterEngine {
 
         // Apply query filter if provided
         if let Some(ref query) = criteria.query
-            && criteria.regex {
-                memories = Self::apply_regex_filter(criteria, memories, query)?;
-            }
-            // Note: FTS5 filtering would be handled at repository level
+            && criteria.regex
+        {
+            memories = Self::apply_regex_filter(criteria, memories, query)?;
+        }
+        // Note: FTS5 filtering would be handled at repository level
 
         Ok(memories)
     }
@@ -294,6 +297,7 @@ impl FilterEngine {
     }
 
     /// Count memories that would match the criteria
+    #[allow(dead_code)] // Reserved for future bulk operation previews
     pub fn count_matches(
         repository: &SqliteMemoryRepository,
         criteria: &FilterCriteria,
@@ -303,6 +307,7 @@ impl FilterEngine {
     }
 
     /// Get a preview of memories that would be affected
+    #[allow(dead_code)] // Reserved for future bulk operation previews
     pub fn preview_matches(
         repository: &SqliteMemoryRepository,
         criteria: &FilterCriteria,

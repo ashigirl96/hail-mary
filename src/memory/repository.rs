@@ -45,6 +45,19 @@ const SEARCH_MEMORIES_FTS: &str = r#"
     LIMIT ?2
 "#;
 
+const SEARCH_MEMORIES_FTS_WITH_TYPE: &str = r#"
+    SELECT m.id, m.type, m.topic, m.tags, m.content, m.examples, 
+           m.reference_count, m.confidence, m.created_at, 
+           m.last_accessed, m.source, m.deleted
+    FROM memories m
+    JOIN memories_fts f ON m.id = f.memory_id
+    WHERE f.memories_fts MATCH ?1
+    AND m.type = ?2
+    AND m.deleted = 0
+    ORDER BY rank
+    LIMIT ?3
+"#;
+
 const BROWSE_BY_TYPE: &str = r#"
     SELECT id, type, topic, tags, content, examples, reference_count,
            confidence, created_at, last_accessed, source, deleted
@@ -107,6 +120,12 @@ pub trait MemoryRepository {
     fn find_by_id(&self, id: &str) -> Result<Option<Memory>>;
     fn find_by_topic(&self, topic: &str, memory_type: &MemoryType) -> Result<Option<Memory>>;
     fn search(&self, query: &str, limit: usize) -> Result<Vec<Memory>>;
+    fn search_with_type(
+        &self,
+        query: &str,
+        memory_type: &MemoryType,
+        limit: usize,
+    ) -> Result<Vec<Memory>>;
     fn search_all(&self, query: &str, limit: usize) -> Result<Vec<Memory>>;
     fn browse_by_type(&self, memory_type: &MemoryType, limit: usize) -> Result<Vec<Memory>>;
     fn browse_all(&self, limit: usize) -> Result<Vec<Memory>>;
@@ -122,6 +141,7 @@ pub trait MemoryRepository {
         model_name: &str,
     ) -> Result<()>;
     fn get_embedding(&self, memory_id: &str) -> Result<Option<Vec<f32>>>;
+    #[allow(dead_code)] // Reserved for future batch embedding operations
     fn get_embeddings_batch(
         &self,
         memory_ids: &[String],
@@ -132,6 +152,7 @@ pub trait MemoryRepository {
         limit: usize,
         min_similarity: f32,
     ) -> Result<Vec<(Memory, f32)>>;
+    #[allow(dead_code)] // Reserved for future duplicate detection functionality
     fn find_duplicates(&self, similarity_threshold: f32) -> Result<Vec<(String, String, f32)>>;
     fn get_memories_without_embeddings(&self, limit: usize) -> Result<Vec<Memory>>;
 }
@@ -246,6 +267,25 @@ impl MemoryRepository for SqliteMemoryRepository {
     fn search_all(&self, query: &str, limit: usize) -> Result<Vec<Memory>> {
         let mut stmt = self.conn.prepare(SEARCH_MEMORIES_FTS_ALL)?;
         let memory_iter = stmt.query_map(params![query, limit], Memory::from_row)?;
+
+        let mut memories = Vec::new();
+        for memory in memory_iter {
+            memories.push(memory?);
+        }
+        Ok(memories)
+    }
+
+    fn search_with_type(
+        &self,
+        query: &str,
+        memory_type: &MemoryType,
+        limit: usize,
+    ) -> Result<Vec<Memory>> {
+        let mut stmt = self.conn.prepare(SEARCH_MEMORIES_FTS_WITH_TYPE)?;
+        let memory_iter = stmt.query_map(
+            params![query, memory_type.to_string(), limit],
+            Memory::from_row,
+        )?;
 
         let mut memories = Vec::new();
         for memory in memory_iter {
@@ -719,6 +759,7 @@ impl SqliteMemoryRepository {
     }
 
     /// Rename a tag across all memories
+    #[allow(dead_code)] // Reserved for future tag management functionality
     pub fn rename_tag(&mut self, from: &str, to: &str) -> Result<usize> {
         if from == to {
             return Ok(0);
@@ -734,6 +775,7 @@ impl SqliteMemoryRepository {
     }
 
     /// Get all unique tags across all memories
+    #[allow(dead_code)] // Reserved for future tag management functionality
     pub fn get_all_tags(&self) -> Result<Vec<String>> {
         let mut stmt = self
             .conn
@@ -759,6 +801,7 @@ impl SqliteMemoryRepository {
     }
 
     /// Remove unused tags (implementation depends on requirements)
+    #[allow(dead_code)] // Reserved for future tag cleanup functionality
     pub fn remove_unused_tags(&mut self) -> Result<usize> {
         // This is a placeholder - actual implementation would depend on
         // whether we store tags separately or inline in the memories table

@@ -103,10 +103,11 @@ impl ExportCommand {
     pub fn execute(self) -> Result<()> {
         // Validate input
         if let Some(confidence) = self.min_confidence
-            && (!(0.0..=1.0).contains(&confidence)) {
-                eprintln!("Error: Confidence score must be between 0.0 and 1.0");
-                return Ok(());
-            }
+            && (!(0.0..=1.0).contains(&confidence))
+        {
+            eprintln!("Error: Confidence score must be between 0.0 and 1.0");
+            return Ok(());
+        }
 
         if self.csv_delimiter.len() != 1 {
             eprintln!("Error: CSV delimiter must be a single character");
@@ -290,7 +291,8 @@ impl ExportCommand {
         let delimiter = &self.csv_delimiter;
 
         // Determine fields to include
-        let available_fields = ["id",
+        let available_fields = [
+            "id",
             "type",
             "topic",
             "tags",
@@ -301,7 +303,8 @@ impl ExportCommand {
             "created_at",
             "last_accessed",
             "source",
-            "deleted"];
+            "deleted",
+        ];
 
         let fields = if let Some(ref custom_fields) = self.fields {
             custom_fields.clone()
@@ -423,7 +426,7 @@ mod tests {
 
     #[test]
     fn test_export_format_enum() {
-        let formats = vec![ExportFormat::Json, ExportFormat::Csv];
+        let formats = [ExportFormat::Json, ExportFormat::Csv];
         assert_eq!(formats.len(), 2);
     }
 

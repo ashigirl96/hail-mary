@@ -25,13 +25,23 @@ impl ServeCommand {
     /// Execute the serve command
     pub fn execute(self) -> Result<()> {
         // Initialize tracing based on verbosity
+        // IMPORTANT: MCP uses stdio, so all logs must go to stderr to avoid JSON parsing errors
         if self.verbose {
             tracing_subscriber::registry()
-                .with(tracing_subscriber::fmt::layer())
+                .with(
+                    tracing_subscriber::fmt::layer()
+                        .with_writer(std::io::stderr)
+                        .with_target(true),
+                )
                 .init();
         } else {
             tracing_subscriber::registry()
-                .with(tracing_subscriber::fmt::layer().with_target(false))
+                .with(
+                    tracing_subscriber::fmt::layer()
+                        .with_writer(std::io::stderr)
+                        .with_target(false)
+                        .with_level(false),
+                )
                 .init();
         }
 
@@ -48,7 +58,8 @@ impl ServeCommand {
         if self.daemon {
             // TODO: Implement proper daemon mode
             // For now, just run in foreground
-            eprintln!("Note: --daemon mode is not yet implemented, running in foreground");
+            // Use tracing instead of eprintln to avoid interfering with MCP stdio
+            tracing::warn!("--daemon mode is not yet implemented, running in foreground");
         }
 
         // Run the server
@@ -68,9 +79,14 @@ impl ServeCommand {
             // Run server with shutdown handler
             tokio::select! {
                 result = server.run() => {
-                    if let Err(e) = result {
-                        error!("Server error: {}", e);
-                        return Err(e);
+                    match result {
+                        Ok(()) => {
+                            info!("Server completed normally");
+                        }
+                        Err(e) => {
+                            error!("Server error: {}", e);
+                            return Err(e);
+                        }
                     }
                 }
                 _ = shutdown => {

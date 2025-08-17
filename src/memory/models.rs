@@ -3,6 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fmt;
+use std::str::FromStr;
 use uuid::Uuid;
 
 /// 記憶のカテゴリ
@@ -27,13 +28,23 @@ impl fmt::Display for MemoryType {
 }
 
 impl MemoryType {
-    /// 文字列からMemoryTypeを作成
+    /// 文字列からMemoryTypeを作成 (backwards compatibility wrapper)
+    /// This method is kept for backwards compatibility with existing code
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
+        s.parse().ok()
+    }
+}
+
+impl FromStr for MemoryType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "tech" => Some(MemoryType::Tech),
-            "project-tech" => Some(MemoryType::ProjectTech),
-            "domain" => Some(MemoryType::Domain),
-            _ => None,
+            "tech" => Ok(MemoryType::Tech),
+            "project-tech" => Ok(MemoryType::ProjectTech),
+            "domain" => Ok(MemoryType::Domain),
+            _ => Err(format!("Invalid memory type: {}", s)),
         }
     }
 }
