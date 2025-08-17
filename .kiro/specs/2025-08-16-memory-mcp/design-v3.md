@@ -295,7 +295,7 @@ $ hail-mary init
 # 1. .kiro/ディレクトリを作成
 # 2. .kiro/config.tomlテンプレートを配置
 # 3. .kiro/memory/ディレクトリを作成
-# 4. .gitignoreに.kiro/memory/db.sqlite3を追加
+# 4. .gitignoreに.kiro/memory/*sqlite3を追加
 
 # 既存の.kiroがある場合は確認
 $ hail-mary init
