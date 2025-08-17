@@ -197,7 +197,6 @@ async fn test_find_related_memories() {
 #[tokio::test]
 async fn test_reindex_with_embeddings() {
     use hail_mary::memory::reindex::{ReindexConfig, ReindexService};
-    use std::path::PathBuf;
 
     let temp_dir = TempDir::new().unwrap();
     let db_path = temp_dir.path().join("test.db");
