@@ -71,7 +71,7 @@ pub struct ImportMemory {
     pub id: Option<String>,
     #[serde(rename = "type", default)]
     pub memory_type: Option<String>,
-    pub topic: String,
+    pub title: String,
     #[serde(default)]
     pub tags: Vec<String>,
     pub content: String,
@@ -260,7 +260,7 @@ impl ImportCommand {
             let mut memory = ImportMemory {
                 id: None,
                 memory_type: None,
-                topic: String::new(),
+                title: String::new(),
                 tags: Vec::new(),
                 content: String::new(),
                 examples: Vec::new(),
@@ -301,7 +301,7 @@ impl ImportCommand {
                             Some(value.to_string())
                         }
                     }
-                    "topic" => memory.topic = value.to_string(),
+                    "topic" => memory.title = value.to_string(),
                     "content" => memory.content = value.to_string(),
                     "tags" => {
                         if !value.is_empty() {
@@ -321,11 +321,7 @@ impl ImportCommand {
                         memory.confidence = value.parse().ok();
                     }
                     "source" => {
-                        memory.source = if value.is_empty() {
-                            None
-                        } else {
-                            Some(value.to_string())
-                        }
+                        // source field removed - skip this field
                     }
                     _ => {} // Ignore unknown columns
                 }
@@ -343,8 +339,8 @@ impl ImportCommand {
 
         for (i, import_memory) in memories.into_iter().enumerate() {
             // Validate required fields
-            if import_memory.topic.trim().is_empty() {
-                warnings.push(format!("Memory #{}: Missing topic", i + 1));
+            if import_memory.title.trim().is_empty() {
+                warnings.push(format!("Memory #{}: Missing title", i + 1));
                 continue;
             }
 
@@ -383,7 +379,7 @@ impl ImportCommand {
                     .id
                     .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
                 memory_type,
-                topic: import_memory.topic,
+                title: import_memory.title,
                 tags: import_memory.tags,
                 content: import_memory.content,
                 examples: import_memory.examples,
@@ -391,8 +387,8 @@ impl ImportCommand {
                 confidence: confidence.clamp(0.0, 1.0),
                 created_at: chrono::Utc::now().timestamp(),
                 last_accessed: None,
-                source: import_memory.source,
-                deleted: import_memory.deleted.unwrap_or(false),
+                // source field removed
+                deleted: false,
             };
 
             valid_memories.push(memory);
@@ -416,7 +412,7 @@ impl ImportCommand {
         if self.verbose && memories.len() <= 10 {
             println!("\nMemory previews:");
             for (i, memory) in memories.iter().enumerate() {
-                println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
+                println!("{}. {} [{}]", i + 1, memory.title, memory.memory_type);
                 if !memory.tags.is_empty() {
                     println!("   Tags: {}", memory.tags.join(", "));
                 }
@@ -452,7 +448,7 @@ impl ImportCommand {
                     Ok(existing) => {
                         if existing.iter().any(|m| m.content == memory.content) {
                             if self.verbose {
-                                println!("Skipping duplicate: {}", memory.topic);
+                                println!("Skipping duplicate: {}", memory.title);
                             }
                             result.skipped += 1;
                             continue;
@@ -472,13 +468,13 @@ impl ImportCommand {
                         match repository.update_memory(&memory) {
                             Ok(_) => {
                                 if self.verbose {
-                                    println!("Updated: {}", memory.topic);
+                                    println!("Updated: {}", memory.title);
                                 }
                                 result.updated += 1;
                             }
                             Err(e) => {
                                 let error_msg =
-                                    format!("Failed to update '{}': {}", memory.topic, e);
+                                    format!("Failed to update '{}': {}", memory.title, e);
                                 result.errors.push(error_msg);
                             }
                         }
@@ -489,7 +485,7 @@ impl ImportCommand {
                     }
                     Err(e) => {
                         let error_msg =
-                            format!("Failed to check existing memory '{}': {}", memory.topic, e);
+                            format!("Failed to check existing memory '{}': {}", memory.title, e);
                         result.errors.push(error_msg);
                         continue;
                     }
@@ -500,12 +496,12 @@ impl ImportCommand {
             match repository.create_memory(&memory) {
                 Ok(_) => {
                     if self.verbose {
-                        println!("Created: {}", memory.topic);
+                        println!("Created: {}", memory.title);
                     }
                     result.created += 1;
                 }
                 Err(e) => {
-                    let error_msg = format!("Failed to create '{}': {}", memory.topic, e);
+                    let error_msg = format!("Failed to create '{}': {}", memory.title, e);
                     result.errors.push(error_msg);
                 }
             }
@@ -584,7 +580,7 @@ mod tests {
         let import_memories = vec![ImportMemory {
             id: None,
             memory_type: Some("tech".to_string()),
-            topic: "Test Topic".to_string(),
+            title: "Test Topic".to_string(),
             tags: vec!["rust".to_string()],
             content: "Test content".to_string(),
             examples: vec![],
@@ -599,7 +595,7 @@ mod tests {
         let (valid_memories, warnings) = cmd.validate_memories(import_memories).unwrap();
         assert_eq!(valid_memories.len(), 1);
         assert!(warnings.is_empty());
-        assert_eq!(valid_memories[0].topic, "Test Topic");
+        assert_eq!(valid_memories[0].title, "Test Topic");
         assert_eq!(valid_memories[0].confidence, 0.9);
     }
 
@@ -631,7 +627,7 @@ test-2,domain,"Database Design","database;sql","Database design principles",0.8"
 
         let memories = cmd.parse_csv().unwrap();
         assert_eq!(memories.len(), 2);
-        assert_eq!(memories[0].topic, "Rust Async");
+        assert_eq!(memories[0].title, "Rust Async");
         assert_eq!(memories[0].tags, vec!["rust", "async"]);
         assert_eq!(memories[0].confidence, Some(0.9));
     }

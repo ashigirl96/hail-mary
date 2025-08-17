@@ -50,7 +50,7 @@ impl DeleteCommand {
                     println!("Found memory:");
                     println!("  ID: {}", memory.id);
                     println!("  Type: {}", memory.memory_type);
-                    println!("  Topic: {}", memory.topic);
+                    println!("  Topic: {}", memory.title);
                     println!("  Created: {}", memory.created_at);
                 }
 

@@ -36,7 +36,7 @@ pub struct SearchCommand {
 
     /// Search only in topic field
     #[arg(long)]
-    pub topic_only: bool,
+    pub title_only: bool,
 
     /// Search only in content field
     #[arg(long)]
@@ -123,7 +123,7 @@ impl SearchCommand {
             eprintln!("Warning: --case-sensitive has no effect without --regex");
         }
 
-        if self.topic_only && self.content_only {
+        if self.title_only && self.content_only {
             eprintln!("Error: Cannot specify both --topic-only and --content-only");
             return Ok(());
         }
@@ -365,12 +365,12 @@ impl SearchCommand {
         // Filter by regex
         let mut matching = Vec::new();
         for memory in all_memories {
-            let matches = if self.topic_only {
-                regex.is_match(&memory.topic)
+            let matches = if self.title_only {
+                regex.is_match(&memory.title)
             } else if self.content_only {
                 regex.is_match(&memory.content)
             } else {
-                regex.is_match(&memory.topic)
+                regex.is_match(&memory.title)
                     || regex.is_match(&memory.content)
                     || memory.tags.iter().any(|tag| regex.is_match(tag))
             };
@@ -433,7 +433,7 @@ impl SearchCommand {
                     .partial_cmp(&a.confidence)
                     .unwrap_or(std::cmp::Ordering::Equal),
                 SortBy::References => b.reference_count.cmp(&a.reference_count),
-                SortBy::Topic => a.topic.cmp(&b.topic),
+                SortBy::Topic => a.title.cmp(&b.title),
             };
 
             match self.sort_order {
@@ -459,7 +459,7 @@ impl SearchCommand {
         println!();
 
         for (i, memory) in memories.iter().enumerate() {
-            println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
+            println!("{}. {} [{}]", i + 1, memory.title, memory.memory_type);
 
             if self.verbose {
                 println!("   ID: {}", memory.id);
@@ -555,7 +555,7 @@ impl SearchCommand {
             println!(
                 "{}. {} [{}]{}",
                 i + 1,
-                memory.topic,
+                memory.title,
                 memory.memory_type,
                 similarity_str
             );
@@ -675,13 +675,13 @@ impl SearchCommand {
         const MAX_SNIPPETS: usize = 3;
 
         // Check topic
-        if regex.is_match(&memory.topic) && !self.content_only {
-            println!("   Topic match: {}", memory.topic);
+        if regex.is_match(&memory.title) && !self.content_only {
+            println!("   Topic match: {}", memory.title);
             shown_snippets += 1;
         }
 
         // Check content
-        if !self.topic_only && shown_snippets < MAX_SNIPPETS {
+        if !self.title_only && shown_snippets < MAX_SNIPPETS {
             for mat in regex.find_iter(&memory.content) {
                 if shown_snippets >= MAX_SNIPPETS {
                     break;
@@ -704,7 +704,7 @@ impl SearchCommand {
         }
 
         // Check tags
-        if !self.topic_only && !self.content_only && shown_snippets < MAX_SNIPPETS {
+        if !self.title_only && !self.content_only && shown_snippets < MAX_SNIPPETS {
             for tag in &memory.tags {
                 if regex.is_match(tag) {
                     println!("   Tag match: {}", tag);
@@ -741,7 +741,7 @@ mod tests {
             tags: None,
             regex: false,
             case_sensitive: false,
-            topic_only: false,
+            title_only: false,
             content_only: false,
             min_confidence: Some(1.5), // Invalid
             max_age_days: None,

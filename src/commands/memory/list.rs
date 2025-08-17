@@ -17,7 +17,7 @@ pub struct ListCommand {
     #[arg(long)]
     pub deleted: bool,
 
-    /// Path to the database file (defaults to ~/.local/share/hail-mary/memory.db)
+    /// Path to the database file (defaults to .kiro/memory/memory.db)
     #[arg(long, value_name = "PATH")]
     pub db_path: Option<PathBuf>,
 
@@ -97,7 +97,7 @@ impl ListCommand {
                 println!();
 
                 for memory in memories {
-                    println!("📝 {}", memory.topic);
+                    println!("📝 {}", memory.title);
                     println!("   ID: {}", memory.id);
                     println!("   Type: {}", memory.memory_type);
                     println!("   References: {}", memory.reference_count);

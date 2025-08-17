@@ -148,7 +148,7 @@ fn generate_markdown(memory_type: &MemoryType, memories: &[Memory]) -> String {
     // Add each memory
     for memory in memories {
         // Topic header
-        content.push_str(&format!("## {}\n", memory.topic));
+        content.push_str(&format!("## {}\n", memory.title));
 
         // Metadata
         let tags = if memory.tags.is_empty() {
@@ -185,10 +185,7 @@ fn generate_markdown(memory_type: &MemoryType, memories: &[Memory]) -> String {
             content.push('\n');
         }
 
-        // Source (if any)
-        if let Some(source) = &memory.source {
-            content.push_str(&format!("*Source: {}*\n\n", source));
-        }
+        // Source field removed
 
         // Separator
         content.push_str("---\n\n");

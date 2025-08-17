@@ -82,7 +82,7 @@ impl RelatedCommand {
 
             if self.verbose {
                 println!("🔍 Finding memories related to:");
-                println!("  Topic: {}", source_memory.topic);
+                println!("  Topic: {}", source_memory.title);
                 println!("  Type: {}", source_memory.memory_type);
                 if !source_memory.tags.is_empty() {
                     println!("  Tags: {}", source_memory.tags.join(", "));
@@ -122,7 +122,7 @@ impl RelatedCommand {
                 println!(
                     "{}. {} [{}]{}",
                     i + 1,
-                    memory.topic,
+                    memory.title,
                     memory.memory_type,
                     score_str
                 );

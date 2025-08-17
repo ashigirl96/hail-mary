@@ -78,7 +78,7 @@ pub struct ExportMemory {
     pub id: String,
     #[serde(rename = "type")]
     pub memory_type: String,
-    pub topic: String,
+    pub title: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
     pub content: String,
@@ -244,7 +244,7 @@ impl ExportCommand {
                 ExportMemory {
                     id: m.id.clone(),
                     memory_type: m.memory_type.to_string(),
-                    topic: m.topic.clone(),
+                    title: m.title.clone(),
                     tags: m.tags.clone(),
                     content: m.content.clone(),
                     examples: m.examples.clone(),
@@ -260,11 +260,7 @@ impl ExportCommand {
                     },
                     created_at,
                     last_accessed,
-                    source: if self.include_metadata {
-                        m.source.clone()
-                    } else {
-                        None
-                    },
+                    source: None, // source field removed
                     deleted: if self.include_deleted {
                         Some(m.deleted)
                     } else {
@@ -294,7 +290,7 @@ impl ExportCommand {
         let available_fields = [
             "id",
             "type",
-            "topic",
+            "title",
             "tags",
             "content",
             "examples",
@@ -346,7 +342,7 @@ impl ExportCommand {
                 let value = match field.as_str() {
                     "id" => memory.id.clone(),
                     "type" => memory.memory_type.clone(),
-                    "topic" => escape_csv_field(&memory.topic, delimiter),
+                    "title" => escape_csv_field(&memory.title, delimiter),
                     "tags" => escape_csv_field(&memory.tags.join("; "), delimiter),
                     "content" => escape_csv_field(&memory.content, delimiter),
                     "examples" => escape_csv_field(&memory.examples.join("; "), delimiter),
@@ -358,7 +354,7 @@ impl ExportCommand {
                         .map_or("".to_string(), |v| format!("{:.2}", v)),
                     "created_at" => memory.created_at.clone().unwrap_or_default(),
                     "last_accessed" => memory.last_accessed.clone().unwrap_or_default(),
-                    "source" => memory.source.clone().unwrap_or_default(),
+                    "source" => "".to_string(), // source field removed
                     "deleted" => memory.deleted.map_or("".to_string(), |v| v.to_string()),
                     _ => "".to_string(),
                 };
@@ -435,7 +431,7 @@ mod tests {
         let export_memory = ExportMemory {
             id: "test-id".to_string(),
             memory_type: "tech".to_string(),
-            topic: "Test Topic".to_string(),
+            title: "Test Topic".to_string(),
             tags: vec!["rust".to_string()],
             content: "Test content".to_string(),
             examples: vec!["example".to_string()],

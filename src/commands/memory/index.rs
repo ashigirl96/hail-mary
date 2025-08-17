@@ -140,7 +140,7 @@ impl IndexCommand {
                     cache_misses += 1;
 
                     // Generate embedding
-                    let text = format!("{} {}", memory.topic, memory.content);
+                    let text = format!("{} {}", memory.title, memory.content);
                     let embeddings = embedding_service
                         .embed_texts(vec![text.clone()])
                         .await
@@ -206,7 +206,7 @@ impl IndexCommand {
                     Ok(Memory {
                         id: row.get(0)?,
                         memory_type: MemoryType::from_str(&row.get::<_, String>(1)?).unwrap(),
-                        topic: row.get(2)?,
+                        title: row.get(2)?,
                         tags: row
                             .get::<_, String>(3)?
                             .split(',')
@@ -220,8 +220,8 @@ impl IndexCommand {
                         confidence: row.get(7)?,
                         created_at: row.get(8)?,
                         last_accessed: row.get(9)?,
-                        source: row.get(10).ok(),
-                        deleted: row.get(11)?,
+                        // source field removed
+                        deleted: row.get(10)?,
                     })
                 })
                 .map_err(|e| HailMaryError::General(e.into()))?;
@@ -246,7 +246,7 @@ impl IndexCommand {
                 let mut batch_embeddings = Vec::new();
 
                 for memory in batch {
-                    let text = format!("{} {}", memory.topic, memory.content);
+                    let text = format!("{} {}", memory.title, memory.content);
                     let embeddings = embedding_service
                         .embed_texts(vec![text.clone()])
                         .await
@@ -595,7 +595,7 @@ impl IndexCommand {
         let mut word_total_counts = HashMap::new();
 
         for memory in memories {
-            let text = format!("{} {}", memory.topic, memory.content);
+            let text = format!("{} {}", memory.title, memory.content);
             let mut seen_words = std::collections::HashSet::new();
 
             for word in text.split_whitespace() {

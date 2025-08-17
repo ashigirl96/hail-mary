@@ -158,7 +158,7 @@ impl ClusterCommand {
         let embedding_service = EmbeddingService::new()?;
         let texts: Vec<String> = memories
             .iter()
-            .map(|m| format!("{} {}", m.topic, m.content))
+            .map(|m| format!("{} {}", m.title, m.content))
             .collect();
 
         let embeddings = embedding_service.embed_texts(texts).await?;
@@ -170,7 +170,7 @@ impl ClusterCommand {
                 self.hierarchical_clustering(&memories, &embeddings)?
             }
             ClusterAlgorithm::Dbscan => self.dbscan_clustering(&memories, &embeddings)?,
-            ClusterAlgorithm::Topic => self.topic_clustering(&memories)?,
+            ClusterAlgorithm::Topic => self.title_clustering(&memories)?,
         };
 
         Ok(clusters)
@@ -437,12 +437,12 @@ impl ClusterCommand {
     }
 
     /// Topic-based clustering
-    fn topic_clustering(&self, memories: &[Memory]) -> Result<Vec<Cluster>> {
+    fn title_clustering(&self, memories: &[Memory]) -> Result<Vec<Cluster>> {
         let mut topic_clusters: HashMap<String, Cluster> = HashMap::new();
 
         for memory in memories {
             // Extract main topic (first significant word)
-            let topic_key = self.extract_topic_key(&memory.topic);
+            let topic_key = self.extract_topic_key(&memory.title);
 
             let cluster = topic_clusters
                 .entry(topic_key.clone())
@@ -520,7 +520,7 @@ impl ClusterCommand {
                     .members
                     .iter()
                     .take(5)
-                    .map(|m| m.topic.clone())
+                    .map(|m| m.title.clone())
                     .collect();
 
                 for topic in topics {
@@ -571,7 +571,7 @@ impl ClusterCommand {
                     "members": c.members.iter().map(|m| {
                         serde_json::json!({
                             "id": m.id,
-                            "topic": m.topic,
+                            "topic": m.title,
                             "type": m.memory_type.to_string(),
                             "confidence": m.confidence,
                         })
@@ -784,7 +784,7 @@ impl Cluster {
             "members": self.members.iter().map(|m| {
                 serde_json::json!({
                     "id": m.id,
-                    "topic": m.topic,
+                    "topic": m.title,
                     "type": m.memory_type.to_string(),
                     "tags": m.tags,
                     "confidence": m.confidence,
