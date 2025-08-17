@@ -46,9 +46,9 @@
 //         // Generate embeddings and check similarity
 //         let embedding_service = EmbeddingService::new().unwrap();
 //
-//         let text1 = format!("{} {}", memory1.topic, memory1.content);
-//         let text2 = format!("{} {}", memory2.topic, memory2.content);
-//         let text3 = format!("{} {}", memory3.topic, memory3.content);
+//         let text1 = format!("{} {}", memory1.title, memory1.content);
+//         let text2 = format!("{} {}", memory2.title, memory2.content);
+//         let text3 = format!("{} {}", memory3.title, memory3.content);
 //
 //         let embeddings = embedding_service
 //             .embed_texts(vec![text1, text2, text3])

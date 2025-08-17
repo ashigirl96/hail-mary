@@ -46,7 +46,7 @@ async fn test_mcp_recall_debug() {
                 println!(
                     "  Memory {}: {} ({})",
                     i + 1,
-                    memory.topic,
+                    memory.title,
                     memory.memory_type
                 );
                 println!("    Tags: {:?}", memory.tags);
@@ -172,12 +172,12 @@ async fn test_mcp_vs_direct_comparison() {
     // Print both results for comparison
     println!("\nDirect result memories:");
     for memory in &direct_response.memories {
-        println!("  - {} ({})", memory.topic, memory.memory_type);
+        println!("  - {} ({})", memory.title, memory.memory_type);
     }
 
     println!("\nMCP result memories:");
     for memory in &mcp_response.0.memories {
-        println!("  - {} ({})", memory.topic, memory.memory_type);
+        println!("  - {} ({})", memory.title, memory.memory_type);
     }
 }
 
@@ -269,4 +269,3 @@ async fn test_mcp_recall_different_params() {
 
     println!("✅ All parameter variations work correctly");
 }
-

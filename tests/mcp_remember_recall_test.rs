@@ -13,7 +13,7 @@ async fn test_mcp_remember_and_recall() {
     // Test 1: Remember a memory
     let remember_params = RmcpRememberParams {
         r#type: "tech".to_string(),
-        topic: "MCP Test Memory".to_string(),
+        title: "MCP Test Memory".to_string(),
         content: "This is a test memory for MCP server functionality".to_string(),
         tags: Some(vec![
             "mcp".to_string(),
@@ -21,7 +21,6 @@ async fn test_mcp_remember_and_recall() {
             "tech".to_string(),
         ]),
         examples: Some(vec!["Example usage".to_string()]),
-        source: Some("Test source".to_string()),
     };
 
     let remember_result = server.remember(Parameters(remember_params)).await;
@@ -83,7 +82,7 @@ async fn test_mcp_remember_and_recall() {
 
     // Test 4: Verify the returned memory matches what we stored
     let found_memory = &recall_response_with_type.0.memories[0];
-    assert_eq!(found_memory.topic, "MCP Test Memory");
+    assert_eq!(found_memory.title, "MCP Test Memory");
     assert_eq!(
         found_memory.content,
         "This is a test memory for MCP server functionality"
@@ -163,7 +162,7 @@ async fn test_mcp_recall_existing_data() {
         };
         println!(
             "  - {} ({}): {}",
-            memory.topic, memory.memory_type, content_preview
+            memory.title, memory.memory_type, content_preview
         );
     }
 
@@ -198,7 +197,7 @@ async fn test_mcp_recall_existing_data() {
         };
         println!(
             "  - {} ({}): {}",
-            memory.topic, memory.memory_type, content_preview
+            memory.title, memory.memory_type, content_preview
         );
     }
 
@@ -253,4 +252,3 @@ async fn test_debug_type_conversion() {
     assert_eq!(recall_params.memory_type, Some(MemoryType::Tech));
     assert_eq!(recall_params.limit, Some(10));
 }
-

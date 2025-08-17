@@ -13,11 +13,10 @@ async fn test_mcp_recall_with_empty_tags_array() {
     // Add test memory
     let remember_params = RmcpRememberParams {
         r#type: "tech".to_string(),
-        topic: "Empty Tags Test".to_string(),
+        title: "Empty Tags Test".to_string(),
         content: "Testing empty tags array handling in MCP server".to_string(),
         tags: Some(vec!["test".to_string(), "edge-case".to_string()]),
         examples: None,
-        source: None,
     };
 
     let remember_result = server.remember(Parameters(remember_params)).await;
@@ -50,7 +49,7 @@ async fn test_mcp_recall_with_empty_tags_array() {
     );
 
     let found_memory = &recall_response.0.memories[0];
-    assert_eq!(found_memory.topic, "Empty Tags Test");
+    assert_eq!(found_memory.title, "Empty Tags Test");
 }
 
 #[tokio::test]
@@ -63,11 +62,10 @@ async fn test_mcp_recall_with_no_tags_vs_empty_tags() {
     // Add test memory
     let remember_params = RmcpRememberParams {
         r#type: "tech".to_string(),
-        topic: "Tags Comparison Test".to_string(),
+        title: "Tags Comparison Test".to_string(),
         content: "Testing tags vs no tags behavior".to_string(),
         tags: Some(vec!["test".to_string()]),
         examples: None,
-        source: None,
     };
 
     let remember_result = server.remember(Parameters(remember_params)).await;
@@ -127,20 +125,18 @@ async fn test_mcp_recall_with_actual_tag_filter() {
     // Add memories with different tags
     let remember_params1 = RmcpRememberParams {
         r#type: "tech".to_string(),
-        topic: "Rust Memory".to_string(),
+        title: "Rust Memory".to_string(),
         content: "Memory about Rust programming".to_string(),
         tags: Some(vec!["rust".to_string(), "programming".to_string()]),
         examples: None,
-        source: None,
     };
 
     let remember_params2 = RmcpRememberParams {
         r#type: "tech".to_string(),
-        topic: "Python Memory".to_string(),
+        title: "Python Memory".to_string(),
         content: "Memory about Python programming".to_string(),
         tags: Some(vec!["python".to_string(), "programming".to_string()]),
         examples: None,
-        source: None,
     };
 
     server.remember(Parameters(remember_params1)).await.unwrap();
@@ -169,6 +165,5 @@ async fn test_mcp_recall_with_actual_tag_filter() {
         1,
         "Should find exactly 1 rust memory"
     );
-    assert_eq!(recall_response.0.memories[0].topic, "Rust Memory");
+    assert_eq!(recall_response.0.memories[0].title, "Rust Memory");
 }
-

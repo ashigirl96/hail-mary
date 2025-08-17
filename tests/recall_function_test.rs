@@ -16,7 +16,7 @@ async fn test_recall_function_direct() {
     // Add test data first
     let remember_params = hail_mary::memory::models::RememberParams {
         memory_type: MemoryType::Tech,
-        topic: "MCP Server Test".to_string(),
+        title: "MCP Server Test".to_string(),
         content: "Testing MCP server functionality with recall function".to_string(),
         tags: Some(vec![
             "mcp".to_string(),
@@ -24,7 +24,6 @@ async fn test_recall_function_direct() {
             "server".to_string(),
         ]),
         examples: Some(vec!["Example MCP usage".to_string()]),
-        source: Some("Test source".to_string()),
     };
 
     let remember_result = service.remember(remember_params).await;
@@ -56,14 +55,14 @@ async fn test_recall_function_direct() {
 
     // Check the found memory
     let found_memory = &recall_response.memories[0];
-    assert_eq!(found_memory.topic, "MCP Server Test");
+    assert_eq!(found_memory.title, "MCP Server Test");
     assert_eq!(found_memory.memory_type, MemoryType::Tech);
     assert!(found_memory.content.contains("MCP"));
     assert!(found_memory.tags.contains(&"mcp".to_string()));
 
     println!(
         "Found memory: {} ({})",
-        found_memory.topic, found_memory.memory_type
+        found_memory.title, found_memory.memory_type
     );
     println!("Content: {}", found_memory.content);
 }
@@ -117,7 +116,7 @@ async fn test_recall_with_existing_database() {
         println!(
             "  Memory {}: {} ({})",
             i + 1,
-            memory.topic,
+            memory.title,
             memory.memory_type
         );
         println!("    Tags: {:?}", memory.tags);
@@ -224,12 +223,12 @@ async fn test_recall_comparison_with_without_type() {
     // Print memory details for debugging
     println!("\nMemories found without type filter:");
     for memory in &recall_response_no_type.memories {
-        println!("  - {} ({})", memory.topic, memory.memory_type);
+        println!("  - {} ({})", memory.title, memory.memory_type);
     }
 
     println!("\nMemories found with tech type filter:");
     for memory in &recall_response_with_type.memories {
-        println!("  - {} ({})", memory.topic, memory.memory_type);
+        println!("  - {} ({})", memory.title, memory.memory_type);
     }
 }
 
@@ -273,4 +272,3 @@ async fn test_recall_type_conversion() {
         "Invalid type should convert to None"
     );
 }
-

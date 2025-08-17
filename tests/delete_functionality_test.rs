@@ -79,11 +79,10 @@ mod delete_functionality_tests {
         // First, add a memory via MCP
         let remember_params = RmcpRememberParams {
             r#type: "tech".to_string(),
-            topic: "Test Memory".to_string(),
+            title: "Test Memory".to_string(),
             content: "Test content".to_string(),
             tags: Some(vec!["test".to_string()]),
             examples: None,
-            source: None,
         };
         let response = server.remember(Parameters(remember_params)).await.unwrap();
         let memory_id = response.0.memory_id.clone();
