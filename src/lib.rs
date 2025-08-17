@@ -4,3 +4,4 @@ pub mod core;
 pub mod mcp;
 pub mod memory;
 pub mod utils;
+// Test comment
