@@ -105,7 +105,7 @@ graph TB
     end
     
     subgraph "Infrastructure Layer"
-        I[(SQLite DB<br/>memory.db)]
+        I[(SQLite DB<br/>db.sqlite3)]
         J[FTS5 Index]
         K[Refinery<br/>Migrations]
         L[Archive<br/>old DBs]
@@ -286,7 +286,26 @@ interface RecallResponse {
 
 ### 4.2 CLIコマンド
 
-#### 4.2.1 MCPサーバー起動
+#### 4.2.1 プロジェクト初期化
+```bash
+# .kiroディレクトリとconfig.tomlテンプレートを作成
+$ hail-mary init
+
+# 実行内容:
+# 1. .kiro/ディレクトリを作成
+# 2. .kiro/config.tomlテンプレートを配置
+# 3. .kiro/memory/ディレクトリを作成
+# 4. .gitignoreに.kiro/memory/db.sqlite3を追加
+
+# 既存の.kiroがある場合は確認
+$ hail-mary init
+> .kiro directory already exists. Overwrite config.toml? (y/N)
+
+# 強制的に上書き
+$ hail-mary init --force
+```
+
+#### 4.2.2 MCPサーバー起動
 ```bash
 # Memory MCPサーバーを起動
 $ hail-mary memory serve
@@ -295,7 +314,7 @@ $ hail-mary memory serve
 $ hail-mary memory serve
 ```
 
-#### 4.2.2 ドキュメント生成
+#### 4.2.3 ドキュメント生成
 ```bash
 # 記憶をMarkdownファイルにエクスポート
 $ hail-mary memory document
@@ -309,7 +328,7 @@ $ hail-mary memory document
 $ hail-mary memory document --type tech
 ```
 
-#### 4.2.3 Reindex（Phase 3）
+#### 4.2.4 Reindex（Phase 3）
 ```bash
 # データベースを最適化・再構築
 $ hail-mary memory reindex
@@ -504,9 +523,9 @@ hail-mary/
 │   └── V003__add_triggers.sql
 └── .kiro/                      # プロジェクト固有データ
     └── memory/
-        ├── memory.db          # 現在のデータベース
+        ├── db.sqlite3         # 現在のデータベース
         ├── archive/           # 旧DBのアーカイブ
-        │   └── memory_20250818.db
+        │   └── db_20250818.sqlite3
         ├── tech.md            # 生成されたドキュメント
         ├── project-tech.md
         └── domain.md
@@ -571,8 +590,7 @@ pub struct SqliteMemoryRepository {
 }
 
 impl SqliteMemoryRepository {
-    pub fn new(kiro_config: &KiroConfig) -> Result<Self> {
-        let db_path = kiro_config.memory_db_path();
+    pub fn new(db_path: &Path) -> Result<Self> {
         let mut conn = rusqlite::Connection::open(db_path)?;
         
         // Refineryでマイグレーション実行
@@ -997,30 +1015,131 @@ impl<R: MemoryRepository + 'static> MemoryMcpServer<R> {
 #### 6.3.4 Commands層（プレゼンテーション）
 
 ```rust
+// commands/init.rs
+use anyhow::{Result, Context};
+use std::fs;
+use std::path::Path;
+use std::io::Write;
+
+pub async fn execute(force: bool) -> Result<()> {
+    let kiro_dir = Path::new(".kiro");
+    let config_path = kiro_dir.join("config.toml");
+    let memory_dir = kiro_dir.join("memory");
+    
+    // .kiroディレクトリの作成
+    if kiro_dir.exists() && !force {
+        // 既存ディレクトリがある場合の確認
+        print!(".kiro directory already exists. Overwrite config.toml? (y/N): ");
+        std::io::stdout().flush()?;
+        
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        
+        if !input.trim().eq_ignore_ascii_case("y") {
+            println!("Initialization cancelled.");
+            return Ok(());
+        }
+    }
+    
+    // ディレクトリ作成
+    fs::create_dir_all(&kiro_dir)
+        .context("Failed to create .kiro directory")?;
+    fs::create_dir_all(&memory_dir)
+        .context("Failed to create .kiro/memory directory")?;
+    
+    // config.tomlテンプレートの作成
+    let config_template = r#"# .kiro/config.toml
+# hail-mary プロジェクト設定ファイル
+
+[memory]
+# メモリータイプの定義（プロジェクトごとにカスタマイズ可能）
+types = [
+    "tech",           # 技術的な知識
+    "project-tech",   # プロジェクト固有の技術
+    "domain",         # ドメイン知識
+    "workflow",       # ワークフロー
+    "decision",       # 意思決定の記録
+]
+
+# MCPサーバーのinstructionsに含める説明
+instructions = """
+利用可能なメモリータイプ:
+- tech: 一般的な技術知識（言語、フレームワーク、アルゴリズムなど）
+- project-tech: このプロジェクト固有の技術実装
+- domain: ビジネスドメインの知識
+- workflow: 開発ワークフローやプロセス
+- decision: アーキテクチャの決定事項や理由
+"""
+
+# ドキュメント生成時の設定
+[memory.document]
+output_dir = ".kiro/memory"
+format = "markdown"
+
+# データベース設定
+[memory.database]
+path = ".kiro/memory/db.sqlite3"
+"#;
+    
+    fs::write(&config_path, config_template)
+        .context("Failed to write config.toml")?;
+    
+    // .gitignoreの更新
+    let gitignore_path = Path::new(".gitignore");
+    if gitignore_path.exists() {
+        let content = fs::read_to_string(gitignore_path)?;
+        if !content.contains(".kiro/memory/db.sqlite3") {
+            let mut file = fs::OpenOptions::new()
+                .append(true)
+                .open(gitignore_path)?;
+            writeln!(file, "\n# hail-mary database")?;
+            writeln!(file, ".kiro/memory/db.sqlite3")?;
+            writeln!(file, ".kiro/memory/*.sqlite3-*")?;
+        }
+    } else {
+        // .gitignoreがない場合は新規作成
+        let gitignore_content = r#"# hail-mary database
+.kiro/memory/db.sqlite3
+.kiro/memory/*.sqlite3-*
+"#;
+        fs::write(gitignore_path, gitignore_content)?;
+    }
+    
+    println!("✅ Initialized .kiro directory structure:");
+    println!("  - Created .kiro/");
+    println!("  - Created .kiro/config.toml (configuration template)");
+    println!("  - Created .kiro/memory/");
+    println!("  - Updated .gitignore");
+    println!();
+    println!("You can now customize .kiro/config.toml for your project needs.");
+    
+    Ok(())
+}
+```
+
+```rust
 // commands/memory/serve.rs
 use anyhow::Result;
+use crate::models::kiro::KiroConfig;
 use crate::services::memory::MemoryService;
 use crate::services::memory_mcp::MemoryMcpServer;
 use crate::repositories::memory::SqliteMemoryRepository;
 use rmcp::{serve_server, transport::stdio};
 
-pub async fn execute(daemon: bool) -> Result<()> {
+pub async fn execute() -> Result<()> {
+    // 設定ファイルから読み込み
+    let config = KiroConfig::load()?;
+    let db_path = config.memory.database.path;
+    
     // 依存性注入でサービスを構築
-    let repository = SqliteMemoryRepository::new("data/memory.db")?;
+    let repository = SqliteMemoryRepository::new(&db_path)?;
     let service = MemoryService::new(repository);
     let mcp_server = MemoryMcpServer::new(service);
     
-    if daemon {
-        // バックグラウンドで起動
-        tokio::spawn(async move {
-            serve_server(mcp_server, stdio()).await
-        });
-        println!("Memory MCP server started in background");
-    } else {
-        // フォアグラウンドで起動
-        println!("Starting Memory MCP server...");
-        serve_server(mcp_server, stdio()).await?;
-    }
+    // MCPサーバーを起動
+    println!("Starting Memory MCP server...");
+    println!("Using database: {}", db_path.display());
+    serve_server(mcp_server, stdio()).await?;
     
     Ok(())
 }
@@ -1069,12 +1188,18 @@ pub struct MemoryConfig {
     pub types: Vec<String>,
     pub instructions: String,
     pub document: DocumentConfig,
+    pub database: DatabaseConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct DocumentConfig {
     pub output_dir: PathBuf,
     pub format: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DatabaseConfig {
+    pub path: PathBuf,
 }
 
 impl KiroConfig {
@@ -1107,6 +1232,9 @@ impl KiroConfig {
                     output_dir: PathBuf::from(".kiro/memory"),
                     format: "markdown".to_string(),
                 },
+                database: DatabaseConfig {
+                    path: PathBuf::from(".kiro/memory/db.sqlite3"),
+                },
             },
         }
     }
@@ -1125,7 +1253,7 @@ impl KiroConfig {
 impl MemoryMcpServer {
     pub async fn new() -> Result<Self> {
         let config = KiroConfig::load()?;
-        let db_path = config.memory_path();
+        let db_path = config.memory.database.path;
         
         // MCPのinstructionsに設定を反映
         let instructions = format!(
