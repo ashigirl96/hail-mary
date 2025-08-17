@@ -124,7 +124,7 @@ impl MemoryMcpServer {
             info!(
                 "  Memory {}: {} ({})",
                 i + 1,
-                memory.topic,
+                memory.title,
                 memory.memory_type
             );
         }
@@ -160,13 +160,15 @@ impl MemoryMcpServer {
 
 /// データベースのデフォルトパスを取得
 pub fn get_default_db_path() -> Result<std::path::PathBuf> {
-    let data_dir =
-        dirs::data_local_dir().ok_or_else(|| anyhow!("Failed to get local data directory"))?;
+    // 現在のディレクトリを取得
+    let current_dir =
+        std::env::current_dir().map_err(|e| anyhow!("Failed to get current directory: {}", e))?;
 
-    let hail_mary_dir = data_dir.join("hail-mary");
-    std::fs::create_dir_all(&hail_mary_dir)?;
+    // .kiro/memory/ ディレクトリを作成
+    let kiro_memory_dir = current_dir.join(".kiro").join("memory");
+    std::fs::create_dir_all(&kiro_memory_dir)?;
 
-    Ok(hail_mary_dir.join("memory.db"))
+    Ok(kiro_memory_dir.join("memory.db"))
 }
 
 #[cfg(test)]
@@ -186,7 +188,8 @@ mod tests {
     #[test]
     fn test_get_default_db_path() {
         let path = get_default_db_path().unwrap();
-        assert!(path.to_str().unwrap().contains("hail-mary"));
+        assert!(path.to_str().unwrap().contains(".kiro"));
+        assert!(path.to_str().unwrap().contains("memory"));
         assert!(path.to_str().unwrap().contains("memory.db"));
     }
 
