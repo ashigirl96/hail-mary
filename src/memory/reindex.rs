@@ -170,7 +170,7 @@ impl ReindexService {
     async fn generate_embeddings(&self, memories: &[Memory]) -> Result<Vec<Vec<f32>>> {
         let texts: Vec<String> = memories
             .iter()
-            .map(|m| format!("{} {}", m.topic, m.content))
+            .map(|m| format!("{} {}", m.title, m.content))
             .collect();
 
         self.embedding_service.embed_texts(texts).await
@@ -303,7 +303,7 @@ impl ReindexService {
                     params![
                         &memory.id,
                         &memory.memory_type.to_string(),
-                        &memory.topic,
+                        &memory.title,
                         &memory.tags.join(","),
                         &memory.content,
                         &serde_json::to_string(&memory.examples)?,
@@ -311,8 +311,8 @@ impl ReindexService {
                         memory.confidence,
                         memory.created_at,
                         memory.last_accessed,
-                        &memory.source,
-                        0, // Always set deleted to false in optimized database
+                        None::<String>, // source field removed
+                        0,              // Always set deleted to false in optimized database
                     ],
                 )?;
 
@@ -366,7 +366,7 @@ impl ReindexService {
             // Generate embeddings for batch
             let texts: Vec<String> = batch
                 .iter()
-                .map(|m| format!("{} {}", m.topic, m.content))
+                .map(|m| format!("{} {}", m.title, m.content))
                 .collect();
 
             // Use Handle::current() to get the current runtime if in async context

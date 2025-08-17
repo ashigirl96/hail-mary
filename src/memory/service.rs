@@ -43,7 +43,7 @@ impl<R: MemoryRepository> MemoryService<R> {
     /// メモリの埋め込みを生成・保存
     async fn generate_and_store_embedding(&mut self, memory: &Memory) -> Result<()> {
         if let Some(service) = &self.embedding_service {
-            let text = format!("{} {}", memory.topic, memory.content);
+            let text = format!("{} {}", memory.title, memory.content);
             let service = service.read().await;
             let embedding = service.embed_text(&text).await?;
             let model_name = service.model_name();
@@ -58,7 +58,7 @@ impl<R: MemoryRepository> MemoryService<R> {
         // ビジネスロジック: 重複チェック
         if let Some(mut existing) = self
             .repository
-            .find_by_topic(&params.topic, &params.memory_type)?
+            .find_by_title(&params.title, &params.memory_type)?
         {
             // 既存の記憶を更新
             self.repository.update_reference_count(&existing.id)?;
@@ -70,9 +70,7 @@ impl<R: MemoryRepository> MemoryService<R> {
             if let Some(examples) = params.examples {
                 existing.examples = examples;
             }
-            if let Some(source) = params.source {
-                existing.source = Some(source);
-            }
+            // source field removed
 
             // 内容も更新
             existing.content = params.content;
@@ -93,7 +91,7 @@ impl<R: MemoryRepository> MemoryService<R> {
         }
 
         // 新規作成
-        let mut memory = Memory::new(params.memory_type, params.topic, params.content);
+        let mut memory = Memory::new(params.memory_type, params.title, params.content);
 
         if let Some(tags) = params.tags {
             memory.tags = tags;
@@ -101,9 +99,7 @@ impl<R: MemoryRepository> MemoryService<R> {
         if let Some(examples) = params.examples {
             memory.examples = examples;
         }
-        if let Some(source) = params.source {
-            memory.source = Some(source);
-        }
+        // source field removed
 
         self.repository.save(&memory)?;
 
@@ -286,11 +282,11 @@ mod tests {
 
         let params = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Test Topic".to_string(),
+            title: "Test Topic".to_string(),
             content: "Test Content".to_string(),
             tags: Some(vec!["test".to_string()]),
             examples: None,
-            source: None,
+            // source field removed
         };
 
         let response = service.remember(params).await.unwrap();
@@ -305,11 +301,11 @@ mod tests {
 
         let params1 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Test Topic".to_string(),
+            title: "Test Topic".to_string(),
             content: "Test Content 1".to_string(),
             tags: None,
             examples: None,
-            source: None,
+            // source field removed
         };
 
         let response1 = service.remember(params1).await.unwrap();
@@ -317,11 +313,11 @@ mod tests {
 
         let params2 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Test Topic".to_string(),
+            title: "Test Topic".to_string(),
             content: "Test Content 2".to_string(),
             tags: None,
             examples: None,
-            source: None,
+            // source field removed
         };
 
         let response2 = service.remember(params2).await.unwrap();
@@ -337,21 +333,21 @@ mod tests {
         // いくつか記憶を追加
         let params1 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Rust async".to_string(),
+            title: "Rust async".to_string(),
             content: "Rust async/await programming".to_string(),
             tags: Some(vec!["rust".to_string(), "async".to_string()]),
             examples: None,
-            source: None,
+            // source field removed
         };
         service.remember(params1).await.unwrap();
 
         let params2 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Python decorators".to_string(),
+            title: "Python decorators".to_string(),
             content: "Python decorator patterns".to_string(),
             tags: Some(vec!["python".to_string()]),
             examples: None,
-            source: None,
+            // source field removed
         };
         service.remember(params2).await.unwrap();
 
@@ -365,7 +361,7 @@ mod tests {
 
         let response = service.recall(recall_params).await.unwrap();
         assert_eq!(response.total_count, 1);
-        assert_eq!(response.memories[0].topic, "Rust async");
+        assert_eq!(response.memories[0].title, "Rust async");
     }
 
     #[tokio::test]
@@ -376,22 +372,22 @@ mod tests {
         // Tech タイプを追加
         let params1 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Tech Topic".to_string(),
+            title: "Tech Topic".to_string(),
             content: "Tech Content".to_string(),
             tags: None,
             examples: None,
-            source: None,
+            // source field removed
         };
         service.remember(params1).await.unwrap();
 
         // Domain タイプを追加
         let params2 = RememberParams {
             memory_type: MemoryType::Domain,
-            topic: "Domain Topic".to_string(),
+            title: "Domain Topic".to_string(),
             content: "Domain Content".to_string(),
             tags: None,
             examples: None,
-            source: None,
+            // source field removed
         };
         service.remember(params2).await.unwrap();
 
@@ -405,6 +401,6 @@ mod tests {
 
         let response = service.recall(recall_params).await.unwrap();
         assert_eq!(response.total_count, 1);
-        assert_eq!(response.memories[0].topic, "Tech Topic");
+        assert_eq!(response.memories[0].title, "Tech Topic");
     }
 }
