@@ -30,7 +30,7 @@ hail-mary new my-awesome-feature
 **目的**: メモリ管理用のMCP（Model Context Protocol）サーバーを開始
 
 **オプション**:
-- `--db-path <PATH>` - データベースファイルパス [デフォルト: ~/.local/share/hail-mary/memory.db]
+- `--db-path <PATH>` - データベースファイルパス [デフォルト: .kiro/memory/memory.db]
 - `--daemon` - デーモンモード（バックグラウンド実行）※未実装
 - `-v, --verbose` - 詳細ログを有効にする
 
@@ -295,7 +295,7 @@ hail-mary memory bulk delete --type tech --confidence-below 0.5 --dry-run
 
 ## 共通パターン
 
-**データベースパス**: すべてのコマンドは`--db-path`オプションをサポートし、デフォルトは`~/.local/share/hail-mary/memory.db`
+**データベースパス**: すべてのコマンドは`--db-path`オプションをサポートし、デフォルトは`.kiro/memory/memory.db`
 
 **詳細モード**: ほとんどのコマンドは詳細出力のため`-v, --verbose`をサポート
 
