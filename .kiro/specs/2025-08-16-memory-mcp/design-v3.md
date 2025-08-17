@@ -258,7 +258,8 @@ interface RememberParams {
     type: string;         // config.tomlで定義されたタイプ
     title: string;        // タイトル（必須）
     content: string;      // 本文（必須）
-    tags?: string[];      // タグリスト
+    tags: string[];       // タグリスト（必須）
+    confidence?: number;  // 信頼度（オプション）
   }>;
 }
 
@@ -517,25 +518,33 @@ hail-mary/
 [dependencies]
 # Phase 1: 基本機能
 rmcp = { version = "0.5.0", features = ["server", "macros", "transport-io"] }
-rusqlite = { version = "0.31", features = ["bundled", "json"] }
+rusqlite = { version = "0.37", features = ["bundled", "json"] }  # v3で0.31→0.37に更新
 refinery = { version = "0.8", features = ["rusqlite"] }  # v3で変更
-tokio = { version = "1", features = ["full"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-schemars = "1"  # For structured output schemas
-uuid = { version = "1", features = ["v4"] }
+tokio = { version = "1", features = ["full"] }  # 最新: 1.47.1
+serde = { version = "1", features = ["derive"] }  # 最新: 1.0.219
+serde_json = "1"  # 最新: 1.0.142
+schemars = "1"  # 最新: 1.0.4
+uuid = { version = "1", features = ["v4"] }  # 最新: 1.18.0
+chrono = "0.4"  # 日時処理
 anyhow = "1"
 thiserror = "1"  # エラー定義
 tracing = "0.1"  # ロギング
 tracing-subscriber = "0.3"
+toml = "0.8"  # 設定ファイル読み込み用
 
 # Phase 2: ドキュメント生成
-pulldown-cmark = "0.9"  # Markdown処理
+pulldown-cmark = "0.13"  # Markdown処理（0.9→0.13に更新）
 
 # Phase 3: Reindex機能（後で追加）
 # fastembed = "3"
 # sqlite-vec = "0.1"
 ```
+
+#### 更新履歴（2025年8月）
+- **rusqlite**: 0.31 → 0.37.0 (SQLite 3.50.2同梱、パフォーマンス改善)
+- **pulldown-cmark**: 0.9 → 0.13.0 (SIMD最適化、2年分の改善)
+- **toml**: 新規追加（.kiro/config.toml読み込み用）
+- その他のクレートは全て最新バージョンと互換性あり
 
 ### 6.3 アーキテクチャ実装
 
@@ -849,7 +858,7 @@ pub struct MemoryInput {
     pub r#type: String,
     pub title: String,
     pub content: String,
-    pub tags: Option<Vec<String>>,
+    pub tags: Vec<String>,
     pub confidence: Option<f32>,
 }
 
@@ -921,7 +930,7 @@ impl<R: MemoryRepository + 'static> MemoryMcpServer<R> {
                     memory_type,
                     title: input.title,
                     content: input.content,
-                    tags: input.tags.unwrap_or_default(),
+                    tags: input.tags,
                     confidence: input.confidence,
                 })
             })
@@ -1485,6 +1494,11 @@ mod tests {
 ## 13. まとめ
 
 Memory MCP v3は、**クリーンアーキテクチャ**と**SOLID原則**を適用することで、v2の設計を大幅に改善しました。
+
+### 最新バージョン対応（2025年8月更新）
+- 主要な依存関係を最新バージョンに更新
+- rusqlite 0.37、pulldown-cmark 0.13など最新の改善を反映
+- プロジェクトごとの設定をサポートする.kiro/config.toml機能を追加
 
 ### 主な利点
 
