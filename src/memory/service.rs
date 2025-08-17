@@ -99,15 +99,16 @@ impl<R: MemoryRepository> MemoryService<R> {
         let has_hyphen = query.contains('-');
         let has_non_ascii = !query.is_ascii();
 
-        if has_hyphen {
-            // ハイフンを含むクエリは全体をダブルクォートで囲む
+        // 日本語（またはその他の非ASCII文字）とハイフンが混在する場合
+        // ワイルドカードを追加して部分マッチを可能にする
+        if has_non_ascii && has_hyphen {
+            // 全体をダブルクォートで囲み、末尾にワイルドカードを追加
             let escaped = query.replace('"', "\"\"");
-            return format!("\"{}\"", escaped);
+            return format!("\"{}\"*", escaped);
         }
 
-        // 日本語（またはその他の非ASCII文字）とハイフンが混在する場合も同様
-        if has_non_ascii && has_hyphen {
-            // 全体をダブルクォートで囲んでリテラル検索として扱う
+        if has_hyphen {
+            // ハイフンを含むクエリは全体をダブルクォートで囲む
             let escaped = query.replace('"', "\"\"");
             return format!("\"{}\"", escaped);
         }
@@ -320,9 +321,18 @@ impl<R: MemoryRepository> MemoryService<R> {
             }
         } else {
             info!("Non-empty query - using FTS search");
+            // クエリを正規化（日本語と英語の境界にスペースを挿入）
+            let normalized_query = Self::normalize_content_for_fts(&params.query);
+            info!(
+                "Normalized query: '{}' -> '{}'",
+                params.query, normalized_query
+            );
             // FTS5検索のクエリ強化を実行
-            let enhanced_query = Self::enhance_query_for_partial_match(&params.query);
-            info!("Enhanced query: '{}' -> '{}'", params.query, enhanced_query);
+            let enhanced_query = Self::enhance_query_for_partial_match(&normalized_query);
+            info!(
+                "Enhanced query: '{}' -> '{}'",
+                normalized_query, enhanced_query
+            );
 
             // Debug: log if the query contains non-ASCII characters
             if !params.query.is_ascii() {

@@ -1,5 +1,3 @@
-pub mod analytics;
-pub mod bulk;
 pub mod cluster;
 pub mod common;
 pub mod dedup;
@@ -53,10 +51,6 @@ pub enum MemorySubcommands {
     Export(export::ExportCommand),
     /// Import memories from JSON or CSV format
     Import(import::ImportCommand),
-    /// Bulk operations for managing multiple memories
-    Bulk(bulk::BulkCommand),
-    /// Analytics and statistics for memory database insights
-    Analytics(analytics::AnalyticsCommand),
 }
 
 impl MemoryCommand {
@@ -76,8 +70,6 @@ impl MemoryCommand {
             MemorySubcommands::Index(cmd) => cmd.execute(),
             MemorySubcommands::Export(cmd) => cmd.execute(),
             MemorySubcommands::Import(cmd) => cmd.execute(),
-            MemorySubcommands::Bulk(cmd) => cmd.execute(),
-            MemorySubcommands::Analytics(cmd) => cmd.execute(),
         }
     }
 }
