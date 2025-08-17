@@ -107,8 +107,9 @@ const SEARCH_MEMORIES_FTS_ALL: &str = r#"
 
 const BROWSE_ALL: &str = r#"
     SELECT id, type, title, tags, content, examples, reference_count,
-           confidence, created_at, last_accessed, source, deleted
+           confidence, created_at, last_accessed, deleted
     FROM memories
+    WHERE deleted = 0
     ORDER BY confidence DESC, reference_count DESC
     LIMIT ?1
 "#;
@@ -131,7 +132,7 @@ pub trait MemoryRepository {
     fn browse_all(&self, limit: usize) -> Result<Vec<Memory>>;
     fn update_reference_count(&mut self, id: &str) -> Result<()>;
     fn update_last_accessed(&mut self, id: &str) -> Result<()>;
-    fn soft_delete(&mut self, id: &str) -> Result<()>;
+    fn soft_delete(&mut self, id: &str) -> Result<bool>;
 
     // Embedding-related methods
     fn store_embedding(
@@ -339,9 +340,9 @@ impl MemoryRepository for SqliteMemoryRepository {
         Ok(memories)
     }
 
-    fn soft_delete(&mut self, id: &str) -> Result<()> {
-        self.conn.execute(SOFT_DELETE, params![id])?;
-        Ok(())
+    fn soft_delete(&mut self, id: &str) -> Result<bool> {
+        let rows_affected = self.conn.execute(SOFT_DELETE, params![id])?;
+        Ok(rows_affected > 0)
     }
 
     // =========================================================================

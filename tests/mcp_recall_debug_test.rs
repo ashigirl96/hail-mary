@@ -129,6 +129,7 @@ async fn test_mcp_vs_direct_comparison() {
         memory_type: Some(MemoryType::Tech),
         tags: None,
         limit: Some(10),
+        invalid_type: false,
     };
 
     let direct_result = service.recall(direct_params).await;

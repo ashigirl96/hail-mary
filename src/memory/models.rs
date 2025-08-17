@@ -179,6 +179,8 @@ pub struct RecallParams {
     pub tags: Option<Vec<String>>,
     #[serde(default)]
     pub limit: Option<usize>,
+    #[serde(skip, default)]
+    pub invalid_type: bool, // Track if an invalid type was provided
 }
 
 /// MCP recall ツールのレスポンス
@@ -193,10 +195,10 @@ pub struct RecallResponse {
 // =============================================================================
 
 /// rmcp remember ツールのパラメータ
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct RmcpRememberParams {
     pub r#type: String,
-    pub title: String, // topic -> title
+    pub title: String,
     pub content: String,
     pub tags: Option<Vec<String>>,
     pub examples: Option<Vec<String>>,
@@ -212,7 +214,7 @@ pub struct RmcpRememberResponse {
 }
 
 /// rmcp recall ツールのパラメータ
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct RmcpRecallParams {
     pub query: String,
     pub r#type: Option<String>,
@@ -228,7 +230,7 @@ pub struct RmcpRecallResponse {
 }
 
 /// rmcp delete ツールのパラメータ
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct RmcpDeleteParams {
     pub memory_id: String,
 }
@@ -266,11 +268,19 @@ impl From<RememberResponse> for RmcpRememberResponse {
 
 impl From<RmcpRecallParams> for RecallParams {
     fn from(params: RmcpRecallParams) -> Self {
+        // Handle invalid type by setting a special flag
+        let memory_type = params.r#type.as_ref().map(|t| MemoryType::from_str(t));
+
+        // Check if type was provided but invalid
+        let invalid_type =
+            params.r#type.is_some() && memory_type.as_ref().is_some_and(|m| m.is_none());
+
         Self {
             query: params.query,
-            memory_type: params.r#type.and_then(|t| MemoryType::from_str(&t)),
+            memory_type: memory_type.flatten(),
             tags: params.tags,
             limit: params.limit.map(|l| l as usize),
+            invalid_type, // Add field to track invalid type
         }
     }
 }

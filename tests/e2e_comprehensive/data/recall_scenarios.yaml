@@ -1,0 +1,419 @@
+# Recall Test Scenarios for Memory MCP Server E2E Tests
+# This file contains comprehensive query scenarios for testing the recall tool
+
+test_suite:
+  name: "Recall Tool Test Scenarios"
+  version: "1.0.0"
+  description: "Comprehensive query and filter test cases for memory retrieval"
+
+# Basic query scenarios
+basic_queries:
+  - scenario_id: "empty_query_browse"
+    description: "Empty query for browsing all memories"
+    input:
+      query: ""
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "browse_mode"
+      result_type: "all_memories"
+      order: "by_relevance_or_date"
+      
+  - scenario_id: "single_word_query"
+    description: "Simple single word search"
+    input:
+      query: "rust"
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "fts_search"
+      result_type: "matching_memories"
+      match_fields: ["content", "title", "examples"]
+      
+  - scenario_id: "multi_word_query"
+    description: "Multi-word phrase search"
+    input:
+      query: "async error handling"
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "fts_search"
+      result_type: "matching_memories"
+      relevance: "ranked_by_match_score"
+      
+  - scenario_id: "partial_match_query"
+    description: "Partial word matching"
+    input:
+      query: "mem"  # Should match "memory", "remember", etc.
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "fts_partial_match"
+      result_type: "partial_matches"
+
+# Type-filtered queries
+type_filtered_queries:
+  - scenario_id: "tech_only_browse"
+    description: "Browse only tech type memories"
+    input:
+      query: ""
+      type: "tech"
+      tags: null
+      limit: null
+    expected:
+      behavior: "filtered_browse"
+      result_type: "tech_memories_only"
+      
+  - scenario_id: "project_tech_search"
+    description: "Search within project-tech memories"
+    input:
+      query: "implementation"
+      type: "project-tech"
+      tags: null
+      limit: null
+    expected:
+      behavior: "type_filtered_search"
+      result_type: "project_tech_matches"
+      
+  - scenario_id: "domain_specific_query"
+    description: "Domain-specific memory search"
+    input:
+      query: "business logic"
+      type: "domain"
+      tags: null
+      limit: null
+    expected:
+      behavior: "type_filtered_search"
+      result_type: "domain_matches"
+
+# Tag-filtered queries
+tag_filtered_queries:
+  - scenario_id: "single_tag_filter"
+    description: "Filter by single tag"
+    input:
+      query: ""
+      type: null
+      tags:
+        - "rust"
+      limit: null
+    expected:
+      behavior: "tag_filtered_browse"
+      result_type: "memories_with_tag"
+      tag_match: "exact"
+      
+  - scenario_id: "multiple_tags_filter"
+    description: "Filter by multiple tags (AND logic)"
+    input:
+      query: ""
+      type: null
+      tags:
+        - "rust"
+        - "async"
+      limit: null
+    expected:
+      behavior: "multi_tag_filter"
+      result_type: "memories_with_all_tags"
+      tag_logic: "AND"
+      
+  - scenario_id: "tag_and_query"
+    description: "Combine tag filter with text search"
+    input:
+      query: "error"
+      type: null
+      tags:
+        - "error-handling"
+      limit: null
+    expected:
+      behavior: "combined_filter_search"
+      result_type: "tagged_and_matching"
+
+# Combined filters
+combined_filters:
+  - scenario_id: "type_and_tag"
+    description: "Filter by both type and tag"
+    input:
+      query: ""
+      type: "tech"
+      tags:
+        - "best-practices"
+      limit: null
+    expected:
+      behavior: "multi_filter_browse"
+      result_type: "type_and_tag_match"
+      
+  - scenario_id: "full_filter_search"
+    description: "All filters combined with search"
+    input:
+      query: "async implementation"
+      type: "project-tech"
+      tags:
+        - "async"
+        - "tokio"
+      limit: 5
+    expected:
+      behavior: "full_filtered_search"
+      result_type: "highly_specific_results"
+      max_results: 5
+
+# Limit and pagination scenarios
+limit_scenarios:
+  - scenario_id: "limit_one"
+    description: "Return only the most relevant result"
+    input:
+      query: "memory"
+      type: null
+      tags: null
+      limit: 1
+    expected:
+      behavior: "limited_search"
+      result_type: "limited_search"
+      result_count: 1
+      selection: "highest_relevance"
+      
+  - scenario_id: "limit_five"
+    description: "Return top 5 results"
+    input:
+      query: "test"
+      type: null
+      tags: null
+      limit: 5
+    expected:
+      behavior: "limited_search"
+      result_type: "limited_search"
+      result_count: "<=5"
+      order: "relevance_desc"
+      
+  - scenario_id: "limit_hundred"
+    description: "Large limit for bulk retrieval"
+    input:
+      query: ""
+      type: null
+      tags: null
+      limit: 100
+    expected:
+      behavior: "bulk_browse"
+      result_type: "bulk_browse"
+      result_count: "<=100"
+      performance: "should_be_fast"
+
+# Special character and edge case queries
+special_queries:
+  - scenario_id: "unicode_query"
+    description: "Search with Unicode characters"
+    input:
+      query: "日本語"
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "unicode_search"
+      result_type: "unicode_matches"
+      encoding: "utf8"
+      
+  - scenario_id: "special_chars_query"
+    description: "Query with special characters"
+    input:
+      query: "@#$% & symbols"
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "special_char_handling"
+      result_type: "escaped_search"
+      
+  - scenario_id: "sql_injection_attempt"
+    description: "Test SQL injection prevention"
+    input:
+      query: "'; DROP TABLE memories; --"
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "safe_search"
+      result_type: "normal_results"
+      security: "query_sanitized"
+      
+  - scenario_id: "very_long_query"
+    description: "Extremely long search query"
+    input:
+      query: "This is an extremely long search query that contains many words and is designed to test how the system handles very lengthy search strings that might exceed typical query lengths and could potentially cause performance issues or buffer overflows in poorly designed systems but should be handled gracefully"
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "long_query_handling"
+      result_type: "normal_results"
+      performance: "acceptable"
+
+# Empty result scenarios
+empty_result_scenarios:
+  - scenario_id: "no_matches"
+    description: "Query with no matching results"
+    input:
+      query: "xyzabc123notfound"
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "no_results"
+      result_type: "empty_array"
+      message: "No memories found"
+      
+  - scenario_id: "non_existent_type"
+    description: "Filter by type that has no memories"
+    input:
+      query: ""
+      type: "non-existent-type"  # Using a type that truly doesn't exist
+      tags: null
+      limit: null
+    expected:
+      behavior: "empty_filter"
+      result_type: "empty_array"
+      
+  - scenario_id: "non_existent_tag"
+    description: "Filter by tag that doesn't exist"
+    input:
+      query: ""
+      type: null
+      tags:
+        - "nonexistenttag123"
+      limit: null
+    expected:
+      behavior: "empty_filter"
+      result_type: "empty_array"
+
+# Performance and stress test scenarios
+performance_scenarios:
+  - scenario_id: "large_dataset_browse"
+    description: "Browse with large dataset"
+    setup:
+      memory_count: 10000
+    input:
+      query: ""
+      type: null
+      tags: null
+      limit: 100
+    expected:
+      behavior: "efficient_browse"
+      result_type: "performance_test"
+      response_time: "<1s"
+      memory_usage: "reasonable"
+      
+  - scenario_id: "complex_fts_query"
+    description: "Complex full-text search"
+    setup:
+      memory_count: 10000
+    input:
+      query: "async AND (error OR exception) NOT panic"
+      type: null
+      tags: null
+      limit: 50
+    expected:
+      behavior: "complex_search"
+      result_type: "performance_test"
+      response_time: "<2s"
+      accuracy: "high"
+      
+  - scenario_id: "many_tags_filter"
+    description: "Filter with many tags"
+    input:
+      query: ""
+      type: null
+      tags:
+        - "tag1"
+        - "tag2"
+        - "tag3"
+        - "tag4"
+        - "tag5"
+        - "tag6"
+        - "tag7"
+        - "tag8"
+        - "tag9"
+        - "tag10"
+      limit: null
+    expected:
+      behavior: "multi_tag_performance"
+      result_type: "performance_test"
+      response_time: "<1s"
+
+# Sorting and ranking scenarios
+sorting_scenarios:
+  - scenario_id: "relevance_ranking"
+    description: "Verify relevance-based ranking"
+    input:
+      query: "rust async"
+      type: null
+      tags: null
+      limit: 10
+    expected:
+      behavior: "ranked_search"
+      result_type: "sorted_results"
+      order: "relevance_desc"
+      scoring: "tf_idf_or_similar"
+      
+  - scenario_id: "date_ordering"
+    description: "Browse with date ordering"
+    input:
+      query: ""
+      type: null
+      tags: null
+      limit: 20
+    expected:
+      behavior: "date_ordered_browse"
+      result_type: "sorted_results"
+      order: "created_at_desc"
+      
+  - scenario_id: "access_frequency"
+    description: "Order by access frequency"
+    input:
+      query: ""
+      type: "tech"
+      tags: null
+      limit: 10
+    expected:
+      behavior: "frequency_ordered"
+      result_type: "sorted_results"
+      order: "reference_count_desc"
+
+# Cross-field search scenarios
+cross_field_scenarios:
+  - scenario_id: "title_match_priority"
+    description: "Matches in title should rank higher"
+    input:
+      query: "Memory"
+      type: null
+      tags: null
+      limit: 10
+    expected:
+      behavior: "field_weighted_search"
+      result_type: "weighted_results"
+      title_weight: "higher"
+      content_weight: "normal"
+      
+  - scenario_id: "example_search"
+    description: "Search within code examples"
+    input:
+      query: "tokio::test"
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "example_field_search"
+      result_type: "field_specific_results"
+      search_fields: ["examples"]
+      
+  - scenario_id: "tag_name_search"
+    description: "Search that matches tag names"
+    input:
+      query: "rust"  # Where "rust" is a tag, not in content
+      type: null
+      tags: null
+      limit: null
+    expected:
+      behavior: "tag_content_search"
+      result_type: "tag_matches"
+      match_tags_as_content: true

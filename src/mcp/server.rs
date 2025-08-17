@@ -139,7 +139,7 @@ impl MemoryMcpServer {
         params: Parameters<RmcpDeleteParams>,
     ) -> Result<Json<RmcpDeleteResponse>, McpError> {
         let mut service = self.service.lock().await;
-        service
+        let deleted = service
             .delete_memory(&params.0.memory_id)
             .await
             .map_err(|e| {
@@ -152,7 +152,7 @@ impl MemoryMcpServer {
             })?;
 
         Ok(Json(RmcpDeleteResponse {
-            deleted: true,
+            deleted,
             memory_id: params.0.memory_id,
         }))
     }

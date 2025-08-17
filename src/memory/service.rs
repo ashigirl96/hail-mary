@@ -40,6 +40,130 @@ impl<R: MemoryRepository> MemoryService<R> {
         self.auto_generate_embeddings = enabled;
     }
 
+    /// 日本語と英語の境界にスペースを挿入する
+    /// FTS5が正しくトークン化できるようにするため
+    fn normalize_content_for_fts(content: &str) -> String {
+        let mut result = String::new();
+        let mut prev_is_ascii = false;
+        let mut prev_char: Option<char> = None;
+
+        for ch in content.chars() {
+            let curr_is_ascii = ch.is_ascii() && !ch.is_ascii_whitespace();
+            let curr_is_japanese = matches!(ch, '\u{3040}'..='\u{309F}' | '\u{30A0}'..='\u{30FF}' | '\u{4E00}'..='\u{9FAF}');
+
+            // 境界検出: ASCII→日本語 または 日本語→ASCII
+            if let Some(prev) = prev_char {
+                let prev_is_japanese = matches!(prev, '\u{3040}'..='\u{309F}' | '\u{30A0}'..='\u{30FF}' | '\u{4E00}'..='\u{9FAF}');
+
+                // ASCII（ハイフン含む）と日本語の境界
+                if (prev_is_ascii && curr_is_japanese) || (prev_is_japanese && curr_is_ascii) {
+                    // スペースがまだない場合のみ挿入
+                    if !prev.is_ascii_whitespace() && !ch.is_ascii_whitespace() {
+                        result.push(' ');
+                    }
+                }
+            }
+
+            result.push(ch);
+            prev_is_ascii = curr_is_ascii;
+            prev_char = Some(ch);
+        }
+
+        result
+    }
+
+    /// FTS5クエリを部分マッチ対応に強化する
+    fn enhance_query_for_partial_match(query: &str) -> String {
+        // 既にワイルドカードがある場合はそのまま返す
+        if query.contains('*') {
+            return query.to_string();
+        }
+
+        // FTS5のブーリアン演算子をチェック（AND, OR, NOT）
+        // これらが含まれる場合は複雑なクエリなのでそのまま返す
+        if query.contains(" AND ") || query.contains(" OR ") || query.contains(" NOT ") {
+            return query.to_string();
+        }
+
+        // 特殊文字が多数含まれる場合（@#$%など）は、クエリ全体をダブルクォートで囲む
+        // FTS5で問題を起こす特殊文字を確認
+        let problematic_chars = ['@', '#', '$', '%', '&', '^', '~', '`', '|', '\\'];
+        if query.chars().any(|c| problematic_chars.contains(&c)) {
+            // これらの文字が含まれる場合は、リテラル検索として扱う
+            let escaped = query.replace('"', "\"\"");
+            return format!("\"{}\"", escaped);
+        }
+
+        // ハイフンを含む場合は特別に扱う（FTS5はハイフンを単語区切りとして扱うため）
+        // 例: "hail-mary", "semi-colon", など
+        let has_hyphen = query.contains('-');
+        let has_non_ascii = !query.is_ascii();
+
+        if has_hyphen {
+            // ハイフンを含むクエリは全体をダブルクォートで囲む
+            let escaped = query.replace('"', "\"\"");
+            return format!("\"{}\"", escaped);
+        }
+
+        // 日本語（またはその他の非ASCII文字）とハイフンが混在する場合も同様
+        if has_non_ascii && has_hyphen {
+            // 全体をダブルクォートで囲んでリテラル検索として扱う
+            let escaped = query.replace('"', "\"\"");
+            return format!("\"{}\"", escaped);
+        }
+
+        // :: を含む場合（名前空間やモジュール参照）は特別に扱う
+        if query.contains("::") {
+            // :: を一時的に置換して処理
+            let processed = query.replace("::", "_COLON_COLON_");
+            let words: Vec<String> = processed
+                .split_whitespace()
+                .map(|word| {
+                    let restored = word.replace("_COLON_COLON_", "::");
+                    // ダブルクォートで囲んで特殊文字をエスケープ
+                    format!("\"{}\"", restored)
+                })
+                .collect();
+            return words.join(" ");
+        }
+
+        // FTS5用の特殊文字エスケープ
+        // FTS5では特殊文字をダブルクォートで囲む必要がある
+        let needs_escaping = query.contains('\'') || query.contains('"') || query.contains(';');
+
+        if needs_escaping {
+            // 特殊文字を含む場合は、ダブルクォートで囲んでエスケープ
+            let escaped = query.replace('"', "\"\"");
+            return format!("\"{}\"", escaped);
+        }
+
+        // 日本語（またはその他の非ASCII文字）が含まれる場合
+        if has_non_ascii {
+            // 日本語の場合は各単語をダブルクォートで囲む
+            // スペースで分割して各部分を処理
+            return query
+                .split_whitespace()
+                .map(|word| format!("\"{}\"", word))
+                .collect::<Vec<_>>()
+                .join(" ");
+        }
+
+        // 各単語にワイルドカードを追加（プレフィックス検索）
+        query
+            .split_whitespace()
+            .map(|word| {
+                // 特殊文字をさらにエスケープ
+                let safe_word = word
+                    .replace('(', "\\(")
+                    .replace(')', "\\)")
+                    .replace('[', "\\[")
+                    .replace(']', "\\]");
+                format!("{}*", safe_word)
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
     /// メモリの埋め込みを生成・保存
     async fn generate_and_store_embedding(&mut self, memory: &Memory) -> Result<()> {
         if let Some(service) = &self.embedding_service {
@@ -55,10 +179,14 @@ impl<R: MemoryRepository> MemoryService<R> {
 
     /// 記憶を保存
     pub async fn remember(&mut self, params: RememberParams) -> Result<RememberResponse> {
+        // コンテンツとタイトルを正規化（日本語と英語の境界にスペースを挿入）
+        let normalized_content = Self::normalize_content_for_fts(&params.content);
+        let normalized_title = Self::normalize_content_for_fts(&params.title);
+
         // ビジネスロジック: 重複チェック
         if let Some(mut existing) = self
             .repository
-            .find_by_title(&params.title, &params.memory_type)?
+            .find_by_title(&normalized_title, &params.memory_type)?
         {
             // 既存の記憶を更新
             self.repository.update_reference_count(&existing.id)?;
@@ -72,8 +200,8 @@ impl<R: MemoryRepository> MemoryService<R> {
             }
             // source field removed
 
-            // 内容も更新
-            existing.content = params.content;
+            // 内容も更新（正規化済みのコンテンツを使用）
+            existing.content = normalized_content;
             existing.last_accessed = Some(chrono::Utc::now().timestamp());
 
             self.repository.update(&existing)?;
@@ -90,8 +218,8 @@ impl<R: MemoryRepository> MemoryService<R> {
             });
         }
 
-        // 新規作成
-        let mut memory = Memory::new(params.memory_type, params.title, params.content);
+        // 新規作成（正規化済みのタイトルとコンテンツを使用）
+        let mut memory = Memory::new(params.memory_type, normalized_title, normalized_content);
 
         if let Some(tags) = params.tags {
             memory.tags = tags;
@@ -159,9 +287,18 @@ impl<R: MemoryRepository> MemoryService<R> {
 
         let limit = params.limit.unwrap_or(10);
         info!(
-            "Service recall: query='{}', memory_type={:?}, tags={:?}, limit={}",
-            params.query, params.memory_type, params.tags, limit
+            "Service recall: query='{}', memory_type={:?}, tags={:?}, limit={}, invalid_type={}",
+            params.query, params.memory_type, params.tags, limit, params.invalid_type
         );
+
+        // If an invalid type was provided, return empty results immediately
+        if params.invalid_type {
+            info!("Invalid type provided - returning empty results");
+            return Ok(RecallResponse {
+                memories: Vec::new(),
+                total_count: 0,
+            });
+        }
 
         // 検索戦略の選択
         let mut memories = if params.query.is_empty() {
@@ -176,26 +313,32 @@ impl<R: MemoryRepository> MemoryService<R> {
                 );
                 results
             } else {
-                // デフォルトはTechタイプをブラウズ
-                let results = self.repository.browse_by_type(&MemoryType::Tech, limit)?;
-                info!(
-                    "Browse by default Tech type returned {} memories",
-                    results.len()
-                );
+                // 全タイプをブラウズ
+                let results = self.repository.browse_all(limit)?;
+                info!("Browse all types returned {} memories", results.len());
                 results
             }
         } else {
             info!("Non-empty query - using FTS search");
+            // FTS5検索のクエリ強化を実行
+            let enhanced_query = Self::enhance_query_for_partial_match(&params.query);
+            info!("Enhanced query: '{}' -> '{}'", params.query, enhanced_query);
+
+            // Debug: log if the query contains non-ASCII characters
+            if !params.query.is_ascii() {
+                info!("Query contains non-ASCII characters (likely Japanese/Unicode)");
+            }
+
             // FTS5検索を実行
-            let mut results = if let Some(memory_type) = params.memory_type {
+            if let Some(memory_type) = params.memory_type {
                 info!(
                     "Calling search_with_type with query='{}', type={}, limit={}",
-                    params.query, memory_type, limit
+                    enhanced_query, memory_type, limit
                 );
                 // タイプ指定がある場合はSQL側でフィルタリング
                 let search_results =
                     self.repository
-                        .search_with_type(&params.query, &memory_type, limit)?;
+                        .search_with_type(&enhanced_query, &memory_type, limit)?;
                 info!(
                     "search_with_type returned {} memories",
                     search_results.len()
@@ -204,32 +347,31 @@ impl<R: MemoryRepository> MemoryService<R> {
             } else {
                 info!(
                     "Calling search with query='{}', limit={}",
-                    params.query, limit
+                    enhanced_query, limit
                 );
                 // タイプ指定がない場合は通常の検索
-                let search_results = self.repository.search(&params.query, limit)?;
+                let search_results = self.repository.search(&enhanced_query, limit)?;
                 info!("search returned {} memories", search_results.len());
                 search_results
-            };
-
-            // タグフィルタを適用（空の配列の場合は適用しない）
-            if let Some(tags) = params.tags {
-                if !tags.is_empty() {
-                    info!("Applying tag filter: {:?}", tags);
-                    let before_count = results.len();
-                    results.retain(|m| tags.iter().any(|tag| m.tags.contains(tag)));
-                    info!(
-                        "Tag filter reduced {} -> {} memories",
-                        before_count,
-                        results.len()
-                    );
-                } else {
-                    info!("Empty tag array provided - skipping tag filter");
-                }
             }
-
-            results
         };
+
+        // タグフィルタを適用（空の配列の場合は適用しない）
+        // 空クエリでもFTS検索でも同じように適用
+        if let Some(tags) = params.tags.clone() {
+            if !tags.is_empty() {
+                info!("Applying tag filter: {:?}", tags);
+                let before_count = memories.len();
+                memories.retain(|m| tags.iter().all(|tag| m.tags.contains(tag)));
+                info!(
+                    "Tag filter reduced {} -> {} memories",
+                    before_count,
+                    memories.len()
+                );
+            } else {
+                info!("Empty tag array provided - skipping tag filter");
+            }
+        }
 
         // 最終アクセス時刻を更新
         for memory in &memories {
@@ -259,7 +401,7 @@ impl<R: MemoryRepository> MemoryService<R> {
     }
 
     /// 記憶を削除（論理削除）
-    pub async fn delete_memory(&mut self, id: &str) -> Result<()> {
+    pub async fn delete_memory(&mut self, id: &str) -> Result<bool> {
         self.repository.soft_delete(id)
     }
 
@@ -357,6 +499,7 @@ mod tests {
             memory_type: None,
             tags: None,
             limit: Some(10),
+            invalid_type: false,
         };
 
         let response = service.recall(recall_params).await.unwrap();
@@ -397,6 +540,7 @@ mod tests {
             memory_type: Some(MemoryType::Tech),
             tags: None,
             limit: Some(10),
+            invalid_type: false,
         };
 
         let response = service.recall(recall_params).await.unwrap();

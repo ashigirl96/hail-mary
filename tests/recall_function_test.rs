@@ -35,6 +35,7 @@ async fn test_recall_function_direct() {
         memory_type: Some(MemoryType::Tech),
         tags: None,
         limit: Some(10),
+        invalid_type: false,
     };
 
     let recall_result = service.recall(recall_params).await;
@@ -93,6 +94,7 @@ async fn test_recall_with_existing_database() {
         memory_type: Some(MemoryType::Tech),
         tags: None,
         limit: Some(10),
+        invalid_type: false,
     };
 
     println!("Testing recall with params: query='MCP', type=tech");
@@ -164,6 +166,7 @@ async fn test_recall_comparison_with_without_type() {
         memory_type: None,
         tags: None,
         limit: Some(10),
+        invalid_type: false,
     };
 
     let recall_result_no_type = service.recall(recall_params_no_type).await;
@@ -179,6 +182,7 @@ async fn test_recall_comparison_with_without_type() {
         memory_type: Some(MemoryType::Tech),
         tags: None,
         limit: Some(10),
+        invalid_type: false,
     };
 
     let recall_result_with_type = service.recall(recall_params_with_type).await;
