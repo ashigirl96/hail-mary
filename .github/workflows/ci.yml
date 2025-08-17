@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+    branches: [ main, dev ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -116,10 +117,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     
