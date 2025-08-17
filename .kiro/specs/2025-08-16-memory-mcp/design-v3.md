@@ -590,7 +590,8 @@ pub struct SqliteMemoryRepository {
 }
 
 impl SqliteMemoryRepository {
-    pub fn new(db_path: &Path) -> Result<Self> {
+    pub fn new(kiro_config: &KiroConfig) -> Result<Self> {
+        let db_path = &kiro_config.memory.database.path;
         let mut conn = rusqlite::Connection::open(db_path)?;
         
         // Refineryでマイグレーション実行
@@ -1129,16 +1130,15 @@ use rmcp::{serve_server, transport::stdio};
 pub async fn execute() -> Result<()> {
     // 設定ファイルから読み込み
     let config = KiroConfig::load()?;
-    let db_path = config.memory.database.path;
     
     // 依存性注入でサービスを構築
-    let repository = SqliteMemoryRepository::new(&db_path)?;
+    let repository = SqliteMemoryRepository::new(&config)?;
     let service = MemoryService::new(repository);
     let mcp_server = MemoryMcpServer::new(service);
     
     // MCPサーバーを起動
     println!("Starting Memory MCP server...");
-    println!("Using database: {}", db_path.display());
+    println!("Using database: {}", config.memory.database.path.display());
     serve_server(mcp_server, stdio()).await?;
     
     Ok(())
@@ -1253,7 +1253,6 @@ impl KiroConfig {
 impl MemoryMcpServer {
     pub async fn new() -> Result<Self> {
         let config = KiroConfig::load()?;
-        let db_path = config.memory.database.path;
         
         // MCPのinstructionsに設定を反映
         let instructions = format!(
@@ -1263,7 +1262,7 @@ impl MemoryMcpServer {
         
         Ok(Self {
             service: Arc::new(Mutex::new(MemoryService::new(
-                SqliteMemoryRepository::new(&db_path)?
+                SqliteMemoryRepository::new(&config)?
             ))),
             config,
             instructions,
