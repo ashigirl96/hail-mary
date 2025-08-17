@@ -866,14 +866,14 @@ pub fn process_data() -> Result<()> {
 
 **目標**: 最小限のMCPサーバーを動かす
 
-- [x] SQLiteデータベースの初期化
-- [x] memoriesテーブルとFTS5インデックスの作成
-- [x] rusqlite_migrationでマイグレーション管理
-- [x] Repository/Service/Handler の3層実装
-- [x] 基本的なMCPサーバー実装（JSON-RPC over stdio）
-- [x] rememberツールの実装
-- [x] recallツールの実装（FTS5検索）
-- [x] 基本的なテスト
+- [ ] SQLiteデータベースの初期化
+- [ ] memoriesテーブルとFTS5インデックスの作成
+- [ ] rusqlite_migrationでマイグレーション管理
+- [ ] Repository/Service/Handler の3層実装
+- [ ] 基本的なMCPサーバー実装（JSON-RPC over stdio）
+- [ ] rememberツールの実装
+- [ ] recallツールの実装（FTS5検索）
+- [ ] 基本的なテスト
 
 **成果物**: `hail-mary memory serve` で起動し、Claudeから記憶の保存と検索が可能
 
@@ -881,11 +881,11 @@ pub fn process_data() -> Result<()> {
 
 **目標**: 記憶をMarkdownで参照可能にする
 
-- [x] `hail-mary memory document` コマンドの実装
-- [x] Markdown生成ロジック
-- [x] タイプ別のファイル分割
-- [x] フォーマッティングとソート
-- [x] Claude Codeから `@tech.md` で参照可能に
+- [ ] `hail-mary memory document` コマンドの実装
+- [ ] Markdown生成ロジック
+- [ ] タイプ別のファイル分割
+- [ ] フォーマッティングとソート
+- [ ] Claude Codeから `@tech.md` で参照可能に
 
 **成果物**: 生成されたMarkdownファイルを直接参照可能
 
@@ -893,12 +893,12 @@ pub fn process_data() -> Result<()> {
 
 **目標**: 定期的な最適化と重複排除
 
-- [x] `hail-mary memory reindex` コマンドの実装
-- [x] fastembed統合（この時点で追加）
-- [x] sqlite-vec統合（この時点で追加）
-- [x] 類似度計算とマージロジック
-- [x] データベースのバックアップとアーカイブ
-- [x] 論理削除の物理削除
+- [ ] `hail-mary memory reindex` コマンドの実装
+- [ ] fastembed統合（この時点で追加）
+- [ ] sqlite-vec統合（この時点で追加）
+- [ ] 類似度計算とマージロジック
+- [ ] データベースのバックアップとアーカイブ
+- [ ] 論理削除の物理削除
 
 **成果物**: データベースの自動最適化機能
 

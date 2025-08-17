@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "hail-mary-memory": {
+      "type": "stdio",
+      "command": "cargo",
+      "args": [
+        "run",
+        "memory",
+        "serve",
+        "--verbose"
+      ],
+      "env": {}
+    }
+  }
+}

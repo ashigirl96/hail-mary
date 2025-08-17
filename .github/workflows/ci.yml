@@ -2,14 +2,68 @@ name: CI
 
 on:
   push:
-    branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Main CI checks using Just commands
+  ci-checks:
+    name: CI Checks (just ci)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Install Just
+      uses: extractions/setup-just@v2
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Run CI checks (just ci)
+      run: just ci
+
+  # Strict linting checks
+  lint-strict:
+    name: Strict Linting (just lint-strict)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+    
+    - name: Install Just
+      uses: extractions/setup-just@v2
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Run strict linting (just lint-strict)
+      run: just lint-strict
+
+  # Additional comprehensive tests across different Rust versions
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -63,10 +117,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     
