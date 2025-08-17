@@ -8,9 +8,10 @@ use crate::memory::{
 };
 use anyhow::{Result, anyhow};
 use rmcp::{
-    ErrorData as McpError, Json,
+    ErrorData as McpError, Json, ServiceExt,
     handler::server::{router::tool::ToolRouter, tool::Parameters},
-    serve_server, tool, tool_handler, tool_router,
+    model::{Implementation, ProtocolVersion, ServerCapabilities, ServerInfo},
+    tool, tool_handler, tool_router,
     transport::stdio,
 };
 use std::{path::Path, sync::Arc};
@@ -25,7 +26,19 @@ pub struct MemoryMcpServer {
 }
 
 #[tool_handler(router = self.tool_router)]
-impl rmcp::ServerHandler for MemoryMcpServer {}
+impl rmcp::ServerHandler for MemoryMcpServer {
+    fn get_info(&self) -> ServerInfo {
+        ServerInfo {
+            protocol_version: ProtocolVersion::V_2024_11_05,
+            capabilities: ServerCapabilities::builder().enable_tools().build(),
+            server_info: Implementation::from_build_env(),
+            instructions: Some(format!(
+                "Memory MCP Server v{} - Store and retrieve memories using embeddings. Available tools: remember, recall, delete_memory",
+                env!("CARGO_PKG_VERSION")
+            )),
+        }
+    }
+}
 
 #[tool_router(router = tool_router)]
 impl MemoryMcpServer {
@@ -43,7 +56,16 @@ impl MemoryMcpServer {
     /// サーバーを実行
     pub async fn run(self) -> Result<()> {
         info!("Starting Memory MCP server (rmcp 0.5.0)");
-        serve_server(self, stdio()).await?;
+        info!("Setting up stdio transport...");
+
+        let service = self.serve(stdio()).await.inspect_err(|e| {
+            error!("serving error: {:?}", e);
+        })?;
+
+        info!("Server initialized successfully, waiting for connections...");
+        let result = service.waiting().await;
+        info!("Server waiting completed: {:?}", result);
+
         info!("Memory MCP server shutting down");
         Ok(())
     }
@@ -72,8 +94,20 @@ impl MemoryMcpServer {
         &self,
         params: Parameters<RmcpRecallParams>,
     ) -> Result<Json<RmcpRecallResponse>, McpError> {
+        // Debug logging
+        info!(
+            "MCP recall called with params: query='{}', type={:?}, tags={:?}, limit={:?}",
+            params.0.query, params.0.r#type, params.0.tags, params.0.limit
+        );
+
+        let recall_params: crate::memory::models::RecallParams = params.0.into();
+        info!(
+            "Converted to RecallParams: query='{}', memory_type={:?}, tags={:?}, limit={:?}",
+            recall_params.query, recall_params.memory_type, recall_params.tags, recall_params.limit
+        );
+
         let mut service = self.service.lock().await;
-        let response = service.recall(params.0.into()).await.map_err(|e| {
+        let response = service.recall(recall_params).await.map_err(|e| {
             error!("Recall tool error: {}", e);
             McpError {
                 code: rmcp::model::ErrorCode(-32603),
@@ -81,6 +115,20 @@ impl MemoryMcpServer {
                 data: None,
             }
         })?;
+
+        info!(
+            "Service recall returned {} memories",
+            response.memories.len()
+        );
+        for (i, memory) in response.memories.iter().enumerate() {
+            info!(
+                "  Memory {}: {} ({})",
+                i + 1,
+                memory.title,
+                memory.memory_type
+            );
+        }
+
         Ok(Json(response.into()))
     }
 
@@ -108,26 +156,19 @@ impl MemoryMcpServer {
             memory_id: params.0.memory_id,
         }))
     }
-
-    /// Get server information
-    #[tool(name = "get_info", description = "Get server information")]
-    pub async fn get_info(&self) -> String {
-        format!(
-            "Memory MCP Server v{} - Store and retrieve memories",
-            env!("CARGO_PKG_VERSION")
-        )
-    }
 }
 
 /// データベースのデフォルトパスを取得
 pub fn get_default_db_path() -> Result<std::path::PathBuf> {
-    let data_dir =
-        dirs::data_local_dir().ok_or_else(|| anyhow!("Failed to get local data directory"))?;
+    // 現在のディレクトリを取得
+    let current_dir =
+        std::env::current_dir().map_err(|e| anyhow!("Failed to get current directory: {}", e))?;
 
-    let hail_mary_dir = data_dir.join("hail-mary");
-    std::fs::create_dir_all(&hail_mary_dir)?;
+    // .kiro/memory/ ディレクトリを作成
+    let kiro_memory_dir = current_dir.join(".kiro").join("memory");
+    std::fs::create_dir_all(&kiro_memory_dir)?;
 
-    Ok(hail_mary_dir.join("memory.db"))
+    Ok(kiro_memory_dir.join("memory.db"))
 }
 
 #[cfg(test)]
@@ -147,7 +188,8 @@ mod tests {
     #[test]
     fn test_get_default_db_path() {
         let path = get_default_db_path().unwrap();
-        assert!(path.to_str().unwrap().contains("hail-mary"));
+        assert!(path.to_str().unwrap().contains(".kiro"));
+        assert!(path.to_str().unwrap().contains("memory"));
         assert!(path.to_str().unwrap().contains("memory.db"));
     }
 
@@ -159,12 +201,11 @@ mod tests {
 
         // Test that tools are registered
         let tools = server.tool_router.list_all();
-        assert_eq!(tools.len(), 4);
+        assert_eq!(tools.len(), 3);
 
         let tool_names: Vec<&str> = tools.iter().map(|t| t.name.as_ref()).collect();
         assert!(tool_names.contains(&"remember"));
         assert!(tool_names.contains(&"recall"));
         assert!(tool_names.contains(&"delete_memory"));
-        assert!(tool_names.contains(&"get_info"));
     }
 }

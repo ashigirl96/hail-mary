@@ -139,7 +139,7 @@ impl DedupCommand {
         // Generate embeddings for all memories
         let texts: Vec<String> = memories
             .iter()
-            .map(|m| format!("{} {}", m.topic, m.content))
+            .map(|m| format!("{} {}", m.title, m.content))
             .collect();
 
         let embeddings = embedding_service.embed_texts(texts).await?;
@@ -209,7 +209,7 @@ impl DedupCommand {
             );
             println!(
                 "   Primary: {} (ID: {})",
-                group.primary_memory.topic,
+                group.primary_memory.title,
                 &group.primary_memory.id[..8]
             );
 
@@ -228,7 +228,7 @@ impl DedupCommand {
                 println!(
                     "   Duplicate {}: {} (Similarity: {:.2})",
                     j + 1,
-                    dup.topic,
+                    dup.title,
                     sim
                 );
                 if self.verbose {
@@ -324,7 +324,7 @@ impl DedupCommand {
                     "  Merging group {}/{}: {}",
                     i + 1,
                     groups.len(),
-                    group.primary_memory.topic
+                    group.primary_memory.title
                 );
             }
 
@@ -496,7 +496,7 @@ impl DedupCommand {
 
     /// Display a memory
     fn display_memory(&self, memory: &Memory, indent: &str) {
-        println!("{}Topic: {}", indent, memory.topic);
+        println!("{}Topic: {}", indent, memory.title);
         println!("{}Type: {}", indent, memory.memory_type);
         println!("{}Created: {}", indent, format_timestamp(memory.created_at));
         println!(
@@ -534,6 +534,7 @@ impl DedupCommand {
 
 /// A group of duplicate memories
 struct DuplicateGroup {
+    #[allow(dead_code)]
     primary_index: usize,
     primary_memory: Memory,
     duplicates: Vec<Memory>,

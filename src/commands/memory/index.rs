@@ -100,8 +100,7 @@ impl IndexCommand {
         runtime.block_on(async {
             let mut repository =
                 SqliteMemoryRepository::new(db_path).map_err(HailMaryError::General)?;
-            let embedding_service =
-                EmbeddingService::new().map_err(HailMaryError::General)?;
+            let embedding_service = EmbeddingService::new().map_err(HailMaryError::General)?;
 
             // Load memories
             let memories = if let Some(ref memory_type) = self.r#type {
@@ -132,15 +131,16 @@ impl IndexCommand {
                 for memory in batch {
                     // Check if embedding already exists
                     if !self.force
-                        && let Ok(Some(_)) = repository.get_embedding(&memory.id) {
-                            cache_hits += 1;
-                            continue;
-                        }
+                        && let Ok(Some(_)) = repository.get_embedding(&memory.id)
+                    {
+                        cache_hits += 1;
+                        continue;
+                    }
 
                     cache_misses += 1;
 
                     // Generate embedding
-                    let text = format!("{} {}", memory.topic, memory.content);
+                    let text = format!("{} {}", memory.title, memory.content);
                     let embeddings = embedding_service
                         .embed_texts(vec![text.clone()])
                         .await
@@ -206,7 +206,7 @@ impl IndexCommand {
                     Ok(Memory {
                         id: row.get(0)?,
                         memory_type: MemoryType::from_str(&row.get::<_, String>(1)?).unwrap(),
-                        topic: row.get(2)?,
+                        title: row.get(2)?,
                         tags: row
                             .get::<_, String>(3)?
                             .split(',')
@@ -220,8 +220,8 @@ impl IndexCommand {
                         confidence: row.get(7)?,
                         created_at: row.get(8)?,
                         last_accessed: row.get(9)?,
-                        source: row.get(10).ok(),
-                        deleted: row.get(11)?,
+                        // source field removed
+                        deleted: row.get(10)?,
                     })
                 })
                 .map_err(|e| HailMaryError::General(e.into()))?;
@@ -239,15 +239,14 @@ impl IndexCommand {
             println!("📊 Found {} memories to index", memories_to_index.len());
 
             // Generate and store embeddings
-            let embedding_service =
-                EmbeddingService::new().map_err(HailMaryError::General)?;
+            let embedding_service = EmbeddingService::new().map_err(HailMaryError::General)?;
             let mut indexed_count = 0;
 
             for batch in memories_to_index.chunks(self.batch_size) {
                 let mut batch_embeddings = Vec::new();
 
                 for memory in batch {
-                    let text = format!("{} {}", memory.topic, memory.content);
+                    let text = format!("{} {}", memory.title, memory.content);
                     let embeddings = embedding_service
                         .embed_texts(vec![text.clone()])
                         .await
@@ -596,7 +595,7 @@ impl IndexCommand {
         let mut word_total_counts = HashMap::new();
 
         for memory in memories {
-            let text = format!("{} {}", memory.topic, memory.content);
+            let text = format!("{} {}", memory.title, memory.content);
             let mut seen_words = std::collections::HashSet::new();
 
             for word in text.split_whitespace() {

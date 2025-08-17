@@ -107,7 +107,7 @@ impl MemoryCommand {
 
             metrics.push(AnalyticsMetric {
                 name: format!("{} Memories", memory_type.to_uppercase()),
-                value: MetricValue::Integer((*count).try_into().unwrap_or(0)),
+                value: MetricValue::Integer((*count).into()),
                 description: Some(format!("{:.1}% of total memories", percentage)),
                 unit: Some("count".to_string()),
             });
@@ -229,7 +229,7 @@ impl MemoryCommand {
                 name: "Most Confident Memory".to_string(),
                 value: MetricValue::String(format!(
                     "{} ({:.2})",
-                    top_memory.topic, top_memory.confidence
+                    top_memory.title, top_memory.confidence
                 )),
                 description: Some("Memory with highest confidence score".to_string()),
                 unit: Some("confidence".to_string()),
@@ -241,7 +241,7 @@ impl MemoryCommand {
                 name: "Least Confident Memory".to_string(),
                 value: MetricValue::String(format!(
                     "{} ({:.2})",
-                    lowest_memory.topic, lowest_memory.confidence
+                    lowest_memory.title, lowest_memory.confidence
                 )),
                 description: Some("Memory with lowest confidence score".to_string()),
                 unit: Some("confidence".to_string()),
@@ -366,10 +366,7 @@ impl MemoryCommand {
             .iter()
             .filter(|m| !m.examples.is_empty())
             .count();
-        let memories_with_source = working_memories
-            .iter()
-            .filter(|m| m.source.is_some())
-            .count();
+        let memories_with_source = working_memories.len();
 
         metrics.push(AnalyticsMetric {
             name: "Tagged Memories".to_string(),
@@ -435,7 +432,7 @@ impl MemoryCommand {
                 name: "Shortest Memory".to_string(),
                 value: MetricValue::String(format!(
                     "{} ({} chars)",
-                    shortest.topic,
+                    shortest.title,
                     shortest.content.len()
                 )),
                 description: Some("Memory with the least content".to_string()),
@@ -448,7 +445,7 @@ impl MemoryCommand {
                 name: "Longest Memory".to_string(),
                 value: MetricValue::String(format!(
                     "{} ({} chars)",
-                    longest.topic,
+                    longest.title,
                     longest.content.len()
                 )),
                 description: Some("Memory with the most content".to_string()),

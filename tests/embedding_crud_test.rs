@@ -18,12 +18,11 @@ async fn test_auto_embedding_on_create() {
     // Create a memory
     let params = RememberParams {
         memory_type: MemoryType::Tech,
-        topic: "Rust Programming".to_string(),
+        title: "Rust Programming".to_string(),
         content: "Rust is a systems programming language focused on safety and performance"
             .to_string(),
         tags: Some(vec!["rust".to_string(), "programming".to_string()]),
         examples: None,
-        source: Some("test".to_string()),
     };
 
     let response = service.remember(params).await.unwrap();
@@ -50,11 +49,10 @@ async fn test_auto_embedding_on_update() {
     // Create a memory
     let params = RememberParams {
         memory_type: MemoryType::Tech,
-        topic: "Python".to_string(),
+        title: "Python".to_string(),
         content: "Python is a high-level language".to_string(),
         tags: None,
         examples: None,
-        source: None,
     };
 
     let response = service.remember(params).await.unwrap();
@@ -67,11 +65,10 @@ async fn test_auto_embedding_on_update() {
     // Update the memory with same topic but different content
     let update_params = RememberParams {
         memory_type: MemoryType::Tech,
-        topic: "Python".to_string(),
+        title: "Python".to_string(),
         content: "Python is a versatile programming language used for web development, data science, and more".to_string(),
         tags: Some(vec!["python".to_string(), "programming".to_string()]),
         examples: None,
-        source: None,
     };
 
     let response = service.remember(update_params).await.unwrap();
@@ -119,11 +116,10 @@ async fn test_semantic_search() {
     for (topic, content) in memories {
         let params = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: topic.to_string(),
+            title: topic.to_string(),
             content: content.to_string(),
             tags: None,
             examples: None,
-            source: None,
         };
         service.remember(params).await.unwrap();
     }
@@ -137,8 +133,8 @@ async fn test_semantic_search() {
     assert!(!results.is_empty());
     // The first result should be about machine learning
     assert!(
-        results[0].0.topic.contains("Machine Learning")
-            || results[0].0.topic.contains("Artificial Intelligence")
+        results[0].0.title.contains("Machine Learning")
+            || results[0].0.title.contains("Artificial Intelligence")
     );
 }
 
@@ -154,31 +150,28 @@ async fn test_find_related_memories() {
     // Create related memories
     let rust_params = RememberParams {
         memory_type: MemoryType::Tech,
-        topic: "Rust Language".to_string(),
+        title: "Rust Language".to_string(),
         content: "Rust is a systems programming language with memory safety".to_string(),
         tags: None,
         examples: None,
-        source: None,
     };
     let rust_response = service.remember(rust_params).await.unwrap();
 
     let cpp_params = RememberParams {
         memory_type: MemoryType::Tech,
-        topic: "C++ Language".to_string(),
+        title: "C++ Language".to_string(),
         content: "C++ is a systems programming language with manual memory management".to_string(),
         tags: None,
         examples: None,
-        source: None,
     };
     service.remember(cpp_params).await.unwrap();
 
     let python_params = RememberParams {
         memory_type: MemoryType::Tech,
-        topic: "Python Language".to_string(),
+        title: "Python Language".to_string(),
         content: "Python is a high-level interpreted language".to_string(),
         tags: None,
         examples: None,
-        source: None,
     };
     service.remember(python_params).await.unwrap();
 
@@ -190,14 +183,13 @@ async fn test_find_related_memories() {
 
     assert!(!related.is_empty());
     // C++ should be more related to Rust than Python (both are systems languages)
-    let cpp_found = related.iter().any(|(m, _)| m.topic.contains("C++"));
+    let cpp_found = related.iter().any(|(m, _)| m.title.contains("C++"));
     assert!(cpp_found);
 }
 
 #[tokio::test]
 async fn test_reindex_with_embeddings() {
     use hail_mary::memory::reindex::{ReindexConfig, ReindexService};
-    use std::path::PathBuf;
 
     let temp_dir = TempDir::new().unwrap();
     let db_path = temp_dir.path().join("test.db");

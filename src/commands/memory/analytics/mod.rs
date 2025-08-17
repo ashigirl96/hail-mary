@@ -125,7 +125,9 @@ pub enum MetricValue {
 /// Time range for analytics filtering
 #[derive(Debug, Clone)]
 pub struct TimeRange {
+    #[allow(dead_code)] // Reserved for future time-based filtering functionality
     pub start: Option<i64>,
+    #[allow(dead_code)] // Reserved for future time-based filtering functionality
     pub end: Option<i64>,
 }
 
@@ -133,8 +135,10 @@ pub struct TimeRange {
 #[derive(Debug)]
 pub struct AnalyticsContext {
     pub repository: SqliteMemoryRepository,
+    #[allow(dead_code)] // Reserved for future time-based analytics filtering
     pub time_range: TimeRange,
     pub include_deleted: bool,
+    #[allow(dead_code)] // Reserved for future enhanced verbose reporting
     pub verbose: bool,
     pub quiet: bool,
 }
@@ -161,6 +165,7 @@ impl AnalyticsContext {
 /// Analytics formatter trait for consistent output formatting
 pub trait AnalyticsFormatter {
     fn format_metrics(&self, metrics: &[AnalyticsMetric], format: &OutputFormat) -> Result<String>;
+    #[allow(dead_code)] // Reserved for future table formatting functionality
     fn format_table(&self, headers: &[String], rows: &[Vec<String>]) -> String;
     fn format_json<T: Serialize + ?Sized>(&self, data: &T) -> Result<String>;
     fn format_csv(&self, headers: &[String], rows: &[Vec<String>]) -> String;
@@ -410,7 +415,7 @@ mod tests {
     #[test]
     fn test_metric_value_display() {
         assert_eq!(MetricValue::Integer(42).to_string(), "42");
-        assert_eq!(MetricValue::Float(3.14159).to_string(), "3.14");
+        assert_eq!(MetricValue::Float(std::f64::consts::PI).to_string(), "3.14");
         assert_eq!(MetricValue::String("test".to_string()).to_string(), "test");
         assert_eq!(MetricValue::Boolean(true).to_string(), "true");
         assert_eq!(

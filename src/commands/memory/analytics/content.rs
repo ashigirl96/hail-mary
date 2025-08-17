@@ -21,15 +21,13 @@ pub struct ContentCommand {
 impl ContentCommand {
     /// Execute content analytics
     pub fn execute(&self, _context: &AnalyticsContext) -> Result<Vec<AnalyticsMetric>> {
-        let mut metrics = Vec::new();
-
         // TODO: Phase 3.4.3 - Implement content analytics
-        metrics.push(AnalyticsMetric {
+        let metrics = vec![AnalyticsMetric {
             name: "Content Analytics".to_string(),
             value: MetricValue::String("Coming in Phase 3.4.3!".to_string()),
             description: Some("Content analysis and text metrics".to_string()),
             unit: None,
-        });
+        }];
 
         Ok(metrics)
     }

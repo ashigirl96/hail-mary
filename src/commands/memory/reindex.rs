@@ -167,7 +167,7 @@ impl ReindexCommand {
         let embedding_service = EmbeddingService::new()?;
         let texts: Vec<String> = all_memories
             .iter()
-            .map(|m| format!("{} {}", m.topic, m.content))
+            .map(|m| format!("{} {}", m.title, m.content))
             .collect();
         // Block on the async operation
         let rt = tokio::runtime::Runtime::new()?;
@@ -196,8 +196,8 @@ impl ReindexCommand {
 
                     if self.verbose && duplicate_pairs.len() <= 10 {
                         println!("\n  Found duplicate (similarity: {:.2}):", similarity);
-                        println!("    Memory 1: {}", all_memories[i].topic);
-                        println!("    Memory 2: {}", all_memories[j].topic);
+                        println!("    Memory 1: {}", all_memories[i].title);
+                        println!("    Memory 2: {}", all_memories[j].title);
                     }
                 }
             }

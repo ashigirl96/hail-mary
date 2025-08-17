@@ -5,12 +5,8 @@ use rusqlite_migration::{M, Migrations};
 /// データベースマイグレーション定義
 pub fn migrations() -> Migrations<'static> {
     Migrations::new(vec![
-        // 初期スキーマ作成
+        // 統合された初期スキーマ作成（全ての機能を含む）
         M::up(include_str!("../../migrations/001_initial_schema.sql")),
-        // ベクトルストレージ追加
-        M::up(include_str!("../../migrations/002_vector_storage.sql")),
-        // エンベディングインデックス追加
-        M::up(include_str!("../../migrations/003_embedding_index.sql")),
     ])
 }
 

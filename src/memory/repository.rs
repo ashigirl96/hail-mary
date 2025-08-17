@@ -6,37 +6,37 @@ use std::path::{Path, PathBuf};
 
 // SQLクエリを定数化（型安全性の補完）
 const INSERT_MEMORY: &str = r#"
-    INSERT INTO memories (id, type, topic, tags, content, examples, 
+    INSERT INTO memories (id, type, title, tags, content, examples, 
                          reference_count, confidence, created_at, 
-                         last_accessed, source, deleted)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+                         last_accessed, deleted)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
 "#;
 
 const UPDATE_MEMORY: &str = r#"
     UPDATE memories 
-    SET type = ?2, topic = ?3, tags = ?4, content = ?5, examples = ?6,
-        confidence = ?7, last_accessed = ?8, source = ?9
+    SET type = ?2, title = ?3, tags = ?4, content = ?5, examples = ?6,
+        confidence = ?7, last_accessed = ?8
     WHERE id = ?1 AND deleted = 0
 "#;
 
 const SELECT_BY_ID: &str = r#"
-    SELECT id, type, topic, tags, content, examples, reference_count,
-           confidence, created_at, last_accessed, source, deleted
+    SELECT id, type, title, tags, content, examples, reference_count,
+           confidence, created_at, last_accessed, deleted
     FROM memories
     WHERE id = ?1 AND deleted = 0
 "#;
 
-const SELECT_BY_TOPIC: &str = r#"
-    SELECT id, type, topic, tags, content, examples, reference_count,
-           confidence, created_at, last_accessed, source, deleted
+const SELECT_BY_TITLE: &str = r#"
+    SELECT id, type, title, tags, content, examples, reference_count,
+           confidence, created_at, last_accessed, deleted
     FROM memories
-    WHERE topic = ?1 AND type = ?2 AND deleted = 0
+    WHERE title = ?1 AND type = ?2 AND deleted = 0
 "#;
 
 const SEARCH_MEMORIES_FTS: &str = r#"
-    SELECT m.id, m.type, m.topic, m.tags, m.content, m.examples, 
+    SELECT m.id, m.type, m.title, m.tags, m.content, m.examples, 
            m.reference_count, m.confidence, m.created_at, 
-           m.last_accessed, m.source, m.deleted
+           m.last_accessed, m.deleted
     FROM memories m
     JOIN memories_fts f ON m.id = f.memory_id
     WHERE f.memories_fts MATCH ?1
@@ -45,17 +45,30 @@ const SEARCH_MEMORIES_FTS: &str = r#"
     LIMIT ?2
 "#;
 
+const SEARCH_MEMORIES_FTS_WITH_TYPE: &str = r#"
+    SELECT m.id, m.type, m.title, m.tags, m.content, m.examples, 
+           m.reference_count, m.confidence, m.created_at, 
+           m.last_accessed, m.deleted
+    FROM memories m
+    JOIN memories_fts f ON m.id = f.memory_id
+    WHERE f.memories_fts MATCH ?1
+    AND m.type = ?2
+    AND m.deleted = 0
+    ORDER BY rank
+    LIMIT ?3
+"#;
+
 const BROWSE_BY_TYPE: &str = r#"
-    SELECT id, type, topic, tags, content, examples, reference_count,
-           confidence, created_at, last_accessed, source, deleted
+    SELECT id, type, title, tags, content, examples, reference_count,
+           confidence, created_at, last_accessed, deleted
     FROM memories
     WHERE type = ?1 AND deleted = 0
     ORDER BY confidence DESC, reference_count DESC
 "#;
 
 const BROWSE_BY_TYPE_LIMIT: &str = r#"
-    SELECT id, type, topic, tags, content, examples, reference_count,
-           confidence, created_at, last_accessed, source, deleted
+    SELECT id, type, title, tags, content, examples, reference_count,
+           confidence, created_at, last_accessed, deleted
     FROM memories
     WHERE type = ?1 AND deleted = 0
     ORDER BY confidence DESC, reference_count DESC
@@ -82,7 +95,7 @@ const SOFT_DELETE: &str = r#"
 "#;
 
 const SEARCH_MEMORIES_FTS_ALL: &str = r#"
-    SELECT m.id, m.type, m.topic, m.tags, m.content, m.examples, 
+    SELECT m.id, m.type, m.title, m.tags, m.content, m.examples, 
            m.reference_count, m.confidence, m.created_at, 
            m.last_accessed, m.source, m.deleted
     FROM memories m
@@ -93,7 +106,7 @@ const SEARCH_MEMORIES_FTS_ALL: &str = r#"
 "#;
 
 const BROWSE_ALL: &str = r#"
-    SELECT id, type, topic, tags, content, examples, reference_count,
+    SELECT id, type, title, tags, content, examples, reference_count,
            confidence, created_at, last_accessed, source, deleted
     FROM memories
     ORDER BY confidence DESC, reference_count DESC
@@ -105,8 +118,14 @@ pub trait MemoryRepository {
     fn save(&mut self, memory: &Memory) -> Result<()>;
     fn update(&mut self, memory: &Memory) -> Result<()>;
     fn find_by_id(&self, id: &str) -> Result<Option<Memory>>;
-    fn find_by_topic(&self, topic: &str, memory_type: &MemoryType) -> Result<Option<Memory>>;
+    fn find_by_title(&self, title: &str, memory_type: &MemoryType) -> Result<Option<Memory>>;
     fn search(&self, query: &str, limit: usize) -> Result<Vec<Memory>>;
+    fn search_with_type(
+        &self,
+        query: &str,
+        memory_type: &MemoryType,
+        limit: usize,
+    ) -> Result<Vec<Memory>>;
     fn search_all(&self, query: &str, limit: usize) -> Result<Vec<Memory>>;
     fn browse_by_type(&self, memory_type: &MemoryType, limit: usize) -> Result<Vec<Memory>>;
     fn browse_all(&self, limit: usize) -> Result<Vec<Memory>>;
@@ -122,6 +141,7 @@ pub trait MemoryRepository {
         model_name: &str,
     ) -> Result<()>;
     fn get_embedding(&self, memory_id: &str) -> Result<Option<Vec<f32>>>;
+    #[allow(dead_code)] // Reserved for future batch embedding operations
     fn get_embeddings_batch(
         &self,
         memory_ids: &[String],
@@ -132,6 +152,7 @@ pub trait MemoryRepository {
         limit: usize,
         min_similarity: f32,
     ) -> Result<Vec<(Memory, f32)>>;
+    #[allow(dead_code)] // Reserved for future duplicate detection functionality
     fn find_duplicates(&self, similarity_threshold: f32) -> Result<Vec<(String, String, f32)>>;
     fn get_memories_without_embeddings(&self, limit: usize) -> Result<Vec<Memory>>;
 }
@@ -174,7 +195,7 @@ impl MemoryRepository for SqliteMemoryRepository {
             params![
                 &memory.id,
                 &memory.memory_type.to_string(),
-                &memory.topic,
+                &memory.title, // topic -> title
                 &tags_str,
                 &memory.content,
                 &examples_json,
@@ -182,7 +203,6 @@ impl MemoryRepository for SqliteMemoryRepository {
                 memory.confidence,
                 memory.created_at,
                 memory.last_accessed,
-                &memory.source,
                 memory.deleted as i32,
             ],
         )?;
@@ -198,13 +218,12 @@ impl MemoryRepository for SqliteMemoryRepository {
             params![
                 &memory.id,
                 &memory.memory_type.to_string(),
-                &memory.topic,
+                &memory.title, // topic -> title
                 &tags_str,
                 &memory.content,
                 &examples_json,
                 memory.confidence,
                 memory.last_accessed,
-                &memory.source,
             ],
         )?;
         Ok(())
@@ -220,9 +239,9 @@ impl MemoryRepository for SqliteMemoryRepository {
         }
     }
 
-    fn find_by_topic(&self, topic: &str, memory_type: &MemoryType) -> Result<Option<Memory>> {
-        let mut stmt = self.conn.prepare(SELECT_BY_TOPIC)?;
-        let mut rows = stmt.query_map(params![topic, memory_type.to_string()], |row| {
+    fn find_by_title(&self, title: &str, memory_type: &MemoryType) -> Result<Option<Memory>> {
+        let mut stmt = self.conn.prepare(SELECT_BY_TITLE)?;
+        let mut rows = stmt.query_map(params![title, memory_type.to_string()], |row| {
             Memory::from_row(row)
         })?;
 
@@ -246,6 +265,25 @@ impl MemoryRepository for SqliteMemoryRepository {
     fn search_all(&self, query: &str, limit: usize) -> Result<Vec<Memory>> {
         let mut stmt = self.conn.prepare(SEARCH_MEMORIES_FTS_ALL)?;
         let memory_iter = stmt.query_map(params![query, limit], Memory::from_row)?;
+
+        let mut memories = Vec::new();
+        for memory in memory_iter {
+            memories.push(memory?);
+        }
+        Ok(memories)
+    }
+
+    fn search_with_type(
+        &self,
+        query: &str,
+        memory_type: &MemoryType,
+        limit: usize,
+    ) -> Result<Vec<Memory>> {
+        let mut stmt = self.conn.prepare(SEARCH_MEMORIES_FTS_WITH_TYPE)?;
+        let memory_iter = stmt.query_map(
+            params![query, memory_type.to_string(), limit],
+            Memory::from_row,
+        )?;
 
         let mut memories = Vec::new();
         for memory in memory_iter {
@@ -719,6 +757,7 @@ impl SqliteMemoryRepository {
     }
 
     /// Rename a tag across all memories
+    #[allow(dead_code)] // Reserved for future tag management functionality
     pub fn rename_tag(&mut self, from: &str, to: &str) -> Result<usize> {
         if from == to {
             return Ok(0);
@@ -734,6 +773,7 @@ impl SqliteMemoryRepository {
     }
 
     /// Get all unique tags across all memories
+    #[allow(dead_code)] // Reserved for future tag management functionality
     pub fn get_all_tags(&self) -> Result<Vec<String>> {
         let mut stmt = self
             .conn
@@ -759,6 +799,7 @@ impl SqliteMemoryRepository {
     }
 
     /// Remove unused tags (implementation depends on requirements)
+    #[allow(dead_code)] // Reserved for future tag cleanup functionality
     pub fn remove_unused_tags(&mut self) -> Result<usize> {
         // This is a placeholder - actual implementation would depend on
         // whether we store tags separately or inline in the memories table
@@ -812,7 +853,7 @@ mod tests {
 
         let found_memory = found.unwrap();
         assert_eq!(found_memory.id, memory.id);
-        assert_eq!(found_memory.topic, "Test Topic");
+        assert_eq!(found_memory.title, "Test Topic");
         assert_eq!(found_memory.content, "Test Content");
     }
 
@@ -839,11 +880,11 @@ mod tests {
 
         let results = repo.search("rust async", 10).unwrap();
         assert_eq!(results.len(), 1);
-        assert_eq!(results[0].topic, "Rust async programming");
+        assert_eq!(results[0].title, "Rust async programming");
 
         let results = repo.search("python", 10).unwrap();
         assert_eq!(results.len(), 1);
-        assert_eq!(results[0].topic, "Python decorators");
+        assert_eq!(results[0].title, "Python decorators");
     }
 
     #[test]

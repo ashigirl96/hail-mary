@@ -45,7 +45,7 @@ pub struct BulkUpdateCommand {
 
     /// Search only in topic field
     #[arg(long)]
-    pub topic_only: bool,
+    pub title_only: bool,
 
     /// Search only in content field
     #[arg(long)]
@@ -317,7 +317,7 @@ impl BulkUpdateCommand {
             criteria = criteria.with_query(query.clone(), self.regex, self.case_sensitive);
         }
 
-        criteria.topic_only = self.topic_only;
+        criteria.title_only = self.title_only;
         criteria.content_only = self.content_only;
 
         Ok(criteria)
@@ -342,19 +342,12 @@ impl BulkUpdateCommand {
 
             if self.verbose && memories.len() <= 20 {
                 for (i, memory) in memories.iter().enumerate() {
-                    println!(
-                        "{}. {} [{}]",
-                        i + 1,
-                        memory.topic,
-                        memory.memory_type
-                    );
+                    println!("{}. {} [{}]", i + 1, memory.title, memory.memory_type);
                     if !memory.tags.is_empty() {
                         println!("   Current tags: {}", memory.tags.join(", "));
                     }
                     println!("   Current confidence: {:.2}", memory.confidence);
-                    if let Some(ref source) = memory.source {
-                        println!("   Current source: {}", source);
-                    }
+                    // source field removed
                     println!("   ID: {}", memory.id);
 
                     // Show what the updates would result in
@@ -364,12 +357,7 @@ impl BulkUpdateCommand {
             } else if memories.len() > 20 {
                 // Show first 10 and last 10
                 for (i, memory) in memories.iter().take(10).enumerate() {
-                    println!(
-                        "{}. {} [{}]",
-                        i + 1,
-                        memory.topic,
-                        memory.memory_type
-                    );
+                    println!("{}. {} [{}]", i + 1, memory.title, memory.memory_type);
                 }
 
                 if memories.len() > 20 {
@@ -380,7 +368,7 @@ impl BulkUpdateCommand {
                     println!(
                         "{}. {} [{}]",
                         memories.len() - 10 + i + 1,
-                        memory.topic,
+                        memory.title,
                         memory.memory_type
                     );
                 }
@@ -430,19 +418,10 @@ impl BulkUpdateCommand {
         }
 
         if let Some(ref memory_type) = operations.set_type {
-            println!(
-                "   → Type: {} → {}",
-                memory.memory_type,
-                memory_type
-            );
+            println!("   → Type: {} → {}", memory.memory_type, memory_type);
         }
 
-        if let Some(ref source) = operations.set_source {
-            let current = memory
-                .source.as_deref()
-                .unwrap_or("(none)");
-            println!("   → Source: {} → {}", current, source);
-        }
+        // source field removed - no longer applicable
 
         Ok(())
     }
@@ -594,7 +573,7 @@ impl BulkUpdateCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::memory::models::{Memory, MemoryType};
+    use crate::memory::models::MemoryType;
 
     #[test]
     fn test_build_update_operations() {
@@ -607,7 +586,7 @@ mod tests {
             query: None,
             regex: false,
             case_sensitive: false,
-            topic_only: false,
+            title_only: false,
             content_only: false,
             include_deleted: false,
             add_tags: Some(vec!["new".to_string(), "test".to_string()]),
@@ -657,7 +636,7 @@ mod tests {
             query: None,
             regex: false,
             case_sensitive: false,
-            topic_only: false,
+            title_only: false,
             content_only: false,
             include_deleted: false,
             add_tags: None,
@@ -691,7 +670,7 @@ mod tests {
             query: None,
             regex: false,
             case_sensitive: false,
-            topic_only: false,
+            title_only: false,
             content_only: false,
             include_deleted: false,
             add_tags: None,

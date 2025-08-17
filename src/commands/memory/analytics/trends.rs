@@ -25,15 +25,13 @@ pub struct TrendsCommand {
 impl TrendsCommand {
     /// Execute trends analytics
     pub fn execute(&self, _context: &AnalyticsContext) -> Result<Vec<AnalyticsMetric>> {
-        let mut metrics = Vec::new();
-
         // TODO: Phase 3.4.4 - Implement trends analytics
-        metrics.push(AnalyticsMetric {
+        let metrics = vec![AnalyticsMetric {
             name: "Trends Analytics".to_string(),
             value: MetricValue::String("Coming in Phase 3.4.4!".to_string()),
             description: Some("Temporal trends and historical analysis".to_string()),
             unit: None,
-        });
+        }];
 
         Ok(metrics)
     }

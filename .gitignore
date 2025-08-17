@@ -58,3 +58,5 @@ rust-wasm/Cargo.lock
 
 # Logs
 *.log
+
+.kiro/memory/*.db

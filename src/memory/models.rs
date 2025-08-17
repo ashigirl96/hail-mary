@@ -3,6 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fmt;
+use std::str::FromStr;
 use uuid::Uuid;
 
 /// 記憶のカテゴリ
@@ -27,13 +28,23 @@ impl fmt::Display for MemoryType {
 }
 
 impl MemoryType {
-    /// 文字列からMemoryTypeを作成
+    /// 文字列からMemoryTypeを作成 (backwards compatibility wrapper)
+    /// This method is kept for backwards compatibility with existing code
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
+        s.parse().ok()
+    }
+}
+
+impl FromStr for MemoryType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "tech" => Some(MemoryType::Tech),
-            "project-tech" => Some(MemoryType::ProjectTech),
-            "domain" => Some(MemoryType::Domain),
-            _ => None,
+            "tech" => Ok(MemoryType::Tech),
+            "project-tech" => Ok(MemoryType::ProjectTech),
+            "domain" => Ok(MemoryType::Domain),
+            _ => Err(format!("Invalid memory type: {}", s)),
         }
     }
 }
@@ -44,7 +55,7 @@ pub struct Memory {
     pub id: String,
     #[serde(rename = "type")]
     pub memory_type: MemoryType,
-    pub topic: String,
+    pub title: String, // topic -> title
     #[serde(default)]
     pub tags: Vec<String>,
     pub content: String,
@@ -55,19 +66,18 @@ pub struct Memory {
     pub created_at: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_accessed: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>,
+    // source field removed
     #[serde(skip)]
     pub deleted: bool,
 }
 
 impl Memory {
     /// 新しいメモリを作成
-    pub fn new(memory_type: MemoryType, topic: String, content: String) -> Self {
+    pub fn new(memory_type: MemoryType, title: String, content: String) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             memory_type,
-            topic,
+            title, // topic -> title
             tags: Vec::new(),
             content,
             examples: Vec::new(),
@@ -75,7 +85,6 @@ impl Memory {
             confidence: 1.0,
             created_at: chrono::Utc::now().timestamp(),
             last_accessed: None,
-            source: None,
             deleted: false,
         }
     }
@@ -84,11 +93,11 @@ impl Memory {
     #[cfg(test)]
     pub fn with_tags(
         memory_type: MemoryType,
-        topic: String,
+        title: String, // topic -> title
         content: String,
         tags: Vec<String>,
     ) -> Self {
-        let mut memory = Self::new(memory_type, topic, content);
+        let mut memory = Self::new(memory_type, title, content);
         memory.tags = tags;
         memory
     }
@@ -116,7 +125,7 @@ impl Memory {
         Ok(Memory {
             id: row.get(0)?,
             memory_type,
-            topic: row.get(2)?,
+            title: row.get(2)?, // topic -> title
             tags,
             content: row.get(4)?,
             examples,
@@ -131,8 +140,8 @@ impl Memory {
             confidence: row.get(7)?,
             created_at: row.get(8)?,
             last_accessed: row.get(9)?,
-            source: row.get(10)?,
-            deleted: row.get::<_, i32>(11)? != 0,
+            // source field removed
+            deleted: row.get::<_, i32>(10)? != 0, // index shifted due to source removal
         })
     }
 }
@@ -142,14 +151,13 @@ impl Memory {
 pub struct RememberParams {
     #[serde(rename = "type")]
     pub memory_type: MemoryType,
-    pub topic: String,
+    pub title: String, // topic -> title
     pub content: String,
     #[serde(default)]
     pub tags: Option<Vec<String>>,
     #[serde(default)]
     pub examples: Option<Vec<String>>,
-    #[serde(default)]
-    pub source: Option<String>,
+    // source field removed
 }
 
 /// MCP remember ツールのレスポンス
@@ -188,11 +196,11 @@ pub struct RecallResponse {
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 pub struct RmcpRememberParams {
     pub r#type: String,
-    pub topic: String,
+    pub title: String, // topic -> title
     pub content: String,
     pub tags: Option<Vec<String>>,
     pub examples: Option<Vec<String>>,
-    pub source: Option<String>,
+    // source field removed
 }
 
 /// rmcp remember ツールのレスポンス
@@ -237,11 +245,11 @@ impl From<RmcpRememberParams> for RememberParams {
     fn from(params: RmcpRememberParams) -> Self {
         Self {
             memory_type: MemoryType::from_str(&params.r#type).unwrap_or(MemoryType::Tech),
-            topic: params.topic,
+            title: params.title, // topic -> title
             content: params.content,
             tags: params.tags,
             examples: params.examples,
-            source: params.source,
+            // source field removed
         }
     }
 }
@@ -305,7 +313,7 @@ mod tests {
 
         assert!(!memory.id.is_empty());
         assert_eq!(memory.memory_type, MemoryType::Tech);
-        assert_eq!(memory.topic, "Test Topic");
+        assert_eq!(memory.title, "Test Topic");
         assert_eq!(memory.content, "Test Content");
         assert_eq!(memory.reference_count, 0);
         assert_eq!(memory.confidence, 1.0);

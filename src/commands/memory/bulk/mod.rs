@@ -2,7 +2,7 @@
 // Will be populated with actual bulk commands in subsequent phases
 
 pub mod delete;
-pub mod tag;
+// pub mod tag;
 pub mod update;
 
 use crate::utils::error::Result;
@@ -21,8 +21,8 @@ pub enum BulkSubcommands {
     Delete(delete::BulkDeleteCommand),
     /// Bulk update memory properties
     Update(update::BulkUpdateCommand),
-    /// Bulk tag operations
-    Tag(tag::BulkTagCommand),
+    // Bulk tag operations
+    // Tag(tag::BulkTagCommand),
 }
 
 impl BulkCommand {
@@ -31,7 +31,7 @@ impl BulkCommand {
         match self.command {
             BulkSubcommands::Delete(cmd) => cmd.execute(),
             BulkSubcommands::Update(cmd) => cmd.execute(),
-            BulkSubcommands::Tag(cmd) => cmd.execute(),
+            // BulkSubcommands::Tag(cmd) => cmd.execute(),
         }
     }
 }

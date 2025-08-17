@@ -35,6 +35,7 @@ impl<R: MemoryRepository> MemoryService<R> {
     }
 
     /// 埋め込み自動生成を有効/無効にする
+    #[allow(dead_code)] // Reserved for future automatic embedding configuration
     pub fn set_auto_embeddings(&mut self, enabled: bool) {
         self.auto_generate_embeddings = enabled;
     }
@@ -42,7 +43,7 @@ impl<R: MemoryRepository> MemoryService<R> {
     /// メモリの埋め込みを生成・保存
     async fn generate_and_store_embedding(&mut self, memory: &Memory) -> Result<()> {
         if let Some(service) = &self.embedding_service {
-            let text = format!("{} {}", memory.topic, memory.content);
+            let text = format!("{} {}", memory.title, memory.content);
             let service = service.read().await;
             let embedding = service.embed_text(&text).await?;
             let model_name = service.model_name();
@@ -57,7 +58,7 @@ impl<R: MemoryRepository> MemoryService<R> {
         // ビジネスロジック: 重複チェック
         if let Some(mut existing) = self
             .repository
-            .find_by_topic(&params.topic, &params.memory_type)?
+            .find_by_title(&params.title, &params.memory_type)?
         {
             // 既存の記憶を更新
             self.repository.update_reference_count(&existing.id)?;
@@ -69,9 +70,7 @@ impl<R: MemoryRepository> MemoryService<R> {
             if let Some(examples) = params.examples {
                 existing.examples = examples;
             }
-            if let Some(source) = params.source {
-                existing.source = Some(source);
-            }
+            // source field removed
 
             // 内容も更新
             existing.content = params.content;
@@ -92,7 +91,7 @@ impl<R: MemoryRepository> MemoryService<R> {
         }
 
         // 新規作成
-        let mut memory = Memory::new(params.memory_type, params.topic, params.content);
+        let mut memory = Memory::new(params.memory_type, params.title, params.content);
 
         if let Some(tags) = params.tags {
             memory.tags = tags;
@@ -100,9 +99,7 @@ impl<R: MemoryRepository> MemoryService<R> {
         if let Some(examples) = params.examples {
             memory.examples = examples;
         }
-        if let Some(source) = params.source {
-            memory.source = Some(source);
-        }
+        // source field removed
 
         self.repository.save(&memory)?;
 
@@ -158,29 +155,77 @@ impl<R: MemoryRepository> MemoryService<R> {
 
     /// 記憶を検索
     pub async fn recall(&mut self, params: RecallParams) -> Result<RecallResponse> {
+        use tracing::info;
+
         let limit = params.limit.unwrap_or(10);
+        info!(
+            "Service recall: query='{}', memory_type={:?}, tags={:?}, limit={}",
+            params.query, params.memory_type, params.tags, limit
+        );
 
         // 検索戦略の選択
         let mut memories = if params.query.is_empty() {
+            info!("Empty query - browsing by type");
             // クエリがない場合はタイプでブラウズ
             if let Some(memory_type) = params.memory_type {
-                self.repository.browse_by_type(&memory_type, limit)?
+                let results = self.repository.browse_by_type(&memory_type, limit)?;
+                info!(
+                    "Browse by type {} returned {} memories",
+                    memory_type,
+                    results.len()
+                );
+                results
             } else {
                 // デフォルトはTechタイプをブラウズ
-                self.repository.browse_by_type(&MemoryType::Tech, limit)?
+                let results = self.repository.browse_by_type(&MemoryType::Tech, limit)?;
+                info!(
+                    "Browse by default Tech type returned {} memories",
+                    results.len()
+                );
+                results
             }
         } else {
+            info!("Non-empty query - using FTS search");
             // FTS5検索を実行
-            let mut results = self.repository.search(&params.query, limit)?;
+            let mut results = if let Some(memory_type) = params.memory_type {
+                info!(
+                    "Calling search_with_type with query='{}', type={}, limit={}",
+                    params.query, memory_type, limit
+                );
+                // タイプ指定がある場合はSQL側でフィルタリング
+                let search_results =
+                    self.repository
+                        .search_with_type(&params.query, &memory_type, limit)?;
+                info!(
+                    "search_with_type returned {} memories",
+                    search_results.len()
+                );
+                search_results
+            } else {
+                info!(
+                    "Calling search with query='{}', limit={}",
+                    params.query, limit
+                );
+                // タイプ指定がない場合は通常の検索
+                let search_results = self.repository.search(&params.query, limit)?;
+                info!("search returned {} memories", search_results.len());
+                search_results
+            };
 
-            // タイプフィルタを適用
-            if let Some(memory_type) = params.memory_type {
-                results.retain(|m| m.memory_type == memory_type);
-            }
-
-            // タグフィルタを適用
+            // タグフィルタを適用（空の配列の場合は適用しない）
             if let Some(tags) = params.tags {
-                results.retain(|m| tags.iter().any(|tag| m.tags.contains(tag)));
+                if !tags.is_empty() {
+                    info!("Applying tag filter: {:?}", tags);
+                    let before_count = results.len();
+                    results.retain(|m| tags.iter().any(|tag| m.tags.contains(tag)));
+                    info!(
+                        "Tag filter reduced {} -> {} memories",
+                        before_count,
+                        results.len()
+                    );
+                } else {
+                    info!("Empty tag array provided - skipping tag filter");
+                }
             }
 
             results
@@ -200,6 +245,7 @@ impl<R: MemoryRepository> MemoryService<R> {
         });
 
         let total_count = memories.len();
+        info!("Final recall result: {} memories", total_count);
 
         Ok(RecallResponse {
             memories,
@@ -236,11 +282,11 @@ mod tests {
 
         let params = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Test Topic".to_string(),
+            title: "Test Topic".to_string(),
             content: "Test Content".to_string(),
             tags: Some(vec!["test".to_string()]),
             examples: None,
-            source: None,
+            // source field removed
         };
 
         let response = service.remember(params).await.unwrap();
@@ -255,11 +301,11 @@ mod tests {
 
         let params1 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Test Topic".to_string(),
+            title: "Test Topic".to_string(),
             content: "Test Content 1".to_string(),
             tags: None,
             examples: None,
-            source: None,
+            // source field removed
         };
 
         let response1 = service.remember(params1).await.unwrap();
@@ -267,11 +313,11 @@ mod tests {
 
         let params2 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Test Topic".to_string(),
+            title: "Test Topic".to_string(),
             content: "Test Content 2".to_string(),
             tags: None,
             examples: None,
-            source: None,
+            // source field removed
         };
 
         let response2 = service.remember(params2).await.unwrap();
@@ -287,21 +333,21 @@ mod tests {
         // いくつか記憶を追加
         let params1 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Rust async".to_string(),
+            title: "Rust async".to_string(),
             content: "Rust async/await programming".to_string(),
             tags: Some(vec!["rust".to_string(), "async".to_string()]),
             examples: None,
-            source: None,
+            // source field removed
         };
         service.remember(params1).await.unwrap();
 
         let params2 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Python decorators".to_string(),
+            title: "Python decorators".to_string(),
             content: "Python decorator patterns".to_string(),
             tags: Some(vec!["python".to_string()]),
             examples: None,
-            source: None,
+            // source field removed
         };
         service.remember(params2).await.unwrap();
 
@@ -315,7 +361,7 @@ mod tests {
 
         let response = service.recall(recall_params).await.unwrap();
         assert_eq!(response.total_count, 1);
-        assert_eq!(response.memories[0].topic, "Rust async");
+        assert_eq!(response.memories[0].title, "Rust async");
     }
 
     #[tokio::test]
@@ -326,22 +372,22 @@ mod tests {
         // Tech タイプを追加
         let params1 = RememberParams {
             memory_type: MemoryType::Tech,
-            topic: "Tech Topic".to_string(),
+            title: "Tech Topic".to_string(),
             content: "Tech Content".to_string(),
             tags: None,
             examples: None,
-            source: None,
+            // source field removed
         };
         service.remember(params1).await.unwrap();
 
         // Domain タイプを追加
         let params2 = RememberParams {
             memory_type: MemoryType::Domain,
-            topic: "Domain Topic".to_string(),
+            title: "Domain Topic".to_string(),
             content: "Domain Content".to_string(),
             tags: None,
             examples: None,
-            source: None,
+            // source field removed
         };
         service.remember(params2).await.unwrap();
 
@@ -355,6 +401,6 @@ mod tests {
 
         let response = service.recall(recall_params).await.unwrap();
         assert_eq!(response.total_count, 1);
-        assert_eq!(response.memories[0].topic, "Tech Topic");
+        assert_eq!(response.memories[0].title, "Tech Topic");
     }
 }

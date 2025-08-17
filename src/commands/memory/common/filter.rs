@@ -33,8 +33,8 @@ pub struct FilterCriteria {
     /// Case-sensitive search (only with regex)
     pub case_sensitive: bool,
 
-    /// Search only in topic field
-    pub topic_only: bool,
+    /// Search only in title field
+    pub title_only: bool,
 
     /// Search only in content field
     pub content_only: bool,
@@ -87,13 +87,14 @@ impl FilterCriteria {
     /// Validate the filter criteria
     pub fn validate(&self) -> Result<()> {
         if let Some(confidence) = self.min_confidence
-            && (!(0.0..=1.0).contains(&confidence)) {
-                return Err(crate::utils::error::HailMaryError::General(
-                    anyhow::anyhow!("Confidence score must be between 0.0 and 1.0"),
-                ));
-            }
+            && (!(0.0..=1.0).contains(&confidence))
+        {
+            return Err(crate::utils::error::HailMaryError::General(
+                anyhow::anyhow!("Confidence score must be between 0.0 and 1.0"),
+            ));
+        }
 
-        if self.topic_only && self.content_only {
+        if self.title_only && self.content_only {
             return Err(crate::utils::error::HailMaryError::General(
                 anyhow::anyhow!("Cannot specify both topic-only and content-only"),
             ));
@@ -101,19 +102,20 @@ impl FilterCriteria {
 
         // Validate regex if provided
         if let Some(ref query) = self.query
-            && self.regex {
-                let regex_pattern = if self.case_sensitive {
-                    query.clone()
-                } else {
-                    format!("(?i){}", query)
-                };
+            && self.regex
+        {
+            let regex_pattern = if self.case_sensitive {
+                query.clone()
+            } else {
+                format!("(?i){}", query)
+            };
 
-                if let Err(e) = Regex::new(&regex_pattern) {
-                    return Err(crate::utils::error::HailMaryError::General(
-                        anyhow::anyhow!("Invalid regex pattern: {}", e),
-                    ));
-                }
+            if let Err(e) = Regex::new(&regex_pattern) {
+                return Err(crate::utils::error::HailMaryError::General(
+                    anyhow::anyhow!("Invalid regex pattern: {}", e),
+                ));
             }
+        }
 
         Ok(())
     }
@@ -162,10 +164,11 @@ impl FilterEngine {
 
         // Apply query filter if provided
         if let Some(ref query) = criteria.query
-            && criteria.regex {
-                memories = Self::apply_regex_filter(criteria, memories, query)?;
-            }
-            // Note: FTS5 filtering would be handled at repository level
+            && criteria.regex
+        {
+            memories = Self::apply_regex_filter(criteria, memories, query)?;
+        }
+        // Note: FTS5 filtering would be handled at repository level
 
         Ok(memories)
     }
@@ -187,12 +190,12 @@ impl FilterEngine {
         let filtered: Vec<Memory> = memories
             .into_iter()
             .filter(|memory| {
-                if criteria.topic_only {
-                    regex.is_match(&memory.topic)
+                if criteria.title_only {
+                    regex.is_match(&memory.title)
                 } else if criteria.content_only {
                     regex.is_match(&memory.content)
                 } else {
-                    regex.is_match(&memory.topic)
+                    regex.is_match(&memory.title)
                         || regex.is_match(&memory.content)
                         || memory.tags.iter().any(|tag| regex.is_match(tag))
                 }
@@ -294,6 +297,7 @@ impl FilterEngine {
     }
 
     /// Count memories that would match the criteria
+    #[allow(dead_code)] // Reserved for future bulk operation previews
     pub fn count_matches(
         repository: &SqliteMemoryRepository,
         criteria: &FilterCriteria,
@@ -303,6 +307,7 @@ impl FilterEngine {
     }
 
     /// Get a preview of memories that would be affected
+    #[allow(dead_code)] // Reserved for future bulk operation previews
     pub fn preview_matches(
         repository: &SqliteMemoryRepository,
         criteria: &FilterCriteria,
@@ -420,7 +425,7 @@ mod tests {
         criteria.min_confidence = Some(0.8); // Valid
         assert!(criteria.validate().is_ok());
 
-        criteria.topic_only = true;
+        criteria.title_only = true;
         criteria.content_only = true; // Invalid combination
         assert!(criteria.validate().is_err());
     }

@@ -1,4 +1,4 @@
-use hail_mary::memory::embeddings::{EmbeddingConfig, EmbeddingService};
+use hail_mary::memory::embeddings::EmbeddingService;
 use hail_mary::memory::models::{Memory, MemoryType};
 use hail_mary::memory::repository::{MemoryRepository, SqliteMemoryRepository};
 use tempfile::TempDir;

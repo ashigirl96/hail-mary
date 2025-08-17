@@ -12,6 +12,7 @@ pub struct EmbeddingConfig {
     /// Model name for tracking
     pub model_name: String,
     /// Similarity threshold for duplicate detection
+    #[allow(dead_code)] // Reserved for future duplicate detection functionality
     pub similarity_threshold: f32,
     /// Batch size for processing
     pub batch_size: usize,
@@ -57,6 +58,7 @@ impl EmbeddingService {
     }
 
     /// Get the configuration
+    #[allow(dead_code)] // Reserved for future configuration access
     pub fn config(&self) -> &EmbeddingConfig {
         &self.config
     }
@@ -67,6 +69,7 @@ impl EmbeddingService {
     }
 
     /// Get the embedding dimension
+    #[allow(dead_code)] // Reserved for future dimension queries
     pub fn dimension(&self) -> usize {
         self.config.dimension
     }
@@ -213,6 +216,7 @@ impl EmbeddingService {
     }
 
     /// Find similar embeddings given a query embedding
+    #[allow(dead_code)] // Reserved for future similarity search functionality
     pub fn find_similar(
         &self,
         query: &[f32],
@@ -235,6 +239,7 @@ impl EmbeddingService {
     }
 
     /// Check if two embeddings are potential duplicates
+    #[allow(dead_code)] // Reserved for future duplicate detection functionality
     pub fn are_duplicates(&self, a: &[f32], b: &[f32]) -> bool {
         Self::cosine_similarity(a, b) >= self.config.similarity_threshold
     }

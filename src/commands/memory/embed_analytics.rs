@@ -148,7 +148,7 @@ impl EmbedAnalyticsCommand {
                 memories_with_embeddings.push((memory.clone(), embedding));
             } else if self.verbose {
                 // Generate embedding if not found
-                let text = format!("{} {}", memory.topic, memory.content);
+                let text = format!("{} {}", memory.title, memory.content);
                 let embeddings = embedding_service.embed_texts(vec![text]).await?;
                 if let Some(embedding) = embeddings.into_iter().next() {
                     memories_with_embeddings.push((memory.clone(), embedding));
@@ -164,9 +164,11 @@ impl EmbedAnalyticsCommand {
         &self,
         memories_with_embeddings: &[(Memory, Vec<f32>)],
     ) -> Result<AnalysisResult> {
-        let mut result = AnalysisResult::default();
-        result.analysis_type = "Overview".to_string();
-        result.total_memories = memories_with_embeddings.len();
+        let mut result = AnalysisResult {
+            analysis_type: "Overview".to_string(),
+            total_memories: memories_with_embeddings.len(),
+            ..Default::default()
+        };
 
         if memories_with_embeddings.is_empty() {
             return Ok(result);
@@ -224,9 +226,11 @@ impl EmbedAnalyticsCommand {
         &self,
         memories_with_embeddings: &[(Memory, Vec<f32>)],
     ) -> Result<AnalysisResult> {
-        let mut result = AnalysisResult::default();
-        result.analysis_type = "Similarity Distribution".to_string();
-        result.total_memories = memories_with_embeddings.len();
+        let mut result = AnalysisResult {
+            analysis_type: "Similarity Distribution".to_string(),
+            total_memories: memories_with_embeddings.len(),
+            ..Default::default()
+        };
 
         if memories_with_embeddings.len() < 2 {
             return Ok(result);
@@ -280,8 +284,8 @@ impl EmbedAnalyticsCommand {
         // Store top similar pairs
         for (i, j, sim) in pairs.iter().take(5) {
             result.top_similar_pairs.push((
-                memories_with_embeddings[*i].0.topic.clone(),
-                memories_with_embeddings[*j].0.topic.clone(),
+                memories_with_embeddings[*i].0.title.clone(),
+                memories_with_embeddings[*j].0.title.clone(),
                 *sim,
             ));
         }
@@ -294,9 +298,11 @@ impl EmbedAnalyticsCommand {
         &self,
         memories_with_embeddings: &[(Memory, Vec<f32>)],
     ) -> Result<AnalysisResult> {
-        let mut result = AnalysisResult::default();
-        result.analysis_type = "Density Analysis".to_string();
-        result.total_memories = memories_with_embeddings.len();
+        let mut result = AnalysisResult {
+            analysis_type: "Density Analysis".to_string(),
+            total_memories: memories_with_embeddings.len(),
+            ..Default::default()
+        };
 
         if memories_with_embeddings.is_empty() {
             return Ok(result);
@@ -341,19 +347,23 @@ impl EmbedAnalyticsCommand {
 
             // Dense regions (top 10%)
             let dense_count = (memories_with_embeddings.len() as f32 * 0.1).ceil() as usize;
-            for i in 0..dense_count.min(density_scores.len()) {
-                let idx = density_scores[i].0;
+            for &(idx, _score) in density_scores
+                .iter()
+                .take(dense_count.min(density_scores.len()))
+            {
                 result
                     .dense_regions
-                    .push(memories_with_embeddings[idx].0.topic.clone());
+                    .push(memories_with_embeddings[idx].0.title.clone());
             }
 
             // Sparse regions (bottom 10%)
-            for i in (density_scores.len().saturating_sub(dense_count))..density_scores.len() {
-                let idx = density_scores[i].0;
+            for &(idx, _score) in density_scores
+                .iter()
+                .skip(density_scores.len().saturating_sub(dense_count))
+            {
                 result
                     .sparse_regions
-                    .push(memories_with_embeddings[idx].0.topic.clone());
+                    .push(memories_with_embeddings[idx].0.title.clone());
             }
         }
 
@@ -365,9 +375,11 @@ impl EmbedAnalyticsCommand {
         &self,
         memories_with_embeddings: &[(Memory, Vec<f32>)],
     ) -> Result<AnalysisResult> {
-        let mut result = AnalysisResult::default();
-        result.analysis_type = "Outlier Detection".to_string();
-        result.total_memories = memories_with_embeddings.len();
+        let mut result = AnalysisResult {
+            analysis_type: "Outlier Detection".to_string(),
+            total_memories: memories_with_embeddings.len(),
+            ..Default::default()
+        };
 
         if memories_with_embeddings.len() < 3 {
             return Ok(result);
@@ -408,7 +420,7 @@ impl EmbedAnalyticsCommand {
             if avg_dist > threshold {
                 result.outliers.push(OutlierInfo {
                     memory_id: memories_with_embeddings[i].0.id.clone(),
-                    topic: memories_with_embeddings[i].0.topic.clone(),
+                    title: memories_with_embeddings[i].0.title.clone(),
                     distance_score: avg_dist,
                     deviation: (avg_dist - mean) / std_dev,
                 });
@@ -427,16 +439,18 @@ impl EmbedAnalyticsCommand {
 
     /// Analyze vocabulary
     fn analyze_vocabulary(&self, memories: &[Memory]) -> Result<AnalysisResult> {
-        let mut result = AnalysisResult::default();
-        result.analysis_type = "Vocabulary Analysis".to_string();
-        result.total_memories = memories.len();
+        let mut result = AnalysisResult {
+            analysis_type: "Vocabulary Analysis".to_string(),
+            total_memories: memories.len(),
+            ..Default::default()
+        };
 
         // Count word frequencies
         let mut word_counts = HashMap::new();
         let mut total_words = 0;
 
         for memory in memories {
-            let text = format!("{} {}", memory.topic, memory.content);
+            let text = format!("{} {}", memory.title, memory.content);
             for word in text.split_whitespace() {
                 let word = word
                     .to_lowercase()
@@ -488,9 +502,11 @@ impl EmbedAnalyticsCommand {
         &self,
         memories_with_embeddings: &[(Memory, Vec<f32>)],
     ) -> Result<AnalysisResult> {
-        let mut result = AnalysisResult::default();
-        result.analysis_type = "Temporal Analysis".to_string();
-        result.total_memories = memories_with_embeddings.len();
+        let mut result = AnalysisResult {
+            analysis_type: "Temporal Analysis".to_string(),
+            total_memories: memories_with_embeddings.len(),
+            ..Default::default()
+        };
 
         if memories_with_embeddings.is_empty() {
             return Ok(result);
@@ -572,6 +588,8 @@ impl EmbedAnalyticsCommand {
 
         let mut histogram = vec![(0.0, 0.0, 0); bins];
 
+        // Index is used for calculations and boundary checks, so range loop is appropriate
+        #[allow(clippy::needless_range_loop)]
         for i in 0..bins {
             let start = min + i as f32 * bin_width;
             let end = if i == bins - 1 {
@@ -710,7 +728,7 @@ impl EmbedAnalyticsCommand {
             for outlier in analysis.outliers.iter().take(10) {
                 println!(
                     "  {:.1}σ: {} (distance: {:.3})",
-                    outlier.deviation, outlier.topic, outlier.distance_score
+                    outlier.deviation, outlier.title, outlier.distance_score
                 );
                 if self.verbose {
                     println!("    ID: {}", &outlier.memory_id[..8]);
@@ -826,7 +844,7 @@ struct AnalysisResult {
 #[derive(serde::Serialize)]
 struct OutlierInfo {
     memory_id: String,
-    topic: String,
+    title: String,
     distance_score: f32,
     deviation: f32,
 }

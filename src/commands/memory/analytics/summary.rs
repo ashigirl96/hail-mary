@@ -127,10 +127,7 @@ impl SummaryCommand {
             // Total reference count
             let total_references: i64 = working_memories
                 .iter()
-                .map(|m| {
-                    
-                    m.reference_count as i64
-                })
+                .map(|m| m.reference_count as i64)
                 .sum();
 
             metrics.push(AnalyticsMetric {
@@ -188,7 +185,7 @@ impl SummaryCommand {
         for (memory_type, count) in sorted_types.iter().take(self.top_count) {
             metrics.push(AnalyticsMetric {
                 name: format!("Type: {}", memory_type),
-                value: MetricValue::Integer((*count).try_into().unwrap_or(0)),
+                value: MetricValue::Integer((*count).into()),
                 description: Some(format!("Number of {} memories", memory_type)),
                 unit: Some("count".to_string()),
             });
@@ -326,7 +323,7 @@ impl SummaryCommand {
                 name: "Most Accessed Memory".to_string(),
                 value: MetricValue::String(format!(
                     "{} ({} accesses)",
-                    most_accessed.topic, most_accessed.reference_count
+                    most_accessed.title, most_accessed.reference_count
                 )),
                 description: Some("Memory with the highest reference count".to_string()),
                 unit: Some("accesses".to_string()),
@@ -340,8 +337,7 @@ impl SummaryCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::memory::analytics::{AnalyticsContext, TimeRange};
-    use crate::memory::repository::SqliteMemoryRepository;
+    // Unused imports removed for lint compliance
 
     #[test]
     fn test_summary_command_creation() {

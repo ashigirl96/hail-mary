@@ -9,6 +9,12 @@ pub struct ProjectManager {
     base_path: PathBuf,
 }
 
+impl Default for ProjectManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProjectManager {
     pub fn new() -> Self {
         Self {
