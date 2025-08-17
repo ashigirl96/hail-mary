@@ -166,13 +166,10 @@ graph TB
 -- メインテーブル（これだけ！）
 CREATE TABLE memories (
     id TEXT PRIMARY KEY,              -- UUID v4
-    type TEXT NOT NULL CHECK(         -- 記憶のカテゴリ
-        type IN ('tech', 'project-tech', 'domain')
-    ),
+    type TEXT NOT NULL,               -- 記憶のカテゴリ（configファイルで定義）
     title TEXT NOT NULL,              -- タイトル/要約（人間が読みやすい）
     tags TEXT,                        -- カンマ区切りのタグ（例: "rust,async,tokio"）
     content TEXT NOT NULL,            -- 本文
-    examples TEXT,                    -- JSON配列でコード例などを保存
     reference_count INTEGER DEFAULT 0, -- 参照された回数
     confidence REAL DEFAULT 1.0       -- 信頼度スコア (0.0-1.0)
         CHECK(confidence >= 0 AND confidence <= 1),
@@ -245,11 +242,10 @@ migrations/
 
 | フィールド | 型 | 説明 | 例 |
 |-----------|-----|------|-----|
-| type | TEXT | 記憶の分類 | 'tech', 'project-tech', 'domain' |
+| type | TEXT | 記憶の分類（config.tomlで定義） | 'tech', 'project-tech', 'domain' など |
 | title | TEXT | 人間が読みやすいタイトル | "Rustの非同期プログラミング" |
 | tags | TEXT | 検索用キーワード | "rust,async,tokio,futures" |
 | content | TEXT | 詳細な内容 | "Rustでは async/await を使って..." |
-| examples | TEXT | JSON配列のコード例 | '["async fn main() {}", "tokio::spawn"]' |
 
 ## 4. 機能仕様
 
@@ -259,11 +255,10 @@ migrations/
 ```typescript
 interface RememberParams {
   memories: Array<{
-    type: 'tech' | 'project-tech' | 'domain';
+    type: string;         // config.tomlで定義されたタイプ
     title: string;        // タイトル（必須）
     content: string;      // 本文（必須）
     tags?: string[];      // タグリスト
-    examples?: string[];  // コード例など
   }>;
 }
 
@@ -296,7 +291,7 @@ interface RecallResponse {
 $ hail-mary memory serve
 
 # バックグラウンドで起動
-$ hail-mary memory serve --daemon
+$ hail-mary memory serve
 ```
 
 #### 4.2.2 ドキュメント生成
@@ -596,10 +591,9 @@ impl SqliteMemoryRepository {
 impl MemoryRepository for SqliteMemoryRepository {
     fn save(&mut self, memory: &Memory) -> Result<()> {
         const INSERT_MEMORY: &str = r#"
-            INSERT INTO memories (id, type, topic, tags, content, examples, 
-                                 reference_count, confidence, created_at, 
-                                 source, deleted)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+            INSERT INTO memories (id, type, title, tags, content, 
+                                 reference_count, confidence, created_at, deleted)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
         "#;
         
         self.conn.execute(
@@ -607,14 +601,12 @@ impl MemoryRepository for SqliteMemoryRepository {
             rusqlite::params![
                 &memory.id,
                 &memory.memory_type.to_string(),
-                &memory.topic,
+                &memory.title,
                 &memory.tags.join(","),
                 &memory.content,
-                serde_json::to_string(&memory.examples)?,
                 memory.reference_count,
                 memory.confidence,
                 memory.created_at,
-                &memory.source,
                 memory.deleted as i32,
             ],
         )?;
@@ -677,6 +669,15 @@ use anyhow::Result;
 use crate::models::memory::{Memory, MemoryType};
 use crate::repositories::memory::MemoryRepository;
 
+// Service層用のMemoryInput構造体
+pub struct MemoryInput {
+    pub memory_type: MemoryType,
+    pub title: String,
+    pub content: String,
+    pub tags: Vec<String>,
+    pub confidence: Option<f32>,
+}
+
 // ジェネリックによる依存性注入
 pub struct MemoryService<R: MemoryRepository> {
     repository: R,
@@ -697,7 +698,7 @@ impl<R: MemoryRepository> MemoryService<R> {
             // Immutableテーブルなので重複チェック不要
             let memory = Memory::new(input.memory_type, input.title, input.content)
                 .with_tags(input.tags)
-                .with_examples(input.examples);
+                .with_confidence(input.confidence.unwrap_or(1.0));
                 
             self.repository.save(&memory)?;
             created_memories.push(memory);
@@ -789,13 +790,6 @@ impl<R: MemoryRepository> MemoryService<R> {
             output.push_str(&memory.content);
             output.push_str("\n\n");
             
-            if !memory.examples.is_empty() {
-                output.push_str("### Examples:\n");
-                for example in &memory.examples {
-                    output.push_str(&format!("```\n{}\n```\n", example));
-                }
-            }
-            
             output.push_str("---\n\n");
         }
         
@@ -851,19 +845,23 @@ use crate::services::memory::MemoryService;
 use crate::repositories::memory::MemoryRepository;
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub struct RememberParams {
+pub struct MemoryInput {
     pub r#type: String,
-    pub topic: String,
+    pub title: String,
     pub content: String,
     pub tags: Option<Vec<String>>,
-    pub examples: Option<Vec<String>>,
-    pub source: Option<String>,
+    pub confidence: Option<f32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+pub struct RememberParams {
+    pub memories: Vec<MemoryInput>,
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 pub struct RememberResponse {
-    pub memory_id: String,
-    pub action: String,
+    pub memory_ids: Vec<String>,
+    pub created_count: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -876,7 +874,7 @@ pub struct RecallParams {
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 pub struct RecallResponse {
-    pub memories: Vec<MemoryDto>,
+    pub content: String,  // Markdown形式の結果
     pub total_count: usize,
 }
 
@@ -898,37 +896,52 @@ impl<R: MemoryRepository + 'static> MemoryMcpServer<R> {
         }
     }
     
-    #[tool(name = "remember", description = "Store a memory for future recall")]
+    #[tool(name = "remember", description = "Store memories for future recall")]
     pub async fn remember(
         &self,
         params: Parameters<RememberParams>,
     ) -> Result<Json<RememberResponse>, McpError> {
         let mut service = self.service.lock().await;
         
-        let memory_type = params.0.r#type.parse()
+        // Service層のMemoryInput型への変換（型チェック含む）
+        let memory_inputs: Vec<crate::services::memory::MemoryInput> = params.0.memories
+            .into_iter()
+            .map(|input| {
+                // configで定義されたtypeかチェック（configが実装されている場合）
+                // self.config.validate_memory_type(&input.r#type)?;
+                
+                let memory_type = input.r#type.parse()
+                    .map_err(|e| McpError {
+                        code: -32602,
+                        message: format!("Invalid type: {}", e),
+                        data: None,
+                    })?;
+                
+                Ok(crate::services::memory::MemoryInput {
+                    memory_type,
+                    title: input.title,
+                    content: input.content,
+                    tags: input.tags.unwrap_or_default(),
+                    confidence: input.confidence,
+                })
+            })
+            .collect::<Result<Vec<_>, McpError>>()?;
+        
+        // バッチ処理でメモリーを保存
+        let created_memories = service.remember_batch(memory_inputs).await
             .map_err(|e| McpError {
-                code: -32602,
-                message: format!("Invalid type: {}", e),
+                code: -32603,
+                message: e.to_string(),
                 data: None,
             })?;
-            
-        let memory = service.remember(
-            memory_type,
-            params.0.topic,
-            params.0.content,
-            params.0.tags.unwrap_or_default(),
-            params.0.examples.unwrap_or_default(),
-            params.0.source,
-        ).await
-        .map_err(|e| McpError {
-            code: -32603,
-            message: e.to_string(),
-            data: None,
-        })?;
+        
+        let memory_ids: Vec<String> = created_memories.iter()
+            .map(|m| m.id.clone())
+            .collect();
         
         Ok(Json(RememberResponse {
-            memory_id: memory.id,
-            action: "created".to_string(),
+            memory_ids: memory_ids.clone(),
+            created_count: memory_ids.len(),
         }))
     }
     
@@ -960,13 +973,12 @@ impl<R: MemoryRepository + 'static> MemoryMcpServer<R> {
             data: None,
         })?;
         
+        // Markdown形式でフォーマット
+        let markdown_content = service.format_as_markdown(&memories);
         let total_count = memories.len();
-        let memories_dto = memories.into_iter()
-            .map(|m| m.into())
-            .collect();
         
         Ok(Json(RecallResponse {
-            memories: memories_dto,
+            content: markdown_content,
             total_count,
         }))
     }
@@ -1005,7 +1017,141 @@ pub async fn execute(daemon: bool) -> Result<()> {
 }
 ```
 
-### 6.4 データモデル
+### 6.4 設定ファイル（.kiro/config.toml）
+
+新しく`.kiro/config.toml`ファイルを導入して、プロジェクトごとのメモリータイプを設定可能にします。
+
+```toml
+# .kiro/config.toml
+
+[memory]
+# メモリータイプの定義（プロジェクトごとにカスタマイズ可能）
+types = [
+    "tech",           # 技術的な知識
+    "project-tech",   # プロジェクト固有の技術
+    "domain",         # ドメイン知識
+    "workflow",       # ワークフロー
+    "decision",       # 意思決定の記録
+]
+
+# MCPサーバーのinstructionsに含める説明
+instructions = """
+利用可能なメモリータイプ:
+- tech: 一般的な技術知識（Rust、TypeScript、アルゴリズムなど）
+- project-tech: このプロジェクト固有の技術実装
+- domain: ビジネスドメインの知識
+- workflow: 開発ワークフローやプロセス
+- decision: アーキテクチャの決定事項や理由
+"""
+
+# ドキュメント生成時の設定
+[memory.document]
+output_dir = ".kiro/memory"
+format = "markdown"
+```
+
+#### KiroConfigの実装
+
+```rust
+// src/models/kiro.rs に追加
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MemoryConfig {
+    pub types: Vec<String>,
+    pub instructions: String,
+    pub document: DocumentConfig,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DocumentConfig {
+    pub output_dir: PathBuf,
+    pub format: String,
+}
+
+impl KiroConfig {
+    pub fn load() -> Result<Self> {
+        let root = Self::find_kiro_root()?;
+        let config_path = root.join("config.toml");
+        
+        let config = if config_path.exists() {
+            let contents = fs::read_to_string(&config_path)?;
+            toml::from_str(&contents)?
+        } else {
+            // デフォルト設定
+            Self::default()
+        };
+        
+        Ok(config)
+    }
+    
+    pub fn default() -> Self {
+        Self {
+            root_dir: PathBuf::from(".kiro"),
+            memory: MemoryConfig {
+                types: vec![
+                    "tech".to_string(),
+                    "project-tech".to_string(),
+                    "domain".to_string(),
+                ],
+                instructions: "デフォルトのインストラクション".to_string(),
+                document: DocumentConfig {
+                    output_dir: PathBuf::from(".kiro/memory"),
+                    format: "markdown".to_string(),
+                },
+            },
+        }
+    }
+    
+    pub fn validate_memory_type(&self, memory_type: &str) -> bool {
+        self.memory.types.contains(&memory_type.to_string())
+    }
+}
+```
+
+#### MCPサーバー起動時の設定読み込み
+
+```rust
+// src/mcp/server.rs
+
+impl MemoryMcpServer {
+    pub async fn new() -> Result<Self> {
+        let config = KiroConfig::load()?;
+        let db_path = config.memory_path();
+        
+        // MCPのinstructionsに設定を反映
+        let instructions = format!(
+            "Memory MCP Server\n\n{}",
+            config.memory.instructions
+        );
+        
+        Ok(Self {
+            service: Arc::new(Mutex::new(MemoryService::new(
+                SqliteMemoryRepository::new(&db_path)?
+            ))),
+            config,
+            instructions,
+        })
+    }
+    
+    // remember時のバリデーション
+    async fn handle_remember(&self, params: RememberParams) -> Result<RememberResponse> {
+        for memory in &params.memories {
+            // configで定義されたtypeかチェック
+            if !self.config.validate_memory_type(&memory.memory_type) {
+                return Err(format!(
+                    "Invalid memory type: {}. Available types: {:?}",
+                    memory.memory_type,
+                    self.config.memory.types
+                ));
+            }
+        }
+        
+        // 以下、通常の処理...
+    }
+}
+```
+
+### 6.5 データモデル
 
 ```rust
 // models/memory.rs
@@ -1049,7 +1195,6 @@ pub struct Memory {
     pub title: String,
     pub tags: Vec<String>,
     pub content: String,
-    pub examples: Vec<String>,
     pub reference_count: u32,
     pub confidence: f32,
     pub created_at: i64,
@@ -1066,15 +1211,13 @@ impl Memory {
         Self {
             id: Uuid::new_v4().to_string(),
             memory_type,
-            topic,
+            title,
             tags: Vec::new(),
             content,
-            examples: Vec::new(),
             reference_count: 0,
             confidence: 1.0,
             created_at: chrono::Utc::now().timestamp(),
             last_accessed: None,
-            source: None,
             deleted: false,
         }
     }
@@ -1084,46 +1227,33 @@ impl Memory {
         self.tags = tags;
         self
     }
-    
-    pub fn with_examples(mut self, examples: Vec<String>) -> Self {
-        self.examples = examples;
-        self
-    }
-    
-    pub fn with_source(mut self, source: Option<String>) -> Self {
-        self.source = source;
-        self
-    }
-    
     // SQLiteからの変換
     pub fn from_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
         let type_str: String = row.get("type")?;
         let tags_str: String = row.get("tags")?;
-        let examples_str: String = row.get("examples")?;
+        let reference_count: i32 = row.get("reference_count")?;
         
         Ok(Self {
             id: row.get("id")?,
             memory_type: type_str.parse().unwrap(),
-            topic: row.get("topic")?,
+            title: row.get("title")?,
             tags: if tags_str.is_empty() {
                 Vec::new()
             } else {
                 tags_str.split(',').map(|s| s.to_string()).collect()
             },
             content: row.get("content")?,
-            examples: serde_json::from_str(&examples_str).unwrap_or_default(),
-            reference_count: row.get("reference_count")?,
+            reference_count: reference_count as u32,
             confidence: row.get("confidence")?,
             created_at: row.get("created_at")?,
             last_accessed: row.get("last_accessed")?,
-            source: row.get("source")?,
             deleted: row.get::<_, i32>("deleted")? != 0,
         })
     }
 }
 ```
 
-### 6.5 エラーハンドリング
+### 6.6 エラーハンドリング
 
 ```rust
 // models/error.rs
@@ -1248,7 +1378,7 @@ pub fn process_data() -> Result<()> {
 
 ### 9.2 データ管理
 
-- データベースファイルは `~/.local/share/hail-mary/` に保存
+- データベースファイルは `.kiro/memory/` に保存
 - アーカイブは自動的に圧縮（Phase 4で検討）
 - エクスポート時のフィルタリング機能
 
