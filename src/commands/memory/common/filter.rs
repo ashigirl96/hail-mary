@@ -33,8 +33,8 @@ pub struct FilterCriteria {
     /// Case-sensitive search (only with regex)
     pub case_sensitive: bool,
 
-    /// Search only in topic field
-    pub topic_only: bool,
+    /// Search only in title field
+    pub title_only: bool,
 
     /// Search only in content field
     pub content_only: bool,
@@ -94,7 +94,7 @@ impl FilterCriteria {
             ));
         }
 
-        if self.topic_only && self.content_only {
+        if self.title_only && self.content_only {
             return Err(crate::utils::error::HailMaryError::General(
                 anyhow::anyhow!("Cannot specify both topic-only and content-only"),
             ));
@@ -190,12 +190,12 @@ impl FilterEngine {
         let filtered: Vec<Memory> = memories
             .into_iter()
             .filter(|memory| {
-                if criteria.topic_only {
-                    regex.is_match(&memory.topic)
+                if criteria.title_only {
+                    regex.is_match(&memory.title)
                 } else if criteria.content_only {
                     regex.is_match(&memory.content)
                 } else {
-                    regex.is_match(&memory.topic)
+                    regex.is_match(&memory.title)
                         || regex.is_match(&memory.content)
                         || memory.tags.iter().any(|tag| regex.is_match(tag))
                 }
@@ -425,7 +425,7 @@ mod tests {
         criteria.min_confidence = Some(0.8); // Valid
         assert!(criteria.validate().is_ok());
 
-        criteria.topic_only = true;
+        criteria.title_only = true;
         criteria.content_only = true; // Invalid combination
         assert!(criteria.validate().is_err());
     }

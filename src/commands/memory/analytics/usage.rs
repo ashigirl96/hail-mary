@@ -305,7 +305,7 @@ impl UsageCommand {
                 name: format!("Top {} Most Accessed", i + 1),
                 value: MetricValue::String(format!(
                     "{} ({} refs)",
-                    memory.topic, memory.reference_count
+                    memory.title, memory.reference_count
                 )),
                 description: Some(format!("{}th most accessed memory", i + 1)),
                 unit: Some("references".to_string()),
@@ -478,7 +478,7 @@ impl UsageCommand {
                     name: "Most Recently Accessed".to_string(),
                     value: MetricValue::String(format!(
                         "{} ({} days ago)",
-                        most_recent.topic, days_ago
+                        most_recent.title, days_ago
                     )),
                     description: Some("Memory accessed most recently".to_string()),
                     unit: Some("days".to_string()),
@@ -491,7 +491,7 @@ impl UsageCommand {
                     name: "Least Recently Accessed".to_string(),
                     value: MetricValue::String(format!(
                         "{} ({} days ago)",
-                        least_recent.topic, days_ago
+                        least_recent.title, days_ago
                     )),
                     description: Some("Memory accessed least recently".to_string()),
                     unit: Some("days".to_string()),

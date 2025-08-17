@@ -323,7 +323,7 @@ impl SummaryCommand {
                 name: "Most Accessed Memory".to_string(),
                 value: MetricValue::String(format!(
                     "{} ({} accesses)",
-                    most_accessed.topic, most_accessed.reference_count
+                    most_accessed.title, most_accessed.reference_count
                 )),
                 description: Some("Memory with the highest reference count".to_string()),
                 unit: Some("accesses".to_string()),

@@ -43,9 +43,9 @@ pub struct BulkDeleteCommand {
     #[arg(long)]
     pub case_sensitive: bool,
 
-    /// Search only in topic field
+    /// Search only in title field
     #[arg(long)]
-    pub topic_only: bool,
+    pub title_only: bool,
 
     /// Search only in content field
     #[arg(long)]
@@ -206,7 +206,7 @@ impl BulkDeleteCommand {
             criteria = criteria.with_query(query.clone(), self.regex, self.case_sensitive);
         }
 
-        criteria.topic_only = self.topic_only;
+        criteria.title_only = self.title_only;
         criteria.content_only = self.content_only;
 
         Ok(criteria)
@@ -221,7 +221,7 @@ impl BulkDeleteCommand {
 
             if self.verbose && memories.len() <= 20 {
                 for (i, memory) in memories.iter().enumerate() {
-                    println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
+                    println!("{}. {} [{}]", i + 1, memory.title, memory.memory_type);
                     if !memory.tags.is_empty() {
                         println!("   Tags: {}", memory.tags.join(", "));
                     }
@@ -234,7 +234,7 @@ impl BulkDeleteCommand {
             } else if memories.len() > 20 {
                 // Show first 10 and last 10
                 for (i, memory) in memories.iter().take(10).enumerate() {
-                    println!("{}. {} [{}]", i + 1, memory.topic, memory.memory_type);
+                    println!("{}. {} [{}]", i + 1, memory.title, memory.memory_type);
                 }
 
                 if memories.len() > 20 {
@@ -245,7 +245,7 @@ impl BulkDeleteCommand {
                     println!(
                         "{}. {} [{}]",
                         memories.len() - 10 + i + 1,
-                        memory.topic,
+                        memory.title,
                         memory.memory_type
                     );
                 }
@@ -389,7 +389,7 @@ mod tests {
             query: Some("test".to_string()),
             regex: true,
             case_sensitive: false,
-            topic_only: false,
+            title_only: false,
             content_only: true,
             include_deleted: true,
             dry_run: true,
@@ -415,7 +415,7 @@ mod tests {
         assert_eq!(criteria.query, Some("test".to_string()));
         assert!(criteria.regex);
         assert!(!criteria.case_sensitive);
-        assert!(!criteria.topic_only);
+        assert!(!criteria.title_only);
         assert!(criteria.content_only);
         assert!(criteria.include_deleted);
     }
@@ -431,7 +431,7 @@ mod tests {
             query: None,
             regex: false,
             case_sensitive: false,
-            topic_only: true,
+            title_only: true,
             content_only: true, // Invalid combination
             include_deleted: false,
             dry_run: true,
