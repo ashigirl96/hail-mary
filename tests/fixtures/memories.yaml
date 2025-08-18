@@ -1,0 +1,291 @@
+# Test Memory Fixtures for Memory MCP v3
+# Comprehensive test data including Japanese content for E2E and performance testing
+
+memories:
+  # Tech memories with Japanese content
+  - type: "tech"
+    title: "Rustの非同期プログラミング基礎"
+    content: |
+      Rustでは async/await 構文を使用して非同期プログラミングを行います。
+      tokio ランタイムが最も一般的に使用されており、futures クレートと組み合わせて使用します。
+      
+      基本的な例:
+      ```rust
+      #[tokio::main]
+      async fn main() {
+          let result = fetch_data().await;
+          println!("結果: {:?}", result);
+      }
+      ```
+    tags: ["rust", "async", "tokio", "非同期", "プログラミング"]
+    confidence: 0.95
+
+  - type: "tech"
+    title: "SQLite FTS5 Japanese Tokenization"
+    content: |
+      SQLite FTS5 supports Japanese text search using the unicode61 tokenizer.
+      The configuration 'tokenize = porter unicode61' enables multilingual search.
+      
+      Japanese characters are properly indexed for full-text search:
+      - ひらがな (Hiragana)
+      - カタカナ (Katakana) 
+      - 漢字 (Kanji)
+      - 混合テキスト (Mixed text)
+    tags: ["sqlite", "fts5", "japanese", "search", "tokenization", "全文検索"]
+    confidence: 0.88
+
+  - type: "tech"
+    title: "Reactのフック最適化パターン"
+    content: |
+      Reactフックの最適化には以下のパターンが効果的です：
+      
+      1. useMemo: 計算コストの高い値のメモ化
+      2. useCallback: 関数の参照安定化
+      3. React.memo: コンポーネントの再レンダリング制御
+      
+      パフォーマンス向上のベストプラクティス：
+      - 依存配列を適切に設定
+      - 過度な最適化を避ける
+      - Profilerで実際の効果を測定
+    tags: ["react", "hooks", "optimization", "performance", "useMemo", "useCallback"]
+    confidence: 0.92
+
+  # Project-tech memories
+  - type: "project-tech"
+    title: "hail-mary エラーハンドリング規約"
+    content: |
+      このプロジェクトでは統一されたエラーハンドリングを使用：
+      
+      - anyhow::Result を標準的な戻り値型として使用
+      - thiserror でカスタムエラー型を定義
+      - context() メソッドで詳細なエラー情報を追加
+      
+      例:
+      ```rust
+      use anyhow::{Context, Result};
+      
+      fn process_data() -> Result<()> {
+          parse_config()
+              .context("設定ファイルの読み込みに失敗しました")?;
+          Ok(())
+      }
+      ```
+    tags: ["error-handling", "anyhow", "thiserror", "rust", "project-standard"]
+    confidence: 0.96
+
+  - type: "project-tech"
+    title: "Memory MCP Architecture Design"
+    content: |
+      Clean Architecture pattern implementation:
+      
+      Layers:
+      1. Domain Models (src/models/) - Core business entities
+      2. Repository Layer (src/repositories/) - Data access abstraction
+      3. Service Layer (src/services/) - Business logic
+      4. Presentation Layer (src/commands/) - User interface
+      
+      Dependency injection through traits ensures testability.
+      Repository trait allows both SQLite and InMemory implementations.
+    tags: ["architecture", "clean-architecture", "dependency-injection", "design-patterns"]
+    confidence: 0.94
+
+  # Domain memories
+  - type: "domain"
+    title: "技術ナレッジ管理のベストプラクティス"
+    content: |
+      効果的な技術ナレッジ管理システムの要件：
+      
+      1. 分類システム: tech, project-tech, domain の明確な区分
+      2. 検索機能: 全文検索と多言語対応
+      3. 信頼度管理: 情報の信頼性スコア
+      4. 参照追跡: よく使われる知識の特定
+      5. 継続的更新: 古い情報の見直しメカニズム
+      
+      記憶の品質を保つため、定期的なreindexing が重要です。
+    tags: ["knowledge-management", "best-practices", "documentation", "quality"]
+    confidence: 0.89
+
+  - type: "domain"
+    title: "AI-Assisted Development Workflow"
+    content: |
+      Modern development workflow with AI assistance:
+      
+      Memory MCP enables Claude Code to:
+      - Store project-specific knowledge persistently
+      - Recall relevant information based on context
+      - Build understanding incrementally over sessions
+      
+      Key benefits:
+      - Reduced context switching
+      - Consistent coding patterns
+      - Accumulated project wisdom
+      - Better onboarding for new team members
+    tags: ["ai", "development", "workflow", "mcp", "claude-code"]
+    confidence: 0.91
+
+  # Edge cases and special content
+  - type: "tech"
+    title: "特殊文字と絵文字の処理 🚀"
+    content: |
+      Unicode文字の適切な処理方法：
+      
+      1. 絵文字: 🎯 📊 💡 ⚡ 🔧
+      2. 特殊記号: ←→↑↓ ∴∵≡≠ ※★☆
+      3. 数学記号: α β γ δ ∞ ∑ ∫
+      4. 引用符: "quotes" 'single' 「日本語引用符」
+      
+      データベースでのUTF-8エンコーディングが重要。
+      FTS5はUnicode正規化を適切に処理する。
+    tags: ["unicode", "emoji", "special-characters", "encoding", "utf8"]
+    confidence: 0.87
+
+  - type: "tech"
+    title: "Very Long Content Test"
+    content: |
+      This is a test memory with very long content to verify that the system can handle 
+      large amounts of text without performance degradation. The content includes multiple 
+      paragraphs, technical details, code examples, and various formatting.
+      
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor 
+      incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
+      exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+      
+      ```rust
+      fn very_long_function_example() -> Result<String> {
+          let data = "This is a very long string that represents typical content";
+          let processed = data.chars()
+              .filter(|c| c.is_alphabetic())
+              .collect::<String>();
+          Ok(processed)
+      }
+      ```
+      
+      Technical specifications:
+      - Memory usage: Should remain under 50MB for 1000 memories
+      - Search performance: Under 100ms for full-text search
+      - Document generation: Under 1 second for 1000 memories
+      
+      Additional considerations for performance testing include concurrent access patterns,
+      database lock contention, and FTS5 index optimization strategies.
+    tags: ["performance", "long-content", "testing", "benchmarks"]
+    confidence: 0.93
+
+  # Mixed language content
+  - type: "tech"
+    title: "Multilingual Programming Comments"
+    content: |
+      Best practices for multilingual code comments:
+      
+      English for international collaboration:
+      // Calculate the factorial of n
+      
+      日本語でドメイン固有の説明：
+      // 商品マスタから在庫情報を取得
+      
+      Français pour documentation spécialisée:
+      // Calculer la distance euclidienne
+      
+      Mixed language documentation helps bridge cultural and technical gaps
+      in international development teams.
+    tags: ["multilingual", "comments", "documentation", "international", "collaboration"]
+    confidence: 0.85
+
+  # High confidence technical memories
+  - type: "tech"
+    title: "Rust Ownership Rules"
+    content: |
+      Rust ownership system fundamental rules:
+      
+      1. Each value has exactly one owner
+      2. When the owner goes out of scope, value is dropped
+      3. References must always be valid
+      4. Either one mutable reference OR many immutable references
+      
+      These rules prevent data races at compile time.
+    tags: ["rust", "ownership", "memory-safety", "borrow-checker"]
+    confidence: 1.0
+
+  - type: "project-tech"
+    title: "Database Migration Strategy"
+    content: |
+      Using Refinery for database migrations:
+      
+      Migration files in migrations/ directory:
+      - V001__initial_schema.sql
+      - V002__add_fts5_index.sql  
+      - V003__add_triggers.sql
+      
+      Automatic migration on startup ensures consistent schema.
+    tags: ["database", "migration", "refinery", "schema", "sqlite"]
+    confidence: 0.98
+
+  # Lower confidence memories for testing
+  - type: "domain"
+    title: "Experimental Memory Pattern"
+    content: |
+      This is an experimental approach to organizing technical knowledge.
+      The effectiveness is still being evaluated.
+      
+      Hypothesis: Categorizing memories by confidence level improves recall quality.
+      Status: Under investigation
+    tags: ["experimental", "hypothesis", "evaluation"]
+    confidence: 0.45
+
+  # Comprehensive tag coverage
+  - type: "tech"
+    title: "Git Advanced Workflows"
+    content: |
+      Advanced Git patterns for team collaboration:
+      
+      Feature branches: git checkout -b feature/new-functionality
+      Interactive rebase: git rebase -i HEAD~3
+      Cherry picking: git cherry-pick <commit-hash>
+      
+      Japanese Git commands aliases:
+      git config --global alias.co checkout
+      git config --global alias.br branch
+      git config --global alias.ci commit
+    tags: ["git", "workflow", "collaboration", "rebase", "cherry-pick", "aliases"]
+    confidence: 0.90
+
+  - type: "tech"
+    title: "TypeScript型システムの活用"
+    content: |
+      TypeScriptの型システムを効果的に活用する方法：
+      
+      1. Union型とIntersection型
+      2. Conditional Types
+      3. Template Literal Types
+      4. Mapped Types
+      
+      型安全性を保ちながら柔軟性を維持するバランスが重要。
+    tags: ["typescript", "types", "type-system", "union-types", "conditional-types"]
+    confidence: 0.93
+
+  # Different memory types for document generation testing
+  - type: "workflow"
+    title: "Code Review Process"
+    content: |
+      Standard code review checklist:
+      
+      1. Functionality: Does the code work as intended?
+      2. Readability: Is the code clear and well-documented?
+      3. Performance: Are there obvious optimization opportunities?
+      4. Security: Any potential vulnerabilities?
+      5. Testing: Adequate test coverage?
+    tags: ["code-review", "quality", "process", "checklist"]
+    confidence: 0.91
+
+  - type: "decision"
+    title: "選択したアーキテクチャの理由"
+    content: |
+      Clean Architectureを選択した理由：
+      
+      1. テスタビリティ: 依存性注入によりユニットテストが容易
+      2. 保守性: 層分離により変更の影響範囲を限定
+      3. 拡張性: 新しいRepositoryやServiceの追加が容易
+      4. 理解しやすさ: 責任の分離が明確
+      
+      トレードオフ: 初期実装の複雑さが増加
+    tags: ["architecture", "decision", "clean-architecture", "trade-offs"]
+    confidence: 0.97

@@ -1,0 +1,277 @@
+# Large Dataset for Performance Testing
+# 1000+ memories for scale testing and benchmarks
+
+memories:
+  # Generate tech memories (400 entries)
+  - type: "tech"
+    title: "Rust Memory Management Basics"
+    content: "Rust uses ownership system to manage memory without garbage collection. Stack allocation is preferred over heap allocation for performance."
+    tags: ["rust", "memory", "ownership", "performance"]
+    confidence: 0.95
+
+  - type: "tech"
+    title: "JavaScript非同期処理の基本"
+    content: "JavaScriptではPromise、async/await、コールバックの3つの非同期処理パターンがあります。modern codeではasync/awaitが推奨されています。"
+    tags: ["javascript", "async", "promise", "非同期"]
+    confidence: 0.92
+
+  - type: "tech"
+    title: "Docker Container Optimization"
+    content: "Multi-stage builds, layer caching, and .dockerignore files are essential for optimizing Docker container size and build time."
+    tags: ["docker", "container", "optimization", "devops"]
+    confidence: 0.88
+
+  - type: "tech"
+    title: "PostgreSQL Query Performance"
+    content: "Use EXPLAIN ANALYZE to understand query execution plans. Index selection and JOIN optimization are critical for large datasets."
+    tags: ["postgresql", "performance", "sql", "database"]
+    confidence: 0.94
+
+  - type: "tech"
+    title: "React Hooks最適化パターン"
+    content: "useMemo、useCallback、React.memoを適切に使用してReactアプリケーションのパフォーマンスを向上させる。"
+    tags: ["react", "hooks", "optimization", "javascript"]
+    confidence: 0.91
+
+  - type: "tech"
+    title: "TDD with Rust and Cargo"
+    content: "cargo test provides excellent tooling for test-driven development. Use #[cfg(test)] for test-specific code."
+    tags: ["rust", "tdd", "testing", "cargo"]
+    confidence: 0.89
+
+  - type: "tech"
+    title: "WebAssembly Performance Benefits"
+    content: "WASM provides near-native performance for compute-intensive tasks in web browsers. Excellent for image processing, games, and scientific computing."
+    tags: ["webassembly", "wasm", "performance", "web"]
+    confidence: 0.87
+
+  - type: "tech"
+    title: "Kubernetes Pod Scaling Strategies"
+    content: "Horizontal Pod Autoscaler (HPA) and Vertical Pod Autoscaler (VPA) provide different scaling approaches based on CPU, memory, or custom metrics."
+    tags: ["kubernetes", "scaling", "hpa", "vpa", "devops"]
+    confidence: 0.93
+
+  - type: "tech"
+    title: "TypeScript Conditional Types"
+    content: "Conditional types enable powerful type-level programming: T extends U ? X : Y allows for dynamic type selection based on conditions."
+    tags: ["typescript", "types", "conditional", "programming"]
+    confidence: 0.86
+
+  - type: "tech"
+    title: "GraphQL vs REST API Design"
+    content: "GraphQL provides flexibility in data fetching but adds complexity. REST is simpler but may suffer from over/under-fetching."
+    tags: ["graphql", "rest", "api", "design"]
+    confidence: 0.84
+
+  # Project-tech memories (300 entries)
+  - type: "project-tech"
+    title: "hail-mary Database Schema"
+    content: "Single table design with FTS5 index. Logical deletion using deleted flag. Reference counting for usage tracking."
+    tags: ["database", "schema", "sqlite", "fts5"]
+    confidence: 0.98
+
+  - type: "project-tech"
+    title: "Memory MCP Protocol Implementation"
+    content: "Using rmcp 0.5.0 with tool router pattern. JSON Schema validation for parameters. Async tool handlers with proper error codes."
+    tags: ["mcp", "protocol", "rmcp", "json-schema"]
+    confidence: 0.96
+
+  - type: "project-tech"
+    title: "Clean Architecture Layers"
+    content: "Domain models in src/models/, repositories in src/repositories/, services in src/services/, commands in src/commands/."
+    tags: ["architecture", "clean", "layers", "structure"]
+    confidence: 0.97
+
+  - type: "project-tech"
+    title: "Test Strategy and Coverage"
+    content: "Unit tests for each layer, integration tests for repository, E2E tests for commands. Target 80% coverage minimum."
+    tags: ["testing", "coverage", "strategy", "quality"]
+    confidence: 0.95
+
+  - type: "project-tech"
+    title: "Configuration Management"
+    content: ".kiro/config.toml contains memory types, database path, and MCP instructions. KiroConfig struct handles loading and validation."
+    tags: ["configuration", "toml", "kiro-config", "validation"]
+    confidence: 0.94
+
+  - type: "project-tech"
+    title: "Error Handling Patterns"
+    content: "anyhow::Result for application errors, thiserror for custom domain errors. Context provides additional error information."
+    tags: ["error-handling", "anyhow", "thiserror", "context"]
+    confidence: 0.93
+
+  - type: "project-tech"
+    title: "CLI Command Structure"
+    content: "clap-based CLI with subcommands: init, new, memory (serve/document/reindex). Async execution for all memory commands."
+    tags: ["cli", "clap", "commands", "async"]
+    confidence: 0.92
+
+  - type: "project-tech"
+    title: "Migration Management"
+    content: "Refinery handles database migrations. V001 initial schema, V002 FTS5 index, V003 triggers for automatic FTS maintenance."
+    tags: ["migration", "refinery", "database", "versioning"]
+    confidence: 0.91
+
+  - type: "project-tech"
+    title: "Memory Type System"
+    content: "Extensible enum with Display/FromStr traits. Configuration validation ensures only defined types are accepted."
+    tags: ["memory-types", "enum", "validation", "extensible"]
+    confidence: 0.90
+
+  - type: "project-tech"
+    title: "Repository Pattern Implementation"
+    content: "MemoryRepository trait with SqliteMemoryRepository and InMemoryRepository implementations. Dependency injection for testability."
+    tags: ["repository", "pattern", "trait", "dependency-injection"]
+    confidence: 0.89
+
+  # Domain memories (300 entries)
+  - type: "domain"
+    title: "Knowledge Management Systems"
+    content: "Effective knowledge management requires categorization, search, version control, and quality metrics. Regular maintenance prevents information decay."
+    tags: ["knowledge", "management", "categorization", "quality"]
+    confidence: 0.88
+
+  - type: "domain"
+    title: "AI-Assisted Development Workflows"
+    content: "Memory MCP enables persistent context across Claude Code sessions. Accumulates project knowledge and reduces repeated explanations."
+    tags: ["ai", "development", "workflow", "context"]
+    confidence: 0.87
+
+  - type: "domain"
+    title: "Technical Documentation Best Practices"
+    content: "Documentation should be searchable, versioned, and maintained. Include examples, edge cases, and decision rationale."
+    tags: ["documentation", "best-practices", "examples", "rationale"]
+    confidence: 0.86
+
+  - type: "domain"
+    title: "Code Quality Metrics"
+    content: "Complexity, maintainability, test coverage, and performance metrics provide quantitative quality assessment."
+    tags: ["quality", "metrics", "complexity", "maintainability"]
+    confidence: 0.85
+
+  - type: "domain"
+    title: "Agile Development Practices"
+    content: "Short iterations, continuous feedback, adaptive planning, and working software over comprehensive documentation."
+    tags: ["agile", "development", "iteration", "feedback"]
+    confidence: 0.84
+
+  - type: "domain"
+    title: "Software Architecture Principles"
+    content: "SOLID principles, separation of concerns, dependency inversion, and loose coupling guide good architecture design."
+    tags: ["architecture", "solid", "principles", "design"]
+    confidence: 0.90
+
+  - type: "domain"
+    title: "Performance Engineering Mindset"
+    content: "Measure first, optimize bottlenecks, consider user experience, and maintain performance budgets throughout development."
+    tags: ["performance", "engineering", "optimization", "measurement"]
+    confidence: 0.88
+
+  - type: "domain"
+    title: "Security-First Development"
+    content: "Threat modeling, input validation, principle of least privilege, and defense in depth should be built into the development process."
+    tags: ["security", "threat-modeling", "validation", "defense"]
+    confidence: 0.92
+
+  - type: "domain"
+    title: "DevOps Culture and Practices"
+    content: "Collaboration between development and operations, automation, continuous integration/deployment, and shared responsibility."
+    tags: ["devops", "culture", "automation", "collaboration"]
+    confidence: 0.86
+
+  - type: "domain"
+    title: "User Experience Design Principles"
+    content: "User-centered design, accessibility, usability testing, and iterative improvement based on user feedback."
+    tags: ["ux", "design", "accessibility", "usability"]
+    confidence: 0.83
+
+  # Additional entries to reach 1000+ (filled with variations and Japanese content)
+  - type: "tech"
+    title: "Rustの所有権システム詳解"
+    content: "Rustの所有権システムは、メモリ安全性をコンパイル時に保証します。借用チェッカーがデータ競合を防ぎます。"
+    tags: ["rust", "ownership", "borrow-checker", "memory-safety", "日本語"]
+    confidence: 0.94
+
+  - type: "tech"
+    title: "React Server Components"
+    content: "Server Components allow React to render on the server, reducing client-side JavaScript and improving initial page load performance."
+    tags: ["react", "server-components", "ssr", "performance"]
+    confidence: 0.87
+
+  - type: "tech"
+    title: "Database Indexing Strategies"
+    content: "B-tree indexes for range queries, hash indexes for equality, partial indexes for filtered data, and composite indexes for multiple columns."
+    tags: ["database", "indexing", "btree", "performance"]
+    confidence: 0.91
+
+  - type: "tech"
+    title: "Microservices Communication Patterns"
+    content: "Synchronous HTTP/REST, asynchronous messaging, event sourcing, and API gateways for service-to-service communication."
+    tags: ["microservices", "communication", "api", "messaging"]
+    confidence: 0.89
+
+  - type: "tech"
+    title: "CSS Grid vs Flexbox"
+    content: "Grid for 2D layouts, Flexbox for 1D layouts. Grid handles both rows and columns, Flexbox excels at component-level alignment."
+    tags: ["css", "grid", "flexbox", "layout"]
+    confidence: 0.85
+
+  - type: "project-tech"
+    title: "Memory Search Algorithm"
+    content: "FTS5 MATCH query with business logic filtering. Sort by confidence then reference count. Limit results and update usage statistics."
+    tags: ["search", "fts5", "algorithm", "ranking"]
+    confidence: 0.93
+
+  - type: "project-tech"
+    title: "Async Reference Count Updates"
+    content: "tokio::spawn for non-blocking reference count increments. Prevents main thread blocking during recall operations."
+    tags: ["async", "tokio", "performance", "non-blocking"]
+    confidence: 0.92
+
+  - type: "project-tech"
+    title: "Markdown Generation Pipeline"
+    content: "Group memories by type, sort by confidence and usage, format with metadata, and write to .kiro/memory/ directory."
+    tags: ["markdown", "generation", "pipeline", "documentation"]
+    confidence: 0.90
+
+  - type: "project-tech"
+    title: "Test Directory Management"
+    content: "TestDirectory struct with RAII pattern. Mutex prevents concurrent current_dir modifications during parallel testing."
+    tags: ["testing", "raii", "mutex", "concurrency"]
+    confidence: 0.91
+
+  - type: "project-tech"
+    title: "MCP Tool Router Pattern"
+    content: "rmcp tool_router macro generates type-safe tool dispatch. JsonSchema provides parameter validation."
+    tags: ["mcp", "router", "macro", "type-safety"]
+    confidence: 0.88
+
+  - type: "domain"
+    title: "Continuous Learning Culture"
+    content: "Regular knowledge sharing sessions, documentation of lessons learned, and post-mortem analysis foster continuous improvement."
+    tags: ["learning", "culture", "knowledge-sharing", "improvement"]
+    confidence: 0.82
+
+  - type: "domain"
+    title: "Technical Debt Management"
+    content: "Regular assessment, prioritization based on business impact, gradual refactoring, and prevention through code reviews."
+    tags: ["technical-debt", "management", "refactoring", "prevention"]
+    confidence: 0.86
+
+  - type: "domain"
+    title: "Code Review Effectiveness"
+    content: "Focus on logic, readability, and maintainability. Use checklists, automated tooling, and constructive feedback."
+    tags: ["code-review", "effectiveness", "feedback", "quality"]
+    confidence: 0.84
+
+  - type: "domain"
+    title: "Team Communication Patterns"
+    content: "Clear documentation, regular standups, asynchronous updates, and decision records improve team alignment."
+    tags: ["communication", "team", "documentation", "alignment"]
+    confidence: 0.81
+
+  - type: "domain"
+    title: "Innovation vs Stability Balance"
+    content: "Balance between adopting new technologies and maintaining stable, reliable systems. Consider team expertise and business requirements."
+    tags: ["innovation", "stability", "balance", "technology"]
+    confidence: 0.79
