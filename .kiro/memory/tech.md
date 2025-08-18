@@ -276,6 +276,74 @@ let snippet = if self.verbose {
 };
 ```
 
+## 19. **並列テスト実行における`current_dir`競合問題**
+**学び**: プロセス全体のグローバル状態とスレッド間競合の理解
+
+### 問題の発見
+```rust
+// ❌ 並列テスト実行で競合が発生
+// 原因: env::set_current_dir() はプロセス全体のグローバル状態を変更
+Thread A: set_current_dir("/tmp/uuid-A") 
+Thread B: set_current_dir("/tmp/uuid-B")  // Thread Aを上書き！
+Thread A: Path::new(".kiro") -> 実際は /tmp/uuid-B/.kiro を参照
+```
+
+### 解決策: Mutexによる同期化
+```rust
+// ✅ グローバルMutexでcurrent_dir操作を同期化
+static TEST_DIR_MUTEX: Mutex<()> = Mutex::new(());
+
+pub struct TestDirectory {
+    _temp_dir: TempDir,           // 独立したUUIDディレクトリ
+    original_dir: PathBuf,
+    _guard: MutexGuard<'static, ()>,  // グローバルロック
+}
+
+impl TestDirectory {
+    pub fn new() -> Self {
+        let guard = TEST_DIR_MUTEX.lock().expect("Failed to acquire test directory mutex");
+        let original_dir = env::current_dir().expect("Failed to get current directory");
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp directory");
+        
+        env::set_current_dir(temp_dir.path())
+            .expect("Failed to change to temp directory");
+            
+        Self { _temp_dir: temp_dir, original_dir, _guard: guard }
+    }
+}
+```
+
+### 学んだポイント
+- **UUIDディレクトリは別々**: 各テストが独立した一時ディレクトリを作成 ✅
+- **current_dirはグローバル**: `env::set_current_dir()`はプロセス単位でグローバル ❌
+- **並列実行での競合**: 複数スレッドが同じプロセスの`current_dir`を競合
+- **最小限の同期化**: テスト自体は並列実行、`current_dir`操作のみ同期化
+- **RAIIパターン**: MutexGuardの自動解放で確実なクリーンアップ
+
+## 20. **TestDirectoryのRAIIパターン設計**
+**学び**: リソース管理の自動化と例外安全性
+
+### RAII (Resource Acquisition Is Initialization) の実装
+```rust
+// ✅ 完全自動化されたテスト環境管理
+let _test_dir = TestDirectory::new();
+// テスト処理
+// Drop時に自動復元（パニック時も確実に実行）
+
+// Before: 手動管理（脆弱）
+let temp_dir = setup_test_dir();
+let original_dir = env::current_dir().unwrap();
+env::set_current_dir(temp_dir.path()).unwrap();
+// テスト処理
+env::set_current_dir(original_dir).unwrap(); // 手動復元（パニック時に失敗）
+```
+
+### 設計の利点
+- **例外安全性**: パニック時も確実にリソース解放
+- **コードの簡潔性**: 手動復元コードが不要
+- **テスト間分離**: 各テストが完全に独立した環境で実行
+- **開発者体験**: 忘れがちなクリーンアップを自動化
+
 ## 💡 **重要な気づき**
 - **テストファーストアプローチ**: エラーケースを先にテストすることで実装の抜け漏れを防止
 - **環境に依存しない設計**: テスト環境での実行を考慮した堅牢な実装
@@ -287,3 +355,5 @@ let snippet = if self.verbose {
 - **エラーチェーン設計**: 具体的なエラー原因を保持する階層的エラーハンドリング
 - **CLI設計**: enumとclapの統合でタイプセーフなコマンドライン引数
 - **データ変換設計**: JSONとCSVの相互変換における適切なエスケープ処理
+- **並列テスト設計**: グローバル状態とスレッド間競合を理解した適切な同期化
+- **RAIIパターン**: リソース管理の自動化による例外安全性とコードの簡潔性
