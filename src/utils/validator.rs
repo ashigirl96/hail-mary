@@ -7,6 +7,7 @@ use super::error::{HailMaryError, Result};
 /// - Cannot start or end with a hyphen
 /// - Cannot have consecutive hyphens
 /// - Must have at least one character
+#[allow(dead_code)] // Used in CLI validation and future features
 pub fn validate_kebab_case(name: &str) -> Result<()> {
     if name.is_empty() {
         return Err(HailMaryError::InvalidFeatureName(

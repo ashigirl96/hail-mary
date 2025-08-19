@@ -1,9 +1,10 @@
 use crate::models::error::{MemoryError, Result};
-use serde::Deserialize;
+use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct KiroConfig {
     pub root_dir: PathBuf,
     pub memory: MemoryConfig,
@@ -96,9 +97,81 @@ impl KiroConfig {
     pub fn memory_docs_dir(&self) -> PathBuf {
         self.memory.document.output_dir.clone()
     }
+
+    #[allow(dead_code)] // Used in template generation and future features
+    pub fn memory_database_path(&self) -> PathBuf {
+        self.memory.database.path.clone()
+    }
+
+    // ===== Business Rules: Project Structure =====
+
+    /// Generate feature directory name in YYYY-MM-dd-feature-name format
+    pub fn generate_feature_dir_name(&self, feature_name: &str) -> String {
+        format!("{}-{}", Utc::now().format("%Y-%m-%d"), feature_name)
+    }
+
+    /// Default feature files to be created for new features
+    pub fn default_feature_files() -> Vec<&'static str> {
+        vec!["requirements.md", "design.md", "tasks.md", "spec.json"]
+    }
+
+    /// Required directories for project structure
+    pub fn required_directories(&self) -> Vec<PathBuf> {
+        vec![
+            self.root_dir.clone(),
+            self.root_dir.join("memory"),
+            self.root_dir.join("specs"),
+        ]
+    }
+
+    /// Default .gitignore entries for hail-mary
+    pub fn default_gitignore_entries() -> Vec<&'static str> {
+        vec![
+            "# hail-mary memory database",
+            ".kiro/memory/db.sqlite3",
+            ".kiro/memory/*.sqlite3-*",
+        ]
+    }
+
+    /// Configuration template for new projects
+    #[allow(dead_code)] // Used in template generation and future features
+    pub fn config_template() -> &'static str {
+        r#"# .kiro/config.toml
+# hail-mary Memory MCP project configuration
+
+[memory]
+# Memory types for categorization (customize for your project)
+types = [
+    "tech",           # General technical knowledge
+    "project-tech",   # Project-specific technical details
+    "domain",         # Business domain knowledge
+    "workflow",       # Development workflows and processes
+    "decision",       # Architecture decisions and rationale
+]
+
+# Instructions for MCP server
+instructions = """
+Available memory types:
+- tech: General technical knowledge (languages, frameworks, algorithms)
+- project-tech: This project's specific technical implementation
+- domain: Business domain knowledge and requirements
+- workflow: Development workflows and processes
+- decision: Architecture decisions and their rationale
+"""
+
+# Document generation settings
+[memory.document]
+output_dir = ".kiro/memory"
+format = "markdown"
+
+# Database configuration
+[memory.database]
+path = ".kiro/memory/db.sqlite3"
+"#
+    }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MemoryConfig {
     pub types: Vec<String>,
     pub instructions: String,
@@ -106,14 +179,14 @@ pub struct MemoryConfig {
     pub database: DatabaseConfig,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DocumentConfig {
     pub output_dir: PathBuf,
     #[allow(dead_code)] // Used in future document format options
     pub format: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DatabaseConfig {
     pub path: PathBuf,
 }
@@ -245,6 +318,76 @@ path = ".kiro/memory/db.sqlite3"
         let docs_dir = config.memory_docs_dir();
 
         assert!(docs_dir.to_str().unwrap().contains("memory"));
+    }
+
+    #[test]
+    fn test_kiro_config_memory_database_path() {
+        let config = KiroConfig::default();
+        let db_path = config.memory_database_path();
+
+        assert_eq!(db_path, PathBuf::from(".kiro/memory/db.sqlite3"));
+    }
+
+    #[test]
+    fn test_generate_feature_dir_name() {
+        let config = KiroConfig::default();
+        let dir_name = config.generate_feature_dir_name("test-feature");
+
+        // Should match YYYY-MM-dd-test-feature pattern
+        assert!(dir_name.ends_with("-test-feature"));
+        // Check format with regex-like pattern
+        let parts: Vec<&str> = dir_name.split('-').collect();
+        assert!(parts.len() >= 4); // YYYY-MM-dd-feature-name
+        assert_eq!(parts[0].len(), 4); // Year
+        assert_eq!(parts[1].len(), 2); // Month
+        assert_eq!(parts[2].len(), 2); // Day
+    }
+
+    #[test]
+    fn test_default_feature_files() {
+        let files = KiroConfig::default_feature_files();
+
+        assert_eq!(files.len(), 4);
+        assert!(files.contains(&"requirements.md"));
+        assert!(files.contains(&"design.md"));
+        assert!(files.contains(&"tasks.md"));
+        assert!(files.contains(&"spec.json"));
+    }
+
+    #[test]
+    fn test_required_directories() {
+        let config = KiroConfig::default();
+        let dirs = config.required_directories();
+
+        assert_eq!(dirs.len(), 3);
+        assert!(dirs.contains(&PathBuf::from(".kiro")));
+        assert!(dirs.contains(&PathBuf::from(".kiro/memory")));
+        assert!(dirs.contains(&PathBuf::from(".kiro/specs")));
+    }
+
+    #[test]
+    fn test_default_gitignore_entries() {
+        let entries = KiroConfig::default_gitignore_entries();
+
+        assert_eq!(entries.len(), 3);
+        assert!(entries.contains(&"# hail-mary memory database"));
+        assert!(entries.contains(&".kiro/memory/db.sqlite3"));
+        assert!(entries.contains(&".kiro/memory/*.sqlite3-*"));
+    }
+
+    #[test]
+    fn test_config_template() {
+        let template = KiroConfig::config_template();
+
+        // Check that template contains essential sections
+        assert!(template.contains("[memory]"));
+        assert!(template.contains("[memory.document]"));
+        assert!(template.contains("[memory.database]"));
+        assert!(template.contains("types ="));
+        assert!(template.contains("instructions ="));
+        assert!(template.contains("output_dir ="));
+        assert!(template.contains("format ="));
+        assert!(template.contains("path ="));
     }
 
     #[test]

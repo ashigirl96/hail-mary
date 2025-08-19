@@ -1,8 +1,8 @@
-use anyhow::{Context, Result};
+use crate::models::kiro::KiroConfig;
+use crate::repositories::project::FileProjectRepository;
+use crate::services::project::ProjectService;
+use anyhow::Result;
 use clap::Args;
-use std::fs;
-use std::io::{self, Write};
-use std::path::Path;
 
 #[derive(Args)]
 pub struct InitCommand {
@@ -13,97 +13,20 @@ pub struct InitCommand {
 
 impl InitCommand {
     pub fn execute(&self) -> Result<()> {
-        let kiro_dir = Path::new(".kiro");
-        let config_path = kiro_dir.join("config.toml");
-        let memory_dir = kiro_dir.join("memory");
+        // Use dependency injection pattern with default config for initialization
+        let repository = FileProjectRepository::new();
+        let service = ProjectService::with_config(repository, KiroConfig::default());
 
-        // Check if .kiro directory exists and handle accordingly
-        if kiro_dir.exists() && !self.force {
-            print!(".kiro directory already exists. Overwrite config.toml? (y/N): ");
-            io::stdout().flush()?;
+        // Execute the use case
+        service.initialize_project(self.force)?;
 
-            let mut input = String::new();
-            io::stdin().read_line(&mut input)?;
-
-            if !input.trim().eq_ignore_ascii_case("y") {
-                println!("Initialization cancelled.");
-                return Ok(());
-            }
-        }
-
-        // Create directories
-        fs::create_dir_all(kiro_dir).context("Failed to create .kiro directory")?;
-        fs::create_dir_all(&memory_dir).context("Failed to create .kiro/memory directory")?;
-
-        // Create config.toml template
-        let config_template = r#"# .kiro/config.toml
-# hail-mary Memory MCP project configuration
-
-[memory]
-# Memory types for categorization (customize for your project)
-types = [
-    "tech",           # General technical knowledge
-    "project-tech",   # Project-specific technical details
-    "domain",         # Business domain knowledge
-    "workflow",       # Development workflows and processes
-    "decision",       # Architecture decisions and rationale
-]
-
-# Instructions for MCP server
-instructions = """
-Available memory types:
-- tech: General technical knowledge (languages, frameworks, algorithms)
-- project-tech: This project's specific technical implementation
-- domain: Business domain knowledge and requirements
-- workflow: Development workflows and processes
-- decision: Architecture decisions and their rationale
-"""
-
-# Document generation settings
-[memory.document]
-output_dir = ".kiro/memory"
-format = "markdown"
-
-# Database configuration
-[memory.database]
-path = ".kiro/memory/db.sqlite3"
-"#;
-
-        fs::write(&config_path, config_template).context("Failed to write config.toml")?;
-
-        // Update .gitignore
-        self.update_gitignore()?;
-
-        println!("✅ Initialized .kiro directory structure:");
+        // Success message
+        println!("✅ Initialized .kiro directory structure");
         println!("  - Created .kiro/");
-        println!("  - Created .kiro/config.toml (configuration template)");
+        println!("  - Created .kiro/config.toml");
         println!("  - Created .kiro/memory/");
+        println!("  - Created .kiro/specs/");
         println!("  - Updated .gitignore");
-        println!();
-        println!("You can now customize .kiro/config.toml for your project needs.");
-
-        Ok(())
-    }
-
-    fn update_gitignore(&self) -> Result<()> {
-        let gitignore_path = Path::new(".gitignore");
-
-        if gitignore_path.exists() {
-            let content = fs::read_to_string(gitignore_path)?;
-            if !content.contains(".kiro/memory/db.sqlite3") {
-                let mut file = fs::OpenOptions::new().append(true).open(gitignore_path)?;
-                writeln!(file, "\n# hail-mary memory database")?;
-                writeln!(file, ".kiro/memory/db.sqlite3")?;
-                writeln!(file, ".kiro/memory/*.sqlite3-*")?;
-            }
-        } else {
-            // Create new .gitignore if it doesn't exist
-            let gitignore_content = r#"# hail-mary memory database
-.kiro/memory/db.sqlite3
-.kiro/memory/*.sqlite3-*
-"#;
-            fs::write(gitignore_path, gitignore_content)?;
-        }
 
         Ok(())
     }
@@ -113,6 +36,8 @@ path = ".kiro/memory/db.sqlite3"
 mod tests {
     use super::*;
     use crate::tests::common::TestDirectory;
+    use std::fs;
+    use std::path::Path;
 
     #[test]
     fn test_init_creates_kiro_directory() {

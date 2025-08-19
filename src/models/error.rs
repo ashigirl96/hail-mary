@@ -11,6 +11,12 @@ pub enum MemoryError {
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
+    #[error("TOML serialization error: {0}")]
+    TomlSer(#[from] toml::ser::Error),
+
+    #[error("TOML deserialization error: {0}")]
+    TomlDe(#[from] toml::de::Error),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 

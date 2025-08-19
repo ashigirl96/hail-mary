@@ -1,5 +1,4 @@
 mod commands;
-mod core;
 mod models;
 mod repositories;
 mod services;

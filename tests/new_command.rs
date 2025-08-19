@@ -27,6 +27,14 @@ fn test_new_command_e2e_success() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path().to_str().unwrap();
 
+    // First initialize the project
+    let init_output = run_hail_mary_command(&["init"], temp_path).unwrap();
+    assert!(
+        init_output.status.success(),
+        "Init command failed: {}",
+        String::from_utf8_lossy(&init_output.stderr)
+    );
+
     // Run: hail-mary new test-feature
     let output = run_hail_mary_command(&["new", "test-feature"], temp_path).unwrap();
 
@@ -44,7 +52,7 @@ fn test_new_command_e2e_success() {
     assert!(stdout.contains("Files created:"));
     assert!(stdout.contains("requirements.md"));
     assert!(stdout.contains("design.md"));
-    assert!(stdout.contains("task.md"));
+    assert!(stdout.contains("tasks.md"));
     assert!(stdout.contains("spec.json"));
 
     // Check that .kiro/specs directory was created
@@ -66,13 +74,25 @@ fn test_new_command_e2e_success() {
             // Check all required files exist
             assert!(feature_path.join("requirements.md").exists());
             assert!(feature_path.join("design.md").exists());
-            assert!(feature_path.join("task.md").exists());
+            assert!(feature_path.join("tasks.md").exists());
             assert!(feature_path.join("spec.json").exists());
 
             // Check file contents
             let spec_json_content =
                 std::fs::read_to_string(feature_path.join("spec.json")).unwrap();
-            assert_eq!(spec_json_content.trim(), "{}");
+
+            // Parse the JSON to verify it's valid and contains expected fields
+            let spec_json: serde_json::Value = serde_json::from_str(&spec_json_content).unwrap();
+            assert!(spec_json["id"].is_string());
+            assert_eq!(spec_json["name"], "test-feature");
+            assert!(spec_json["created_at"].is_string());
+            assert!(
+                spec_json["directory_name"]
+                    .as_str()
+                    .unwrap()
+                    .ends_with("-test-feature")
+            );
+            assert!(spec_json["path"].is_null());
 
             let requirements_content =
                 std::fs::read_to_string(feature_path.join("requirements.md")).unwrap();
@@ -93,6 +113,14 @@ fn test_new_command_e2e_invalid_name() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path().to_str().unwrap();
 
+    // First initialize the project
+    let init_output = run_hail_mary_command(&["init"], temp_path).unwrap();
+    assert!(
+        init_output.status.success(),
+        "Init command failed: {}",
+        String::from_utf8_lossy(&init_output.stderr)
+    );
+
     // Run: hail-mary new Invalid_Name (with underscore)
     let output = run_hail_mary_command(&["new", "Invalid_Name"], temp_path).unwrap();
 
@@ -105,7 +133,7 @@ fn test_new_command_e2e_invalid_name() {
     // Check error message
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("InvalidFeatureName"),
+        stderr.contains("Invalid feature name"),
         "Should contain invalid name error, got: {}",
         stderr
     );
@@ -115,6 +143,14 @@ fn test_new_command_e2e_invalid_name() {
 fn test_new_command_e2e_duplicate_feature() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path().to_str().unwrap();
+
+    // First initialize the project
+    let init_output = run_hail_mary_command(&["init"], temp_path).unwrap();
+    assert!(
+        init_output.status.success(),
+        "Init command failed: {}",
+        String::from_utf8_lossy(&init_output.stderr)
+    );
 
     // First run: hail-mary new test-feature
     let output1 = run_hail_mary_command(&["new", "test-feature"], temp_path).unwrap();
@@ -132,7 +168,7 @@ fn test_new_command_e2e_duplicate_feature() {
     // Check error message
     let stderr = String::from_utf8_lossy(&output2.stderr);
     assert!(
-        stderr.contains("FeatureAlreadyExists"),
+        stderr.contains("already exists"),
         "Should contain duplicate error, got: {}",
         stderr
     );
@@ -160,6 +196,14 @@ fn test_new_command_e2e_help() {
 fn test_new_command_e2e_complex_feature_name() {
     let temp_dir = TempDir::new().unwrap();
     let temp_path = temp_dir.path().to_str().unwrap();
+
+    // First initialize the project
+    let init_output = run_hail_mary_command(&["init"], temp_path).unwrap();
+    assert!(
+        init_output.status.success(),
+        "Init command failed: {}",
+        String::from_utf8_lossy(&init_output.stderr)
+    );
 
     // Run: hail-mary new complex-feature-name-123
     let output = run_hail_mary_command(&["new", "complex-feature-name-123"], temp_path).unwrap();

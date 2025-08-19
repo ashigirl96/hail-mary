@@ -1,5 +1,6 @@
-use crate::core::project::ProjectManager;
-use crate::utils::error::Result;
+use crate::repositories::project::FileProjectRepository;
+use crate::services::project::ProjectService;
+use anyhow::Result;
 use clap::Args;
 
 #[derive(Args)]
@@ -10,18 +11,20 @@ pub struct NewCommand {
 
 impl NewCommand {
     pub fn execute(&self) -> Result<()> {
-        let project_manager = ProjectManager::new();
+        // Use dependency injection pattern
+        let repository = FileProjectRepository::new();
+        let service = ProjectService::new(repository)?;
 
-        println!("Creating new feature: {}", self.feature_name);
+        // Execute the use case
+        let feature_path = service.create_new_feature(&self.feature_name)?;
 
-        let feature_path = project_manager.create_new_feature(&self.feature_name)?;
-
+        // Success message
         println!("✅ Feature '{}' created successfully!", self.feature_name);
         println!("📁 Location: {}", feature_path.display());
         println!("📝 Files created:");
         println!("   - requirements.md");
         println!("   - design.md");
-        println!("   - task.md");
+        println!("   - tasks.md");
         println!("   - spec.json");
 
         Ok(())
@@ -84,7 +87,7 @@ mod tests {
     //             let feature_dir = entry.path();
     //             assert!(feature_dir.join("requirements.md").exists());
     //             assert!(feature_dir.join("design.md").exists());
-    //             assert!(feature_dir.join("task.md").exists());
+    //             assert!(feature_dir.join("tasks.md").exists());
     //             assert!(feature_dir.join("spec.json").exists());
     //             found = true;
     //             break;
