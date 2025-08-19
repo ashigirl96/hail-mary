@@ -19,13 +19,13 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 # Database
-rusqlite = { version = "0.31", features = ["bundled"] }
-refinery = { version = "0.8", features = ["rusqlite"] }
+rusqlite = { version = "0.33", features = ["bundled"] }
+refinery = { version = "0.8.16", features = ["rusqlite"] }
 
 # Utils
 uuid = { version = "1", features = ["v4"] }
 chrono = "0.4"
-toml = "0.8"
+toml = "0.9"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 pulldown-cmark = "0.13"
