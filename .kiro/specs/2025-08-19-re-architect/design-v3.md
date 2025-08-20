@@ -450,6 +450,159 @@ pub fn recall_memory(
 }
 ```
 
+### 5.1.3 Initialize Project Use Case
+
+```rust
+// application/use_cases/initialize_project.rs
+use crate::application::repositories::ProjectRepository;
+use crate::domain::entities::ProjectConfig;
+use crate::application::errors::ApplicationError;
+
+pub fn initialize_project(
+    repository: &impl ProjectRepository,
+    force: bool,
+) -> Result<(), ApplicationError> {
+    // Check if project already exists
+    if repository.exists()? && !force {
+        return Err(ApplicationError::ProjectAlreadyExists);
+    }
+    
+    // Initialize project structure
+    repository.initialize()?;
+    
+    // Create default configuration
+    let config = ProjectConfig::default_for_new_project();
+    repository.save_config(&config)?;
+    
+    // Update .gitignore
+    repository.update_gitignore()?;
+    
+    Ok(())
+}
+```
+
+### 5.1.4 Create Feature Use Case
+
+```rust
+// application/use_cases/create_feature.rs
+use crate::application::repositories::ProjectRepository;
+use crate::application::errors::ApplicationError;
+
+pub fn create_feature(
+    repository: &impl ProjectRepository,
+    name: &str,
+) -> Result<String, ApplicationError> {
+    // Validate feature name (must be kebab-case)
+    if !name.chars().all(|c| c.is_lowercase() || c == '-' || c.is_numeric())
+        || name.starts_with('-')
+        || name.ends_with('-')
+        || name.contains("--") {
+        return Err(ApplicationError::InvalidFeatureName(name.to_string()));
+    }
+    
+    // Create feature through repository
+    repository.create_feature(name)?;
+    
+    // Return feature path for user feedback
+    let date = chrono::Utc::now().format("%Y-%m-%d");
+    Ok(format!(".kiro/specs/{}-{}", date, name))
+}
+```
+
+### 5.1.5 Generate Document Use Case
+
+```rust
+// application/use_cases/generate_document.rs
+use crate::application::repositories::{MemoryRepository, ProjectRepository};
+use crate::application::errors::ApplicationError;
+use std::path::PathBuf;
+
+pub fn generate_document(
+    memory_repo: &impl MemoryRepository,
+    project_repo: &impl ProjectRepository,
+    memory_type: Option<&str>,
+) -> Result<PathBuf, ApplicationError> {
+    // Load project configuration
+    let config = project_repo.load_config()?;
+    
+    if let Some(mt) = memory_type {
+        // Validate memory type
+        if !config.validate_memory_type(mt) {
+            return Err(ApplicationError::InvalidMemoryType(mt.to_string()));
+        }
+        
+        // Generate document for specific type
+        let memories = memory_repo.find_by_type(mt)?;
+        project_repo.save_document(mt, &memories)?;
+    } else {
+        // Generate documents for all types
+        for memory_type in &config.memory_types {
+            let memories = memory_repo.find_by_type(memory_type)?;
+            project_repo.save_document(memory_type, &memories)?;
+        }
+    }
+    
+    // Return output directory
+    Ok(PathBuf::from(".kiro/memory"))
+}
+```
+
+### 5.1.6 Reindex Memories Use Case
+
+```rust
+// application/use_cases/reindex_memories.rs
+use crate::application::repositories::MemoryRepository;
+use crate::application::errors::ApplicationError;
+
+pub fn reindex_memories(
+    repository: &mut impl MemoryRepository,
+    verbose: bool,
+) -> Result<ReindexStats, ApplicationError> {
+    let mut stats = ReindexStats::default();
+    
+    if verbose {
+        println!("Starting database reindex...");
+    }
+    
+    // Remove logically deleted entries
+    stats.deleted_entries = repository.cleanup_deleted()?;
+    
+    if verbose {
+        println!("Removed {} deleted entries", stats.deleted_entries);
+    }
+    
+    // Rebuild FTS5 index
+    repository.rebuild_fts_index()?;
+    stats.index_rebuilt = true;
+    
+    if verbose {
+        println!("FTS5 index rebuilt successfully");
+    }
+    
+    // Optimize database
+    repository.vacuum()?;
+    stats.database_optimized = true;
+    
+    Ok(stats)
+}
+
+pub struct ReindexStats {
+    pub deleted_entries: usize,
+    pub index_rebuilt: bool,
+    pub database_optimized: bool,
+}
+
+impl Default for ReindexStats {
+    fn default() -> Self {
+        Self {
+            deleted_entries: 0,
+            index_rebuilt: false,
+            database_optimized: false,
+        }
+    }
+}
+```
+
 ### 5.2 Repository Interfaces
 
 ```rust
@@ -532,6 +685,175 @@ pub enum MemoryCommands {
         #[arg(short, long)]
         verbose: bool,
     },
+}
+```
+
+### 6.2 Init Command Implementation
+
+```rust
+// cli/commands/init.rs
+use crate::application::use_cases::initialize_project;
+use crate::infrastructure::filesystem::PathManager;
+use crate::infrastructure::repositories::ProjectRepository;
+use anyhow::Result;
+
+pub struct InitCommand {
+    force: bool,
+}
+
+impl InitCommand {
+    pub fn new(force: bool) -> Self {
+        Self { force }
+    }
+    
+    pub fn execute(&self) -> Result<()> {
+        // Use current directory as project root
+        let current_dir = std::env::current_dir()?;
+        let path_manager = PathManager::new(current_dir);
+        
+        // Create repository
+        let project_repo = ProjectRepository::new(path_manager);
+        
+        // Execute use case function
+        initialize_project(&project_repo, self.force)?;
+        
+        println!("✅ Initialized .kiro directory structure:");
+        println!("  - Created .kiro/");
+        println!("  - Created .kiro/config.toml (configuration template)");
+        println!("  - Created .kiro/memory/");
+        println!("  - Updated .gitignore");
+        
+        Ok(())
+    }
+}
+```
+
+### 6.3 New Command Implementation
+
+```rust
+// cli/commands/new.rs
+use crate::application::use_cases::create_feature;
+use crate::infrastructure::filesystem::PathManager;
+use crate::infrastructure::repositories::ProjectRepository;
+use anyhow::Result;
+
+pub struct NewCommand {
+    name: String,
+}
+
+impl NewCommand {
+    pub fn new(name: String) -> Self {
+        Self { name }
+    }
+    
+    pub fn execute(&self) -> Result<()> {
+        // Discover project root
+        let path_manager = PathManager::discover()?;
+        
+        // Create repository
+        let project_repo = ProjectRepository::new(path_manager);
+        
+        // Execute use case function (validation is done inside)
+        let feature_path = create_feature(&project_repo, &self.name)?;
+        
+        println!("✅ Feature '{}' created successfully at: {}", self.name, feature_path);
+        Ok(())
+    }
+}
+```
+
+### 6.3 Memory Commands Implementation
+
+```rust
+// cli/commands/memory.rs
+use crate::application::use_cases::{generate_document, reindex_memories};
+use crate::infrastructure::filesystem::PathManager;
+use crate::infrastructure::repositories::{MemoryRepository, ProjectRepository};
+use crate::infrastructure::mcp::MemoryMcpServer;
+use anyhow::Result;
+
+pub enum MemoryCommand {
+    Serve,
+    Document { memory_type: Option<String> },
+    Reindex { dry_run: bool, verbose: bool },
+}
+
+impl MemoryCommand {
+    pub fn execute(&self) -> Result<()> {
+        match self {
+            Self::Serve => self.serve(),
+            Self::Document { memory_type } => self.document(memory_type.as_deref()),
+            Self::Reindex { dry_run, verbose } => self.reindex(*dry_run, *verbose),
+        }
+    }
+    
+    fn serve(&self) -> Result<()> {
+        println!("Starting Memory MCP server...");
+        
+        // Discover project and load configuration
+        let path_manager = PathManager::discover()?;
+        let project_repo = ProjectRepository::new(path_manager.clone());
+        let config = project_repo.load_config()?;
+        
+        // Initialize memory repository
+        let db_path = path_manager.memory_db_path(true);
+        let memory_repo = MemoryRepository::new(&db_path)?;
+        
+        // Start MCP server
+        let server = MemoryMcpServer::new(Box::new(memory_repo), config);
+        
+        println!("Memory MCP server ready. Connect with MCP client via stdio.");
+        server.run()?;
+        
+        Ok(())
+    }
+    
+    fn document(&self, memory_type: Option<&str>) -> Result<()> {
+        println!("Generating memory documentation...");
+        
+        // Discover project
+        let path_manager = PathManager::discover()?;
+        let project_repo = ProjectRepository::new(path_manager.clone());
+        
+        // Initialize memory repository
+        let db_path = path_manager.memory_db_path(true);
+        let memory_repo = MemoryRepository::new(&db_path)?;
+        
+        // Execute use case function
+        let output_dir = generate_document(&memory_repo, &project_repo, memory_type)?;
+        
+        println!("✅ Generated memory documents in: {}", output_dir.display());
+        Ok(())
+    }
+    
+    fn reindex(&self, dry_run: bool, verbose: bool) -> Result<()> {
+        if dry_run {
+            println!("🔍 Dry run mode - would perform reindex operations:");
+            println!("  - Analyze database for duplicates and optimization opportunities");
+            println!("  - Remove logical deleted entries");
+            println!("  - Rebuild FTS5 index");
+            println!("  - Archive old database");
+            
+            if verbose {
+                println!("Verbose logging enabled");
+            }
+            
+            return Ok(());
+        }
+        
+        // Discover project
+        let path_manager = PathManager::discover()?;
+        
+        // Initialize memory repository
+        let db_path = path_manager.memory_db_path(true);
+        let mut memory_repo = MemoryRepository::new(&db_path)?;
+        
+        // Execute use case function
+        let stats = reindex_memories(&mut memory_repo, verbose)?;
+        
+        println!("✅ Database reindexed successfully");
+        Ok(())
+    }
 }
 ```
 
@@ -1389,18 +1711,26 @@ path = ".kiro/memory/db.sqlite3"
 - **Clear separation** of concerns across 4 layers
 - **Rust-idiomatic** patterns throughout
 - **Testable** at every layer
+- **Simple function-based Use Cases** instead of unnecessary struct wrappers
+- **Consistent naming** following YAGNI principle (MemoryRepository, ProjectRepository)
+- **Type-safe TOML configuration** with Serde integration
 
 ### Operational Benefits
 - **High performance** with SQLite FTS5
 - **Japanese support** out of the box
 - **Batch operations** for efficiency
 - **Async reference counting** for non-blocking updates
+- **Git-aware project discovery** automatically finds project root
+- **Flexible path management** with absolute/relative path support
 
 ### Development Benefits
 - **Dependency injection** for flexibility
 - **Repository pattern** for swappable implementations
 - **Clean interfaces** between layers
 - **Comprehensive testing** strategy
+- **Centralized path management** via PathManager
+- **Unified Use Case pattern** for consistent implementation
+- **Auto-completion friendly** configuration access
 
 ## 18. Type-Safe Configuration Example
 
