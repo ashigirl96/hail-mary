@@ -141,7 +141,7 @@ Creating new feature: user-authentication
 📝 Files created:
    - requirements.md
    - design.md
-   - task.md
+   - tasks.md
    - spec.json
 
 # Invalid name (will fail)
