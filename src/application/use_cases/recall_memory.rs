@@ -70,90 +70,9 @@ fn format_memories_as_markdown(memories: &[Memory]) -> Result<String, Applicatio
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::test_helpers::MockMemoryRepository;
     use crate::domain::entities::memory::Memory;
     use crate::domain::value_objects::confidence::Confidence;
-    use std::collections::HashMap;
-    use uuid::Uuid;
-
-    #[derive(Debug, Default)]
-    struct MockMemoryRepository {
-        memories: HashMap<Uuid, Memory>,
-        search_results: Vec<Memory>,
-        should_fail_search: bool,
-    }
-
-    impl MockMemoryRepository {
-        fn new() -> Self {
-            Self::default()
-        }
-
-        fn with_memories(mut self, memories: Vec<Memory>) -> Self {
-            for memory in &memories {
-                self.memories.insert(memory.id, memory.clone());
-            }
-            self.search_results = memories;
-            self
-        }
-
-        fn with_search_failure(mut self) -> Self {
-            self.should_fail_search = true;
-            self
-        }
-    }
-
-    impl MemoryRepository for MockMemoryRepository {
-        fn save(&mut self, memory: &Memory) -> Result<(), ApplicationError> {
-            self.memories.insert(memory.id, memory.clone());
-            Ok(())
-        }
-
-        fn save_batch(&mut self, memories: &[Memory]) -> Result<(), ApplicationError> {
-            for memory in memories {
-                self.memories.insert(memory.id, memory.clone());
-            }
-            Ok(())
-        }
-
-        fn find_by_id(&mut self, id: &Uuid) -> Result<Option<Memory>, ApplicationError> {
-            Ok(self.memories.get(id).cloned())
-        }
-
-        fn search_fts(
-            &mut self,
-            _query: &str,
-            _limit: usize,
-        ) -> Result<Vec<Memory>, ApplicationError> {
-            if self.should_fail_search {
-                return Err(ApplicationError::DatabaseError("Search failed".to_string()));
-            }
-            Ok(self.search_results.clone())
-        }
-
-        fn find_by_type(&mut self, _memory_type: &str) -> Result<Vec<Memory>, ApplicationError> {
-            Ok(vec![])
-        }
-
-        fn find_all(&mut self) -> Result<Vec<Memory>, ApplicationError> {
-            Ok(self.memories.values().cloned().collect())
-        }
-
-        fn increment_reference_count(&mut self, _id: &Uuid) -> Result<(), ApplicationError> {
-            // Mock implementation - in real implementation this would be async
-            Ok(())
-        }
-
-        fn cleanup_deleted(&mut self) -> Result<usize, ApplicationError> {
-            Ok(0)
-        }
-
-        fn rebuild_fts_index(&mut self) -> Result<(), ApplicationError> {
-            Ok(())
-        }
-
-        fn vacuum(&mut self) -> Result<(), ApplicationError> {
-            Ok(())
-        }
-    }
 
     fn create_test_memory(
         memory_type: &str,

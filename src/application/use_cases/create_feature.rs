@@ -28,66 +28,7 @@ pub fn create_feature(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::entities::memory::Memory;
-    use crate::domain::entities::project::ProjectConfig;
-
-    // Mock implementation for testing
-    #[derive(Debug, Default)]
-    struct MockProjectRepository {
-        should_fail_operation: Option<String>,
-    }
-
-    impl ProjectRepository for MockProjectRepository {
-        fn initialize(&self) -> Result<(), ApplicationError> {
-            Ok(())
-        }
-
-        fn exists(&self) -> Result<bool, ApplicationError> {
-            Ok(false)
-        }
-
-        fn save_config(&self, _config: &ProjectConfig) -> Result<(), ApplicationError> {
-            Ok(())
-        }
-
-        fn load_config(&self) -> Result<ProjectConfig, ApplicationError> {
-            Ok(ProjectConfig::default_for_new_project())
-        }
-
-        fn update_gitignore(&self) -> Result<(), ApplicationError> {
-            Ok(())
-        }
-
-        fn create_feature(&self, name: &str) -> Result<(), ApplicationError> {
-            if let Some(ref fail_op) = self.should_fail_operation {
-                if fail_op == "create_feature" {
-                    return Err(ApplicationError::FeatureCreationError(format!(
-                        "Mock creation failure for: {}",
-                        name
-                    )));
-                }
-            }
-            Ok(())
-        }
-
-        fn save_document(
-            &self,
-            _memory_type: &str,
-            _memories: &[Memory],
-        ) -> Result<(), ApplicationError> {
-            Ok(())
-        }
-    }
-
-    impl MockProjectRepository {
-        fn new() -> Self {
-            Self::default()
-        }
-
-        fn set_operation_to_fail(&mut self, operation: &str) {
-            self.should_fail_operation = Some(operation.to_string());
-        }
-    }
+    use crate::application::test_helpers::MockProjectRepository;
 
     #[test]
     fn test_create_feature_success() {
