@@ -25,13 +25,14 @@ impl MemoryCommand {
     }
 
     fn serve(&self) -> Result<()> {
-        println!("{}", format_info("Starting Memory MCP server..."));
+        // Log startup to stderr to avoid interfering with MCP protocol on stdout
+        eprintln!("{}", format_info("Starting Memory MCP server..."));
 
         // Discover project and load configuration
         let path_manager = match PathManager::discover() {
             Ok(pm) => pm,
             Err(_) => {
-                println!(
+                eprintln!(
                     "{}",
                     format_error("Not in a project directory. Run 'hail-mary init' first.")
                 );
@@ -43,7 +44,7 @@ impl MemoryCommand {
         let config = match project_repo.load_config() {
             Ok(cfg) => cfg,
             Err(e) => {
-                println!("{}", format_error(&format!("Failed to load config: {}", e)));
+                eprintln!("{}", format_error(&format!("Failed to load config: {}", e)));
                 return Err(anyhow::anyhow!(e));
             }
         };
@@ -53,7 +54,7 @@ impl MemoryCommand {
         let memory_repo = match SqliteMemoryRepository::new(&db_path) {
             Ok(repo) => repo,
             Err(e) => {
-                println!(
+                eprintln!(
                     "{}",
                     format_error(&format!("Failed to open database: {}", e))
                 );
@@ -65,34 +66,40 @@ impl MemoryCommand {
         let service = MemoryService::new(Box::new(memory_repo), config);
         let _server = MemoryMcpServer::new(service);
 
-        println!(
+        eprintln!(
             "{}",
             format_info("Memory MCP server ready. Connect with MCP client via stdio.")
         );
 
-        // In production, the MCP server would be run through the MCP runtime
-        // The actual server execution would involve setting up stdio transport
-        // and running the server handler through the MCP protocol
-        #[cfg(not(test))]
-        {
-            // TODO: Implement actual MCP server runtime execution
-            // This would typically involve:
-            // - Creating a stdio transport
-            // - Running the server with the transport
-            // - Blocking until the server shuts down
-        }
+        // // Run the actual MCP server with stdio transport
+        // #[cfg(not(test))]
+        // {
+        //     use rmcp::{ServiceExt, transport::stdio};
+        //
+        //     let rt = tokio::runtime::Runtime::new()?;
+        //     rt.block_on(async {
+        //         let service = server
+        //             .serve(stdio())
+        //             .await
+        //             .map_err(|e| anyhow::anyhow!("Failed to start MCP server: {}", e))?;
+        //         service
+        //             .waiting()
+        //             .await
+        //             .map_err(|e| anyhow::anyhow!("MCP server error: {}", e))
+        //     })?;
+        // }
 
         Ok(())
     }
 
     fn document(&self, memory_type: Option<&str>) -> Result<()> {
-        println!("{}", format_info("Generating memory documentation..."));
+        eprintln!("{}", format_info("Generating memory documentation..."));
 
         // Discover project
         let path_manager = match PathManager::discover() {
             Ok(pm) => pm,
             Err(_) => {
-                println!(
+                eprintln!(
                     "{}",
                     format_error("Not in a project directory. Run 'hail-mary init' first.")
                 );
@@ -107,7 +114,7 @@ impl MemoryCommand {
         let mut memory_repo = match SqliteMemoryRepository::new(&db_path) {
             Ok(repo) => repo,
             Err(e) => {
-                println!(
+                eprintln!(
                     "{}",
                     format_error(&format!("Failed to open database: {}", e))
                 );
@@ -118,7 +125,7 @@ impl MemoryCommand {
         // Execute use case function
         match generate_document(&mut memory_repo, &project_repo, memory_type) {
             Ok(output_dir) => {
-                println!(
+                eprintln!(
                     "{}",
                     format_success(&format!(
                         "Generated memory documents in: {}",
@@ -128,7 +135,7 @@ impl MemoryCommand {
                 Ok(())
             }
             Err(crate::application::errors::ApplicationError::InvalidMemoryType(mt)) => {
-                println!(
+                eprintln!(
                     "{}",
                     format_error(&format!(
                         "Invalid memory type: '{}'. Check your config.toml for valid types.",
@@ -138,7 +145,7 @@ impl MemoryCommand {
                 Err(anyhow::anyhow!("Invalid memory type"))
             }
             Err(e) => {
-                println!("{}", format_error(&e.to_string()));
+                eprintln!("{}", format_error(&e.to_string()));
                 Err(anyhow::anyhow!(e))
             }
         }
@@ -146,17 +153,17 @@ impl MemoryCommand {
 
     fn reindex(&self, dry_run: bool, verbose: bool) -> Result<()> {
         if dry_run {
-            println!(
+            eprintln!(
                 "{}",
                 format_info("🔍 Dry run mode - would perform reindex operations:")
             );
-            println!("  - Analyze database for duplicates and optimization opportunities");
-            println!("  - Remove logical deleted entries");
-            println!("  - Rebuild FTS5 index");
-            println!("  - Archive old database");
+            eprintln!("  - Analyze database for duplicates and optimization opportunities");
+            eprintln!("  - Remove logical deleted entries");
+            eprintln!("  - Rebuild FTS5 index");
+            eprintln!("  - Archive old database");
 
             if verbose {
-                println!("{}", format_info("Verbose logging enabled"));
+                eprintln!("{}", format_info("Verbose logging enabled"));
             }
 
             return Ok(());
@@ -166,7 +173,7 @@ impl MemoryCommand {
         let path_manager = match PathManager::discover() {
             Ok(pm) => pm,
             Err(_) => {
-                println!(
+                eprintln!(
                     "{}",
                     format_error("Not in a project directory. Run 'hail-mary init' first.")
                 );
@@ -179,7 +186,7 @@ impl MemoryCommand {
         let mut memory_repo = match SqliteMemoryRepository::new(&db_path) {
             Ok(repo) => repo,
             Err(e) => {
-                println!(
+                eprintln!(
                     "{}",
                     format_error(&format!("Failed to open database: {}", e))
                 );
@@ -190,12 +197,12 @@ impl MemoryCommand {
         // Execute use case function
         match reindex_memories(&mut memory_repo, verbose) {
             Ok(stats) => {
-                println!("{}", format_success("Database reindexed successfully"));
-                println!("{}", format_reindex_stats_as_text(&stats));
+                eprintln!("{}", format_success("Database reindexed successfully"));
+                eprintln!("{}", format_reindex_stats_as_text(&stats));
                 Ok(())
             }
             Err(e) => {
-                println!("{}", format_error(&e.to_string()));
+                eprintln!("{}", format_error(&e.to_string()));
                 Err(anyhow::anyhow!(e))
             }
         }
