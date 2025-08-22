@@ -27,6 +27,9 @@ pub enum ApplicationError {
     #[error("Domain error: {0}")]
     DomainError(#[from] DomainError),
 
+    #[error("SQLite error: {0}")]
+    SqliteError(#[from] rusqlite::Error),
+
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
 

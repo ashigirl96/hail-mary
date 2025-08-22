@@ -106,9 +106,9 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 - [x] `src/infrastructure/migrations/mod.rs`
 
 ### 3.3 Repository Implementations (trait実装)
-- [ ] `src/infrastructure/repositories/memory.rs` - テスト先行
+- [x] `src/infrastructure/repositories/memory.rs` - テスト先行
   - SQLite統合テスト（tempdb使用）
-- [ ] `src/infrastructure/repositories/memory.rs` - 実装追加
+- [x] `src/infrastructure/repositories/memory.rs` - 実装追加
   - SqliteMemoryRepository構造体実装
 - [ ] `src/infrastructure/repositories/project.rs` - テスト先行
   - ファイルシステム統合テスト（tempdir使用）
