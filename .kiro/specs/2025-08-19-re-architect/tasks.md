@@ -61,9 +61,9 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 - [x] `src/application/repositories/mod.rs`
 
 ### 2.3 Use Cases (trait使用)
-- [ ] `src/application/use_cases/initialize_project.rs` - テスト先行
+- [x] `src/application/use_cases/initialize_project.rs` - テスト先行
   - プロジェクト初期化ロジックテスト
-- [ ] `src/application/use_cases/initialize_project.rs` - 実装追加
+- [x] `src/application/use_cases/initialize_project.rs` - 実装追加
   - initialize_project関数実装
 - [ ] `src/application/use_cases/create_feature.rs` - テスト先行
   - 機能作成ロジックテスト
