@@ -65,13 +65,13 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
   - プロジェクト初期化ロジックテスト
 - [x] `src/application/use_cases/initialize_project.rs` - 実装追加
   - initialize_project関数実装
-- [ ] `src/application/use_cases/create_feature.rs` - テスト先行
+- [x] `src/application/use_cases/create_feature.rs` - テスト先行
   - 機能作成ロジックテスト
-- [ ] `src/application/use_cases/create_feature.rs` - 実装追加
+- [x] `src/application/use_cases/create_feature.rs` - 実装追加
   - create_feature関数実装
-- [ ] `src/application/use_cases/remember_memory.rs` - テスト先行
+- [x] `src/application/use_cases/remember_memory.rs` - テスト先行
   - メモリ保存ロジックテスト
-- [ ] `src/application/use_cases/remember_memory.rs` - 実装追加
+- [x] `src/application/use_cases/remember_memory.rs` - 実装追加
   - remember_memory関数実装
 - [ ] `src/application/use_cases/recall_memory.rs` - テスト先行
   - メモリ検索ロジックテスト
