@@ -762,7 +762,7 @@ mod tests {
         // This may only find 1 memory due to tokenizer limitations with mixed scripts
         // The porter unicode61 tokenizer may not properly handle English words in Japanese text
         assert!(
-            rust_results.len() >= 1,
+            !rust_results.is_empty(),
             "Should find at least one memory containing 'Rust'"
         );
 

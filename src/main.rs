@@ -225,7 +225,7 @@ mod tests {
                     MemoryCommands::Serve => {
                         // In real execution, this would start the MCP server
                         // For testing, we just verify the command parses correctly
-                        assert!(true);
+                        // No assertion needed - successful parsing is verification enough
                     }
                     _ => panic!("Expected serve subcommand"),
                 }

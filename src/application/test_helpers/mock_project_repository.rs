@@ -80,34 +80,34 @@ impl ProjectRepository for MockProjectRepository {
                 "Simulated initialization failure".to_string(),
             ));
         }
-        if let Some(ref fail_op) = self.should_fail_operation {
-            if fail_op == "initialize" {
-                return Err(ApplicationError::ProjectInitializationError(
-                    "Mock initialization failure".to_string(),
-                ));
-            }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "initialize"
+        {
+            return Err(ApplicationError::ProjectInitializationError(
+                "Mock initialization failure".to_string(),
+            ));
         }
         Ok(())
     }
 
     fn exists(&self) -> Result<bool, ApplicationError> {
-        if let Some(ref fail_op) = self.should_fail_operation {
-            if fail_op == "exists" {
-                return Err(ApplicationError::FileSystemError(
-                    "Mock exists failure".to_string(),
-                ));
-            }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "exists"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock exists failure".to_string(),
+            ));
         }
         Ok(self.initialized)
     }
 
     fn save_config(&self, _config: &ProjectConfig) -> Result<(), ApplicationError> {
-        if let Some(ref fail_op) = self.should_fail_operation {
-            if fail_op == "save_config" {
-                return Err(ApplicationError::ConfigurationError(
-                    "Mock save_config failure".to_string(),
-                ));
-            }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "save_config"
+        {
+            return Err(ApplicationError::ConfigurationError(
+                "Mock save_config failure".to_string(),
+            ));
         }
         Ok(())
     }
@@ -120,24 +120,24 @@ impl ProjectRepository for MockProjectRepository {
     }
 
     fn update_gitignore(&self) -> Result<(), ApplicationError> {
-        if let Some(ref fail_op) = self.should_fail_operation {
-            if fail_op == "update_gitignore" {
-                return Err(ApplicationError::FileSystemError(
-                    "Mock update_gitignore failure".to_string(),
-                ));
-            }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "update_gitignore"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock update_gitignore failure".to_string(),
+            ));
         }
         Ok(())
     }
 
     fn create_feature(&self, name: &str) -> Result<(), ApplicationError> {
-        if let Some(ref fail_op) = self.should_fail_operation {
-            if fail_op == "create_feature" {
-                return Err(ApplicationError::FeatureCreationError(format!(
-                    "Mock creation failure for: {}",
-                    name
-                )));
-            }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "create_feature"
+        {
+            return Err(ApplicationError::FeatureCreationError(format!(
+                "Mock creation failure for: {}",
+                name
+            )));
         }
         if self.feature_exists || self.features.contains(&name.to_string()) {
             return Err(ApplicationError::FeatureAlreadyExists(name.to_string()));

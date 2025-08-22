@@ -27,7 +27,6 @@ static TEST_DIR_MUTEX: Mutex<()> = Mutex::new(());
 /// ```
 /// use hail_mary::application::test_helpers::TestDirectory;
 ///
-/// #[test]
 /// fn test_with_temp_dir() {
 ///     let test_dir = TestDirectory::new();
 ///     // Current directory is now a temp directory

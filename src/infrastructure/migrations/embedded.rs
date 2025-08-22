@@ -224,7 +224,7 @@ mod tests {
         // Insert test data
         conn.execute(
             "INSERT INTO memories (id, type, title, content, tags) VALUES (?, ?, ?, ?, ?)",
-            &[
+            [
                 "test-uuid",
                 "tech",
                 "Test Memory",
@@ -238,7 +238,7 @@ mod tests {
         let search_result: i32 = conn
             .prepare("SELECT COUNT(*) FROM memories_fts WHERE memories_fts MATCH ?")
             .unwrap()
-            .query_row(&["test"], |row| row.get(0))
+            .query_row(["test"], |row| row.get(0))
             .unwrap();
 
         assert!(search_result > 0, "FTS search should find the test memory");
