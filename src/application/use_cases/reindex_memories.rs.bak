@@ -1,5 +1,5 @@
-use crate::application::errors::ApplicationError;
 use crate::application::repositories::MemoryRepository;
+use crate::application::errors::ApplicationError;
 
 #[derive(Default)]
 pub struct ReindexStats {
@@ -8,35 +8,45 @@ pub struct ReindexStats {
     pub database_optimized: bool,
 }
 
+impl Default for ReindexStats {
+    fn default() -> Self {
+        Self {
+            deleted_entries: 0,
+            index_rebuilt: false,
+            database_optimized: false,
+        }
+    }
+}
+
 pub fn reindex_memories(
     repository: &mut impl MemoryRepository,
     verbose: bool,
 ) -> Result<ReindexStats, ApplicationError> {
     let mut stats = ReindexStats::default();
-
+    
     if verbose {
         println!("Starting database reindex...");
     }
-
+    
     // Remove logically deleted entries
     stats.deleted_entries = repository.cleanup_deleted()?;
-
+    
     if verbose {
         println!("Removed {} deleted entries", stats.deleted_entries);
     }
-
+    
     // Rebuild FTS5 index
     repository.rebuild_fts_index()?;
     stats.index_rebuilt = true;
-
+    
     if verbose {
         println!("FTS5 index rebuilt successfully");
     }
-
+    
     // Optimize database
     repository.vacuum()?;
     stats.database_optimized = true;
-
+    
     Ok(stats)
 }
 
@@ -45,8 +55,8 @@ mod tests {
     use super::*;
     use crate::application::repositories::MemoryRepository;
     use crate::domain::entities::memory::Memory;
-    use std::collections::HashMap;
     use uuid::Uuid;
+    use std::collections::HashMap;
 
     // Mock repository for testing
     struct MockMemoryRepository {
@@ -90,11 +100,7 @@ mod tests {
             Ok(self.memories.get(id).cloned())
         }
 
-        fn search_fts(
-            &mut self,
-            _query: &str,
-            _limit: usize,
-        ) -> Result<Vec<Memory>, ApplicationError> {
+        fn search_fts(&mut self, _query: &str, _limit: usize) -> Result<Vec<Memory>, ApplicationError> {
             Ok(self.memories.values().cloned().collect())
         }
 
@@ -130,15 +136,15 @@ mod tests {
     fn test_reindex_memories_basic_operation() {
         let mut repo = MockMemoryRepository::new();
         repo.set_deleted_count(5);
-
+        
         let result = reindex_memories(&mut repo, false);
-
+        
         assert!(result.is_ok());
         let stats = result.unwrap();
         assert_eq!(stats.deleted_entries, 5);
         assert!(stats.index_rebuilt);
         assert!(stats.database_optimized);
-
+        
         assert!(repo.cleanup_called);
         assert!(repo.rebuild_called);
         assert!(repo.vacuum_called);
@@ -148,9 +154,9 @@ mod tests {
     fn test_reindex_memories_verbose_mode() {
         let mut repo = MockMemoryRepository::new();
         repo.set_deleted_count(3);
-
+        
         let result = reindex_memories(&mut repo, true);
-
+        
         assert!(result.is_ok());
         let stats = result.unwrap();
         assert_eq!(stats.deleted_entries, 3);
@@ -162,9 +168,9 @@ mod tests {
     fn test_reindex_memories_no_deleted_entries() {
         let mut repo = MockMemoryRepository::new();
         repo.set_deleted_count(0);
-
+        
         let result = reindex_memories(&mut repo, false);
-
+        
         assert!(result.is_ok());
         let stats = result.unwrap();
         assert_eq!(stats.deleted_entries, 0);
@@ -183,7 +189,7 @@ mod tests {
     #[test]
     fn test_reindex_memories_cleanup_failure() {
         struct FailingRepository;
-
+        
         impl MemoryRepository for FailingRepository {
             fn save(&mut self, _memory: &Memory) -> Result<(), ApplicationError> {
                 unimplemented!()
@@ -197,18 +203,11 @@ mod tests {
                 unimplemented!()
             }
 
-            fn search_fts(
-                &mut self,
-                _query: &str,
-                _limit: usize,
-            ) -> Result<Vec<Memory>, ApplicationError> {
+            fn search_fts(&mut self, _query: &str, _limit: usize) -> Result<Vec<Memory>, ApplicationError> {
                 unimplemented!()
             }
 
-            fn find_by_type(
-                &mut self,
-                _memory_type: &str,
-            ) -> Result<Vec<Memory>, ApplicationError> {
+            fn find_by_type(&mut self, _memory_type: &str) -> Result<Vec<Memory>, ApplicationError> {
                 unimplemented!()
             }
 
@@ -221,9 +220,7 @@ mod tests {
             }
 
             fn cleanup_deleted(&mut self) -> Result<usize, ApplicationError> {
-                Err(ApplicationError::DatabaseError(
-                    "Cleanup failed".to_string(),
-                ))
+                Err(ApplicationError::DatabaseError("Cleanup failed".to_string()))
             }
 
             fn rebuild_fts_index(&mut self) -> Result<(), ApplicationError> {
@@ -237,7 +234,7 @@ mod tests {
 
         let mut repo = FailingRepository;
         let result = reindex_memories(&mut repo, false);
-
+        
         assert!(result.is_err());
         if let Err(ApplicationError::DatabaseError(msg)) = result {
             assert_eq!(msg, "Cleanup failed");

@@ -83,9 +83,9 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
   - generate_document関数実装
 - [x] `src/application/use_cases/reindex_memories.rs` - テスト先行
   - データベース最適化テスト
-- [ ] `src/application/use_cases/reindex_memories.rs` - 実装追加
+- [x] `src/application/use_cases/reindex_memories.rs` - 実装追加
   - reindex_memories関数実装
-- [ ] `src/application/use_cases/mod.rs`
+- [x] `src/application/use_cases/mod.rs`
 
 ---
 
