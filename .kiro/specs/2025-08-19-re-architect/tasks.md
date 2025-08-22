@@ -92,11 +92,11 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 ## Phase 3: Infrastructure Layer (9ファイル)
 
 ### 3.1 Filesystem
-- [ ] `src/infrastructure/filesystem/path_manager.rs` - テスト先行
+- [x] `src/infrastructure/filesystem/path_manager.rs` - テスト先行
   - パス解決テスト（tempdir使用）
-- [ ] `src/infrastructure/filesystem/path_manager.rs` - 実装追加
+- [x] `src/infrastructure/filesystem/path_manager.rs` - 実装追加
   - PathManager構造体実装
-- [ ] `src/infrastructure/filesystem/mod.rs`
+- [x] `src/infrastructure/filesystem/mod.rs`
 
 ### 3.2 Database Migrations
 - [ ] `src/infrastructure/migrations/embedded.rs` - テスト先行
