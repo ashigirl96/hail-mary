@@ -1,6 +1,6 @@
 use crate::application::errors::ApplicationError;
-use crate::domain::entities::project::ProjectConfig;
 use crate::domain::entities::memory::Memory;
+use crate::domain::entities::project::ProjectConfig;
 
 pub trait ProjectRepository: Send + Sync {
     fn initialize(&self) -> Result<(), ApplicationError>;
@@ -9,7 +9,8 @@ pub trait ProjectRepository: Send + Sync {
     fn load_config(&self) -> Result<ProjectConfig, ApplicationError>;
     fn update_gitignore(&self) -> Result<(), ApplicationError>;
     fn create_feature(&self, name: &str) -> Result<(), ApplicationError>;
-    fn save_document(&self, memory_type: &str, memories: &[Memory]) -> Result<(), ApplicationError>;
+    fn save_document(&self, memory_type: &str, memories: &[Memory])
+    -> Result<(), ApplicationError>;
 }
 
 #[cfg(test)]
@@ -38,7 +39,9 @@ mod tests {
     impl ProjectRepository for MockProjectRepository {
         fn initialize(&self) -> Result<(), ApplicationError> {
             if self.should_fail_next_operation {
-                return Err(ApplicationError::ProjectInitializationError("Simulated initialization failure".to_string()));
+                return Err(ApplicationError::ProjectInitializationError(
+                    "Simulated initialization failure".to_string(),
+                ));
             }
             Ok(())
         }
@@ -49,7 +52,9 @@ mod tests {
 
         fn save_config(&self, _config: &ProjectConfig) -> Result<(), ApplicationError> {
             if self.should_fail_next_operation {
-                return Err(ApplicationError::ConfigurationError("Failed to save config".to_string()));
+                return Err(ApplicationError::ConfigurationError(
+                    "Failed to save config".to_string(),
+                ));
             }
             Ok(())
         }
@@ -65,30 +70,45 @@ mod tests {
 
         fn update_gitignore(&self) -> Result<(), ApplicationError> {
             if self.should_fail_next_operation {
-                return Err(ApplicationError::FileSystemError("Failed to update gitignore".to_string()));
+                return Err(ApplicationError::FileSystemError(
+                    "Failed to update gitignore".to_string(),
+                ));
             }
             Ok(())
         }
 
         fn create_feature(&self, name: &str) -> Result<(), ApplicationError> {
             if self.should_fail_next_operation {
-                return Err(ApplicationError::FeatureCreationError(format!("Failed to create feature: {}", name)));
+                return Err(ApplicationError::FeatureCreationError(format!(
+                    "Failed to create feature: {}",
+                    name
+                )));
             }
-            
+
             // Validate feature name (kebab-case)
-            if !name.chars().all(|c| c.is_lowercase() || c == '-' || c.is_numeric())
+            if !name
+                .chars()
+                .all(|c| c.is_lowercase() || c == '-' || c.is_numeric())
                 || name.starts_with('-')
                 || name.ends_with('-')
-                || name.contains("--") {
+                || name.contains("--")
+            {
                 return Err(ApplicationError::InvalidFeatureName(name.to_string()));
             }
-            
+
             Ok(())
         }
 
-        fn save_document(&self, memory_type: &str, _memories: &[Memory]) -> Result<(), ApplicationError> {
+        fn save_document(
+            &self,
+            memory_type: &str,
+            _memories: &[Memory],
+        ) -> Result<(), ApplicationError> {
             if self.should_fail_next_operation {
-                return Err(ApplicationError::DocumentGenerationError(format!("Failed to save document for type: {}", memory_type)));
+                return Err(ApplicationError::DocumentGenerationError(format!(
+                    "Failed to save document for type: {}",
+                    memory_type
+                )));
             }
             Ok(())
         }
@@ -143,11 +163,11 @@ mod tests {
     fn test_project_repository_initialize_failure() {
         let mut repo = MockProjectRepository::new();
         repo.set_next_operation_to_fail();
-        
+
         let result = repo.initialize();
         assert!(result.is_err());
         match result.unwrap_err() {
-            ApplicationError::ProjectInitializationError(_) => {},
+            ApplicationError::ProjectInitializationError(_) => {}
             _ => panic!("Expected ProjectInitializationError"),
         }
     }
@@ -155,11 +175,11 @@ mod tests {
     #[test]
     fn test_project_repository_exists() {
         let mut repo = MockProjectRepository::new();
-        
+
         // Initially not initialized
         let exists = repo.exists().unwrap();
         assert!(!exists);
-        
+
         // After setting as initialized
         repo.set_initialized(true);
         let exists = repo.exists().unwrap();
@@ -170,7 +190,7 @@ mod tests {
     fn test_project_repository_save_config() {
         let repo = MockProjectRepository::new();
         let config = ProjectConfig::default_for_new_project();
-        
+
         let result = repo.save_config(&config);
         assert!(result.is_ok());
     }
@@ -180,11 +200,11 @@ mod tests {
         let mut repo = MockProjectRepository::new();
         repo.set_next_operation_to_fail();
         let config = ProjectConfig::default_for_new_project();
-        
+
         let result = repo.save_config(&config);
         assert!(result.is_err());
         match result.unwrap_err() {
-            ApplicationError::ConfigurationError(_) => {},
+            ApplicationError::ConfigurationError(_) => {}
             _ => panic!("Expected ConfigurationError"),
         }
     }
@@ -192,14 +212,14 @@ mod tests {
     #[test]
     fn test_project_repository_load_config() {
         let mut repo = MockProjectRepository::new();
-        
+
         // Load default config when none exists
         let config = repo.load_config().unwrap();
         assert_eq!(config.memory_types.len(), 5); // Default types
         assert!(config.memory_types.contains(&"tech".to_string()));
         assert!(config.memory_types.contains(&"project-tech".to_string()));
         assert!(config.memory_types.contains(&"domain".to_string()));
-        
+
         // Load custom config
         let custom_config = ProjectConfig {
             memory_types: vec!["custom".to_string()],
@@ -207,7 +227,7 @@ mod tests {
             document_format: crate::domain::entities::project::DocumentFormat::Markdown,
         };
         repo.set_config(custom_config.clone());
-        
+
         let loaded_config = repo.load_config().unwrap();
         assert_eq!(loaded_config.memory_types, vec!["custom".to_string()]);
         assert_eq!(loaded_config.instructions, "Custom instructions");
@@ -216,7 +236,7 @@ mod tests {
     #[test]
     fn test_project_repository_update_gitignore() {
         let repo = MockProjectRepository::new();
-        
+
         let result = repo.update_gitignore();
         assert!(result.is_ok());
     }
@@ -225,11 +245,11 @@ mod tests {
     fn test_project_repository_update_gitignore_failure() {
         let mut repo = MockProjectRepository::new();
         repo.set_next_operation_to_fail();
-        
+
         let result = repo.update_gitignore();
         assert!(result.is_err());
         match result.unwrap_err() {
-            ApplicationError::FileSystemError(_) => {},
+            ApplicationError::FileSystemError(_) => {}
             _ => panic!("Expected FileSystemError"),
         }
     }
@@ -237,7 +257,7 @@ mod tests {
     #[test]
     fn test_project_repository_create_feature_valid_names() {
         let repo = MockProjectRepository::new();
-        
+
         // Valid feature names
         let valid_names = vec![
             "user-authentication",
@@ -246,7 +266,7 @@ mod tests {
             "feature-123",
             "simple",
         ];
-        
+
         for name in valid_names {
             let result = repo.create_feature(name);
             assert!(result.is_ok(), "Feature name '{}' should be valid", name);
@@ -256,22 +276,22 @@ mod tests {
     #[test]
     fn test_project_repository_create_feature_invalid_names() {
         let repo = MockProjectRepository::new();
-        
+
         // Invalid feature names
         let invalid_names = vec![
-            "-invalid-start",    // starts with dash
-            "invalid-end-",      // ends with dash
-            "invalid--double",   // double dash
-            "InvalidCase",       // uppercase
+            "-invalid-start",     // starts with dash
+            "invalid-end-",       // ends with dash
+            "invalid--double",    // double dash
+            "InvalidCase",        // uppercase
             "invalid_underscore", // underscore
-            "invalid.dot",       // dot
+            "invalid.dot",        // dot
         ];
-        
+
         for name in invalid_names {
             let result = repo.create_feature(name);
             assert!(result.is_err(), "Feature name '{}' should be invalid", name);
             match result.unwrap_err() {
-                ApplicationError::InvalidFeatureName(_) => {},
+                ApplicationError::InvalidFeatureName(_) => {}
                 _ => panic!("Expected InvalidFeatureName for '{}'", name),
             }
         }
@@ -281,11 +301,11 @@ mod tests {
     fn test_project_repository_create_feature_failure() {
         let mut repo = MockProjectRepository::new();
         repo.set_next_operation_to_fail();
-        
+
         let result = repo.create_feature("valid-name");
         assert!(result.is_err());
         match result.unwrap_err() {
-            ApplicationError::FeatureCreationError(_) => {},
+            ApplicationError::FeatureCreationError(_) => {}
             _ => panic!("Expected FeatureCreationError"),
         }
     }
@@ -293,14 +313,12 @@ mod tests {
     #[test]
     fn test_project_repository_save_document() {
         let repo = MockProjectRepository::new();
-        let memories = vec![
-            crate::domain::entities::memory::Memory::new(
-                "tech".to_string(),
-                "Test Memory".to_string(),
-                "Test content".to_string(),
-            ),
-        ];
-        
+        let memories = vec![crate::domain::entities::memory::Memory::new(
+            "tech".to_string(),
+            "Test Memory".to_string(),
+            "Test content".to_string(),
+        )];
+
         let result = repo.save_document("tech", &memories);
         assert!(result.is_ok());
     }
@@ -310,11 +328,11 @@ mod tests {
         let mut repo = MockProjectRepository::new();
         repo.set_next_operation_to_fail();
         let memories = vec![];
-        
+
         let result = repo.save_document("tech", &memories);
         assert!(result.is_err());
         match result.unwrap_err() {
-            ApplicationError::DocumentGenerationError(_) => {},
+            ApplicationError::DocumentGenerationError(_) => {}
             _ => panic!("Expected DocumentGenerationError"),
         }
     }
@@ -322,14 +340,14 @@ mod tests {
     #[test]
     fn test_project_config_validate_memory_type() {
         let config = ProjectConfig::default_for_new_project();
-        
+
         // Valid types
         assert!(config.validate_memory_type("tech"));
         assert!(config.validate_memory_type("project-tech"));
         assert!(config.validate_memory_type("domain"));
         assert!(config.validate_memory_type("workflow"));
         assert!(config.validate_memory_type("decision"));
-        
+
         // Invalid types
         assert!(!config.validate_memory_type("invalid"));
         assert!(!config.validate_memory_type(""));
@@ -339,20 +357,20 @@ mod tests {
     #[test]
     fn test_mock_repository_helper_methods() {
         let mut repo = MockProjectRepository::new();
-        
+
         // Test feature tracking
         repo.add_created_feature("feature1");
         repo.add_created_feature("feature2");
         assert_eq!(repo.get_created_features().len(), 2);
         assert_eq!(repo.get_created_features()[0], "feature1");
-        
+
         // Test document tracking
         repo.add_saved_document("tech", 5);
         repo.add_saved_document("domain", 3);
         assert_eq!(repo.get_saved_documents().len(), 2);
         assert_eq!(*repo.get_saved_documents().get("tech").unwrap(), 5);
         assert_eq!(*repo.get_saved_documents().get("domain").unwrap(), 3);
-        
+
         // Test failure flag
         repo.set_next_operation_to_fail();
         assert!(repo.should_fail_next_operation);

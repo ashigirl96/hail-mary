@@ -56,7 +56,7 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
   - MemoryRepository trait定義
 - [x] `src/application/repositories/project_repository.rs` - テスト先行
   - Mockを使用したtrait動作テスト
-- [ ] `src/application/repositories/project_repository.rs` - 実装追加
+- [x] `src/application/repositories/project_repository.rs` - 実装追加
   - ProjectRepository trait定義
 - [ ] `src/application/repositories/mod.rs`
 
