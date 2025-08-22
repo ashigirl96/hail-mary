@@ -16,32 +16,28 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 ## Phase 1: Domain Layer (7ファイル)
 
 ### 1.1 Domain Errors
-- [ ] `src/domain/errors.rs` - テスト先行
+- [x] `src/domain/errors.rs` - テスト先行
   - `#[cfg(test)] mod tests`でエラー型テスト作成
-- [ ] `src/domain/errors.rs` - 実装追加
+- [x] `src/domain/errors.rs` - 実装追加
   - DomainError enumの実装
 
 ### 1.2 Value Objects
-- [ ] `src/domain/value_objects/confidence.rs` - テスト先行
+- [x] `src/domain/value_objects/confidence.rs` - テスト先行
   - バリデーションテスト（0.0-1.0範囲チェック）
-- [ ] `src/domain/value_objects/confidence.rs` - 実装追加
+- [x] `src/domain/value_objects/confidence.rs` - 実装追加
   - Confidence構造体とバリデーション実装
-- [ ] `src/domain/value_objects/mod.rs`
+- [x] `src/domain/value_objects/mod.rs`
 
 ### 1.3 Entities
-- [ ] `src/domain/entities/memory.rs` - テスト先行
+- [x] `src/domain/entities/memory.rs` - テスト先行
   - Memory作成・操作テスト
-- [ ] `src/domain/entities/memory.rs` - 実装追加
+- [x] `src/domain/entities/memory.rs` - 実装追加
   - Memory構造体とメソッド実装
-- [ ] `src/domain/entities/feature.rs` - テスト先行
-  - Featureエンティティテスト
-- [ ] `src/domain/entities/feature.rs` - 実装追加
-  - Feature構造体実装
-- [ ] `src/domain/entities/project.rs` - テスト先行
+- [x] `src/domain/entities/project.rs` - テスト先行
   - ProjectConfig設定検証テスト
-- [ ] `src/domain/entities/project.rs` - 実装追加
+- [x] `src/domain/entities/project.rs` - 実装追加
   - ProjectConfig構造体実装
-- [ ] `src/domain/entities/mod.rs`
+- [x] `src/domain/entities/mod.rs`
 
 ---
 

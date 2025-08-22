@@ -175,7 +175,6 @@ src/
 │   ├── entities/
 │   │   ├── mod.rs
 │   │   ├── memory.rs               # Memory entity with UUID, type, content
-│   │   ├── feature.rs              # Feature specification entity
 │   │   └── project.rs              # Project configuration
 │   ├── value_objects/
 │   │   ├── mod.rs
