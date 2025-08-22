@@ -5,7 +5,7 @@ pub struct Confidence(f32);
 
 impl Confidence {
     pub fn new(value: f32) -> Result<Self, DomainError> {
-        if value < 0.0 || value > 1.0 {
+        if value.is_nan() || value.is_infinite() || !(0.0..=1.0).contains(&value) {
             return Err(DomainError::InvalidConfidence(value));
         }
         Ok(Self(value))
@@ -32,7 +32,7 @@ mod tests {
         assert!(Confidence::new(0.5).is_ok());
         assert!(Confidence::new(0.0).is_ok());
         assert!(Confidence::new(1.0).is_ok());
-        
+
         assert!(Confidence::new(1.5).is_err());
         assert!(Confidence::new(-0.1).is_err());
     }
@@ -80,11 +80,11 @@ mod tests {
         // Boundary values
         assert!(Confidence::new(0.0).is_ok());
         assert!(Confidence::new(1.0).is_ok());
-        
+
         // Just outside boundaries
         assert!(Confidence::new(-0.000001).is_err());
         assert!(Confidence::new(1.000001).is_err());
-        
+
         // Special float values
         assert!(Confidence::new(f32::NAN).is_err());
         assert!(Confidence::new(f32::INFINITY).is_err());

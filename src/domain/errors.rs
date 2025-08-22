@@ -4,10 +4,10 @@ use thiserror::Error;
 pub enum DomainError {
     #[error("Invalid confidence value: {0}. Confidence must be between 0.0 and 1.0")]
     InvalidConfidence(f32),
-    
+
     #[error("Invalid memory type: {0}")]
     InvalidMemoryType(String),
-    
+
     #[error("Invalid feature name: {0}. Feature name must be kebab-case")]
     InvalidFeatureName(String),
 }
@@ -28,10 +28,7 @@ mod tests {
     #[test]
     fn test_invalid_memory_type_error() {
         let error = DomainError::InvalidMemoryType("invalid".to_string());
-        assert_eq!(
-            error.to_string(),
-            "Invalid memory type: invalid"
-        );
+        assert_eq!(error.to_string(), "Invalid memory type: invalid");
     }
 
     #[test]
@@ -54,7 +51,7 @@ mod tests {
         let error1 = DomainError::InvalidConfidence(1.5);
         let error2 = DomainError::InvalidConfidence(1.5);
         let error3 = DomainError::InvalidConfidence(2.0);
-        
+
         assert_eq!(error1, error2);
         assert_ne!(error1, error3);
     }
