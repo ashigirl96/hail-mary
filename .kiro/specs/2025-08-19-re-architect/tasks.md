@@ -50,11 +50,11 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
   - ApplicationError enum実装
 
 ### 2.2 Repository Traits (先にtrait定義)
-- [ ] `src/application/repositories/memory_repository.rs` - テスト先行
+- [x] `src/application/repositories/memory_repository.rs` - テスト先行
   - Mockを使用したtrait動作テスト
-- [ ] `src/application/repositories/memory_repository.rs` - 実装追加
+- [x] `src/application/repositories/memory_repository.rs` - 実装追加
   - MemoryRepository trait定義
-- [ ] `src/application/repositories/project_repository.rs` - テスト先行
+- [x] `src/application/repositories/project_repository.rs` - テスト先行
   - Mockを使用したtrait動作テスト
 - [ ] `src/application/repositories/project_repository.rs` - 実装追加
   - ProjectRepository trait定義

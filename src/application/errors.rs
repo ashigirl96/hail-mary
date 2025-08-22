@@ -29,6 +29,18 @@ pub enum ApplicationError {
 
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
+
+    #[error("Project initialization error: {0}")]
+    ProjectInitializationError(String),
+
+    #[error("File system error: {0}")]
+    FileSystemError(String),
+
+    #[error("Feature creation error: {0}")]
+    FeatureCreationError(String),
+
+    #[error("Document generation error: {0}")]
+    DocumentGenerationError(String),
 }
 
 impl ApplicationError {
