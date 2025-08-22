@@ -19,7 +19,7 @@ run *ARGS:
 
 # Run tests
 test:
-    cargo test
+    cargo test --quiet
 
 # Run tests with output
 test-verbose:
