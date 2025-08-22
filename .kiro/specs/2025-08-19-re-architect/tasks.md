@@ -44,9 +44,9 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 ## Phase 2: Application Layer (11ファイル)
 
 ### 2.1 Application Errors
-- [ ] `src/application/errors.rs` - テスト先行
+- [x] `src/application/errors.rs` - テスト先行
   - ApplicationErrorのテスト作成
-- [ ] `src/application/errors.rs` - 実装追加
+- [x] `src/application/errors.rs` - 実装追加
   - ApplicationError enum実装
 
 ### 2.2 Repository Traits (先にtrait定義)

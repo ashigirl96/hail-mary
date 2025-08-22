@@ -30,6 +30,7 @@ impl ProjectConfig {
     }
 }
 
+// TODO: 別ファイルに切り出す
 const DEFAULT_INSTRUCTIONS: &str = r#"Memory MCP Server v3
 
 Available memory types:
