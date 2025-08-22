@@ -2,7 +2,7 @@ use crate::application::errors::ApplicationError;
 use std::env;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PathManager {
     project_root: PathBuf,
 }
@@ -17,12 +17,20 @@ impl PathManager {
             ApplicationError::FileSystemError(format!("Failed to get current directory: {}", e))
         })?;
 
-        // Walk up directory tree to find .git (project root)
+        // Walk up directory tree to find .kiro or .git (project root)
         loop {
+            // Check for .kiro directory (kiro-initialized project)
+            let kiro_dir = current_dir.join(".kiro");
+            if kiro_dir.exists() {
+                // Found project root with .kiro
+                return Ok(Self::new(current_dir.clone()));
+            }
+
+            // Check for .git directory (git repository root)
             let git_dir = current_dir.join(".git");
             if git_dir.exists() {
                 // Found project root with .git
-                return Ok(Self::new(current_dir));
+                return Ok(Self::new(current_dir.clone()));
             }
 
             if !current_dir.pop() {

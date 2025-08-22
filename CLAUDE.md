@@ -111,6 +111,7 @@ cargo test -- --nocapture                     # Test output visible
 - `TestDirectory` RAII pattern for safe current directory changes
 - Temporary databases with full schema setup
 - Japanese content specifically tested in multilingual scenarios
+- **Use `TestDirectory` instead of `temp_dir.path()`** for thread-safe temporary directory management with automatic cleanup
 
 ## MCP Protocol Integration
 

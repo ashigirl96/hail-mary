@@ -142,16 +142,16 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
   - initコマンド統合テスト
 - [x] `src/cli/commands/init.rs` - 実装追加
   - InitCommand構造体実装
-- [ ] `src/cli/commands/new.rs` - テスト先行
+- [x] `src/cli/commands/new.rs` - テスト先行
   - newコマンド統合テスト
-- [ ] `src/cli/commands/new.rs` - 実装追加
+- [x] `src/cli/commands/new.rs` - 実装追加
   - NewCommand構造体実装
-- [ ] `src/cli/commands/memory.rs` - テスト先行
+- [x] `src/cli/commands/memory.rs` - テスト先行
   - memoryサブコマンド統合テスト
-- [ ] `src/cli/commands/memory.rs` - 実装追加
+- [x] `src/cli/commands/memory.rs` - 実装追加
   - MemoryCommand構造体実装
-- [ ] `src/cli/commands/mod.rs`
-- [ ] `src/cli/mod.rs`
+- [x] `src/cli/commands/mod.rs`
+- [x] `src/cli/mod.rs`
 
 ---
 
@@ -180,7 +180,7 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 - [x] Phase 1: Domain Layer (7ファイル・14タスク)
 - [x] Phase 2: Application Layer (11ファイル・22タスク)
 - [x] Phase 3: Infrastructure Layer (9ファイル・18タスク)
-- [ ] Phase 4: CLI Layer (7ファイル・14タスク)
+- [x] Phase 4: CLI Layer (7ファイル・14タスク)
 - [ ] Phase 5: Integration (5ファイル・10タスク)
 
 ### TDD品質チェック
