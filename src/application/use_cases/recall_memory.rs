@@ -3,7 +3,7 @@ use crate::application::repositories::MemoryRepository;
 use crate::domain::entities::memory::Memory;
 
 pub fn recall_memory(
-    repository: &mut impl MemoryRepository,
+    repository: &mut (impl MemoryRepository + ?Sized),
     query: &str,
     limit: usize,
     type_filter: Option<String>,

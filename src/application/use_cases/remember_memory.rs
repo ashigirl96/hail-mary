@@ -13,7 +13,7 @@ pub struct RememberRequest {
 }
 
 pub fn remember_memory(
-    repository: &mut impl MemoryRepository,
+    repository: &mut (impl MemoryRepository + ?Sized),
     config: &ProjectConfig,
     requests: Vec<RememberRequest>,
 ) -> Result<Vec<Memory>, ApplicationError> {
