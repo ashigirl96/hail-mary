@@ -99,11 +99,11 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 - [x] `src/infrastructure/filesystem/mod.rs`
 
 ### 3.2 Database Migrations
-- [ ] `src/infrastructure/migrations/embedded.rs` - テスト先行
+- [x] `src/infrastructure/migrations/embedded.rs` - テスト先行
   - マイグレーション実行テスト
-- [ ] `src/infrastructure/migrations/embedded.rs` - 実装追加
+- [x] `src/infrastructure/migrations/embedded.rs` - 実装追加
   - Refineryマイグレーション実装
-- [ ] `src/infrastructure/migrations/mod.rs`
+- [x] `src/infrastructure/migrations/mod.rs`
 
 ### 3.3 Repository Implementations (trait実装)
 - [ ] `src/infrastructure/repositories/memory.rs` - テスト先行
