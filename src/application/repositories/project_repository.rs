@@ -23,17 +23,9 @@ mod tests {
     struct MockProjectRepository {
         is_initialized: bool,
         config: Option<ProjectConfig>,
-        gitignore_updated: bool,
         created_features: Vec<String>,
         saved_documents: HashMap<String, usize>, // memory_type -> count
         should_fail_next_operation: bool,
-        initialize_calls: u32,
-        exists_calls: u32,
-        save_config_calls: u32,
-        load_config_calls: u32,
-        update_gitignore_calls: u32,
-        create_feature_calls: u32,
-        save_document_calls: u32,
     }
 
     impl ProjectRepository for MockProjectRepository {
