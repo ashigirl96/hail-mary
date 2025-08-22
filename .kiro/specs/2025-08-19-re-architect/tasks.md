@@ -110,11 +110,11 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
   - SQLite統合テスト（tempdb使用）
 - [x] `src/infrastructure/repositories/memory.rs` - 実装追加
   - SqliteMemoryRepository構造体実装
-- [ ] `src/infrastructure/repositories/project.rs` - テスト先行
+- [x] `src/infrastructure/repositories/project.rs` - テスト先行
   - ファイルシステム統合テスト（tempdir使用）
-- [ ] `src/infrastructure/repositories/project.rs` - 実装追加
+- [x] `src/infrastructure/repositories/project.rs` - 実装追加
   - ProjectRepository具体実装
-- [ ] `src/infrastructure/repositories/mod.rs`
+- [x] `src/infrastructure/repositories/mod.rs`
 
 ### 3.4 MCP Server
 - [ ] `src/infrastructure/mcp/server.rs` - テスト先行
