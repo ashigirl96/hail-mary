@@ -18,6 +18,7 @@ pub trait MemoryRepository: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::value_objects::confidence::Confidence;
     use std::collections::HashMap;
 
     // Mock implementation for testing
@@ -34,11 +35,18 @@ mod tests {
         cleanup_deleted_calls: u32,
         rebuild_fts_calls: u32,
         vacuum_calls: u32,
+        should_fail_next_save: bool,
     }
 
     impl MemoryRepository for MockMemoryRepository {
         fn save(&mut self, memory: &Memory) -> Result<(), ApplicationError> {
             self.save_calls += 1;
+            if self.should_fail_next_save {
+                self.should_fail_next_save = false;
+                return Err(ApplicationError::DatabaseError(
+                    "Simulated save failure".to_string(),
+                ));
+            }
             self.memories.insert(memory.id, memory.clone());
             Ok(())
         }
@@ -65,9 +73,24 @@ mod tests {
             let mut results: Vec<Memory> = self
                 .memories
                 .values()
-                .filter(|m| m.title.contains(query) || m.content.contains(query))
+                .filter(|m| {
+                    !m.deleted
+                        && (m.title.contains(query)
+                            || m.content.contains(query)
+                            || m.tags.iter().any(|tag| tag.contains(query)))
+                })
                 .cloned()
                 .collect();
+
+            // Sort by confidence and reference count (descending)
+            results.sort_by(|a, b| {
+                b.confidence
+                    .value()
+                    .partial_cmp(&a.confidence.value())
+                    .unwrap()
+                    .then(b.reference_count.cmp(&a.reference_count))
+            });
+
             results.truncate(limit);
             Ok(results)
         }
@@ -77,20 +100,26 @@ mod tests {
             Ok(self
                 .memories
                 .values()
-                .filter(|m| m.memory_type == memory_type)
+                .filter(|m| m.memory_type == memory_type && !m.deleted)
                 .cloned()
                 .collect())
         }
 
         fn find_all(&mut self) -> Result<Vec<Memory>, ApplicationError> {
             self.find_all_calls += 1;
-            Ok(self.memories.values().cloned().collect())
+            Ok(self
+                .memories
+                .values()
+                .filter(|m| !m.deleted)
+                .cloned()
+                .collect())
         }
 
         fn increment_reference_count(&mut self, id: &Uuid) -> Result<(), ApplicationError> {
             self.increment_ref_calls += 1;
             if let Some(memory) = self.memories.get_mut(id) {
                 memory.reference_count += 1;
+                memory.last_accessed = Some(chrono::Utc::now());
             }
             Ok(())
         }
@@ -118,12 +147,20 @@ mod tests {
             Self::default()
         }
 
+        fn set_next_save_to_fail(&mut self) {
+            self.should_fail_next_save = true;
+        }
+
         fn get_save_calls(&self) -> u32 {
             self.save_calls
         }
 
         fn get_save_batch_calls(&self) -> u32 {
             self.save_batch_calls
+        }
+
+        fn memory_count(&self) -> usize {
+            self.memories.len()
         }
     }
 
@@ -292,5 +329,184 @@ mod tests {
 
         let vacuum_result = repo.vacuum();
         assert!(vacuum_result.is_ok());
+    }
+
+    #[test]
+    fn test_search_fts_sorting_by_confidence() {
+        let mut repo = MockMemoryRepository::new();
+        let high_confidence = Memory::new(
+            "tech".to_string(),
+            "High confidence".to_string(),
+            "Content with keyword".to_string(),
+        )
+        .with_confidence(Confidence::new(0.9).unwrap());
+
+        let low_confidence = Memory::new(
+            "tech".to_string(),
+            "Low confidence".to_string(),
+            "Content with keyword".to_string(),
+        )
+        .with_confidence(Confidence::new(0.3).unwrap());
+
+        repo.save(&low_confidence).unwrap();
+        repo.save(&high_confidence).unwrap();
+
+        let results = repo.search_fts("keyword", 10).unwrap();
+        assert_eq!(results.len(), 2);
+        // High confidence should come first
+        assert_eq!(results[0].title, "High confidence");
+        assert_eq!(results[1].title, "Low confidence");
+    }
+
+    #[test]
+    fn test_search_fts_excludes_deleted() {
+        let mut repo = MockMemoryRepository::new();
+        let active_memory = Memory::new(
+            "tech".to_string(),
+            "Active memory".to_string(),
+            "This contains keyword".to_string(),
+        );
+        let mut deleted_memory = Memory::new(
+            "tech".to_string(),
+            "Deleted memory".to_string(),
+            "This also contains keyword".to_string(),
+        );
+        deleted_memory.deleted = true;
+
+        repo.save(&active_memory).unwrap();
+        repo.save(&deleted_memory).unwrap();
+
+        let results = repo.search_fts("keyword", 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].title, "Active memory");
+    }
+
+    #[test]
+    fn test_search_fts_tags() {
+        let mut repo = MockMemoryRepository::new();
+        let memory_with_tags = Memory::new(
+            "tech".to_string(),
+            "Tagged memory".to_string(),
+            "Some content".to_string(),
+        )
+        .with_tags(vec!["rust".to_string(), "programming".to_string()]);
+
+        repo.save(&memory_with_tags).unwrap();
+
+        let results = repo.search_fts("rust", 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].title, "Tagged memory");
+    }
+
+    #[test]
+    fn test_increment_reference_count_updates_last_accessed() {
+        let mut repo = MockMemoryRepository::new();
+        let memory = Memory::new(
+            "tech".to_string(),
+            "Test Memory".to_string(),
+            "Test content".to_string(),
+        );
+        let memory_id = memory.id;
+
+        repo.save(&memory).unwrap();
+        assert!(
+            repo.find_by_id(&memory_id)
+                .unwrap()
+                .unwrap()
+                .last_accessed
+                .is_none()
+        );
+
+        repo.increment_reference_count(&memory_id).unwrap();
+
+        let updated = repo.find_by_id(&memory_id).unwrap().unwrap();
+        assert_eq!(updated.reference_count, 1);
+        assert!(updated.last_accessed.is_some());
+    }
+
+    #[test]
+    fn test_save_failure_error_handling() {
+        let mut repo = MockMemoryRepository::new();
+        repo.set_next_save_to_fail();
+
+        let memory = Memory::new(
+            "tech".to_string(),
+            "Test Memory".to_string(),
+            "Test content".to_string(),
+        );
+
+        let result = repo.save(&memory);
+        assert!(result.is_err());
+        assert_eq!(repo.memory_count(), 0);
+
+        // Next save should succeed
+        let result2 = repo.save(&memory);
+        assert!(result2.is_ok());
+        assert_eq!(repo.memory_count(), 1);
+    }
+
+    #[test]
+    fn test_find_all_excludes_deleted() {
+        let mut repo = MockMemoryRepository::new();
+        let active_memory = Memory::new(
+            "tech".to_string(),
+            "Active".to_string(),
+            "Active content".to_string(),
+        );
+        let mut deleted_memory = Memory::new(
+            "tech".to_string(),
+            "Deleted".to_string(),
+            "Deleted content".to_string(),
+        );
+        deleted_memory.deleted = true;
+
+        repo.save(&active_memory).unwrap();
+        repo.save(&deleted_memory).unwrap();
+
+        let all_memories = repo.find_all().unwrap();
+        assert_eq!(all_memories.len(), 1);
+        assert_eq!(all_memories[0].title, "Active");
+    }
+
+    #[test]
+    fn test_find_by_type_excludes_deleted() {
+        let mut repo = MockMemoryRepository::new();
+        let active_memory = Memory::new(
+            "tech".to_string(),
+            "Active Tech".to_string(),
+            "Active content".to_string(),
+        );
+        let mut deleted_memory = Memory::new(
+            "tech".to_string(),
+            "Deleted Tech".to_string(),
+            "Deleted content".to_string(),
+        );
+        deleted_memory.deleted = true;
+
+        repo.save(&active_memory).unwrap();
+        repo.save(&deleted_memory).unwrap();
+
+        let tech_memories = repo.find_by_type("tech").unwrap();
+        assert_eq!(tech_memories.len(), 1);
+        assert_eq!(tech_memories[0].title, "Active Tech");
+    }
+
+    #[test]
+    fn test_search_fts_limit_behavior() {
+        let mut repo = MockMemoryRepository::new();
+        for i in 1..=5 {
+            let memory = Memory::new(
+                "tech".to_string(),
+                format!("Title {}", i),
+                "Common keyword content".to_string(),
+            );
+            repo.save(&memory).unwrap();
+        }
+
+        let results = repo.search_fts("keyword", 3).unwrap();
+        assert_eq!(results.len(), 3);
+
+        let results = repo.search_fts("keyword", 10).unwrap();
+        assert_eq!(results.len(), 5);
     }
 }
