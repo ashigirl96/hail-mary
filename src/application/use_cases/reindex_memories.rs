@@ -43,88 +43,7 @@ pub fn reindex_memories(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::repositories::MemoryRepository;
-    use crate::domain::entities::memory::Memory;
-    use std::collections::HashMap;
-    use uuid::Uuid;
-
-    // Mock repository for testing
-    struct MockMemoryRepository {
-        memories: HashMap<Uuid, Memory>,
-        deleted_count: usize,
-        cleanup_called: bool,
-        rebuild_called: bool,
-        vacuum_called: bool,
-    }
-
-    impl MockMemoryRepository {
-        fn new() -> Self {
-            Self {
-                memories: HashMap::new(),
-                deleted_count: 0,
-                cleanup_called: false,
-                rebuild_called: false,
-                vacuum_called: false,
-            }
-        }
-
-        fn set_deleted_count(&mut self, count: usize) {
-            self.deleted_count = count;
-        }
-    }
-
-    impl MemoryRepository for MockMemoryRepository {
-        fn save(&mut self, memory: &Memory) -> Result<(), ApplicationError> {
-            self.memories.insert(memory.id, memory.clone());
-            Ok(())
-        }
-
-        fn save_batch(&mut self, memories: &[Memory]) -> Result<(), ApplicationError> {
-            for memory in memories {
-                self.save(memory)?;
-            }
-            Ok(())
-        }
-
-        fn find_by_id(&mut self, id: &Uuid) -> Result<Option<Memory>, ApplicationError> {
-            Ok(self.memories.get(id).cloned())
-        }
-
-        fn search_fts(
-            &mut self,
-            _query: &str,
-            _limit: usize,
-        ) -> Result<Vec<Memory>, ApplicationError> {
-            Ok(self.memories.values().cloned().collect())
-        }
-
-        fn find_by_type(&mut self, _memory_type: &str) -> Result<Vec<Memory>, ApplicationError> {
-            Ok(self.memories.values().cloned().collect())
-        }
-
-        fn find_all(&mut self) -> Result<Vec<Memory>, ApplicationError> {
-            Ok(self.memories.values().cloned().collect())
-        }
-
-        fn increment_reference_count(&mut self, _id: &Uuid) -> Result<(), ApplicationError> {
-            Ok(())
-        }
-
-        fn cleanup_deleted(&mut self) -> Result<usize, ApplicationError> {
-            self.cleanup_called = true;
-            Ok(self.deleted_count)
-        }
-
-        fn rebuild_fts_index(&mut self) -> Result<(), ApplicationError> {
-            self.rebuild_called = true;
-            Ok(())
-        }
-
-        fn vacuum(&mut self) -> Result<(), ApplicationError> {
-            self.vacuum_called = true;
-            Ok(())
-        }
-    }
+    use crate::application::test_helpers::MockMemoryRepository;
 
     #[test]
     fn test_reindex_memories_basic_operation() {
@@ -139,9 +58,9 @@ mod tests {
         assert!(stats.index_rebuilt);
         assert!(stats.database_optimized);
 
-        assert!(repo.cleanup_called);
-        assert!(repo.rebuild_called);
-        assert!(repo.vacuum_called);
+        assert!(repo.is_cleanup_called());
+        assert!(repo.is_rebuild_called());
+        assert!(repo.is_vacuum_called());
     }
 
     #[test]
@@ -182,60 +101,9 @@ mod tests {
 
     #[test]
     fn test_reindex_memories_cleanup_failure() {
-        struct FailingRepository;
+        let mut repo = MockMemoryRepository::new();
+        repo.set_fail_cleanup(true);
 
-        impl MemoryRepository for FailingRepository {
-            fn save(&mut self, _memory: &Memory) -> Result<(), ApplicationError> {
-                unimplemented!()
-            }
-
-            fn save_batch(&mut self, _memories: &[Memory]) -> Result<(), ApplicationError> {
-                unimplemented!()
-            }
-
-            fn find_by_id(&mut self, _id: &Uuid) -> Result<Option<Memory>, ApplicationError> {
-                unimplemented!()
-            }
-
-            fn search_fts(
-                &mut self,
-                _query: &str,
-                _limit: usize,
-            ) -> Result<Vec<Memory>, ApplicationError> {
-                unimplemented!()
-            }
-
-            fn find_by_type(
-                &mut self,
-                _memory_type: &str,
-            ) -> Result<Vec<Memory>, ApplicationError> {
-                unimplemented!()
-            }
-
-            fn find_all(&mut self) -> Result<Vec<Memory>, ApplicationError> {
-                unimplemented!()
-            }
-
-            fn increment_reference_count(&mut self, _id: &Uuid) -> Result<(), ApplicationError> {
-                unimplemented!()
-            }
-
-            fn cleanup_deleted(&mut self) -> Result<usize, ApplicationError> {
-                Err(ApplicationError::DatabaseError(
-                    "Cleanup failed".to_string(),
-                ))
-            }
-
-            fn rebuild_fts_index(&mut self) -> Result<(), ApplicationError> {
-                unimplemented!()
-            }
-
-            fn vacuum(&mut self) -> Result<(), ApplicationError> {
-                unimplemented!()
-            }
-        }
-
-        let mut repo = FailingRepository;
         let result = reindex_memories(&mut repo, false);
 
         assert!(result.is_err());
