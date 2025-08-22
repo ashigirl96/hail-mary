@@ -167,13 +167,13 @@ impl MemoryMcpServer {
 #[tool_handler]
 impl ServerHandler for MemoryMcpServer {
     fn get_info(&self) -> ServerInfo {
+        let instructions = self.service.lock().unwrap().config.instructions.clone();
+
         ServerInfo {
             protocol_version: ProtocolVersion::V_2024_11_05,
-            capabilities: ServerCapabilities::builder()
-                .enable_tools()
-                .build(),
+            capabilities: ServerCapabilities::builder().enable_tools().build(),
             server_info: Implementation::from_build_env(),
-            instructions: Some("Memory MCP Server v3\n\nAvailable memory types:\n- tech: General technical knowledge (languages, frameworks, algorithms)\n- project-tech: This project's specific technical implementation\n- domain: Business domain knowledge and requirements\n- workflow: Development workflows and processes\n- decision: Architecture decisions and their rationale".to_string()),
+            instructions: Some(instructions),
         }
     }
 }
@@ -593,5 +593,25 @@ mod tests {
         let json = serde_json::to_string(&recall_response).unwrap();
         assert!(json.contains("content"));
         assert!(json.contains("total_count"));
+    }
+
+    #[test]
+    fn test_server_info_uses_config_instructions() {
+        // Red: テスト先行 - カスタムinstructionsがServerInfoに反映される
+        let repo = Box::new(MockMemoryRepository::new());
+        let mut config = create_test_config();
+        config.instructions =
+            "Custom MCP Instructions\n\nTest memory types:\n- custom-type: Custom type for testing"
+                .to_string();
+
+        let service = MemoryService::new(repo, config);
+        let server = MemoryMcpServer::new(service);
+
+        let info = server.get_info();
+        let instructions = info.instructions.unwrap();
+
+        assert!(instructions.contains("Custom MCP Instructions"));
+        assert!(instructions.contains("custom-type: Custom type for testing"));
+        assert!(!instructions.contains("Memory MCP Server v3")); // 元のデフォルトは含まれない
     }
 }
