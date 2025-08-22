@@ -117,11 +117,11 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 - [x] `src/infrastructure/repositories/mod.rs`
 
 ### 3.4 MCP Server
-- [ ] `src/infrastructure/mcp/server.rs` - テスト先行
+- [x] `src/infrastructure/mcp/server.rs` - テスト先行
   - MCPプロトコル通信テスト
-- [ ] `src/infrastructure/mcp/server.rs` - 実装追加
+- [x] `src/infrastructure/mcp/server.rs` - 実装追加
   - MemoryMcpServer構造体実装
-- [ ] `src/infrastructure/mcp/mod.rs`
+- [x] `src/infrastructure/mcp/mod.rs`
 
 ---
 
@@ -177,9 +177,9 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 **合計**: 39ファイル（78タスク: テスト先行 + 実装）
 
 ### Phase別進捗
-- [ ] Phase 1: Domain Layer (7ファイル・14タスク)
-- [ ] Phase 2: Application Layer (11ファイル・22タスク)
-- [ ] Phase 3: Infrastructure Layer (9ファイル・18タスク)
+- [x] Phase 1: Domain Layer (7ファイル・14タスク)
+- [x] Phase 2: Application Layer (11ファイル・22タスク)
+- [x] Phase 3: Infrastructure Layer (9ファイル・18タスク)
 - [ ] Phase 4: CLI Layer (7ファイル・14タスク)
 - [ ] Phase 5: Integration (5ファイル・10タスク)
 
