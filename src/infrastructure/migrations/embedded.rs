@@ -14,8 +14,8 @@ pub fn run_migrations(conn: &mut Connection) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::test_helpers::TestDirectory;
     use rusqlite::Connection;
-    use tempfile::tempdir;
 
     #[test]
     fn test_migrations_can_be_embedded() {
@@ -59,8 +59,8 @@ mod tests {
     #[test]
     fn test_run_migrations_creates_tables() {
         // Create temporary database
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test_migrations.db");
+        let test_dir = TestDirectory::new_no_cd();
+        let db_path = test_dir.path().join("test_migrations.db");
         let mut conn = Connection::open(&db_path).unwrap();
 
         // Run migrations
@@ -148,8 +148,8 @@ mod tests {
     #[test]
     fn test_migrations_are_idempotent() {
         // Create temporary database
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test_idempotent.db");
+        let test_dir = TestDirectory::new_no_cd();
+        let db_path = test_dir.path().join("test_idempotent.db");
         let mut conn = Connection::open(&db_path).unwrap();
 
         // Run migrations first time
@@ -171,8 +171,8 @@ mod tests {
     #[test]
     fn test_migration_creates_triggers() {
         // Create temporary database
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test_triggers.db");
+        let test_dir = TestDirectory::new_no_cd();
+        let db_path = test_dir.path().join("test_triggers.db");
         let mut conn = Connection::open(&db_path).unwrap();
 
         // Run migrations
@@ -214,8 +214,8 @@ mod tests {
     #[test]
     fn test_fts_functionality() {
         // Create temporary database
-        let temp_dir = tempdir().unwrap();
-        let db_path = temp_dir.path().join("test_fts.db");
+        let test_dir = TestDirectory::new_no_cd();
+        let db_path = test_dir.path().join("test_fts.db");
         let mut conn = Connection::open(&db_path).unwrap();
 
         // Run migrations

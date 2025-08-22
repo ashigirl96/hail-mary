@@ -79,8 +79,8 @@ impl PathManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::test_helpers::TestDirectory;
     use std::fs;
-    use tempfile::tempdir;
 
     #[test]
     fn test_path_manager_new() {
@@ -93,25 +93,20 @@ mod tests {
 
     #[test]
     fn test_discover_finds_git_in_current_dir() {
-        // Create temporary directory with .git
-        let temp_dir = tempdir().expect("Failed to create temp dir");
-        let git_dir = temp_dir.path().join(".git");
+        // Use TestDirectory for thread-safe test execution
+        let test_dir = TestDirectory::new();
+
+        // Create .git directory in test directory
+        let git_dir = test_dir.path().join(".git");
         fs::create_dir(&git_dir).expect("Failed to create .git dir");
 
-        // Change to temp directory
-        let original_dir = env::current_dir().expect("Failed to get current dir");
-        env::set_current_dir(&temp_dir).expect("Failed to change dir");
-
-        // Test discovery
+        // Test discovery - current directory is already set by TestDirectory
         let result = PathManager::discover();
-
-        // Restore original directory
-        env::set_current_dir(&original_dir).expect("Failed to restore dir");
 
         assert!(result.is_ok());
         let path_manager = result.unwrap();
         // Use canonicalize to handle macOS symlink resolution (/var -> /private/var)
-        let expected = temp_dir
+        let expected = test_dir
             .path()
             .canonicalize()
             .expect("Failed to canonicalize temp dir");
@@ -124,30 +119,27 @@ mod tests {
 
     #[test]
     fn test_discover_walks_up_directory_tree() {
-        // Create temporary directory structure: temp/.git and temp/subdir/nested
-        let temp_dir = tempdir().expect("Failed to create temp dir");
-        let git_dir = temp_dir.path().join(".git");
+        // Use TestDirectory for thread-safe test execution
+        let test_dir = TestDirectory::new();
+
+        // Create .git directory in test directory
+        let git_dir = test_dir.path().join(".git");
         fs::create_dir(&git_dir).expect("Failed to create .git dir");
 
-        let subdir = temp_dir.path().join("subdir");
-        let nested_dir = subdir.join("nested");
-        fs::create_dir_all(&nested_dir).expect("Failed to create nested dirs");
+        // Create nested directory structure
+        let nested_dir = test_dir.create_subdir("subdir/nested");
 
-        // Change to nested directory
-        let original_dir = env::current_dir().expect("Failed to get current dir");
+        // Change to nested directory while still holding the mutex
         env::set_current_dir(&nested_dir).expect("Failed to change to nested dir");
 
         // Test discovery - should find .git in parent directory
         let result = PathManager::discover();
 
-        // Restore original directory before temp_dir goes out of scope
-        env::set_current_dir(&original_dir).expect("Failed to restore dir");
-
         // Validate result
         assert!(result.is_ok());
         let path_manager = result.unwrap();
         // Use canonicalize to handle macOS symlink resolution (/var -> /private/var)
-        let expected = temp_dir
+        let expected = test_dir
             .path()
             .canonicalize()
             .expect("Failed to canonicalize temp dir");
@@ -160,18 +152,12 @@ mod tests {
 
     #[test]
     fn test_discover_returns_error_when_no_git() {
-        // Create temporary directory without .git
-        let temp_dir = tempdir().expect("Failed to create temp dir");
+        // Use TestDirectory for thread-safe test execution
+        // The temporary directory is created without .git
+        let _test_dir = TestDirectory::new();
 
-        // Change to temp directory
-        let original_dir = env::current_dir().expect("Failed to get current dir");
-        env::set_current_dir(&temp_dir).expect("Failed to change dir");
-
-        // Test discovery - should fail
+        // Test discovery - should fail since there's no .git directory
         let result = PathManager::discover();
-
-        // Restore original directory
-        env::set_current_dir(&original_dir).expect("Failed to restore dir");
 
         assert!(result.is_err());
         assert!(matches!(

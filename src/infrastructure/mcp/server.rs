@@ -195,6 +195,7 @@ mod tests {
         MemoryService::new(repo, config)
     }
 
+    #[allow(dead_code)]
     fn create_test_service_with_memories(memories: Vec<Memory>) -> MemoryService {
         let repo = Box::new(MockMemoryRepository::new().with_memories(memories));
         let config = create_test_config();

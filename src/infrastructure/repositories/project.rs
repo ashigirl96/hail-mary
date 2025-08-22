@@ -294,18 +294,18 @@ impl ProjectRepositoryTrait for ProjectRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
+    use crate::application::test_helpers::TestDirectory;
 
-    fn create_test_repository() -> (ProjectRepository, tempfile::TempDir) {
-        let temp_dir = tempdir().expect("Failed to create temp directory");
-        let path_manager = PathManager::new(temp_dir.path().to_path_buf());
+    fn create_test_repository() -> (ProjectRepository, TestDirectory) {
+        let test_dir = TestDirectory::new_no_cd();
+        let path_manager = PathManager::new(test_dir.path().to_path_buf());
         let repository = ProjectRepository::new(path_manager);
-        (repository, temp_dir)
+        (repository, test_dir)
     }
 
     #[test]
     fn test_initialize_creates_directory_structure() {
-        let (repository, _temp_dir) = create_test_repository();
+        let (repository, _test_dir) = create_test_repository();
 
         let result = repository.initialize();
         assert!(result.is_ok());
@@ -318,7 +318,7 @@ mod tests {
 
     #[test]
     fn test_exists_returns_true_when_initialized() {
-        let (repository, _temp_dir) = create_test_repository();
+        let (repository, _test_dir) = create_test_repository();
 
         // Initially should not exist
         let exists = repository.exists().unwrap();
@@ -332,7 +332,7 @@ mod tests {
 
     #[test]
     fn test_save_and_load_config_roundtrip() {
-        let (repository, _temp_dir) = create_test_repository();
+        let (repository, _test_dir) = create_test_repository();
 
         // Initialize to create directories
         repository.initialize().unwrap();
@@ -534,10 +534,10 @@ mod tests {
 
     #[test]
     fn test_error_handling_scenarios() {
-        let temp_dir = tempdir().expect("Failed to create temp directory");
+        let test_dir = TestDirectory::new_no_cd();
 
         // Test with invalid path (read-only)
-        let readonly_path = temp_dir.path().join("readonly");
+        let readonly_path = test_dir.path().join("readonly");
         fs::create_dir(&readonly_path).unwrap();
 
         // Make directory read-only on Unix systems
@@ -563,11 +563,11 @@ mod tests {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            let mut perms = fs::metadata(temp_dir.path().join("readonly"))
+            let mut perms = fs::metadata(test_dir.path().join("readonly"))
                 .unwrap()
                 .permissions();
             perms.set_mode(0o755);
-            fs::set_permissions(temp_dir.path().join("readonly"), perms).unwrap();
+            fs::set_permissions(test_dir.path().join("readonly"), perms).unwrap();
         }
     }
 

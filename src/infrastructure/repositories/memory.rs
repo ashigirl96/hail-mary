@@ -315,15 +315,15 @@ impl MemoryRepository for SqliteMemoryRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::test_helpers::TestDirectory;
     use crate::domain::value_objects::confidence::Confidence;
-    use tempfile::tempdir;
 
     /// Create a test repository with temporary database
-    fn create_test_repository() -> (SqliteMemoryRepository, tempfile::TempDir) {
-        let temp_dir = tempdir().expect("Failed to create temp directory");
-        let db_path = temp_dir.path().join("test.db");
+    fn create_test_repository() -> (SqliteMemoryRepository, TestDirectory) {
+        let test_dir = TestDirectory::new_no_cd();
+        let db_path = test_dir.path().join("test.db");
         let repo = SqliteMemoryRepository::new(&db_path).expect("Failed to create repository");
-        (repo, temp_dir)
+        (repo, test_dir)
     }
 
     /// Create test memory for use in tests
@@ -357,7 +357,7 @@ mod tests {
 
     #[test]
     fn test_repository_creation() {
-        let (_repo, _temp_dir) = create_test_repository();
+        let (_repo, _test_dir) = create_test_repository();
         // Test passes if repository creation doesn't panic
     }
 
