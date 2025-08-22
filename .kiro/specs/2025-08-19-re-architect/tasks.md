@@ -58,7 +58,7 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
   - Mockを使用したtrait動作テスト
 - [x] `src/application/repositories/project_repository.rs` - 実装追加
   - ProjectRepository trait定義
-- [ ] `src/application/repositories/mod.rs`
+- [x] `src/application/repositories/mod.rs`
 
 ### 2.3 Use Cases (trait使用)
 - [ ] `src/application/use_cases/initialize_project.rs` - テスト先行
