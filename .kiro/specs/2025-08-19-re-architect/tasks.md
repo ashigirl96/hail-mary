@@ -128,19 +128,19 @@ Design-v3.mdのMigration Planに従い、Clean Architecture + TDDで全39ファ�
 ## Phase 4: CLI Layer (7ファイル)
 
 ### 4.1 基盤コンポーネント
-- [ ] `src/cli/args.rs` - テスト先行
+- [x] `src/cli/args.rs` - テスト先行
   - 引数解析テスト
-- [ ] `src/cli/args.rs` - 実装追加
+- [x] `src/cli/args.rs` - 実装追加
   - Clap構造体定義
-- [ ] `src/cli/formatters.rs` - テスト先行
+- [x] `src/cli/formatters.rs` - テスト先行
   - 出力フォーマットテスト
-- [ ] `src/cli/formatters.rs` - 実装追加
+- [x] `src/cli/formatters.rs` - 実装追加
   - フォーマッター関数実装
 
 ### 4.2 Command Implementations
-- [ ] `src/cli/commands/init.rs` - テスト先行
+- [x] `src/cli/commands/init.rs` - テスト先行
   - initコマンド統合テスト
-- [ ] `src/cli/commands/init.rs` - 実装追加
+- [x] `src/cli/commands/init.rs` - 実装追加
   - InitCommand構造体実装
 - [ ] `src/cli/commands/new.rs` - テスト先行
   - newコマンド統合テスト
