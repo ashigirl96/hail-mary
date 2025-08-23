@@ -342,9 +342,14 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         let dest_path = archive_dir.join(name);
 
-        // Check if already exists in archive
+        // If already exists in archive, remove it first to allow overwriting
         if dest_path.exists() {
-            return Err(ApplicationError::ArchiveAlreadyExists(name.to_string()));
+            fs::remove_dir_all(&dest_path).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to remove existing archive: {}",
+                    e
+                ))
+            })?;
         }
 
         // Move directory to archive
