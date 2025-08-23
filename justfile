@@ -33,12 +33,12 @@ fmt:
 fmt-check:
     cargo fmt --check
 
-# Run clippy linter
-lint:
+# Run clippy linter (basic)
+lint-basic:
     cargo clippy -- -D warnings
 
-# Run clippy with additional checks
-lint-strict:
+# Run clippy with comprehensive checks (same as CI)
+lint:
     cargo clippy --all-targets --all-features -- -D warnings
 
 # Type check without building
@@ -87,7 +87,7 @@ fix:
     cargo fmt
     cargo clippy --fix --allow-dirty --allow-staged
 
-# Run all checks (format, lint, test)
+# Run all checks (format, lint, test) - same as CI pipeline
 ci: fmt-check lint test
 
 # Setup development environment
