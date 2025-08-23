@@ -71,23 +71,23 @@ impl MemoryCommand {
             format_info("Memory MCP server ready. Connect with MCP client via stdio.")
         );
 
-        // // Run the actual MCP server with stdio transport
-        // #[cfg(not(test))]
-        // {
-        //     use rmcp::{ServiceExt, transport::stdio};
-        //
-        //     let rt = tokio::runtime::Runtime::new()?;
-        //     rt.block_on(async {
-        //         let service = server
-        //             .serve(stdio())
-        //             .await
-        //             .map_err(|e| anyhow::anyhow!("Failed to start MCP server: {}", e))?;
-        //         service
-        //             .waiting()
-        //             .await
-        //             .map_err(|e| anyhow::anyhow!("MCP server error: {}", e))
-        //     })?;
-        // }
+        // Run the actual MCP server with stdio transport
+        #[cfg(not(test))]
+        {
+            use rmcp::{ServiceExt, transport::stdio};
+
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async {
+                let service = _server
+                    .serve(stdio())
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Failed to start MCP server: {}", e))?;
+                service
+                    .waiting()
+                    .await
+                    .map_err(|e| anyhow::anyhow!("MCP server error: {}", e))
+            })?;
+        }
 
         Ok(())
     }

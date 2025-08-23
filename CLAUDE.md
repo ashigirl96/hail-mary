@@ -8,21 +8,46 @@ This is hail-mary, a sophisticated Rust CLI application that implements a Memory
 
 ## Core Architecture
 
-The system follows hexagonal architecture with clear separation of concerns:
+The system follows a 4-layer Clean Architecture with clear separation of concerns and dependency inversion:
 
-### Domain Models (`src/models/`)
-- `Memory`: Core entity with UUID, MemoryType enum (Tech/ProjectTech/Domain), confidence scoring, and metadata
-- `KiroConfig`: TOML-based configuration management with project root discovery
-- `MemoryError`: Structured error handling using thiserror
+```
++-----------------------------------------------------------+
+|                      CLI Layer                           |
+|              (Commands, User Interaction)                |
++-----------------------------------------------------------+
+|                   Application Layer                      |
+|          (Use Cases, Business Logic, Ports)             |
++-----------------------------------------------------------+
+|                     Domain Layer                         |
+|        (Entities, Value Objects, Domain Rules)          |
++-----------------------------------------------------------+
+|                 Infrastructure Layer                     |
+|    (Database, File System, External Services)           |
++-----------------------------------------------------------+
+```
 
-### Repository Pattern (`src/repositories/memory.rs`)
-- `MemoryRepository` trait: Abstracted data access interface
-- `SqliteMemoryRepository`: Production implementation with FTS5 search, WAL mode, and transaction support
-- `InMemoryRepository`: Testing implementation using HashMap
+### Domain Layer (`src/domain/`)
+- **Entities**: `Memory` and `ProjectConfig` - core business objects with identity
+- **Value Objects**: `Confidence` - domain-specific types with validation (0.0-1.0)
+- **Domain Rules**: Business invariants and validation logic embedded in entities
+- **Domain Errors**: Business rule violations using thiserror
 
-### Service Layer (`src/services/`)
-- `MemoryService`: Business logic with validation, async operations, and batch processing
-- `MemoryMcpService`: MCP protocol implementation for AI model integration
+### Application Layer (`src/application/`)
+- **Use Cases**: Function-based business logic (`remember_memory`, `recall_memory`, `initialize_project`)
+- **Repository Ports**: `MemoryRepository` and `ProjectRepository` traits defining data access interfaces
+- **Business Orchestration**: Coordinates domain objects and enforces business rules
+- **Application Errors**: Operation-level errors with proper conversion from domain errors
+
+### CLI Layer (`src/cli/`)
+- **Commands**: Command implementations (`InitCommand`, `NewCommand`, `MemoryCommand`)
+- **Arguments**: Clap-based CLI argument parsing with validation
+- **Formatters**: Output formatting for different display modes (text, JSON, markdown)
+
+### Infrastructure Layer (`src/infrastructure/`)
+- **Repository Implementations**: `SqliteMemoryRepository` with FTS5 search and WAL mode
+- **MCP Server**: Protocol implementation for AI model integration using rmcp
+- **Filesystem**: `PathManager` for centralized path resolution and project discovery
+- **Migrations**: Embedded database migrations using Refinery
 
 ### Database Design
 - SQLite with FTS5 for multilingual full-text search (Japanese tokenization support)
@@ -30,12 +55,64 @@ The system follows hexagonal architecture with clear separation of concerns:
 - Automatic triggers maintain FTS index consistency
 - Logical deletion with `deleted` flag
 
-### CLI Commands (`src/commands/`)
-- `init`: Initialize .kiro directory and configuration
-- `new`: Create feature specification templates
-- `memory serve`: Start MCP server
-- `memory document`: Generate documentation from memories
-- `memory reindex`: Database optimization and cleanup
+### Directory Structure
+
+```
+src/
+├── domain/                          # Pure business logic
+│   ├── entities/
+│   │   ├── memory.rs               # Memory entity with UUID, type, content
+│   │   └── project.rs              # Project configuration
+│   ├── value_objects/
+│   │   └── confidence.rs           # Confidence value (0.0-1.0)
+│   └── errors.rs                   # Domain-specific errors
+│
+├── application/                     # Business logic orchestration
+│   ├── use_cases/
+│   │   ├── initialize_project.rs   # Project initialization logic
+│   │   ├── create_feature.rs       # Feature creation logic
+│   │   ├── complete_features.rs    # Archive completed specs logic
+│   │   ├── remember_memory.rs      # Store memory logic
+│   │   ├── recall_memory.rs        # Retrieve memories logic
+│   │   ├── generate_document.rs    # Document generation logic
+│   │   └── reindex_memories.rs     # Database optimization logic
+│   ├── repositories/               # Repository interfaces (traits)
+│   │   ├── memory_repository.rs    # Memory persistence interface
+│   │   └── project_repository.rs   # Project structure interface (includes spec archiving)
+│   ├── test_helpers/               # Mock repositories for testing
+│   └── errors.rs                   # Application errors
+│
+├── cli/                            # Command-line interface
+│   ├── commands/
+│   │   ├── init.rs                # Init command implementation
+│   │   ├── new.rs                 # New feature command
+│   │   ├── complete.rs            # Complete command with TUI (ratatui)
+│   │   └── memory.rs              # Memory subcommands 
+│   ├── formatters.rs              # Output formatting
+│   └── args.rs                    # Argument parsing structures
+│
+├── infrastructure/                 # External services & implementations
+│   ├── repositories/
+│   │   ├── memory.rs              # Memory repository (SQLite)
+│   │   └── project.rs             # Project repository
+│   ├── mcp/
+│   │   └── server.rs              # MCP server implementation
+│   ├── filesystem/
+│   │   └── path_manager.rs        # Centralized path management
+│   └── migrations/
+│       └── embedded.rs            # Refinery migrations
+│
+├── lib.rs                          # Library exports
+└── main.rs                         # Application entry point & DI
+```
+
+### CLI Commands
+- `hail-mary init`: Initialize .kiro directory structure and configuration
+- `hail-mary new <name>`: Create feature specification templates with validation
+- `hail-mary complete`: Interactive TUI for marking specifications as complete (archives to .kiro/archive)
+- `hail-mary memory serve`: Start MCP server for AI model integration
+- `hail-mary memory document [--type <type>]`: Generate documentation from memories
+- `hail-mary memory reindex [--dry-run] [--verbose]`: Database optimization and cleanup
 
 ## Development Commands
 
@@ -86,14 +163,16 @@ cargo test -- --nocapture                     # Test output visible
 ## Key Implementation Details
 
 ### Error Handling Strategy
-- `anyhow::Result` for application-level errors
-- `MemoryError` enum with `thiserror` for domain errors
-- Repository methods return `Result<T>` with proper error propagation
+- **Domain Errors**: `DomainError` enum with `thiserror` for business rule violations (e.g., invalid confidence values)
+- **Application Errors**: `ApplicationError` enum for operation-level errors with automatic conversion from domain errors
+- **Repository Results**: All repository methods return `Result<T, ApplicationError>` for consistent error handling
+- **Error Propagation**: Use `?` operator for seamless error conversion through the layers
 
-### Async Patterns
-- Tokio runtime with async/await throughout service layer
-- `Arc<Mutex<Repository>>` for safe concurrent access
-- Non-blocking reference count updates via `tokio::spawn`
+### Clean Architecture Patterns
+- **Dependency Inversion**: CLI and Infrastructure depend on Application/Domain abstractions
+- **Function-based Use Cases**: Simple functions instead of complex service classes
+- **Repository Pattern**: Traits in Application layer, implementations in Infrastructure
+- **Dependency Injection**: Main function composes dependencies and injects into CLI commands
 
 ### Database Patterns
 - Parameterized queries prevent SQL injection
@@ -102,9 +181,9 @@ cargo test -- --nocapture                     # Test output visible
 - FTS5 triggers automatically maintain search index
 
 ### Memory Types System
-- Extensible enum with string serialization
-- Configuration validation against allowed types
-- Display/FromStr traits for CLI argument parsing
+- **String-based Types**: Flexible string types defined in configuration (tech, project-tech, domain, workflow, decision)
+- **Configuration Validation**: ProjectConfig validates memory types against allowed values
+- **Type Safety**: Use case functions validate memory types before entity creation
 
 ### Testing Infrastructure
 - `tests/common/` provides shared test utilities

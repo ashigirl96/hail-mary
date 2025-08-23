@@ -44,6 +44,15 @@ pub enum ApplicationError {
 
     #[error("Document generation error: {0}")]
     DocumentGenerationError(String),
+
+    #[error("Spec directory not found: {0}")]
+    SpecNotFound(String),
+
+    #[error("Invalid spec directory: {0}")]
+    InvalidSpecDirectory(String),
+
+    #[error("Spec already exists in archive: {0}")]
+    ArchiveAlreadyExists(String),
 }
 
 impl ApplicationError {

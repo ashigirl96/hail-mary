@@ -289,6 +289,71 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         Ok(())
     }
+
+    fn list_spec_directories(&self) -> Result<Vec<(String, bool)>, ApplicationError> {
+        let specs_dir = self.path_manager.specs_dir(true);
+        let mut specs = Vec::new();
+
+        if !specs_dir.exists() {
+            return Ok(specs);
+        }
+
+        let entries = fs::read_dir(specs_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to read specs directory: {}", e))
+        })?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| {
+                ApplicationError::FileSystemError(format!("Failed to read directory entry: {}", e))
+            })?;
+
+            let file_type = entry.file_type().map_err(|e| {
+                ApplicationError::FileSystemError(format!("Failed to get file type: {}", e))
+            })?;
+
+            if file_type.is_dir() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                // For now, all specs in the specs directory are considered not archived
+                specs.push((name, false));
+            }
+        }
+
+        // Sort by name in reverse order (newer dates first)
+        specs.sort_by(|a, b| b.0.cmp(&a.0));
+        Ok(specs)
+    }
+
+    fn mark_spec_complete(&self, name: &str) -> Result<(), ApplicationError> {
+        let source_path = self.path_manager.specs_dir(true).join(name);
+
+        if !source_path.exists() {
+            return Err(ApplicationError::SpecNotFound(name.to_string()));
+        }
+
+        if !source_path.is_dir() {
+            return Err(ApplicationError::InvalidSpecDirectory(name.to_string()));
+        }
+
+        // Create archive directory
+        let archive_dir = self.path_manager.archive_dir(true);
+        fs::create_dir_all(&archive_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create archive directory: {}", e))
+        })?;
+
+        let dest_path = archive_dir.join(name);
+
+        // Check if already exists in archive
+        if dest_path.exists() {
+            return Err(ApplicationError::ArchiveAlreadyExists(name.to_string()));
+        }
+
+        // Move directory to archive
+        fs::rename(&source_path, &dest_path).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to move spec to archive: {}", e))
+        })?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
