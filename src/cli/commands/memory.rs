@@ -64,7 +64,7 @@ impl MemoryCommand {
 
         // Create service and start MCP server
         let service = MemoryService::new(Box::new(memory_repo), config);
-        let server = MemoryMcpServer::new(service);
+        let _server = MemoryMcpServer::new(service);
 
         eprintln!(
             "{}",
@@ -78,7 +78,7 @@ impl MemoryCommand {
 
             let rt = tokio::runtime::Runtime::new()?;
             rt.block_on(async {
-                let service = server
+                let service = _server
                     .serve(stdio())
                     .await
                     .map_err(|e| anyhow::anyhow!("Failed to start MCP server: {}", e))?;
