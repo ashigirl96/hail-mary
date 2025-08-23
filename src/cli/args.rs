@@ -31,6 +31,7 @@ pub enum Commands {
     },
 
     /// Generate shell completion scripts
+    #[command(name = "shell-completions")]
     Completion {
         /// Shell type to generate completions for
         shell: Shell,

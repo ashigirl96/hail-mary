@@ -134,19 +134,19 @@ hail-mary memory reindex --verbose
 
 ```bash
 # Generate bash completions
-hail-mary completion bash > /etc/bash_completion.d/hail-mary
+hail-mary shell-completions bash > /etc/bash_completion.d/hail-mary
 
 # Generate zsh completions
-hail-mary completion zsh > ~/.zsh/completions/_hail-mary
+hail-mary shell-completions zsh > ~/.zsh/completions/_hail-mary
 
 # Generate fish completions
-hail-mary completion fish > ~/.config/fish/completions/hail-mary.fish
+hail-mary shell-completions fish > ~/.config/fish/completions/hail-mary.fish
 
 # Generate PowerShell completions
-hail-mary completion power-shell > hail-mary.ps1
+hail-mary shell-completions power-shell > hail-mary.ps1
 
 # Generate Elvish completions
-hail-mary completion elvish > hail-mary.elv
+hail-mary shell-completions elvish > hail-mary.elv
 ```
 
 ## ⚙️ Configuration
