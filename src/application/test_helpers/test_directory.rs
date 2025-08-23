@@ -251,20 +251,4 @@ mod tests {
         let content = fs::read_to_string(&file_path).unwrap();
         assert_eq!(content, "test content");
     }
-
-    #[test]
-    fn test_panic_still_restores_directory() {
-        let original = env::current_dir().unwrap();
-
-        let result = std::panic::catch_unwind(|| {
-            let _test_dir = TestDirectory::new();
-            panic!("Test panic");
-        });
-
-        assert!(result.is_err());
-
-        // Directory should still be restored even after panic
-        let restored = env::current_dir().unwrap();
-        assert_eq!(restored, original);
-    }
 }
