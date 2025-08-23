@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Parser, Debug)]
 #[command(name = "hail-mary")]
@@ -29,6 +29,12 @@ pub enum Commands {
         #[command(subcommand)]
         command: MemoryCommands,
     },
+
+    /// Generate shell completion scripts
+    Completion {
+        /// Shell type to generate completions for
+        shell: Shell,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -55,6 +61,20 @@ pub enum MemoryCommands {
     },
 }
 
+#[derive(ValueEnum, Clone, Debug)]
+pub enum Shell {
+    /// Bash shell completions
+    Bash,
+    /// Zsh shell completions
+    Zsh,
+    /// Fish shell completions
+    Fish,
+    /// PowerShell completions
+    PowerShell,
+    /// Elvish shell completions
+    Elvish,
+}
+
 impl Commands {
     pub fn is_init(&self) -> bool {
         matches!(self, Commands::Init { .. })
@@ -66,6 +86,10 @@ impl Commands {
 
     pub fn is_memory(&self) -> bool {
         matches!(self, Commands::Memory { .. })
+    }
+
+    pub fn is_completion(&self) -> bool {
+        matches!(self, Commands::Completion { .. })
     }
 }
 
@@ -87,6 +111,13 @@ impl Commands {
     pub fn get_memory_command(&self) -> Option<&MemoryCommands> {
         match self {
             Commands::Memory { command } => Some(command),
+            _ => None,
+        }
+    }
+
+    pub fn get_completion_shell(&self) -> Option<&Shell> {
+        match self {
+            Commands::Completion { shell } => Some(shell),
             _ => None,
         }
     }
