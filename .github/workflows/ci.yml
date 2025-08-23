@@ -17,6 +17,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
+        toolchain: stable
         components: rustfmt
     
     - name: Check formatting
@@ -32,6 +33,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
+        toolchain: stable
         components: clippy
     
     - name: Cache cargo registry
@@ -56,6 +58,8 @@ jobs:
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
     
     - name: Cache cargo registry
       uses: actions/cache@v3
@@ -80,6 +84,8 @@ jobs:
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
     
     - name: Install cargo-audit
       run: cargo install cargo-audit
@@ -96,6 +102,8 @@ jobs:
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
     
     - name: Cache cargo registry
       uses: actions/cache@v3
