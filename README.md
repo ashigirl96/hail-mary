@@ -34,6 +34,7 @@ Hail-Mary provides intelligent memory management for AI models with full-text se
 - **Automatic Migrations**: Versioned schema management with Refinery
 - **Batch Operations**: Efficient bulk operations with transaction support
 - **Comprehensive Testing**: Unit, integration, and repository-level tests
+- **Shell Completion**: Auto-completion support for all major shells
 
 ## 🚀 Quick Start
 
@@ -113,6 +114,25 @@ hail-mary new api-rate-limiting-v2
 # Reindex and optimize database (Phase 3 feature - placeholder)
 hail-mary memory reindex --dry-run
 hail-mary memory reindex --verbose
+```
+
+### Shell Completions
+
+```bash
+# Generate bash completions
+hail-mary completion bash > /etc/bash_completion.d/hail-mary
+
+# Generate zsh completions
+hail-mary completion zsh > ~/.zsh/completions/_hail-mary
+
+# Generate fish completions
+hail-mary completion fish > ~/.config/fish/completions/hail-mary.fish
+
+# Generate PowerShell completions
+hail-mary completion power-shell > hail-mary.ps1
+
+# Generate Elvish completions
+hail-mary completion elvish > hail-mary.elv
 ```
 
 ## ⚙️ Configuration
