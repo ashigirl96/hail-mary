@@ -35,6 +35,9 @@ pub enum Commands {
         /// Shell type to generate completions for
         shell: Shell,
     },
+
+    /// Mark feature specifications as complete
+    Complete,
 }
 
 #[derive(Subcommand, Debug)]
@@ -90,6 +93,10 @@ impl Commands {
 
     pub fn is_completion(&self) -> bool {
         matches!(self, Commands::Completion { .. })
+    }
+
+    pub fn is_complete(&self) -> bool {
+        matches!(self, Commands::Complete)
     }
 }
 
