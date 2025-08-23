@@ -34,7 +34,7 @@ mod tests {
         fs::create_dir_all(specs_dir.join("2025-01-02-feature-b")).unwrap();
 
         // Complete one feature
-        let result = complete_features(&project_repo, &vec!["2025-01-01-feature-a".to_string()]);
+        let result = complete_features(&project_repo, &["2025-01-01-feature-a".to_string()]);
         assert!(result.is_ok());
 
         // Verify it was moved to archive
@@ -61,7 +61,7 @@ mod tests {
         // Complete multiple features
         let result = complete_features(
             &project_repo,
-            &vec![
+            &[
                 "2025-01-01-feature-a".to_string(),
                 "2025-01-02-feature-b".to_string(),
             ],
@@ -86,7 +86,7 @@ mod tests {
         project_repo.initialize().unwrap();
 
         // Try to complete non-existent feature
-        let result = complete_features(&project_repo, &vec!["non-existent".to_string()]);
+        let result = complete_features(&project_repo, &["non-existent".to_string()]);
         assert!(result.is_err());
         match result.unwrap_err() {
             ApplicationError::SpecNotFound(name) => assert_eq!(name, "non-existent"),
@@ -111,7 +111,7 @@ mod tests {
         fs::create_dir_all(archive_dir.join("2025-01-01-feature-a")).unwrap();
 
         // Try to complete feature that already exists in archive
-        let result = complete_features(&project_repo, &vec!["2025-01-01-feature-a".to_string()]);
+        let result = complete_features(&project_repo, &["2025-01-01-feature-a".to_string()]);
         assert!(result.is_err());
         match result.unwrap_err() {
             ApplicationError::ArchiveAlreadyExists(name) => {

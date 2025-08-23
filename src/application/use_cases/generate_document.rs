@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn test_generate_document_no_config() {
         let mut memory_repo = MockMemoryRepository::new();
-        let project_repo = MockProjectRepository::new();
+        let project_repo = MockProjectRepository::new_without_config();
 
         let result = generate_document(&mut memory_repo, &project_repo, Some("tech"));
 
