@@ -26,6 +26,7 @@ Hail-Mary provides intelligent memory management for AI models with full-text se
 ### 🎯 Project Specification Management
 - **Kiro System**: Structured project specification management
 - **Template Generation**: Automatic creation of requirements, design, and task files
+- **Spec Archiving**: Interactive TUI for marking completed specs with archive management
 - **Configuration Management**: TOML-based hierarchical configuration
 - **Document Generation**: Markdown output with organized memory exports
 
@@ -35,6 +36,12 @@ Hail-Mary provides intelligent memory management for AI models with full-text se
 - **Batch Operations**: Efficient bulk operations with transaction support
 - **Comprehensive Testing**: Unit, integration, and repository-level tests
 - **Shell Completion**: Auto-completion support for all major shells
+
+### 🖥️ Terminal User Interface (TUI)
+- **Interactive Selection**: Checkbox-based multi-selection interface
+- **Keyboard Navigation**: Intuitive keyboard shortcuts (arrows, j/k, Space, Enter)
+- **Visual Feedback**: Real-time selection count and highlighting
+- **Built with Ratatui**: Modern TUI framework for Rust applications
 
 ## 🚀 Quick Start
 
@@ -106,6 +113,13 @@ hail-mary new user-authentication-system
 
 # Create feature with custom name validation
 hail-mary new api-rate-limiting-v2
+
+# Mark completed specifications as done (interactive TUI)
+hail-mary complete
+# - Use arrow keys or j/k to navigate
+# - Press Space to select specifications
+# - Press Enter to archive selected specs
+# - Press q or Esc to quit
 ```
 
 ### Database Management
@@ -287,6 +301,13 @@ cargo test test_migration_creates_tables
 3. **Search**: Use full-text search with filters and ranking
 4. **Analyze**: Perform clustering, deduplication, and analytics
 5. **Export**: Generate documentation and export data
+
+### Specification Management Workflow
+
+1. **Create**: Generate new feature specifications with `hail-mary new`
+2. **Develop**: Work on features in `.kiro/specs` directory
+3. **Complete**: Use interactive TUI with `hail-mary complete` to mark as done
+4. **Archive**: Completed specs are moved to `.kiro/archive` for reference
 
 ## 🔒 Security
 
