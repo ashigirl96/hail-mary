@@ -108,16 +108,26 @@ mod tests {
         let archive_dir = path_manager.archive_dir(true);
         fs::create_dir_all(&archive_dir).unwrap();
         fs::create_dir_all(specs_dir.join("2025-01-01-feature-a")).unwrap();
+        
+        // Create a file in the spec to verify it gets moved
+        fs::write(specs_dir.join("2025-01-01-feature-a").join("new.txt"), "new content").unwrap();
+        
+        // Create existing archive with different content
         fs::create_dir_all(archive_dir.join("2025-01-01-feature-a")).unwrap();
+        fs::write(archive_dir.join("2025-01-01-feature-a").join("old.txt"), "old content").unwrap();
 
-        // Try to complete feature that already exists in archive
+        // Complete feature that already exists in archive - should overwrite
         let result = complete_features(&project_repo, &["2025-01-01-feature-a".to_string()]);
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            ApplicationError::ArchiveAlreadyExists(name) => {
-                assert_eq!(name, "2025-01-01-feature-a")
-            }
-            _ => panic!("Expected ArchiveAlreadyExists error"),
-        }
+        assert!(result.is_ok());
+        
+        // Verify the new spec replaced the old archive
+        assert!(!specs_dir.join("2025-01-01-feature-a").exists());
+        assert!(archive_dir.join("2025-01-01-feature-a").exists());
+        assert!(archive_dir.join("2025-01-01-feature-a").join("new.txt").exists());
+        assert!(!archive_dir.join("2025-01-01-feature-a").join("old.txt").exists());
+        
+        // Verify new content
+        let new_content = fs::read_to_string(archive_dir.join("2025-01-01-feature-a").join("new.txt")).unwrap();
+        assert_eq!(new_content, "new content");
     }
 }
