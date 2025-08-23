@@ -152,4 +152,31 @@ impl ProjectRepository for MockProjectRepository {
     ) -> Result<(), ApplicationError> {
         Ok(())
     }
+
+    fn list_spec_directories(&self) -> Result<Vec<(String, bool)>, ApplicationError> {
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "list_spec_directories"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock list_spec_directories failure".to_string(),
+            ));
+        }
+        // Return features as specs (simulating specs directory)
+        let specs = self.features.iter().map(|f| (f.clone(), false)).collect();
+        Ok(specs)
+    }
+
+    fn mark_spec_complete(&self, name: &str) -> Result<(), ApplicationError> {
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "mark_spec_complete"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock mark_spec_complete failure".to_string(),
+            ));
+        }
+        if !self.features.contains(&name.to_string()) {
+            return Err(ApplicationError::SpecNotFound(name.to_string()));
+        }
+        Ok(())
+    }
 }

@@ -11,6 +11,13 @@ pub trait ProjectRepository: Send + Sync {
     fn create_feature(&self, name: &str) -> Result<(), ApplicationError>;
     fn save_document(&self, memory_type: &str, memories: &[Memory])
     -> Result<(), ApplicationError>;
+
+    /// List all specification directories in .kiro/specs
+    /// Returns a vector of (name, is_archived) tuples
+    fn list_spec_directories(&self) -> Result<Vec<(String, bool)>, ApplicationError>;
+
+    /// Mark a specification as complete by moving it to archive
+    fn mark_spec_complete(&self, name: &str) -> Result<(), ApplicationError>;
 }
 
 #[cfg(test)]
@@ -101,6 +108,33 @@ mod tests {
                     "Failed to save document for type: {}",
                     memory_type
                 )));
+            }
+            Ok(())
+        }
+
+        fn list_spec_directories(&self) -> Result<Vec<(String, bool)>, ApplicationError> {
+            if self.should_fail_next_operation {
+                return Err(ApplicationError::FileSystemError(
+                    "Failed to list spec directories".to_string(),
+                ));
+            }
+            // Return created features as specs
+            let specs = self
+                .created_features
+                .iter()
+                .map(|f| (f.clone(), false))
+                .collect();
+            Ok(specs)
+        }
+
+        fn mark_spec_complete(&self, name: &str) -> Result<(), ApplicationError> {
+            if self.should_fail_next_operation {
+                return Err(ApplicationError::FileSystemError(
+                    "Failed to mark spec as complete".to_string(),
+                ));
+            }
+            if !self.created_features.contains(&name.to_string()) {
+                return Err(ApplicationError::SpecNotFound(name.to_string()));
             }
             Ok(())
         }
