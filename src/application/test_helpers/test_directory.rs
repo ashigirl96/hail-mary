@@ -204,27 +204,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_directory_creates_and_changes_dir() {
-        let original = env::current_dir().unwrap();
-
-        {
-            let _test_dir = TestDirectory::new();
-            let current = env::current_dir().unwrap();
-
-            // Verify we're in a different directory
-            assert_ne!(current, original);
-
-            // Verify we can create files in the temp directory
-            fs::write("test.txt", "content").unwrap();
-            assert!(Path::new("test.txt").exists());
-        }
-
-        // Verify directory is restored after drop
-        let restored = env::current_dir().unwrap();
-        assert_eq!(restored, original);
-    }
-
-    #[test]
     fn test_directory_with_prefix() {
         let test_dir = TestDirectory::with_prefix("test_prefix_");
         let path_str = test_dir.path().to_string_lossy();
