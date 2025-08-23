@@ -82,6 +82,14 @@ impl PathManager {
             PathBuf::from(".kiro/memory/db.sqlite3")
         }
     }
+
+    pub fn archive_dir(&self, absolute: bool) -> PathBuf {
+        if absolute {
+            self.kiro_dir(true).join("archive")
+        } else {
+            PathBuf::from(".kiro/archive")
+        }
+    }
 }
 
 #[cfg(test)]
