@@ -58,3 +58,9 @@ rust-wasm/Cargo.lock
 
 # Logs
 *.log
+
+.kiro/memory/*db*
+
+# hail-mary memory database
+.kiro/memory/db.sqlite3
+.kiro/memory/*.sqlite3-*

@@ -1,0 +1,152 @@
+use crate::domain::errors::DomainError;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ApplicationError {
+    #[error("Project already exists")]
+    ProjectAlreadyExists,
+
+    #[error("Project not found")]
+    ProjectNotFound,
+
+    #[error("Invalid memory type: {0}")]
+    InvalidMemoryType(String),
+
+    #[error("Feature already exists: {0}")]
+    FeatureAlreadyExists(String),
+
+    #[error("Invalid feature name: {0}")]
+    InvalidFeatureName(String),
+
+    #[error("Database error: {0}")]
+    DatabaseError(String),
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Domain error: {0}")]
+    DomainError(#[from] DomainError),
+
+    #[error("SQLite error: {0}")]
+    SqliteError(#[from] rusqlite::Error),
+
+    #[error("Configuration error: {0}")]
+    ConfigurationError(String),
+
+    #[error("Project initialization error: {0}")]
+    ProjectInitializationError(String),
+
+    #[error("File system error: {0}")]
+    FileSystemError(String),
+
+    #[error("Feature creation error: {0}")]
+    FeatureCreationError(String),
+
+    #[error("Document generation error: {0}")]
+    DocumentGenerationError(String),
+}
+
+impl ApplicationError {
+    pub fn database_error(msg: impl Into<String>) -> Self {
+        Self::DatabaseError(msg.into())
+    }
+
+    pub fn configuration_error(msg: impl Into<String>) -> Self {
+        Self::ConfigurationError(msg.into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::error::Error;
+
+    #[test]
+    fn test_project_already_exists_error() {
+        let error = ApplicationError::ProjectAlreadyExists;
+        assert_eq!(error.to_string(), "Project already exists");
+    }
+
+    #[test]
+    fn test_project_not_found_error() {
+        let error = ApplicationError::ProjectNotFound;
+        assert_eq!(error.to_string(), "Project not found");
+    }
+
+    #[test]
+    fn test_invalid_memory_type_error() {
+        let error = ApplicationError::InvalidMemoryType("invalid".to_string());
+        assert_eq!(error.to_string(), "Invalid memory type: invalid");
+    }
+
+    #[test]
+    fn test_feature_already_exists_error() {
+        let error = ApplicationError::FeatureAlreadyExists("test-feature".to_string());
+        assert_eq!(error.to_string(), "Feature already exists: test-feature");
+    }
+
+    #[test]
+    fn test_invalid_feature_name_error() {
+        let error = ApplicationError::InvalidFeatureName("Invalid_Name".to_string());
+        assert_eq!(error.to_string(), "Invalid feature name: Invalid_Name");
+    }
+
+    #[test]
+    fn test_database_error() {
+        let error = ApplicationError::database_error("Connection failed");
+        assert_eq!(error.to_string(), "Database error: Connection failed");
+    }
+
+    #[test]
+    fn test_configuration_error() {
+        let error = ApplicationError::configuration_error("Invalid config");
+        assert_eq!(error.to_string(), "Configuration error: Invalid config");
+    }
+
+    #[test]
+    fn test_io_error_conversion() {
+        let io_error = std::io::Error::new(std::io::ErrorKind::NotFound, "File not found");
+        let app_error = ApplicationError::from(io_error);
+
+        assert!(app_error.to_string().contains("File not found"));
+        assert!(matches!(app_error, ApplicationError::IoError(_)));
+    }
+
+    #[test]
+    fn test_domain_error_conversion() {
+        let domain_error = DomainError::InvalidConfidence(1.5);
+        let app_error = ApplicationError::from(domain_error);
+
+        assert!(
+            app_error
+                .to_string()
+                .contains("Invalid confidence value: 1.5")
+        );
+        assert!(matches!(app_error, ApplicationError::DomainError(_)));
+    }
+
+    #[test]
+    fn test_application_error_debug() {
+        let error = ApplicationError::ProjectAlreadyExists;
+        let debug_str = format!("{:?}", error);
+        assert_eq!(debug_str, "ProjectAlreadyExists");
+    }
+
+    #[test]
+    fn test_application_error_is_error() {
+        let error = ApplicationError::ProjectNotFound;
+        let boxed_error: Box<dyn std::error::Error> = Box::new(error);
+        assert_eq!(boxed_error.to_string(), "Project not found");
+    }
+
+    #[test]
+    fn test_error_chain() {
+        let domain_error = DomainError::InvalidMemoryType("invalid".to_string());
+        let app_error = ApplicationError::from(domain_error);
+
+        // Test error chain
+        assert!(app_error.source().is_some());
+        let source = app_error.source().unwrap();
+        assert_eq!(source.to_string(), "Invalid memory type: invalid");
+    }
+}
