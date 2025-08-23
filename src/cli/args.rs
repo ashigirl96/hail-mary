@@ -18,16 +18,16 @@ pub enum Commands {
         force: bool,
     },
 
-    /// Create a new feature specification
-    New {
-        /// Feature name in kebab-case
-        name: String,
-    },
-
     /// Memory operations
     Memory {
         #[command(subcommand)]
         command: MemoryCommands,
+    },
+
+    /// Create a new feature specification
+    New {
+        /// Feature name in kebab-case
+        name: String,
     },
 
     /// Generate shell completion scripts
