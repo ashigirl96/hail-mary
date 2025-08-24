@@ -1,0 +1,31 @@
+# .kiro/config.toml
+# hail-mary Memory MCP project configuration
+
+[memory]
+# Memory types for categorization (customize for your project)
+types = [
+    "tech",           # General technical knowledge
+    "project-tech",   # Project-specific technical details
+    "domain",         # Business domain knowledge
+    "workflow",       # Development workflows and processes
+    "decision",       # Architecture decisions and rationale
+]
+
+# Instructions for MCP server
+instructions = """
+Available memory types:
+- tech: General technical knowledge (languages, frameworks, algorithms)
+- project-tech: This project's specific technical implementation
+- domain: Business domain knowledge and requirements
+- workflow: Development workflows and processes
+- decision: Architecture decisions and their rationale
+"""
+
+# Document generation settings
+[memory.document]
+output_dir = ".kiro/memory"
+format = "markdown"
+
+# Database configuration
+[memory.database]
+path = ".kiro/memory/db.sqlite3"

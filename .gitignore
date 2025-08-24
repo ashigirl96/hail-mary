@@ -43,12 +43,24 @@ experimental/
 bin/
 .claude/
 tmp/
-.kiro/
 
 # Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
 rust-wasm/target/
 rust-wasm/Cargo.lock
 *.wasm
 
 # Just
 .just/
+
+# Logs
+*.log
+
+.kiro/memory/*db*
+
+# hail-mary memory database
+.kiro/memory/db.sqlite3
+.kiro/memory/*.sqlite3-*
