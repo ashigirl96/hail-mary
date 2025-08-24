@@ -213,27 +213,31 @@ impl ProjectRepositoryTrait for ProjectRepository {
 ## Architecture
 [Architecture overview for {}]
 
-## Components
-[Component descriptions]
-
 ## Data Flow
 [Data flow diagrams]
+
+## ...
 "#,
             name
         );
 
         let task_content = r#"# Tasks
 
-## Implementation Tasks
+## References
+...
+
+## Phase 1: ...
 - [ ] Task 1
 - [ ] Task 2
 - [ ] Task 3
-
-## Testing Tasks
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] E2E tests
 "#;
+
+        let memo_content = format!(
+            r#"# Memo: {}
+
+"#,
+            name
+        );
 
         // Write template files
         fs::write(feature_dir.join("requirements.md"), requirements_content).map_err(|e| {
@@ -246,6 +250,10 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         fs::write(feature_dir.join("tasks.md"), task_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write tasks.md: {}", e))
+        })?;
+
+        fs::write(feature_dir.join("memo.md"), memo_content).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to write memo.md: {}", e))
         })?;
 
         fs::write(feature_dir.join("spec.json"), "{}").map_err(|e| {
@@ -342,9 +350,14 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         let dest_path = archive_dir.join(name);
 
-        // Check if already exists in archive
+        // If already exists in archive, remove it first to allow overwriting
         if dest_path.exists() {
-            return Err(ApplicationError::ArchiveAlreadyExists(name.to_string()));
+            fs::remove_dir_all(&dest_path).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to remove existing archive: {}",
+                    e
+                ))
+            })?;
         }
 
         // Move directory to archive
@@ -502,6 +515,7 @@ mod tests {
         assert!(feature_path.join("requirements.md").exists());
         assert!(feature_path.join("design.md").exists());
         assert!(feature_path.join("tasks.md").exists());
+        assert!(feature_path.join("memo.md").exists());
         assert!(feature_path.join("spec.json").exists());
 
         // Verify content contains feature name
