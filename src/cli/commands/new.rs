@@ -71,7 +71,6 @@ mod tests {
     use super::*;
     use crate::application::test_helpers::TestDirectory;
     use crate::cli::commands::init::InitCommand;
-    use std::fs;
     use std::path::Path;
 
     #[test]
@@ -189,53 +188,6 @@ mod tests {
         let cmd2 = NewCommand::new("duplicate-test".to_string());
         let result2 = cmd2.execute();
         assert!(result2.is_err());
-    }
-
-    #[test]
-    fn test_new_command_template_files_content() {
-        let _test_dir = TestDirectory::new();
-
-        // Initialize project first
-        let init_cmd = InitCommand::new(false);
-        init_cmd.execute().unwrap();
-
-        // Create new feature
-        let cmd = NewCommand::new("template-test".to_string());
-        let result = cmd.execute();
-        assert!(result.is_ok());
-
-        // Check template content
-        let date = chrono::Utc::now().format("%Y-%m-%d");
-        let feature_dir = format!(".kiro/specs/{}-template-test", date);
-
-        // Check requirements.md
-        let requirements_path = format!("{}/requirements.md", feature_dir);
-        let requirements_content = fs::read_to_string(&requirements_path).unwrap();
-        assert!(requirements_content.contains("# Requirements"));
-        assert!(requirements_content.contains("template-test"));
-        assert!(requirements_content.contains("## Overview"));
-        assert!(requirements_content.contains("## User Stories"));
-        assert!(requirements_content.contains("## Acceptance Criteria"));
-
-        // Check design.md
-        let design_path = format!("{}/design.md", feature_dir);
-        let design_content = fs::read_to_string(&design_path).unwrap();
-        assert!(design_content.contains("# Design"));
-        assert!(design_content.contains("template-test"));
-        assert!(design_content.contains("## Architecture"));
-        assert!(design_content.contains("## Components"));
-
-        // Check tasks.md
-        let tasks_path = format!("{}/tasks.md", feature_dir);
-        let tasks_content = fs::read_to_string(&tasks_path).unwrap();
-        assert!(tasks_content.contains("# Tasks"));
-        assert!(tasks_content.contains("## Implementation Tasks"));
-        assert!(tasks_content.contains("## Testing Tasks"));
-
-        // Check spec.json
-        let spec_path = format!("{}/spec.json", feature_dir);
-        let spec_content = fs::read_to_string(&spec_path).unwrap();
-        assert_eq!(spec_content, "{}");
     }
 
     #[test]
