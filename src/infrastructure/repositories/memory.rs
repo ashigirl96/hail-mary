@@ -16,6 +16,11 @@ pub struct SqliteMemoryRepository {
 
 impl SqliteMemoryRepository {
     pub fn new<P: AsRef<Path>>(db_path: P) -> Result<Self, ApplicationError> {
+        // Ensure parent directory exists for the database file
+        if let Some(parent) = db_path.as_ref().parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
         let mut conn = Connection::open(db_path)?;
 
         // Set SQLite pragmas for performance and safety
@@ -359,6 +364,31 @@ mod tests {
     fn test_repository_creation() {
         let (_repo, _test_dir) = create_test_repository();
         // Test passes if repository creation doesn't panic
+    }
+    #[test]
+    fn test_repository_creation_with_non_existent_parent_directory() {
+        // Create a test directory but dont create the parent directories for the database
+        let test_dir = TestDirectory::new_no_cd();
+        let db_path = test_dir.path().join("non_existent_dir/memory/db.sqlite3");
+
+        // Ensure parent directories dont exist
+        assert!(!db_path.parent().unwrap().exists());
+
+        // Create repository - should automatically create parent directories
+        let repo = SqliteMemoryRepository::new(&db_path);
+        assert!(
+            repo.is_ok(),
+            "Should create repository even with non-existent parent dir"
+        );
+
+        // Verify parent directories were created
+        assert!(
+            db_path.parent().unwrap().exists(),
+            "Parent directory should be created"
+        );
+
+        // Verify database file exists
+        assert!(db_path.exists(), "Database file should be created");
     }
 
     #[test]
