@@ -205,3 +205,25 @@ The Memory MCP server provides AI models with structured access to technical kno
 - Async protocol implementation using rmcp v0.5.0
 
 When working with MCP features, remember that the server maintains persistent connections and memory updates are immediately available for search.
+
+## Anthropic Client Integration
+
+The workspace now includes `crates/anthropic-client` which provides OAuth authentication and API client functionality for Anthropic's Claude API:
+
+### Key Features
+- **OAuth Token Management**: Automatic token refresh when expired
+- **Authentication**: Loads tokens from `~/.local/share/opencode/auth.json`
+- **API Client**: Non-streaming calls to Claude models
+- **Cloudflare Protection**: Configured with `rustls-tls-native-roots` to avoid bot detection
+
+### Usage Example
+```bash
+# Run the example chat client
+cargo run --example basic_chat -- "Your question here"
+```
+
+### Important Implementation Details
+- Uses `reqwest` with specific features to mimic browser behavior
+- Handles OAuth2 refresh token flow automatically
+- Provides public API functions: `load_auth()`, `refresh_token()`, `complete()`
+- Requires proper reqwest configuration to bypass Cloudflare bot detection

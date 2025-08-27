@@ -43,6 +43,12 @@ Hail-Mary provides intelligent memory management for AI models with full-text se
 - **Visual Feedback**: Real-time selection count and highlighting
 - **Built with Ratatui**: Modern TUI framework for Rust applications
 
+### 🤖 Anthropic API Integration
+- **OAuth Authentication**: Secure OAuth2 flow with automatic token refresh
+- **Claude API Client**: Non-streaming API calls to Claude models
+- **Cloudflare Protection**: Configured to bypass bot detection mechanisms
+- **Example Implementation**: Ready-to-use example for chat interactions
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -79,11 +85,17 @@ The project uses a Cargo workspace structure for better modularity:
 
 ```
 .
-├── Cargo.toml           # Workspace root configuration
+├── Cargo.toml                  # Workspace root configuration
 └── crates/
-    └── hail-mary/      # Main application crate
-        ├── Cargo.toml  # Application dependencies
-        └── src/        # Source code (4-layer Clean Architecture)
+    ├── hail-mary/              # Main application crate
+    │   ├── Cargo.toml          # Application dependencies
+    │   └── src/                # Source code (4-layer Clean Architecture)
+    └── anthropic-client/       # Anthropic API OAuth client
+        ├── Cargo.toml          # OAuth client dependencies
+        ├── src/
+        │   └── lib.rs          # OAuth implementation
+        └── examples/
+            └── basic_chat.rs   # Example usage
 ```
 
 ## 📋 Usage Examples
@@ -144,6 +156,16 @@ hail-mary complete
 # Reindex and optimize database (Phase 3 feature - placeholder)
 hail-mary memory reindex --dry-run
 hail-mary memory reindex --verbose
+```
+
+### Anthropic API Client
+
+```bash
+# Run the OAuth client example
+cargo run --example basic_chat -- "Hello, how are you?"
+
+# The client automatically handles OAuth token refresh
+# Requires authentication file at ~/.local/share/opencode/auth.json
 ```
 
 ### Shell Completions
