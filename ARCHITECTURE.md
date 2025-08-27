@@ -102,46 +102,52 @@ The project uses a Cargo workspace structure for better modularity and future ex
 .
 ├── Cargo.toml                    # Workspace root configuration
 ├── crates/
-│   └── hail-mary/                    # Main application crate
-│       ├── Cargo.toml                # Application package configuration  
-│       └── src/                      # Source code
-│           ├── main.rs               # CLI entry point and command routing
-│           ├── lib.rs                # Library exports for integration tests
-│           ├── domain/               # Pure business logic
-│           │   ├── entities/        # Core domain objects
-│           │   │   ├── memory.rs    # Memory entity with business rules
-│           │   │   └── project.rs   # Project configuration entity
-│           │   ├── value_objects/   # Domain-specific types
-│           │   │   └── confidence.rs # Confidence value (0.0-1.0)
-│           │   └── errors.rs        # Domain errors
-│           ├── application/          # Business logic orchestration
-│           │   ├── use_cases/       # Application services
-│           │   │   ├── initialize_project.rs
-│           │   │   ├── create_feature.rs
-│           │   │   ├── remember_memory.rs
-│           │   │   └── recall_memory.rs
-│           │   ├── repositories/    # Repository trait definitions
-│           │   │   ├── memory_repository.rs
-│           │   │   └── project_repository.rs
-│           │   └── errors.rs        # Application errors
-│           ├── cli/                 # Command-line interface
-│           │   ├── commands/        # Command implementations
-│           │   │   ├── init.rs     # Project initialization
-│           │   │   ├── new.rs      # Feature creation
-│           │   │   ├── complete.rs # Complete features with TUI
-│           │   │   └── memory.rs   # Memory subcommands
-│           │   ├── formatters.rs   # Output formatting
-│           │   └── args.rs         # CLI argument parsing
-│           └── infrastructure/      # External services
-│               ├── repositories/    # Repository implementations
-│               │   ├── memory.rs   # SQLite memory repository
-│               │   └── project.rs  # Filesystem project repository
-│               ├── mcp/            # MCP protocol
-│               │   └── server.rs   # MCP server implementation
-│               ├── filesystem/      # File system operations
-│               │   └── path_manager.rs
-│               └── migrations/      # Database migrations
-│                   └── embedded.rs  # Embedded migration system
+│   ├── hail-mary/                    # Main application crate
+│   │   ├── Cargo.toml                # Application package configuration  
+│   │   └── src/                      # Source code
+│   │       ├── main.rs               # CLI entry point and command routing
+│   │       ├── lib.rs                # Library exports for integration tests
+│   │       ├── domain/               # Pure business logic
+│   │       │   ├── entities/        # Core domain objects
+│   │       │   │   ├── memory.rs    # Memory entity with business rules
+│   │       │   │   └── project.rs   # Project configuration entity
+│   │       │   ├── value_objects/   # Domain-specific types
+│   │       │   │   └── confidence.rs # Confidence value (0.0-1.0)
+│   │       │   └── errors.rs        # Domain errors
+│   │       ├── application/          # Business logic orchestration
+│   │       │   ├── use_cases/       # Application services
+│   │       │   │   ├── initialize_project.rs
+│   │       │   │   ├── create_feature.rs
+│   │       │   │   ├── remember_memory.rs
+│   │       │   │   └── recall_memory.rs
+│   │       │   ├── repositories/    # Repository trait definitions
+│   │       │   │   ├── memory_repository.rs
+│   │       │   │   └── project_repository.rs
+│   │       │   └── errors.rs        # Application errors
+│   │       ├── cli/                 # Command-line interface
+│   │       │   ├── commands/        # Command implementations
+│   │       │   │   ├── init.rs     # Project initialization
+│   │       │   │   ├── new.rs      # Feature creation
+│   │       │   │   ├── complete.rs # Complete features with TUI
+│   │       │   │   └── memory.rs   # Memory subcommands
+│   │       │   ├── formatters.rs   # Output formatting
+│   │       │   └── args.rs         # CLI argument parsing
+│   │       └── infrastructure/      # External services
+│   │           ├── repositories/    # Repository implementations
+│   │           │   ├── memory.rs   # SQLite memory repository
+│   │           │   └── project.rs  # Filesystem project repository
+│   │           ├── mcp/            # MCP protocol
+│   │           │   └── server.rs   # MCP server implementation
+│   │           ├── filesystem/      # File system operations
+│   │           │   └── path_manager.rs
+│   │           └── migrations/      # Database migrations
+│   │               └── embedded.rs  # Embedded migration system
+│   └── anthropic-client/             # Anthropic API OAuth client
+│       ├── Cargo.toml                # OAuth client dependencies
+│       ├── src/
+│       │   └── lib.rs               # OAuth implementation & API client
+│       └── examples/
+│           └── basic_chat.rs        # Example usage with Claude API
 ```
 
 ### External Organization
@@ -430,6 +436,30 @@ pub enum MemoryError {
 **Search Features**: Advanced query syntax and filters
 **Export Formats**: Multiple output formats beyond Markdown
 **MCP Features**: Extended protocol capability implementation
+
+## 🔌 External Integrations
+
+### Anthropic Client (`crates/anthropic-client`)
+**Purpose**: OAuth authentication and API client for Anthropic's Claude API
+**Key Features**:
+- OAuth token management with automatic refresh
+- Secure authentication from `~/.local/share/opencode/auth.json`
+- Non-streaming API calls to Claude models
+- Cloudflare bot detection mitigation
+
+**Architecture Highlights**:
+- **Token Management**: Automatic refresh when expired with persistent storage
+- **HTTP Client**: Configured with `rustls-tls-native-roots` for proper TLS behavior
+- **Error Handling**: Comprehensive error handling with `anyhow::Result`
+- **Security**: OAuth2 flow with secure token storage and refresh
+
+**Usage Example**:
+```rust
+use anthropic_client::{load_auth, complete};
+
+let mut auth = load_auth().await?;
+let response = complete("claude-3-5-sonnet", "Hello?", &mut auth).await?;
+```
 
 ---
 
