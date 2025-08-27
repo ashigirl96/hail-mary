@@ -60,14 +60,30 @@ cd hail-mary
 # Setup development environment
 just setup
 
-# Build the project
+# Build the project (builds entire workspace)
 just build
 
+# Build specific package
+just build-package hail-mary
+
 # Initialize a new project
-cargo run -- init
+cargo run --package hail-mary -- init
 
 # Start the Memory MCP server
-cargo run -- memory serve --verbose
+cargo run --package hail-mary -- memory serve --verbose
+```
+
+### Project Structure
+
+The project uses a Cargo workspace structure for better modularity:
+
+```
+.
+├── Cargo.toml           # Workspace root configuration
+└── crates/
+    └── hail-mary/      # Main application crate
+        ├── Cargo.toml  # Application dependencies
+        └── src/        # Source code (4-layer Clean Architecture)
 ```
 
 ## 📋 Usage Examples

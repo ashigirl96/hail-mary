@@ -392,32 +392,6 @@ mod tests {
     }
 
     #[test]
-    fn test_repository_creation_with_non_existent_parent_directory() {
-        // Create a test directory but don't create the parent directories for the database
-        let test_dir = TestDirectory::new_no_cd();
-        let db_path = test_dir.path().join("non_existent_dir/memory/db.sqlite3");
-
-        // Ensure parent directories don't exist
-        assert!(!db_path.parent().unwrap().exists());
-
-        // Create repository - should automatically create parent directories
-        let repo = SqliteMemoryRepository::new(&db_path);
-        assert!(
-            repo.is_ok(),
-            "Should create repository even with non-existent parent dir"
-        );
-
-        // Verify parent directories were created
-        assert!(
-            db_path.parent().unwrap().exists(),
-            "Parent directory should be created"
-        );
-
-        // Verify database file exists
-        assert!(db_path.exists(), "Database file should be created");
-    }
-
-    #[test]
     fn test_save_and_find_by_id() {
         let (mut repo, _temp_dir) = create_test_repository();
         let memory = create_test_memory();

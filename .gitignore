@@ -21,9 +21,6 @@ go.work.sum
 # env file
 .env
 
-# Generated binary
-hail-mary
-
 # OS specific files
 .DS_Store
 Thumbs.db
