@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is hail-mary, a sophisticated Rust CLI application that implements a Memory MCP (Model Context Protocol) server and Kiro project specification management system. The project demonstrates modern Rust architecture patterns with a focus on AI model context management, technical knowledge storage, and multilingual full-text search capabilities.
 
+The project is structured as a Cargo workspace with the main application located in `crates/hail-mary/`.
+
 ## Core Architecture
 
 The system follows a 4-layer Clean Architecture with clear separation of concerns and dependency inversion:
@@ -26,24 +28,24 @@ The system follows a 4-layer Clean Architecture with clear separation of concern
 +-----------------------------------------------------------+
 ```
 
-### Domain Layer (`src/domain/`)
+### Domain Layer (`crates/hail-mary/src/domain/`)
 - **Entities**: `Memory` and `ProjectConfig` - core business objects with identity
 - **Value Objects**: `Confidence` - domain-specific types with validation (0.0-1.0)
 - **Domain Rules**: Business invariants and validation logic embedded in entities
 - **Domain Errors**: Business rule violations using thiserror
 
-### Application Layer (`src/application/`)
+### Application Layer (`crates/hail-mary/src/application/`)
 - **Use Cases**: Function-based business logic (`remember_memory`, `recall_memory`, `initialize_project`)
 - **Repository Ports**: `MemoryRepository` and `ProjectRepository` traits defining data access interfaces
 - **Business Orchestration**: Coordinates domain objects and enforces business rules
 - **Application Errors**: Operation-level errors with proper conversion from domain errors
 
-### CLI Layer (`src/cli/`)
+### CLI Layer (`crates/hail-mary/src/cli/`)
 - **Commands**: Command implementations (`InitCommand`, `NewCommand`, `MemoryCommand`)
 - **Arguments**: Clap-based CLI argument parsing with validation
 - **Formatters**: Output formatting for different display modes (text, JSON, markdown)
 
-### Infrastructure Layer (`src/infrastructure/`)
+### Infrastructure Layer (`crates/hail-mary/src/infrastructure/`)
 - **Repository Implementations**: `SqliteMemoryRepository` with FTS5 search and WAL mode
 - **MCP Server**: Protocol implementation for AI model integration using rmcp
 - **Filesystem**: `PathManager` for centralized path resolution and project discovery
@@ -58,52 +60,54 @@ The system follows a 4-layer Clean Architecture with clear separation of concern
 ### Directory Structure
 
 ```
-src/
-├── domain/                          # Pure business logic
-│   ├── entities/
-│   │   ├── memory.rs               # Memory entity with UUID, type, content
-│   │   └── project.rs              # Project configuration
-│   ├── value_objects/
-│   │   └── confidence.rs           # Confidence value (0.0-1.0)
-│   └── errors.rs                   # Domain-specific errors
-│
-├── application/                     # Business logic orchestration
-│   ├── use_cases/
-│   │   ├── initialize_project.rs   # Project initialization logic
-│   │   ├── create_feature.rs       # Feature creation logic
-│   │   ├── complete_features.rs    # Archive completed specs logic
-│   │   ├── remember_memory.rs      # Store memory logic
-│   │   ├── recall_memory.rs        # Retrieve memories logic
-│   │   ├── generate_document.rs    # Document generation logic
-│   │   └── reindex_memories.rs     # Database optimization logic
-│   ├── repositories/               # Repository interfaces (traits)
-│   │   ├── memory_repository.rs    # Memory persistence interface
-│   │   └── project_repository.rs   # Project structure interface (includes spec archiving)
-│   ├── test_helpers/               # Mock repositories for testing
-│   └── errors.rs                   # Application errors
-│
-├── cli/                            # Command-line interface
-│   ├── commands/
-│   │   ├── init.rs                # Init command implementation
-│   │   ├── new.rs                 # New feature command
-│   │   ├── complete.rs            # Complete command with TUI (ratatui)
-│   │   └── memory.rs              # Memory subcommands 
-│   ├── formatters.rs              # Output formatting
-│   └── args.rs                    # Argument parsing structures
-│
-├── infrastructure/                 # External services & implementations
-│   ├── repositories/
-│   │   ├── memory.rs              # Memory repository (SQLite)
-│   │   └── project.rs             # Project repository
-│   ├── mcp/
-│   │   └── server.rs              # MCP server implementation
-│   ├── filesystem/
-│   │   └── path_manager.rs        # Centralized path management
-│   └── migrations/
-│       └── embedded.rs            # Refinery migrations
-│
-├── lib.rs                          # Library exports
-└── main.rs                         # Application entry point & DI
+crates/
+└── hail-mary/
+    └── src/
+        ├── domain/                          # Pure business logic
+        │   ├── entities/
+        │   │   ├── memory.rs               # Memory entity with UUID, type, content
+        │   │   └── project.rs              # Project configuration
+        │   ├── value_objects/
+        │   │   └── confidence.rs           # Confidence value (0.0-1.0)
+        │   └── errors.rs                   # Domain-specific errors
+        │
+        ├── application/                     # Business logic orchestration
+        │   ├── use_cases/
+        │   │   ├── initialize_project.rs   # Project initialization logic
+        │   │   ├── create_feature.rs       # Feature creation logic
+        │   │   ├── complete_features.rs    # Archive completed specs logic
+        │   │   ├── remember_memory.rs      # Store memory logic
+        │   │   ├── recall_memory.rs        # Retrieve memories logic
+        │   │   ├── generate_document.rs    # Document generation logic
+        │   │   └── reindex_memories.rs     # Database optimization logic
+        │   ├── repositories/               # Repository interfaces (traits)
+        │   │   ├── memory_repository.rs    # Memory persistence interface
+        │   │   └── project_repository.rs   # Project structure interface (includes spec archiving)
+        │   ├── test_helpers/               # Mock repositories for testing
+        │   └── errors.rs                   # Application errors
+        │
+        ├── cli/                            # Command-line interface
+        │   ├── commands/
+        │   │   ├── init.rs                # Init command implementation
+        │   │   ├── new.rs                 # New feature command
+        │   │   ├── complete.rs            # Complete command with TUI (ratatui)
+        │   │   └── memory.rs              # Memory subcommands 
+        │   ├── formatters.rs              # Output formatting
+        │   └── args.rs                    # Argument parsing structures
+        │
+        ├── infrastructure/                 # External services & implementations
+        │   ├── repositories/
+        │   │   ├── memory.rs              # Memory repository (SQLite)
+        │   │   └── project.rs             # Project repository
+        │   ├── mcp/
+        │   │   └── server.rs              # MCP server implementation
+        │   ├── filesystem/
+        │   │   └── path_manager.rs        # Centralized path management
+        │   └── migrations/
+        │       └── embedded.rs            # Refinery migrations
+        │
+        ├── lib.rs                          # Library exports
+        └── main.rs                         # Application entry point & DI
 ```
 
 ### CLI Commands

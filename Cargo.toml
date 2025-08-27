@@ -1,9 +1,8 @@
-[package]
-name = "hail-mary"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = ["crates/hail-mary"]
+resolver = "2"
 
-[dependencies]
+[workspace.dependencies]
 # CLI
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
@@ -35,7 +34,3 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 pulldown-cmark = "0.13"
 
-[dev-dependencies]
-rstest = "0.23"
-pretty_assertions = "1"
-tempfile = "3"

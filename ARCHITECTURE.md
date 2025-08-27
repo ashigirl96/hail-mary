@@ -95,39 +95,53 @@ flowchart TB
 
 ## 📁 Directory Structure
 
-### Source Organization
+### Workspace Organization
+The project uses a Cargo workspace structure for better modularity and future extensibility.
+
 ```
-src/
-├── main.rs                 # CLI entry point and command routing
-├── lib.rs                  # Library exports for integration tests
-├── commands/               # Command implementations
-│   ├── mod.rs             # Command module exports
-│   ├── init.rs            # Project initialization
-│   ├── new.rs             # Specification creation
-│   └── memory/            # Memory MCP commands
-│       ├── mod.rs         # Memory command exports
-│       ├── serve.rs       # MCP server implementation
-│       ├── document.rs    # Documentation generation
-│       └── reindex.rs     # Database optimization
-├── models/                # Domain models and data structures
-│   ├── mod.rs            # Model exports
-│   ├── error.rs          # Error types and handling
-│   ├── memory.rs         # Memory domain model
-│   └── kiro.rs           # Configuration model
-├── repositories/          # Data access layer
-│   ├── mod.rs            # Repository exports
-│   └── memory.rs         # Memory repository implementations
-├── services/              # Business logic layer
-│   ├── mod.rs            # Service exports
-│   ├── memory.rs         # Memory business logic
-│   └── memory_mcp.rs     # MCP protocol service
-├── utils/                 # Shared utilities
-│   ├── mod.rs            # Utility exports
-│   ├── error.rs          # Error handling utilities
-│   └── validator.rs      # Input validation
-└── tests/                # Internal test utilities
-    ├── mod.rs            # Test module exports
-    └── common.rs         # Shared test infrastructure
+.
+├── Cargo.toml                    # Workspace root configuration
+├── crates/
+│   └── hail-mary/                    # Main application crate
+│       ├── Cargo.toml                # Application package configuration  
+│       └── src/                      # Source code
+│           ├── main.rs               # CLI entry point and command routing
+│           ├── lib.rs                # Library exports for integration tests
+│           ├── domain/               # Pure business logic
+│           │   ├── entities/        # Core domain objects
+│           │   │   ├── memory.rs    # Memory entity with business rules
+│           │   │   └── project.rs   # Project configuration entity
+│           │   ├── value_objects/   # Domain-specific types
+│           │   │   └── confidence.rs # Confidence value (0.0-1.0)
+│           │   └── errors.rs        # Domain errors
+│           ├── application/          # Business logic orchestration
+│           │   ├── use_cases/       # Application services
+│           │   │   ├── initialize_project.rs
+│           │   │   ├── create_feature.rs
+│           │   │   ├── remember_memory.rs
+│           │   │   └── recall_memory.rs
+│           │   ├── repositories/    # Repository trait definitions
+│           │   │   ├── memory_repository.rs
+│           │   │   └── project_repository.rs
+│           │   └── errors.rs        # Application errors
+│           ├── cli/                 # Command-line interface
+│           │   ├── commands/        # Command implementations
+│           │   │   ├── init.rs     # Project initialization
+│           │   │   ├── new.rs      # Feature creation
+│           │   │   ├── complete.rs # Complete features with TUI
+│           │   │   └── memory.rs   # Memory subcommands
+│           │   ├── formatters.rs   # Output formatting
+│           │   └── args.rs         # CLI argument parsing
+│           └── infrastructure/      # External services
+│               ├── repositories/    # Repository implementations
+│               │   ├── memory.rs   # SQLite memory repository
+│               │   └── project.rs  # Filesystem project repository
+│               ├── mcp/            # MCP protocol
+│               │   └── server.rs   # MCP server implementation
+│               ├── filesystem/      # File system operations
+│               │   └── path_manager.rs
+│               └── migrations/      # Database migrations
+│                   └── embedded.rs  # Embedded migration system
 ```
 
 ### External Organization

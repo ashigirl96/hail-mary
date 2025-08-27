@@ -5,17 +5,21 @@
 default:
     @just --list
 
-# Build the project
+# Build the project (all workspace members)
 build:
     cargo build
+
+# Build specific package
+build-package PACKAGE:
+    cargo build --package {{PACKAGE}}
 
 # Build in release mode
 build-release:
     cargo build --release
 
-# Run the project
+# Run the hail-mary project
 run *ARGS:
-    cargo run {{ARGS}}
+    cargo run --package hail-mary {{ARGS}}
 
 # Run tests
 test:
@@ -80,7 +84,7 @@ update:
 
 # Install the binary
 install:
-    cargo install --path .
+    cargo install --path crates/hail-mary
 
 # Auto-fix format and lint issues
 fix:
