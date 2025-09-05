@@ -30,7 +30,7 @@ The system follows a 4-layer Clean Architecture with clear separation of concern
 
 ### Domain Layer (`crates/hail-mary/src/domain/`)
 - **Entities**: `Memory` and `ProjectConfig` - core business objects with identity
-- **Value Objects**: `Confidence` - domain-specific types with validation (0.0-1.0)
+- **Value Objects**: `Confidence`, `SystemPrompt` - domain-specific types with validation (0.0-1.0)
 - **Domain Rules**: Business invariants and validation logic embedded in entities
 - **Domain Errors**: Business rule violations using thiserror
 
@@ -41,7 +41,7 @@ The system follows a 4-layer Clean Architecture with clear separation of concern
 - **Application Errors**: Operation-level errors with proper conversion from domain errors
 
 ### CLI Layer (`crates/hail-mary/src/cli/`)
-- **Commands**: Command implementations (`InitCommand`, `NewCommand`, `MemoryCommand`)
+- **Commands**: Command implementations (`InitCommand`, `NewCommand`, `CodeCommand`, `MemoryCommand`)
 - **Arguments**: Clap-based CLI argument parsing with validation
 - **Formatters**: Output formatting for different display modes (text, JSON, markdown)
 
@@ -49,6 +49,8 @@ The system follows a 4-layer Clean Architecture with clear separation of concern
 - **Repository Implementations**: `SqliteMemoryRepository` with FTS5 search and WAL mode
 - **MCP Server**: Protocol implementation for AI model integration using rmcp
 - **Filesystem**: `PathManager` for centralized path resolution and project discovery
+- **Process Management**: `ClaudeProcessLauncher` for external process integration with TTY management
+- **TUI Components**: Specification selector interface using ratatui/crossterm
 - **Migrations**: Embedded database migrations using Refinery
 
 ### Database Design
@@ -68,7 +70,8 @@ crates/
         │   │   ├── memory.rs               # Memory entity with UUID, type, content
         │   │   └── project.rs              # Project configuration
         │   ├── value_objects/
-        │   │   └── confidence.rs           # Confidence value (0.0-1.0)
+        │   │   ├── confidence.rs           # Confidence value (0.0-1.0)
+        │   │   └── system_prompt.rs        # System prompt for Claude Code
         │   └── errors.rs                   # Domain-specific errors
         │
         ├── application/                     # Business logic orchestration
@@ -76,6 +79,7 @@ crates/
         │   │   ├── initialize_project.rs   # Project initialization logic
         │   │   ├── create_feature.rs       # Feature creation logic
         │   │   ├── complete_features.rs    # Archive completed specs logic
+        │   │   ├── launch_claude_with_spec.rs # Claude Code integration logic
         │   │   ├── remember_memory.rs      # Store memory logic
         │   │   ├── recall_memory.rs        # Retrieve memories logic
         │   │   ├── generate_document.rs    # Document generation logic
@@ -91,6 +95,7 @@ crates/
         │   │   ├── init.rs                # Init command implementation
         │   │   ├── new.rs                 # New feature command
         │   │   ├── complete.rs            # Complete command with TUI (ratatui)
+        │   │   ├── code.rs                # Code command for Claude Code integration
         │   │   └── memory.rs              # Memory subcommands 
         │   ├── formatters.rs              # Output formatting
         │   └── args.rs                    # Argument parsing structures
@@ -103,6 +108,10 @@ crates/
         │   │   └── server.rs              # MCP server implementation
         │   ├── filesystem/
         │   │   └── path_manager.rs        # Centralized path management
+        │   ├── process/
+        │   │   └── claude_launcher.rs     # Claude Code launcher with TTY management
+        │   ├── tui/
+        │   │   └── spec_selector.rs       # Specification selector TUI
         │   └── migrations/
         │       └── embedded.rs            # Refinery migrations
         │
@@ -114,6 +123,7 @@ crates/
 - `hail-mary init`: Initialize .kiro directory structure and configuration
 - `hail-mary new <name>`: Create feature specification templates with validation
 - `hail-mary complete`: Interactive TUI for marking specifications as complete (archives to .kiro/archive)
+- `hail-mary code`: Launch Claude Code with Kiro specification context
 - `hail-mary memory serve`: Start MCP server for AI model integration
 - `hail-mary memory document [--type <type>]`: Generate documentation from memories
 - `hail-mary memory reindex [--dry-run] [--verbose]`: Database optimization and cleanup
@@ -205,6 +215,41 @@ The Memory MCP server provides AI models with structured access to technical kno
 - Async protocol implementation using rmcp v0.5.0
 
 When working with MCP features, remember that the server maintains persistent connections and memory updates are immediately available for search.
+
+## Claude Code Integration
+
+The `hail-mary code` command provides seamless integration with Claude Code by launching it with Kiro specification context:
+
+### Key Features
+- **Interactive Specification Selection**: TUI for choosing existing specs or creating new ones
+- **Structured System Prompts**: XML-tagged file paths for easy reference in Claude Code
+- **TTY Management**: Proper terminal handling for backgrounding and process control
+- **Clean Architecture Integration**: Follows the project's 4-layer architecture pattern
+
+### System Prompt Structure
+When launching Claude Code, the following XML tags provide structured access to specification files:
+```xml
+<kiro_spec_name>spec-name</kiro_spec_name>
+<kiro_spec_path>.kiro/specs/spec-name/</kiro_spec_path>
+<kiro_requirements_path>.kiro/specs/spec-name/requirements.md</kiro_requirements_path>
+<kiro_design_path>.kiro/specs/spec-name/design.md</kiro_design_path>
+<kiro_tasks_path>.kiro/specs/spec-name/tasks.md</kiro_tasks_path>
+<kiro_memo_path>.kiro/specs/spec-name/memo.md</kiro_memo_path>
+```
+
+### Usage
+```bash
+# Launch Claude Code with Kiro context
+hail-mary code
+# Select from existing specifications or create new ones
+# Claude Code launches with full specification context
+```
+
+### File Descriptions
+- **requirements.md**: Comprehensive requirements including user stories and acceptance criteria
+- **design.md**: Technical design with architecture decisions and implementation approach  
+- **tasks.md**: Implementation tasks with priorities and dependencies
+- **memo.md**: Additional notes and context from the user
 
 ## Anthropic Client Integration
 

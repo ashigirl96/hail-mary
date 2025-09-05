@@ -367,6 +367,21 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         Ok(())
     }
+
+    fn get_spec_path(&self, name: &str) -> Result<std::path::PathBuf, ApplicationError> {
+        let specs_dir = self.path_manager.specs_dir(true);
+        let spec_path = specs_dir.join(name);
+
+        if !spec_path.exists() {
+            return Err(ApplicationError::SpecNotFound(name.to_string()));
+        }
+
+        if !spec_path.is_dir() {
+            return Err(ApplicationError::InvalidSpecDirectory(name.to_string()));
+        }
+
+        Ok(spec_path)
+    }
 }
 
 #[cfg(test)]

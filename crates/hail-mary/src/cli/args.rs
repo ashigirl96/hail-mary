@@ -39,6 +39,9 @@ pub enum Commands {
 
     /// Mark feature specifications as complete
     Complete,
+
+    /// Launch Claude Code with Kiro specification context
+    Code,
 }
 
 #[derive(Subcommand, Debug)]
@@ -98,6 +101,10 @@ impl Commands {
 
     pub fn is_complete(&self) -> bool {
         matches!(self, Commands::Complete)
+    }
+
+    pub fn is_code(&self) -> bool {
+        matches!(self, Commands::Code)
     }
 }
 

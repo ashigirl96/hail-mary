@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use hail_mary::cli::args::{Cli, Commands, MemoryCommands};
 use hail_mary::cli::commands::{
-    CompleteCommand, InitCommand, MemoryCommand, NewCommand, completion,
+    CodeCommand, CompleteCommand, InitCommand, MemoryCommand, NewCommand, completion,
 };
 use hail_mary::cli::formatters::format_error;
 use std::process;
@@ -41,6 +41,10 @@ fn run() -> Result<()> {
         }
         Commands::Complete => {
             let command = CompleteCommand::new();
+            command.execute()?;
+        }
+        Commands::Code => {
+            let command = CodeCommand::new();
             command.execute()?;
         }
     }

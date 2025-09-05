@@ -18,6 +18,9 @@ pub trait ProjectRepository: Send + Sync {
 
     /// Mark a specification as complete by moving it to archive
     fn mark_spec_complete(&self, name: &str) -> Result<(), ApplicationError>;
+
+    /// Get the path to a specification directory
+    fn get_spec_path(&self, name: &str) -> Result<std::path::PathBuf, ApplicationError>;
 }
 
 #[cfg(test)]
