@@ -39,6 +39,7 @@ flowchart TB
     subgraph CMD ["⚡ Command Layer"]
         Init["InitCommand<br/>Project setup"]
         New["NewCommand<br/>Spec creation"]
+        Code["CodeCommand<br/>Claude Code integration"]
         Memory["MemoryCommands<br/>MCP operations"]
     end
     
@@ -61,10 +62,12 @@ flowchart TB
     
     Main --> Init
     Main --> New
+    Main --> Code
     Main --> Memory
     
     Init --> MemSvc
     New --> MemSvc
+    Code --> MemSvc
     Memory --> MemSvc
     Memory --> McpSvc
     
@@ -86,7 +89,7 @@ flowchart TB
     classDef interface fill:#272822,stroke:#66D9EF,stroke-width:2px,stroke-dasharray: 5 5;
     
     class Main cli;
-    class Init,New,Memory command;
+    class Init,New,Code,Memory command;
     class MemSvc,McpSvc service;
     class RepoTrait interface;
     class SqliteRepo,InMemRepo repo;
@@ -178,6 +181,7 @@ tests/                   # Integration tests
 ```rust
 Commands::Init(InitCommand)        // Project initialization
 Commands::New(NewCommand)          // Specification creation
+Commands::Code(CodeCommand)        // Claude Code integration
 Commands::Memory {
     MemoryCommands::Serve          // Start MCP server
     MemoryCommands::Document       // Generate documentation
@@ -233,6 +237,34 @@ format = "markdown"
 [memory.database]
 path = ".kiro/memory/db.sqlite3"
 ```
+
+### Claude Code Integration (`commands/code.rs`)
+**Purpose**: Launch Claude Code with Kiro specification context
+**Key Components**:
+- **TUI Specification Selector**: Interactive selection of existing specs or creation of new ones
+- **System Prompt Generation**: XML-tagged context for structured file references
+- **Process Management**: TTY-aware Claude Code launching with proper backgrounding support
+
+**Architecture Flow**:
+1. **Specification Discovery**: List available specs via ProjectRepository
+2. **Interactive Selection**: TUI for spec choice with "Create new" option
+3. **Context Generation**: SystemPrompt value object with XML-tagged file paths
+4. **Process Launch**: ClaudeProcessLauncher with exec replacement for TTY preservation
+
+**System Prompt Template**:
+```xml
+<kiro_spec_name>{name}</kiro_spec_name>
+<kiro_spec_path>{path}</kiro_spec_path>
+<kiro_requirements_path>{path}/requirements.md</kiro_requirements_path>
+<kiro_design_path>{path}/design.md</kiro_design_path>
+<kiro_tasks_path>{path}/tasks.md</kiro_tasks_path>
+<kiro_memo_path>{path}/memo.md</kiro_memo_path>
+```
+
+**TTY Management Strategy**:
+- **Process Replacement**: Uses `exec()` on Unix systems to replace hail-mary process with Claude Code
+- **TTY Preservation**: Maintains terminal control for proper Ink (React CLI) operation
+- **Background Support**: Enables `ctrl+z` job control through proper process ownership
 
 ### Repository Layer (`repositories/memory.rs`)
 **Pattern**: Repository pattern with trait-based abstraction
@@ -352,6 +384,24 @@ CREATE TRIGGER memories_soft_delete AFTER UPDATE       -- Handle logical deletio
 **Database**: Connection reuse, prepared statements
 **Threading**: Safe sharing with Arc<Mutex<>> patterns
 **Error Handling**: Zero-cost error propagation
+
+## 🔗 Infrastructure Layer Extensions
+
+### Process Management (`infrastructure/process/`)
+**Purpose**: External process integration with proper TTY handling
+**Key Features**:
+- **Claude Code Integration**: Launch Claude with system prompts
+- **TTY Management**: Process replacement (`exec()`) for terminal control preservation
+- **Cross-platform Support**: Unix/Windows compatibility with fallback mechanisms
+- **Error Handling**: Comprehensive process launch error management
+
+### TUI Components (`infrastructure/tui/`)
+**Purpose**: Terminal user interface for interactive workflows
+**Key Features**:
+- **Specification Selector**: Interactive TUI for spec selection and creation
+- **Keyboard Navigation**: Standard keybindings (↑/↓/j/k/Enter/q/Esc)
+- **Visual Design**: Consistent styling with existing CLI patterns
+- **State Management**: Proper terminal setup and cleanup
 
 ## 🔒 Error Handling Strategy
 
