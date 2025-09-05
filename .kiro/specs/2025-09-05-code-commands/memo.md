@@ -43,3 +43,9 @@ e.g.
 
 私は特に、システムプロンプトの書き方がよく分かっておらず、context7などで良いシステムプロンプトの書き方を調べてほしい
 
+
+
+---
+
+- `Create new specification` で作ったものからclaude codeが実行されない。❌ Error: Specification XXX not found と表示されてしまう
+- claude codeで `ctrl+z`すると、バックグラウンドになるはずなんだけど、hail-mary codeを実行する親プロセスのせいで、backgroundにならない

@@ -53,6 +53,9 @@ pub enum ApplicationError {
 
     #[error("Spec already exists in archive: {0}")]
     ArchiveAlreadyExists(String),
+
+    #[error("Process launch error: {0}")]
+    ProcessLaunchError(String),
 }
 
 impl ApplicationError {

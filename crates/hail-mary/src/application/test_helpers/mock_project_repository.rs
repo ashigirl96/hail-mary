@@ -292,4 +292,26 @@ impl ProjectRepository for MockProjectRepository {
         }
         Ok(())
     }
+
+    fn get_spec_path(&self, name: &str) -> Result<std::path::PathBuf, ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::FileSystemError(
+                "Failed to get spec path".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "get_spec_path"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock get_spec_path failure".to_string(),
+            ));
+        }
+        if !self.created_features.contains(&name.to_string()) {
+            return Err(ApplicationError::SpecNotFound(name.to_string()));
+        }
+
+        // Return a mock path
+        let mock_path = std::path::PathBuf::from(".kiro/specs").join(name);
+        Ok(mock_path)
+    }
 }

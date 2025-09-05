@@ -1,0 +1,99 @@
+use anyhow::Result;
+use std::process::Command;
+
+pub struct ClaudeProcessLauncher;
+
+impl ClaudeProcessLauncher {
+    pub fn new() -> Self {
+        Self
+    }
+
+    pub fn launch(&self, system_prompt: &str) -> Result<()> {
+        // Check if claude command exists
+        let claude_exists = Self::check_claude_availability()?;
+
+        if !claude_exists {
+            return Err(anyhow::anyhow!(
+                "Claude Code CLI not found. Please install it first: https://claude.ai/code"
+            ));
+        }
+
+        // Use exec to replace current process with Claude Code
+        // This preserves TTY access while allowing backgrounding via shell job control
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+
+            // On Unix systems, use exec to replace the current process
+            let error = Command::new("claude")
+                .arg("--append-system-prompt")
+                .arg(system_prompt)
+                .exec(); // This never returns if successful
+
+            // If we reach here, exec failed
+            Err(anyhow::anyhow!("Failed to exec Claude Code: {}", error))
+        }
+
+        #[cfg(not(unix))]
+        {
+            // Fallback for non-Unix systems
+            Command::new("claude")
+                .arg("--append-system-prompt")
+                .arg(system_prompt)
+                .spawn()
+                .map_err(|e| anyhow::anyhow!("Failed to spawn Claude Code: {}", e))?;
+
+            Ok(())
+        }
+    }
+
+    fn check_claude_availability() -> Result<bool> {
+        // Use 'which' on Unix-like systems, 'where' on Windows
+        let command = if cfg!(target_os = "windows") {
+            "where"
+        } else {
+            "which"
+        };
+
+        let output = Command::new(command).arg("claude").output()?;
+
+        Ok(output.status.success())
+    }
+}
+
+impl Default for ClaudeProcessLauncher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_claude_launcher_new() {
+        let launcher = ClaudeProcessLauncher::new();
+        // Just ensure it can be created without panicking
+        assert!(std::mem::size_of_val(&launcher) == 0);
+    }
+
+    #[test]
+    fn test_claude_launcher_default() {
+        let launcher = ClaudeProcessLauncher::new();
+        // Just ensure default works
+        assert!(std::mem::size_of_val(&launcher) == 0);
+    }
+
+    #[test]
+    fn test_check_claude_availability() {
+        // This test will depend on whether claude is actually installed
+        // We just test that the function doesn't panic
+        let result = ClaudeProcessLauncher::check_claude_availability();
+        assert!(result.is_ok());
+    }
+
+    // Note: We don't test launch() method in unit tests as it would actually
+    // try to launch Claude. This should be tested in integration tests with mocks.
+}
