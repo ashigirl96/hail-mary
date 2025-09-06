@@ -239,6 +239,30 @@ impl ProjectRepositoryTrait for ProjectRepository {
             name
         );
 
+        let investigation_content = format!(
+            r#"# Investigation: {}
+
+## Research Notes
+[Research findings and exploration notes]
+
+## Key Findings
+- Finding 1
+- Finding 2
+
+## Technical Considerations
+[Technical details discovered during investigation]
+
+## Questions & Uncertainties
+- [ ] Question 1
+- [ ] Question 2
+
+## Resources & References
+- Resource 1
+- Resource 2
+"#,
+            name
+        );
+
         // Write template files
         fs::write(feature_dir.join("requirements.md"), requirements_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write requirements.md: {}", e))
@@ -254,6 +278,10 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         fs::write(feature_dir.join("memo.md"), memo_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write memo.md: {}", e))
+        })?;
+
+        fs::write(feature_dir.join("investigation.md"), investigation_content).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to write investigation.md: {}", e))
         })?;
 
         fs::write(feature_dir.join("spec.json"), "{}").map_err(|e| {
@@ -531,6 +559,7 @@ mod tests {
         assert!(feature_path.join("design.md").exists());
         assert!(feature_path.join("tasks.md").exists());
         assert!(feature_path.join("memo.md").exists());
+        assert!(feature_path.join("investigation.md").exists());
         assert!(feature_path.join("spec.json").exists());
 
         // Verify content contains feature name

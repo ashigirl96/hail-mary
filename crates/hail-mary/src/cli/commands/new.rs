@@ -100,6 +100,7 @@ mod tests {
         assert!(Path::new(&format!("{}/requirements.md", feature_dir)).exists());
         assert!(Path::new(&format!("{}/design.md", feature_dir)).exists());
         assert!(Path::new(&format!("{}/tasks.md", feature_dir)).exists());
+        assert!(Path::new(&format!("{}/investigation.md", feature_dir)).exists());
         assert!(Path::new(&format!("{}/spec.json", feature_dir)).exists());
     }
 
