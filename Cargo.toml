@@ -10,7 +10,7 @@ clap_complete = "4.5"
 # Core
 tokio = { version = "1", features = ["full", "test-util"] }
 anyhow = "1"
-thiserror = "1"
+thiserror = "2"
 
 # MCP Protocol
 rmcp = { version = "0.5.0", features = ["server", "macros", "transport-io"] }
@@ -24,7 +24,7 @@ refinery = { version = "0.8.16", features = ["rusqlite"] }
 
 # TUI
 ratatui = "0.29"
-crossterm = "0.28"
+crossterm = "0.29"
 
 # Utils
 uuid = { version = "1", features = ["v4"] }
