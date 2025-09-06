@@ -238,6 +238,21 @@ format = "markdown"
 path = ".kiro/memory/db.sqlite3"
 ```
 
+### Kiro Specification Management (`commands/new.rs`)
+**Purpose**: Create and manage project specifications with structured documentation
+**Key Components**:
+- **Specification Templates**: Auto-generated markdown files for comprehensive project documentation
+- **Date-based Naming**: Automatic prefixing with creation date for chronological organization
+- **Validation**: Kebab-case naming enforcement for consistency
+
+**Specification Files Created**:
+- **requirements.md**: User stories, acceptance criteria, and functional requirements
+- **design.md**: Technical architecture decisions and implementation approach
+- **tasks.md**: Implementation tasks with priorities and dependencies
+- **memo.md**: Additional notes and context from the user
+- **investigation.md**: Research findings, key discoveries, and technical considerations
+- **spec.json**: Metadata for specification tracking
+
 ### Claude Code Integration (`commands/code.rs`)
 **Purpose**: Launch Claude Code with Kiro specification context
 **Key Components**:

@@ -121,7 +121,7 @@ crates/
 
 ### CLI Commands
 - `hail-mary init`: Initialize .kiro directory structure and configuration
-- `hail-mary new <name>`: Create feature specification templates with validation
+- `hail-mary new <name>`: Create feature specification templates with validation (includes requirements.md, design.md, tasks.md, memo.md, investigation.md, and spec.json)
 - `hail-mary complete`: Interactive TUI for marking specifications as complete (archives to .kiro/archive)
 - `hail-mary code`: Launch Claude Code with Kiro specification context
 - `hail-mary memory serve`: Start MCP server for AI model integration
@@ -235,6 +235,7 @@ When launching Claude Code, the following XML tags provide structured access to 
 <kiro_design_path>.kiro/specs/spec-name/design.md</kiro_design_path>
 <kiro_tasks_path>.kiro/specs/spec-name/tasks.md</kiro_tasks_path>
 <kiro_memo_path>.kiro/specs/spec-name/memo.md</kiro_memo_path>
+<kiro_investigation_path>.kiro/specs/spec-name/investigation.md</kiro_investigation_path>
 ```
 
 ### Usage
@@ -250,6 +251,7 @@ hail-mary code
 - **design.md**: Technical design with architecture decisions and implementation approach  
 - **tasks.md**: Implementation tasks with priorities and dependencies
 - **memo.md**: Additional notes and context from the user
+- **investigation.md**: Research findings, key discoveries, and technical considerations from investigation phase
 
 ## Anthropic Client Integration
 
