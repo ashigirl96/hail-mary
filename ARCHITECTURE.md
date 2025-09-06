@@ -259,6 +259,7 @@ path = ".kiro/memory/db.sqlite3"
 <kiro_design_path>{path}/design.md</kiro_design_path>
 <kiro_tasks_path>{path}/tasks.md</kiro_tasks_path>
 <kiro_memo_path>{path}/memo.md</kiro_memo_path>
+<kiro_investigation_path>{path}/investigation.md</kiro_investigation_path>
 ```
 
 **TTY Management Strategy**:
