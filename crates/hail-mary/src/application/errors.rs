@@ -135,5 +135,4 @@ mod tests {
         let boxed_error: Box<dyn std::error::Error> = Box::new(error);
         assert_eq!(boxed_error.to_string(), "Project not found");
     }
-
 }

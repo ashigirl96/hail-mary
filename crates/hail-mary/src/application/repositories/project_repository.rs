@@ -194,33 +194,6 @@ mod tests {
     }
 
     #[test]
-    fn test_project_repository_save_document() {
-        let repo = MockProjectRepository::new();
-        let memories = vec![crate::domain::entities::memory::Memory::new(
-            "tech".to_string(),
-            "Test Memory".to_string(),
-            "Test content".to_string(),
-        )];
-
-        let result = repo.save_document("tech", &memories);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_project_repository_save_document_failure() {
-        let mut repo = MockProjectRepository::new();
-        repo.set_next_operation_to_fail();
-        let memories = vec![];
-
-        let result = repo.save_document("tech", &memories);
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            ApplicationError::DocumentGenerationError(_) => {}
-            _ => panic!("Expected DocumentGenerationError"),
-        }
-    }
-
-    #[test]
     fn test_project_config_validate_memory_type() {
         let config = ProjectConfig::default_for_new_project();
 
@@ -246,13 +219,6 @@ mod tests {
         repo.add_created_feature("feature2");
         assert_eq!(repo.get_created_features().len(), 2);
         assert_eq!(repo.get_created_features()[0], "feature1");
-
-        // Test document tracking
-        repo.add_saved_document("tech", 5);
-        repo.add_saved_document("domain", 3);
-        assert_eq!(repo.get_saved_documents().len(), 2);
-        assert_eq!(*repo.get_saved_documents().get("tech").unwrap(), 5);
-        assert_eq!(*repo.get_saved_documents().get("domain").unwrap(), 3);
 
         // Test failure flag
         repo.set_next_operation_to_fail();

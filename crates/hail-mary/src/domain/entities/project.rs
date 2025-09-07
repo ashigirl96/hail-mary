@@ -5,29 +5,21 @@ pub enum DocumentFormat {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProjectConfig {
-    pub memory_types: Vec<String>,
     pub instructions: String,
     pub document_format: DocumentFormat,
+    pub steering: crate::domain::entities::steering::SteeringConfig,
 }
 
 impl ProjectConfig {
     pub fn default_for_new_project() -> Self {
         Self {
-            memory_types: vec![
-                "tech".to_string(),
-                "project-tech".to_string(),
-                "domain".to_string(),
-                "workflow".to_string(),
-                "decision".to_string(),
-            ],
             instructions: DEFAULT_INSTRUCTIONS.to_string(),
             document_format: DocumentFormat::Markdown,
+            steering: crate::domain::entities::steering::SteeringConfig::default_for_new_project(),
         }
     }
 
-    pub fn validate_memory_type(&self, memory_type: &str) -> bool {
-        self.memory_types.contains(&memory_type.to_string())
-    }
+    // Memory type validation removed - using steering system instead
 
     pub fn validate_spec_name(name: &str) -> Result<(), crate::domain::errors::DomainError> {
         if name.is_empty() {
@@ -49,14 +41,12 @@ impl ProjectConfig {
 }
 
 // TODO: 別ファイルに切り出す
-const DEFAULT_INSTRUCTIONS: &str = r#"Memory MCP Server v3
+const DEFAULT_INSTRUCTIONS: &str = r#"Hail-Mary Project Management System
 
-Available memory types:
-- tech: General technical knowledge (languages, frameworks, algorithms)
-- project-tech: This project's specific technical implementation
-- domain: Business domain knowledge and requirements
-- workflow: Development workflows and processes
-- decision: Architecture decisions and their rationale"#;
+File-based steering system for context management:
+- product.md: Product overview and value proposition
+- tech.md: Technical stack and development environment
+- structure.md: Code organization patterns and conventions"#;
 
 #[cfg(test)]
 mod tests {
@@ -66,39 +56,21 @@ mod tests {
     fn test_project_config_default() {
         let config = ProjectConfig::default_for_new_project();
 
-        assert_eq!(config.memory_types.len(), 5);
-        assert!(config.memory_types.contains(&"tech".to_string()));
-        assert!(config.memory_types.contains(&"project-tech".to_string()));
-        assert!(config.memory_types.contains(&"domain".to_string()));
-        assert!(config.memory_types.contains(&"workflow".to_string()));
-        assert!(config.memory_types.contains(&"decision".to_string()));
+        assert!(!config.steering.types.is_empty());
 
         assert!(!config.instructions.is_empty());
-        assert!(config.instructions.contains("Memory MCP Server v3"));
+        assert!(
+            config
+                .instructions
+                .contains("Hail-Mary Project Management System")
+        );
 
         assert_eq!(config.document_format, DocumentFormat::Markdown);
     }
 
-    #[test]
-    fn test_validate_memory_type_valid() {
-        let config = ProjectConfig::default_for_new_project();
+    // Memory type validation tests removed - using steering system
 
-        assert!(config.validate_memory_type("tech"));
-        assert!(config.validate_memory_type("project-tech"));
-        assert!(config.validate_memory_type("domain"));
-        assert!(config.validate_memory_type("workflow"));
-        assert!(config.validate_memory_type("decision"));
-    }
-
-    #[test]
-    fn test_validate_memory_type_invalid() {
-        let config = ProjectConfig::default_for_new_project();
-
-        assert!(!config.validate_memory_type("invalid"));
-        assert!(!config.validate_memory_type("unknown"));
-        assert!(!config.validate_memory_type(""));
-        assert!(!config.validate_memory_type("TECH")); // case sensitive
-    }
+    // Memory type validation tests removed - using steering system
 
     #[test]
     fn test_project_config_clone() {
@@ -106,7 +78,7 @@ mod tests {
         let config2 = config1.clone();
 
         assert_eq!(config1, config2);
-        assert_eq!(config1.memory_types, config2.memory_types);
+        assert_eq!(config1.steering, config2.steering);
         assert_eq!(config1.instructions, config2.instructions);
         assert_eq!(config1.document_format, config2.document_format);
     }
@@ -117,7 +89,7 @@ mod tests {
         let debug_str = format!("{:?}", config);
 
         assert!(debug_str.contains("ProjectConfig"));
-        assert!(debug_str.contains("tech"));
+        assert!(debug_str.contains("steering"));
         assert!(debug_str.contains("Markdown"));
     }
 
@@ -132,36 +104,18 @@ mod tests {
         assert_eq!(debug_str, "Markdown");
     }
 
-    #[test]
-    fn test_memory_types_ordering() {
-        let config = ProjectConfig::default_for_new_project();
-
-        assert_eq!(config.memory_types[0], "tech");
-        assert_eq!(config.memory_types[1], "project-tech");
-        assert_eq!(config.memory_types[2], "domain");
-        assert_eq!(config.memory_types[3], "workflow");
-        assert_eq!(config.memory_types[4], "decision");
-    }
+    // Memory types ordering tests removed - using steering system
 
     #[test]
     fn test_default_instructions_content() {
         let config = ProjectConfig::default_for_new_project();
 
-        assert!(config.instructions.contains("tech:"));
-        assert!(config.instructions.contains("project-tech:"));
-        assert!(config.instructions.contains("domain:"));
-        assert!(config.instructions.contains("workflow:"));
-        assert!(config.instructions.contains("decision:"));
+        assert!(config.instructions.contains("product.md:"));
+        assert!(config.instructions.contains("tech.md:"));
+        assert!(config.instructions.contains("structure.md:"));
     }
 
-    #[test]
-    fn test_custom_memory_types() {
-        let mut config = ProjectConfig::default_for_new_project();
-        config.memory_types.push("custom".to_string());
-
-        assert!(config.validate_memory_type("custom"));
-        assert_eq!(config.memory_types.len(), 6);
-    }
+    // Custom memory types test removed - using steering system
 
     #[test]
     fn test_validate_spec_name_valid() {

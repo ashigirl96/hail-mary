@@ -35,50 +35,54 @@ Removes business logic and use cases related to memory management.
 - [x] Update `src/application/test_helpers/mod.rs` to remove mock memory repository export
 - [x] Update `src/cli/formatters.rs` to keep only general formatting functions
 
-## Phase 3: Remove Infrastructure & Core Components
+## Phase 3: Remove Infrastructure & Core Components ✅
 Removes MCP server, database, and domain entities.
 
 ### MCP Server Removal
-- [ ] Delete `src/infrastructure/mcp/server.rs`
-- [ ] Delete `src/infrastructure/mcp/mod.rs`
-- [ ] Update `src/infrastructure/mod.rs` to remove MCP module export
+- [x] Delete `src/infrastructure/mcp/server.rs`
+- [x] Delete `src/infrastructure/mcp/mod.rs`
+- [x] Update `src/infrastructure/mod.rs` to remove MCP module export
 
 ### Database Components Removal
-- [ ] Delete `src/infrastructure/repositories/memory.rs` (SQLite repository)
-- [ ] Delete `src/infrastructure/migrations/embedded.rs`
-- [ ] Delete `src/infrastructure/migrations/mod.rs`
-- [ ] Delete `migrations/V001__initial_schema.sql`
-- [ ] Delete `migrations/V002__add_fts5_index.sql`
-- [ ] Delete `migrations/V003__add_triggers.sql`
+- [x] Delete `src/infrastructure/repositories/memory.rs` (SQLite repository)
+- [x] Delete `src/infrastructure/migrations/embedded.rs`
+- [x] Delete `src/infrastructure/migrations/mod.rs`
+- [x] Delete `migrations/V001__initial_schema.sql`
+- [x] Delete `migrations/V002__add_fts5_index.sql`
+- [x] Delete `migrations/V003__add_triggers.sql`
 
 ### Domain Entities Removal
-- [ ] Delete `src/domain/entities/memory.rs`
-- [ ] Delete `src/domain/value_objects/confidence.rs`
-- [ ] Update `src/domain/entities/mod.rs` to remove Memory export
-- [ ] Update `src/domain/value_objects/mod.rs` to remove Confidence export
-- [ ] Update `src/domain/errors.rs` to remove memory-related domain errors
+- [x] Delete `src/domain/entities/memory.rs`
+- [x] Delete `src/domain/value_objects/confidence.rs`
+- [x] Update `src/domain/entities/mod.rs` to remove Memory export
+- [x] Update `src/domain/value_objects/mod.rs` to remove Confidence export
+- [x] Update `src/domain/errors.rs` to remove memory-related domain errors
+- [x] Update `src/infrastructure/repositories/mod.rs` to remove memory repository
+- [x] Remove save_document method from ProjectRepository trait
+- [x] Remove save_document implementation and tests
+- [x] Update MockProjectRepository to remove Memory references
 
-## Phase 4: Cleanup & Dependencies
+## Phase 4: Cleanup & Dependencies ✅
 Final cleanup of configuration, initialization, and dependencies.
 
 ### Configuration Updates
-- [ ] Update `src/cli/commands/init.rs` to remove memory directory creation
-- [ ] Update `src/application/use_cases/initialize_project.rs` to remove memory initialization
-- [ ] Update `src/infrastructure/repositories/project.rs` to remove memory path management
-- [ ] Update config.toml template to remove `[memory]` section
-- [ ] Update ProjectConfig to remove memory_types field
+- [x] Update `src/cli/commands/init.rs` to remove memory directory creation
+- [x] Update `src/application/use_cases/initialize_project.rs` to remove memory initialization
+- [x] Update `src/infrastructure/repositories/project.rs` to remove memory path management
+- [x] Update config.toml template to remove `[memory]` section
+- [x] Update ProjectConfig to remove memory_types field
 
 ### Dependency Removal
-- [ ] Remove `rmcp` from `Cargo.toml` dependencies
-- [ ] Remove `rusqlite` from `Cargo.toml` dependencies
-- [ ] Remove `refinery` from `Cargo.toml` dependencies
-- [ ] Remove `schemars` from `Cargo.toml` dependencies (if not used elsewhere)
+- [x] Remove `rmcp` from `Cargo.toml` dependencies
+- [x] Remove `rusqlite` from `Cargo.toml` dependencies
+- [x] Remove `refinery` from `Cargo.toml` dependencies
+- [x] Remove `schemars` from `Cargo.toml` dependencies (not used elsewhere)
 
 ### Test Cleanup
-- [ ] Remove memory repository integration tests
-- [ ] Remove migration tests
-- [ ] Remove memory use case tests
-- [ ] Update any remaining tests that reference memory components
+- [x] Remove memory repository integration tests (completed in Phase 3)
+- [x] Remove migration tests (completed in Phase 3)
+- [x] Remove memory use case tests (completed in Phase 2)
+- [x] Update any remaining tests that reference memory components
 
 ## Phase 5: Verification
 Ensures the removal is complete and the project still functions correctly.

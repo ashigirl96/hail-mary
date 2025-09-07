@@ -1,6 +1,6 @@
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::ProjectRepository as ProjectRepositoryTrait;
-use crate::domain::entities::project::{DocumentFormat, ProjectConfig};
+use crate::domain::entities::project::ProjectConfig;
 use crate::domain::entities::steering::SteeringConfig;
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,6 @@ struct SteeringTypeToml {
     purpose: String,
     criterions: Vec<String>,
 }
-
 
 pub struct ProjectRepository {
     path_manager: PathManager,
@@ -135,7 +134,7 @@ impl ProjectRepositoryTrait for ProjectRepository {
     }
 
     fn load_config(&self) -> Result<ProjectConfig, ApplicationError> {
-        // For now, just return default config since we're removing memory system
+        // Return default config for steering system
         // TODO: Update to load only steering configuration
         Ok(ProjectConfig::default_for_new_project())
     }
@@ -143,7 +142,7 @@ impl ProjectRepositoryTrait for ProjectRepository {
     fn update_gitignore(&self) -> Result<(), ApplicationError> {
         let gitignore_path = self.path_manager.project_root().join(".gitignore");
 
-        let mut content = if gitignore_path.exists() {
+        let content = if gitignore_path.exists() {
             fs::read_to_string(&gitignore_path).map_err(|e| {
                 ApplicationError::FileSystemError(format!("Failed to read .gitignore: {}", e))
             })?
@@ -151,19 +150,7 @@ impl ProjectRepositoryTrait for ProjectRepository {
             String::new()
         };
 
-        // Get relative paths for database files
-        let db_path = self.path_manager.memory_db_path(false);
-        let db_pattern = format!("{}", db_path.display());
-
-        // Add .kiro database exclusions if not present
-        if !content.contains(&db_pattern) {
-            content.push_str("\n# Hail-Mary database\n");
-            content.push_str(&format!("{}\n", db_pattern));
-
-            // Add pattern for WAL and SHM files
-            let memory_dir = self.path_manager.memory_dir(false);
-            content.push_str(&format!("{}/*.sqlite3-*\n", memory_dir.display()));
-        }
+        // No database files to exclude since we're using file-based steering system
 
         fs::write(gitignore_path, content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write .gitignore: {}", e))
@@ -434,9 +421,9 @@ impl ProjectRepositoryTrait for ProjectRepository {
         let config_path = self.path_manager.config_path(true);
 
         if !config_path.exists() {
-            // Create new config with both memory and steering sections
-            let memory_config = ProjectConfig::default_for_new_project();
-            self.save_config(&memory_config)?;
+            // Create new config with steering section
+            let config = ProjectConfig::default_for_new_project();
+            self.save_config(&config)?;
             return Ok(());
         }
 
@@ -492,7 +479,7 @@ mod tests {
 
         // Verify directories were created
         assert!(repository.path_manager.kiro_dir(true).exists());
-        assert!(repository.path_manager.memory_dir(true).exists());
+        // Memory directory no longer created
         assert!(repository.path_manager.specs_dir(true).exists());
     }
 
@@ -519,9 +506,9 @@ mod tests {
 
         // Create custom config
         let original_config = ProjectConfig {
-            memory_types: vec!["custom".to_string(), "test".to_string()],
             instructions: "Custom instructions for testing".to_string(),
             document_format: DocumentFormat::Markdown,
+            steering: SteeringConfig::default_for_new_project(),
         };
 
         // Save config
@@ -531,8 +518,7 @@ mod tests {
         // Load config
         let loaded_config = repository.load_config().unwrap();
 
-        // Verify roundtrip
-        assert_eq!(loaded_config.memory_types, original_config.memory_types);
+        // Verify roundtrip - memory_types no longer exist
         assert_eq!(loaded_config.instructions, original_config.instructions);
         assert_eq!(
             loaded_config.document_format,
@@ -546,13 +532,8 @@ mod tests {
 
         let config = repository.load_config().unwrap();
 
-        // Should return default config
-        assert_eq!(config.memory_types.len(), 5);
-        assert!(config.memory_types.contains(&"tech".to_string()));
-        assert!(config.memory_types.contains(&"project-tech".to_string()));
-        assert!(config.memory_types.contains(&"domain".to_string()));
-        assert!(config.memory_types.contains(&"workflow".to_string()));
-        assert!(config.memory_types.contains(&"decision".to_string()));
+        // Should return default config with steering
+        assert!(!config.steering.types.is_empty());
     }
 
     #[test]
@@ -568,8 +549,7 @@ mod tests {
 
         let content = fs::read_to_string(gitignore_path).unwrap();
         assert!(content.contains("# Hail-Mary database"));
-        assert!(content.contains(".kiro/memory/db.sqlite3"));
-        assert!(content.contains(".kiro/memory/*.sqlite3-*"));
+        // No database files with file-based steering system
     }
 
     #[test]
@@ -672,49 +652,6 @@ mod tests {
     }
 
     #[test]
-    fn test_save_document_generates_markdown() {
-        let (repository, _temp_dir) = create_test_repository();
-
-        repository.initialize().unwrap();
-
-        // Create test memories
-        let memory1 = Memory::new(
-            "tech".to_string(),
-            "Test Memory 1".to_string(),
-            "This is test content 1".to_string(),
-        )
-        .with_tags(vec!["rust".to_string(), "testing".to_string()]);
-
-        let memory2 = Memory::new(
-            "tech".to_string(),
-            "Test Memory 2".to_string(),
-            "This is test content 2".to_string(),
-        )
-        .with_tags(vec!["programming".to_string()]);
-
-        let memories = vec![memory1, memory2];
-
-        let result = repository.save_document("tech", &memories);
-        assert!(result.is_ok());
-
-        // Verify file was created
-        let doc_path = repository.path_manager.memory_dir(true).join("tech.md");
-        assert!(doc_path.exists());
-
-        // Verify content
-        let content = fs::read_to_string(doc_path).unwrap();
-        assert!(content.contains("# tech Memories"));
-        assert!(content.contains("## Test Memory 1"));
-        assert!(content.contains("## Test Memory 2"));
-        assert!(content.contains("This is test content 1"));
-        assert!(content.contains("This is test content 2"));
-        assert!(content.contains("**Tags**: rust, testing"));
-        assert!(content.contains("**Tags**: programming"));
-        assert!(content.contains("**Confidence**:"));
-        assert!(content.contains("**References**:"));
-    }
-
-    #[test]
     fn test_error_handling_scenarios() {
         let test_dir = TestDirectory::new_no_cd();
 
@@ -766,13 +703,8 @@ mod tests {
         let config_path = repository.path_manager.config_path(true);
         let content = fs::read_to_string(config_path).unwrap();
 
-        // Should contain TOML structure
-        assert!(content.contains("[memory]"));
-        assert!(content.contains("types ="));
-        assert!(content.contains("instructions ="));
-        assert!(content.contains("[memory.document]"));
-        assert!(content.contains("[memory.database]"));
-        assert!(content.contains("output_dir ="));
+        // Should contain TOML structure for steering
+        assert!(content.contains("[steering]"));
         assert!(content.contains("path ="));
     }
 }
