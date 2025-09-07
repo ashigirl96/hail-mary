@@ -1,3 +1,114 @@
+# Technology Stack
+
+## Architecture
+- **Language**: Rust (stable, latest version via rustup)
+- **Architecture Pattern**: 4-layer Clean Architecture (Hexagonal)
+  - CLI Layer: Command routing with clap
+  - Application Layer: Use cases and business logic
+  - Domain Layer: Entities and value objects
+  - Infrastructure Layer: Database, filesystem, external services
+- **Concurrency**: Tokio async runtime with full features
+- **Error Handling**: `anyhow::Result` with `thiserror` for domain errors
+
+## Backend
+- **Database**: SQLite with FTS5 full-text search
+- **Migrations**: Refinery for versioned schema management
+- **ORM/Query**: rusqlite with manual mapping
+- **Protocol**: rmcp v0.5.0 for MCP server implementation
+- **HTTP Client**: reqwest with rustls-tls-native-roots
+- **Serialization**: serde with JSON/TOML support
+
+## Development Environment
+- **Build System**: Cargo workspace with multiple crates
+- **Task Runner**: Just task runner for development commands
+- **Testing**: rstest for parameterized tests, tempfile for isolation
+- **Code Quality**: clippy, rustfmt, comprehensive test suite
+- **Documentation**: Embedded documentation with cargo doc
+
+## Common Commands
+
+### Development Workflow
+```bash
+# Core development workflow
+just build              # Standard build
+just test               # Run all tests (unit + integration)
+just fmt                # Format code
+just lint               # Clippy with -D warnings
+just ci                 # Full CI pipeline (format check + lint + test)
+
+# Development utilities  
+just run init           # Initialize project
+just run memory serve  # Start MCP server
+just dev                # Watch mode (check + test + run)
+just test-watch         # Watch mode for tests only
+```
+
+### Application Commands
+```bash
+# Project initialization and management
+hail-mary init [--force]                    # Initialize .kiro directory
+hail-mary new <feature-name>                # Create feature specification
+hail-mary complete                          # Interactive TUI for spec completion
+hail-mary code                              # Launch Claude Code with context
+
+# Memory MCP operations
+hail-mary memory serve [--verbose]          # Start MCP server
+hail-mary memory document [--type <type>]   # Generate documentation
+hail-mary memory reindex [--dry-run]        # Database optimization
+
+# Shell completions
+hail-mary shell-completions <shell>         # Generate completion scripts
+```
+
+### Testing Commands
+```bash
+# Comprehensive testing
+cargo test --test integration_repository_test   # SQLite integration tests
+cargo test test_migration_creates_tables        # Database migration tests
+cargo test -- --nocapture                       # Test output visible
+RUST_BACKTRACE=1 cargo test -- --nocapture     # With backtraces
+```
+
+## Environment Variables
+- `RUST_LOG`: Logging level (debug, info, warn, error)
+- `RUST_BACKTRACE`: Error backtrace display (0, 1, full)
+- `CARGO_MANIFEST_DIR`: Project root for integration tests
+- `CARGO_BIN_EXE_hail-mary`: Binary path for E2E tests
+
+## Port Configuration
+- **MCP Server**: No fixed port (stdio-based protocol)
+- **Development**: No web server components
+- **Testing**: Temporary file-based SQLite databases
+
+## Key Dependencies
+```toml
+[dependencies]
+# CLI and async runtime
+clap = { version = "4.5", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+
+# Database and persistence
+rusqlite = { version = "0.31", features = ["bundled", "fts5"] }
+refinery = { version = "0.8", features = ["rusqlite"] }
+
+# MCP protocol and serialization
+rmcp = "0.5.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+# Error handling and utilities
+anyhow = "1"
+thiserror = "1"
+uuid = { version = "1", features = ["v4"] }
+
+# TUI and process management
+ratatui = "0.28"
+crossterm = "0.28"
+```
+
+---
+
 # 🎯 今回のコーディングから得た学び
 
 ## 1. **統合テストでのバイナリ実行**

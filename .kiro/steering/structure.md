@@ -165,6 +165,13 @@ tests/                   # Integration tests
 ├── integration/        # Cross-module integration tests
 ├── new_command.rs      # Command testing
 └── integration_repository_test.rs  # Database integration tests
+
+.claude/                 # Claude Code integration
+└── commands/           # Custom slash commands for Claude Code
+    └── hm/             # Hail-mary specific commands
+        ├── steering.md          # Main steering management command
+        ├── steering-remember.md  # Draft capture command
+        └── steering-merge.md     # Merge steering drafts command
 ```
 
 ## 🔧 Core Components Detail
@@ -526,6 +533,51 @@ use anthropic_client::{load_auth, complete};
 let mut auth = load_auth().await?;
 let response = complete("claude-3-5-sonnet", "Hello?", &mut auth).await?;
 ```
+
+### Claude Code Integration & Steering System
+
+**Purpose**: File-based context management system complementing the SQLite Memory MCP, designed for version-controllable project knowledge.
+
+#### Steering System Architecture
+**Storage Location**: `.kiro/steering/` directory with markdown-based context files
+**Configuration**: `.kiro/config.toml` with `[[steering.types]]` sections for type definitions
+
+**Core Steering Files** (Always Included in Claude Code sessions):
+- `product.md`: Product overview and value proposition
+- `tech.md`: Technology stack and development environment
+- `structure.md`: Code organization and architectural patterns
+
+#### Custom Claude Code Commands
+**Location**: `.claude/commands/hm/` directory
+
+**Available Slash Commands**:
+- `/hm:steering`: Main steering management command - processes drafts and updates steering files intelligently
+- `/hm:steering-remember [title]`: Capture learning and insights to `.kiro/steering/draft/` for later processing
+- `/hm:steering-merge`: Advanced merging of steering content with conflict resolution capabilities
+
+#### Domain Integration
+**Steering Entities** (`domain/entities/steering.rs`):
+- `SteeringType`: Enum for steering categories (Product, Tech, Structure)
+- `Criterion`: Structured criteria for content categorization and validation
+- `SteeringConfig`: Configuration management with type validation
+
+**Repository Integration**:
+- `ProjectRepository` handles all steering file operations with proper error handling
+- Automatic backup creation before any steering file modifications
+- Smart configuration updates that preserve existing settings
+
+#### Key Benefits
+- **Version Controllable**: All steering files are git-trackable for team collaboration
+- **Transparency**: Clear visibility into project context evolution and decision history
+- **Team Collaboration**: Shared context without database synchronization requirements
+- **Complementary Design**: Works alongside Memory MCP for different knowledge management patterns
+- **Always Available**: Core steering files loaded in every Claude Code session for consistent context
+
+#### Workflow Integration
+1. **Capture Phase**: Use `/hm:steering-remember` during development to save insights
+2. **Processing Phase**: Run `/hm:steering` to intelligently categorize and organize drafts
+3. **Version Control**: Commit steering changes to share context with team members
+4. **Context Loading**: Steering files automatically provide persistent context for development sessions
 
 ---
 
