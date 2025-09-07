@@ -16,8 +16,8 @@ fn run() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Init { force } => {
-            let command = InitCommand::new(force);
+        Commands::Init => {
+            let command = InitCommand::new();
             command.execute()?;
         }
         Commands::New { name } => {
@@ -94,8 +94,8 @@ mod tests {
         let cli = Cli::parse_from(args);
 
         match cli.command {
-            Commands::Init { force } => {
-                let command = InitCommand::new(force);
+            Commands::Init => {
+                let command = InitCommand::new();
                 let result = command.execute();
                 assert!(result.is_ok());
 
@@ -109,25 +109,24 @@ mod tests {
     }
 
     #[test]
-    fn test_main_init_command_with_force() {
+    fn test_main_init_command_idempotent() {
         let _test_dir = TestDirectory::new();
 
-        // Create existing .kiro directory
+        // Create existing .kiro directory with config
         fs::create_dir_all(".kiro").unwrap();
         fs::write(".kiro/config.toml", "existing content").unwrap();
 
-        // Test init with force flag overwrites existing
-        let args = vec!["hail-mary", "init", "--force"];
+        // Test init is idempotent (no force flag needed)
+        let args = vec!["hail-mary", "init"];
         let cli = Cli::parse_from(args);
 
         match cli.command {
-            Commands::Init { force } => {
-                assert!(force);
-                let command = InitCommand::new(force);
+            Commands::Init => {
+                let command = InitCommand::new();
                 let result = command.execute();
                 assert!(result.is_ok());
 
-                // Verify config was updated with steering section (new behavior: add [steering] to existing config)
+                // Verify existing config is preserved and steering section is added
                 let config = fs::read_to_string(".kiro/config.toml").unwrap();
                 assert!(config.contains("existing content"));
                 assert!(config.contains("[[steering.types]]"));
@@ -141,7 +140,7 @@ mod tests {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first
-        InitCommand::new(false).execute().unwrap();
+        InitCommand::new().execute().unwrap();
 
         // Test new feature command
         let args = vec!["hail-mary", "new", "test-feature"];
@@ -176,7 +175,7 @@ mod tests {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first
-        InitCommand::new(false).execute().unwrap();
+        InitCommand::new().execute().unwrap();
 
         // Test new feature with invalid name
         let args = vec!["hail-mary", "new", "Invalid Name"];

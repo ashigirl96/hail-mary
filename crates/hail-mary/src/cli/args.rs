@@ -12,11 +12,7 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Initialize a new project
-    Init {
-        /// Force initialization even if project already exists
-        #[arg(short, long)]
-        force: bool,
-    },
+    Init,
 
     /// Create a new feature specification
     New {
@@ -58,7 +54,7 @@ pub enum Shell {
 
 impl Commands {
     pub fn is_init(&self) -> bool {
-        matches!(self, Commands::Init { .. })
+        matches!(self, Commands::Init)
     }
 
     pub fn is_new(&self) -> bool {
@@ -79,13 +75,6 @@ impl Commands {
 }
 
 impl Commands {
-    pub fn get_init_force(&self) -> Option<bool> {
-        match self {
-            Commands::Init { force } => Some(*force),
-            _ => None,
-        }
-    }
-
     pub fn get_new_name(&self) -> Option<&str> {
         match self {
             Commands::New { name } => Some(name.as_str()),
@@ -116,14 +105,6 @@ mod tests {
     fn test_cli_parse_init_command() {
         let cli = Cli::parse_from(["hail-mary", "init"]);
         assert!(cli.command.is_init());
-        assert_eq!(cli.command.get_init_force(), Some(false));
-    }
-
-    #[test]
-    fn test_cli_parse_init_with_force() {
-        let cli = Cli::parse_from(["hail-mary", "init", "--force"]);
-        assert!(cli.command.is_init());
-        assert_eq!(cli.command.get_init_force(), Some(true));
     }
 
     #[test]
@@ -135,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_commands_is_methods() {
-        let init_cmd = Commands::Init { force: false };
+        let init_cmd = Commands::Init;
         assert!(init_cmd.is_init());
         assert!(!init_cmd.is_new());
 
