@@ -275,7 +275,7 @@ flowchart TB
     REPO --> DATA[Data Layer]
 ```
 
-For detailed architectural documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+For detailed architectural documentation, see [ARCHITECTURE.md](.kiro/steering/structure.md).
 
 ### Key Components
 
@@ -327,7 +327,7 @@ cargo test test_migration_creates_tables
 
 ## 📚 Documentation
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)**: Detailed system architecture and design patterns
+- **[ARCHITECTURE.md](.kiro/steering/structure.md)**: Detailed system architecture and design patterns
 - **[COMMANDS.md](./COMMANDS.md)**: Comprehensive CLI command reference (Japanese)
 - **API Documentation**: Run `just doc` to generate and open Rust documentation
 
@@ -422,4 +422,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ in Rust** | **[Documentation](./ARCHITECTURE.md)** | **[Commands Reference](./COMMANDS.md)** | **[Issues](https://github.com/ashigirl96/hail-mary/issues)**
+**Built with ❤️ in Rust** | **[Documentation](.kiro/steering/structure.md)** | **[Commands Reference](./COMMANDS.md)** | **[Issues](https://github.com/ashigirl96/hail-mary/issues)**
