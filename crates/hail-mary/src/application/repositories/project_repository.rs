@@ -1,5 +1,4 @@
 use crate::application::errors::ApplicationError;
-use crate::domain::entities::memory::Memory;
 use crate::domain::entities::project::ProjectConfig;
 use crate::domain::entities::steering::SteeringConfig;
 
@@ -10,8 +9,6 @@ pub trait ProjectRepository: Send + Sync {
     fn load_config(&self) -> Result<ProjectConfig, ApplicationError>;
     fn update_gitignore(&self) -> Result<(), ApplicationError>;
     fn create_feature(&self, name: &str) -> Result<(), ApplicationError>;
-    fn save_document(&self, memory_type: &str, memories: &[Memory])
-    -> Result<(), ApplicationError>;
 
     /// List all specification directories in .kiro/specs
     /// Returns a vector of (name, is_archived) tuples

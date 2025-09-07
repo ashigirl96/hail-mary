@@ -1,6 +1,5 @@
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::ProjectRepository as ProjectRepositoryTrait;
-use crate::domain::entities::memory::Memory;
 use crate::domain::entities::project::{DocumentFormat, ProjectConfig};
 use crate::domain::entities::steering::SteeringConfig;
 use crate::infrastructure::filesystem::path_manager::PathManager;
@@ -10,7 +9,6 @@ use std::fs;
 // Type-safe TOML configuration structures
 #[derive(Debug, Serialize, Deserialize)]
 struct TomlConfig {
-    memory: MemoryConfig,
     steering: Option<SteeringSection>,
 }
 
@@ -31,24 +29,6 @@ struct SteeringTypeToml {
     criterions: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct MemoryConfig {
-    types: Vec<String>,
-    instructions: String,
-    document: DocumentConfig,
-    database: DatabaseConfig,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct DocumentConfig {
-    output_dir: String,
-    format: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct DatabaseConfig {
-    path: String,
-}
 
 pub struct ProjectRepository {
     path_manager: PathManager,
@@ -102,11 +82,6 @@ impl ProjectRepositoryTrait for ProjectRepository {
         })?;
 
         // Create subdirectories
-        let memory_dir = self.path_manager.memory_dir(true);
-        fs::create_dir_all(&memory_dir).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to create memory directory: {}", e))
-        })?;
-
         let specs_dir = self.path_manager.specs_dir(true);
         fs::create_dir_all(&specs_dir).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to create specs directory: {}", e))
@@ -130,21 +105,6 @@ impl ProjectRepositoryTrait for ProjectRepository {
         // Create type-safe TOML structure
         let steering_config = SteeringConfig::default_for_new_project();
         let toml_config = TomlConfig {
-            memory: MemoryConfig {
-                types: config.memory_types.clone(),
-                instructions: config.instructions.clone(),
-                document: DocumentConfig {
-                    output_dir: self.path_manager.memory_dir(false).display().to_string(),
-                    format: "markdown".to_string(),
-                },
-                database: DatabaseConfig {
-                    path: self
-                        .path_manager
-                        .memory_db_path(false)
-                        .display()
-                        .to_string(),
-                },
-            },
             steering: Some(SteeringSection {
                 types: steering_config
                     .types
@@ -175,28 +135,9 @@ impl ProjectRepositoryTrait for ProjectRepository {
     }
 
     fn load_config(&self) -> Result<ProjectConfig, ApplicationError> {
-        let config_path = self.path_manager.config_path(true);
-
-        if !config_path.exists() {
-            // Return default config if file doesn't exist
-            return Ok(ProjectConfig::default_for_new_project());
-        }
-
-        let content = fs::read_to_string(config_path).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to read config file: {}", e))
-        })?;
-
-        // Type-safe deserialization
-        let toml_config: TomlConfig = toml::from_str(&content).map_err(|e| {
-            ApplicationError::ConfigurationError(format!("Failed to parse config: {}", e))
-        })?;
-
-        // Convert to domain entity
-        Ok(ProjectConfig {
-            memory_types: toml_config.memory.types,
-            instructions: toml_config.memory.instructions,
-            document_format: DocumentFormat::Markdown,
-        })
+        // For now, just return default config since we're removing memory system
+        // TODO: Update to load only steering configuration
+        Ok(ProjectConfig::default_for_new_project())
     }
 
     fn update_gitignore(&self) -> Result<(), ApplicationError> {
@@ -359,41 +300,6 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         fs::write(feature_dir.join("spec.json"), "{}").map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write spec.json: {}", e))
-        })?;
-
-        Ok(())
-    }
-
-    fn save_document(
-        &self,
-        memory_type: &str,
-        memories: &[Memory],
-    ) -> Result<(), ApplicationError> {
-        let memory_dir = self.path_manager.memory_dir(true);
-        let doc_path = memory_dir.join(format!("{}.md", memory_type));
-
-        // Generate markdown content
-        let mut content = format!("# {} Memories\n\n", memory_type);
-
-        for memory in memories {
-            content.push_str(&format!("## {}\n", memory.title));
-            content.push_str(&format!("**ID**: {}\n", memory.id));
-            content.push_str(&format!("**Tags**: {}\n", memory.tags.join(", ")));
-            content.push_str(&format!(
-                "**Confidence**: {:.2}\n",
-                memory.confidence.value()
-            ));
-            content.push_str(&format!("**References**: {}\n", memory.reference_count));
-            content.push('\n');
-            content.push_str(&memory.content);
-            content.push_str("\n\n---\n\n");
-        }
-
-        fs::write(doc_path, content).map_err(|e| {
-            ApplicationError::DocumentGenerationError(format!(
-                "Failed to write document for {}: {}",
-                memory_type, e
-            ))
         })?;
 
         Ok(())

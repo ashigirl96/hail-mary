@@ -20,17 +20,20 @@ Removes command-line interface for memory commands while maintaining compilation
 - [x] Update `src/cli/commands/mod.rs` to remove memory module export
 - [x] Update `src/cli/mod.rs` to remove MemoryCommand and MemoryCommands exports
 
-## Phase 2: Remove Application Layer
+## Phase 2: Remove Application Layer ✅
 Removes business logic and use cases related to memory management.
 
-- [ ] Delete `src/application/use_cases/remember_memory.rs`
-- [ ] Delete `src/application/use_cases/recall_memory.rs`
-- [ ] Delete `src/application/use_cases/generate_document.rs`
-- [ ] Delete `src/application/use_cases/reindex_memories.rs`
-- [ ] Remove `src/application/repositories/memory_repository.rs` trait
-- [ ] Delete `src/application/test_helpers/mock_memory_repository.rs`
-- [ ] Update `src/application/errors.rs` to remove memory-related error variants
-- [ ] Update `src/application/mod.rs` to remove memory-related exports
+- [x] Delete `src/application/use_cases/remember_memory.rs`
+- [x] Delete `src/application/use_cases/recall_memory.rs`
+- [x] Delete `src/application/use_cases/generate_document.rs`
+- [x] Delete `src/application/use_cases/reindex_memories.rs`
+- [x] Remove `src/application/repositories/memory_repository.rs` trait
+- [x] Delete `src/application/test_helpers/mock_memory_repository.rs`
+- [x] Update `src/application/errors.rs` to remove memory-related error variants
+- [x] Update `src/application/use_cases/mod.rs` to remove memory-related exports
+- [x] Update `src/application/repositories/mod.rs` to remove memory repository export
+- [x] Update `src/application/test_helpers/mod.rs` to remove mock memory repository export
+- [x] Update `src/cli/formatters.rs` to keep only general formatting functions
 
 ## Phase 3: Remove Infrastructure & Core Components
 Removes MCP server, database, and domain entities.

@@ -9,9 +9,6 @@ pub enum ApplicationError {
     #[error("Project not found")]
     ProjectNotFound,
 
-    #[error("Invalid memory type: {0}")]
-    InvalidMemoryType(String),
-
     #[error("Feature already exists: {0}")]
     FeatureAlreadyExists(String),
 
@@ -27,9 +24,6 @@ pub enum ApplicationError {
     #[error("Domain error: {0}")]
     DomainError(#[from] DomainError),
 
-    #[error("SQLite error: {0}")]
-    SqliteError(#[from] rusqlite::Error),
-
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
 
@@ -41,9 +35,6 @@ pub enum ApplicationError {
 
     #[error("Feature creation error: {0}")]
     FeatureCreationError(String),
-
-    #[error("Document generation error: {0}")]
-    DocumentGenerationError(String),
 
     #[error("Spec directory not found: {0}")]
     SpecNotFound(String),
@@ -86,12 +77,6 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_memory_type_error() {
-        let error = ApplicationError::InvalidMemoryType("invalid".to_string());
-        assert_eq!(error.to_string(), "Invalid memory type: invalid");
-    }
-
-    #[test]
     fn test_feature_already_exists_error() {
         let error = ApplicationError::FeatureAlreadyExists("test-feature".to_string());
         assert_eq!(error.to_string(), "Feature already exists: test-feature");
@@ -126,13 +111,13 @@ mod tests {
 
     #[test]
     fn test_domain_error_conversion() {
-        let domain_error = DomainError::InvalidConfidence(1.5);
+        let domain_error = DomainError::InvalidFeatureName("Bad_Name".to_string());
         let app_error = ApplicationError::from(domain_error);
 
         assert!(
             app_error
                 .to_string()
-                .contains("Invalid confidence value: 1.5")
+                .contains("Invalid feature name: Bad_Name")
         );
         assert!(matches!(app_error, ApplicationError::DomainError(_)));
     }
@@ -151,14 +136,4 @@ mod tests {
         assert_eq!(boxed_error.to_string(), "Project not found");
     }
 
-    #[test]
-    fn test_error_chain() {
-        let domain_error = DomainError::InvalidMemoryType("invalid".to_string());
-        let app_error = ApplicationError::from(domain_error);
-
-        // Test error chain
-        assert!(app_error.source().is_some());
-        let source = app_error.source().unwrap();
-        assert_eq!(source.to_string(), "Invalid memory type: invalid");
-    }
 }
