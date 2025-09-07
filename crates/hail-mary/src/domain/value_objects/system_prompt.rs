@@ -65,11 +65,21 @@ mod tests {
             content.contains("<kiro_tasks_path>.kiro/specs/my-feature/tasks.md</kiro_tasks_path>")
         );
         assert!(
-            content.contains("<kiro_memo_path>.kiro/specs/my-feature/memo.md</kiro_memo_path>")
-        );
-        assert!(
             content.contains("<kiro_investigation_path>.kiro/specs/my-feature/investigation.md</kiro_investigation_path>")
         );
+    }
+
+    #[test]
+    fn test_memo_md_is_excluded() {
+        let spec_name = "test-spec";
+        let spec_path = PathBuf::from(".kiro/specs/test-spec");
+
+        let prompt = SystemPrompt::new(spec_name, &spec_path);
+        let content = prompt.as_str();
+
+        // Verify RULES section exists
+        assert!(content.contains("## RULES"));
+        assert!(content.contains("DO NOT read memo.md"));
     }
 
     #[test]

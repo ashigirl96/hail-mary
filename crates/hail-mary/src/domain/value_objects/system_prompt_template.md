@@ -31,6 +31,9 @@ Path: {path_str}
 2. Review investigation findings in <kiro_investigation_path/> for research insights
 3. Follow the technical approach in <kiro_design_path/>
 4. Track your progress against tasks in <kiro_tasks_path/>
-5. Consider any additional context in <kiro_memo_path/>
 
 When you need to reference these files, use the XML tag paths provided above.
+
+## RULES
+
+- **DO NOT read memo.md**: The memo.md file contains internal developer notes and implementation details that are not part of the formal specification. You must NOT read or access {path_str}/memo.md under any circumstances.
