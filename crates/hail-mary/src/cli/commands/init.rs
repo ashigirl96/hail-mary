@@ -1,16 +1,20 @@
 use crate::application::use_cases::initialize_project;
-use crate::cli::formatters::{format_error, format_list, format_success};
+use crate::cli::formatters::{format_error, format_success};
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use crate::infrastructure::repositories::project::ProjectRepository;
 use anyhow::Result;
 
-pub struct InitCommand {
-    force: bool,
+pub struct InitCommand;
+
+impl Default for InitCommand {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl InitCommand {
-    pub fn new(force: bool) -> Self {
-        Self { force }
+    pub fn new() -> Self {
+        Self
     }
 
     pub fn execute(&self) -> Result<()> {
@@ -21,28 +25,11 @@ impl InitCommand {
         // Create repository
         let project_repo = ProjectRepository::new(path_manager);
 
-        // Execute use case function
-        match initialize_project(&project_repo, self.force) {
+        // Execute use case function (now idempotent)
+        match initialize_project(&project_repo) {
             Ok(()) => {
-                println!(
-                    "{}",
-                    format_success("Initialized .kiro directory structure:")
-                );
-                let items = vec![
-                    "Created .kiro/".to_string(),
-                    "Created .kiro/config.toml (configuration template)".to_string(),
-                    "Created .kiro/specs/".to_string(),
-                    "Updated .gitignore".to_string(),
-                ];
-                println!("{}", format_list(&items));
+                println!("{}", format_success("Initialization complete."));
                 Ok(())
-            }
-            Err(crate::application::errors::ApplicationError::ProjectAlreadyExists) => {
-                println!(
-                    "{}",
-                    format_error("Project already initialized. Use --force to reinitialize.")
-                );
-                Err(anyhow::anyhow!("Project already exists"))
             }
             Err(e) => {
                 println!("{}", format_error(&e.to_string()));
@@ -61,18 +48,15 @@ mod tests {
 
     #[test]
     fn test_init_command_new() {
-        let cmd = InitCommand::new(false);
-        assert!(!cmd.force);
-
-        let cmd_force = InitCommand::new(true);
-        assert!(cmd_force.force);
+        let _cmd = InitCommand::new();
+        // No force field to test anymore
     }
 
     #[test]
     fn test_init_command_execute_success() {
         let _test_dir = TestDirectory::new();
 
-        let cmd = InitCommand::new(false);
+        let cmd = InitCommand::new();
         let result = cmd.execute();
 
         assert!(result.is_ok());
@@ -85,49 +69,53 @@ mod tests {
     }
 
     #[test]
-    fn test_init_command_execute_already_exists() {
+    fn test_init_command_is_idempotent() {
         let _test_dir = TestDirectory::new();
 
         // First initialization
-        let cmd1 = InitCommand::new(false);
+        let cmd1 = InitCommand::new();
         let result1 = cmd1.execute();
         assert!(result1.is_ok());
 
-        // Second initialization without force
-        let cmd2 = InitCommand::new(false);
-        let result2 = cmd2.execute();
-        assert!(result2.is_err());
-    }
-
-    #[test]
-    fn test_init_command_execute_with_force() {
-        let _test_dir = TestDirectory::new();
-
-        // First initialization
-        let cmd1 = InitCommand::new(false);
-        let result1 = cmd1.execute();
-        assert!(result1.is_ok());
-
-        // Modify config to test force overwrites
-        let config_path = Path::new(".kiro/config.toml");
-        fs::write(config_path, "# Modified content").unwrap();
-
-        // Second initialization with force
-        let cmd2 = InitCommand::new(true);
+        // Second initialization (should succeed, not error)
+        let cmd2 = InitCommand::new();
         let result2 = cmd2.execute();
         assert!(result2.is_ok());
 
-        // Verify config was updated with steering section (new behavior: add [steering] to existing config)
-        let config_content = fs::read_to_string(config_path).unwrap();
-        assert!(config_content.contains("# Modified content"));
-        assert!(config_content.contains("[[steering.types]]"));
+        // Third initialization (should also succeed)
+        let cmd3 = InitCommand::new();
+        let result3 = cmd3.execute();
+        assert!(result3.is_ok());
+    }
+
+    #[test]
+    fn test_init_command_partial_initialization() {
+        let _test_dir = TestDirectory::new();
+
+        // Create only .kiro directory (partial initialization)
+        fs::create_dir(".kiro").unwrap();
+
+        // Run init command (should complete the initialization)
+        let cmd = InitCommand::new();
+        let result = cmd.execute();
+        assert!(result.is_ok());
+
+        // Verify all expected components were created
+        assert!(Path::new(".kiro").exists());
+        assert!(Path::new(".kiro/specs").exists());
+        assert!(Path::new(".kiro/config.toml").exists());
+        assert!(Path::new(".kiro/steering").exists());
+        assert!(Path::new(".kiro/steering/product.md").exists());
+        assert!(Path::new(".kiro/steering/tech.md").exists());
+        assert!(Path::new(".kiro/steering/structure.md").exists());
+        assert!(Path::new(".kiro/steering/draft").exists());
     }
 
     #[test]
     fn test_init_command_creates_gitignore() {
         let _test_dir = TestDirectory::new();
 
-        let cmd = InitCommand::new(false);
+        let cmd = InitCommand::new();
         let result = cmd.execute();
         assert!(result.is_ok());
 
@@ -146,7 +134,7 @@ mod tests {
         let gitignore_path = Path::new(".gitignore");
         fs::write(gitignore_path, "# Existing content\nnode_modules/\n").unwrap();
 
-        let cmd = InitCommand::new(false);
+        let cmd = InitCommand::new();
         let result = cmd.execute();
         assert!(result.is_ok());
 
@@ -159,7 +147,7 @@ mod tests {
     fn test_init_command_directory_structure() {
         let _test_dir = TestDirectory::new();
 
-        let cmd = InitCommand::new(false);
+        let cmd = InitCommand::new();
         let result = cmd.execute();
         assert!(result.is_ok());
 
@@ -175,7 +163,7 @@ mod tests {
     fn test_init_command_config_content() {
         let _test_dir = TestDirectory::new();
 
-        let cmd = InitCommand::new(false);
+        let cmd = InitCommand::new();
         let result = cmd.execute();
         assert!(result.is_ok());
 

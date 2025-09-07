@@ -84,7 +84,7 @@ mod tests {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first
-        let init_cmd = InitCommand::new(false);
+        let init_cmd = InitCommand::new();
         init_cmd.execute().unwrap();
 
         // Create new feature
@@ -120,7 +120,7 @@ mod tests {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first
-        let init_cmd = InitCommand::new(false);
+        let init_cmd = InitCommand::new();
         init_cmd.execute().unwrap();
 
         // Try invalid feature names
@@ -145,7 +145,7 @@ mod tests {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first
-        let init_cmd = InitCommand::new(false);
+        let init_cmd = InitCommand::new();
         init_cmd.execute().unwrap();
 
         let valid_names = vec![
@@ -177,7 +177,7 @@ mod tests {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first
-        let init_cmd = InitCommand::new(false);
+        let init_cmd = InitCommand::new();
         init_cmd.execute().unwrap();
 
         // Create feature first time
@@ -196,7 +196,7 @@ mod tests {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first
-        let init_cmd = InitCommand::new(false);
+        let init_cmd = InitCommand::new();
         init_cmd.execute().unwrap();
 
         // Create new feature
@@ -216,7 +216,7 @@ mod tests {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first
-        let init_cmd = InitCommand::new(false);
+        let init_cmd = InitCommand::new();
         init_cmd.execute().unwrap();
 
         // Single character (valid)
