@@ -134,8 +134,8 @@ mod tests {
         let gitignore_path = Path::new(".gitignore");
         assert!(gitignore_path.exists());
 
-        let content = fs::read_to_string(gitignore_path).unwrap();
-        assert!(!content.is_empty());
+        // With file-based steering system, gitignore may be empty
+        let _ = fs::read_to_string(gitignore_path).unwrap();
     }
 
     #[test]
@@ -183,8 +183,8 @@ mod tests {
         let content = fs::read_to_string(config_path).unwrap();
 
         // Verify config contains expected sections
-        assert!(content.contains("[steering]"));
-        assert!(content.contains("domain"));
-        assert!(content.contains("instructions ="));
+        assert!(content.contains("[[steering.types]]"));
+        assert!(content.contains("name ="));
+        assert!(content.contains("purpose ="));
     }
 }

@@ -5,7 +5,7 @@ use crate::domain::entities::steering::SteeringConfig;
 pub trait ProjectRepository: Send + Sync {
     fn initialize(&self) -> Result<(), ApplicationError>;
     fn exists(&self) -> Result<bool, ApplicationError>;
-    fn save_config(&self, config: &ProjectConfig) -> Result<(), ApplicationError>;
+    fn save_config(&self) -> Result<(), ApplicationError>;
     fn load_config(&self) -> Result<ProjectConfig, ApplicationError>;
     fn update_gitignore(&self) -> Result<(), ApplicationError>;
     fn create_feature(&self, name: &str) -> Result<(), ApplicationError>;
@@ -72,9 +72,8 @@ mod tests {
     #[test]
     fn test_project_repository_save_config() {
         let repo = MockProjectRepository::new();
-        let config = ProjectConfig::default_for_new_project();
 
-        let result = repo.save_config(&config);
+        let result = repo.save_config();
         assert!(result.is_ok());
     }
 
@@ -82,9 +81,8 @@ mod tests {
     fn test_project_repository_save_config_failure() {
         let mut repo = MockProjectRepository::new();
         repo.set_next_operation_to_fail();
-        let config = ProjectConfig::default_for_new_project();
 
-        let result = repo.save_config(&config);
+        let result = repo.save_config();
         assert!(result.is_err());
         match result.unwrap_err() {
             ApplicationError::ConfigurationError(_) => {}
@@ -98,21 +96,17 @@ mod tests {
 
         // Load default config when none exists
         let config = repo.load_config().unwrap();
-        assert_eq!(config.memory_types.len(), 5); // Default types
-        assert!(config.memory_types.contains(&"tech".to_string()));
-        assert!(config.memory_types.contains(&"project-tech".to_string()));
-        assert!(config.memory_types.contains(&"domain".to_string()));
+        assert!(!config.steering.types.is_empty()); // Default steering types
 
         // Load custom config
         let custom_config = ProjectConfig {
-            memory_types: vec!["custom".to_string()],
             instructions: "Custom instructions".to_string(),
             document_format: crate::domain::entities::project::DocumentFormat::Markdown,
+            steering: crate::domain::entities::steering::SteeringConfig::default_for_new_project(),
         };
         repo.set_config(custom_config.clone());
 
         let loaded_config = repo.load_config().unwrap();
-        assert_eq!(loaded_config.memory_types, vec!["custom".to_string()]);
         assert_eq!(loaded_config.instructions, "Custom instructions");
     }
 
@@ -193,22 +187,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_project_config_validate_memory_type() {
-        let config = ProjectConfig::default_for_new_project();
-
-        // Valid types
-        assert!(config.validate_memory_type("tech"));
-        assert!(config.validate_memory_type("project-tech"));
-        assert!(config.validate_memory_type("domain"));
-        assert!(config.validate_memory_type("workflow"));
-        assert!(config.validate_memory_type("decision"));
-
-        // Invalid types
-        assert!(!config.validate_memory_type("invalid"));
-        assert!(!config.validate_memory_type(""));
-        assert!(!config.validate_memory_type("TECH"));
-    }
+    // Memory type validation test removed - using steering system
 
     #[test]
     fn test_mock_repository_helper_methods() {

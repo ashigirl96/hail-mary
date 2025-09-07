@@ -62,7 +62,6 @@ impl ApplicationError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::error::Error;
 
     #[test]
     fn test_project_already_exists_error() {

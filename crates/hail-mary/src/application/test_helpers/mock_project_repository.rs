@@ -158,7 +158,7 @@ impl ProjectRepository for MockProjectRepository {
         Ok(self.initialized)
     }
 
-    fn save_config(&self, _config: &ProjectConfig) -> Result<(), ApplicationError> {
+    fn save_config(&self) -> Result<(), ApplicationError> {
         if self.should_fail_next_operation {
             return Err(ApplicationError::ConfigurationError(
                 "Simulated save_config failure".to_string(),

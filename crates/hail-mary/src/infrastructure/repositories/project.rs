@@ -93,7 +93,7 @@ impl ProjectRepositoryTrait for ProjectRepository {
         Ok(self.path_manager.kiro_dir(true).exists())
     }
 
-    fn save_config(&self, config: &ProjectConfig) -> Result<(), ApplicationError> {
+    fn save_config(&self) -> Result<(), ApplicationError> {
         let config_path = self.path_manager.config_path(true);
 
         // Never overwrite existing config.toml (even with --force)
@@ -422,8 +422,7 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         if !config_path.exists() {
             // Create new config with steering section
-            let config = ProjectConfig::default_for_new_project();
-            self.save_config(&config)?;
+            self.save_config()?;
             return Ok(());
         }
 
@@ -504,25 +503,19 @@ mod tests {
         // Initialize to create directories
         repository.initialize().unwrap();
 
-        // Create custom config
-        let original_config = ProjectConfig {
-            instructions: "Custom instructions for testing".to_string(),
-            document_format: DocumentFormat::Markdown,
-            steering: SteeringConfig::default_for_new_project(),
-        };
-
-        // Save config
-        let save_result = repository.save_config(&original_config);
+        // Save config (always saves default)
+        let save_result = repository.save_config();
         assert!(save_result.is_ok());
 
         // Load config
         let loaded_config = repository.load_config().unwrap();
 
-        // Verify roundtrip - memory_types no longer exist
-        assert_eq!(loaded_config.instructions, original_config.instructions);
+        // Verify it returns default config
+        let default_config = ProjectConfig::default_for_new_project();
+        assert_eq!(loaded_config.instructions, default_config.instructions);
         assert_eq!(
             loaded_config.document_format,
-            original_config.document_format
+            default_config.document_format
         );
     }
 
@@ -532,24 +525,25 @@ mod tests {
 
         let config = repository.load_config().unwrap();
 
-        // Should return default config with steering
-        assert!(!config.steering.types.is_empty());
+        // Should return default config
+        assert!(!config.instructions.is_empty());
     }
 
     #[test]
-    fn test_update_gitignore_adds_database_patterns() {
+    fn test_update_gitignore_creates_file() {
         let (repository, _temp_dir) = create_test_repository();
 
         let result = repository.update_gitignore();
         assert!(result.is_ok());
 
-        // Verify gitignore was created and contains patterns
+        // Verify gitignore was created
         let gitignore_path = repository.path_manager.project_root().join(".gitignore");
         assert!(gitignore_path.exists());
 
+        // With file-based steering system, no database patterns are added
         let content = fs::read_to_string(gitignore_path).unwrap();
-        assert!(content.contains("# Hail-Mary database"));
-        // No database files with file-based steering system
+        // File should exist but be empty or minimal
+        assert!(content.is_empty() || content.trim().is_empty());
     }
 
     #[test]
@@ -563,9 +557,9 @@ mod tests {
         let gitignore_path = repository.path_manager.project_root().join(".gitignore");
         let content = fs::read_to_string(gitignore_path).unwrap();
 
-        // Should only appear once
+        // No database patterns with file-based steering system
         let pattern_count = content.matches("# Hail-Mary database").count();
-        assert_eq!(pattern_count, 1);
+        assert_eq!(pattern_count, 0);
     }
 
     #[test]
@@ -694,17 +688,23 @@ mod tests {
     fn test_config_serialization_format() {
         let (repository, _temp_dir) = create_test_repository();
 
-        repository.initialize().unwrap();
+        // Create directory first
+        fs::create_dir_all(repository.path_manager.kiro_dir(true)).unwrap();
 
-        let config = ProjectConfig::default_for_new_project();
-        repository.save_config(&config).unwrap();
+        // Ensure config doesn't exist yet
+        let config_path = repository.path_manager.config_path(true);
+        if config_path.exists() {
+            fs::remove_file(&config_path).unwrap();
+        }
+
+        repository.save_config().unwrap();
 
         // Verify TOML format
-        let config_path = repository.path_manager.config_path(true);
-        let content = fs::read_to_string(config_path).unwrap();
+        let content = fs::read_to_string(&config_path).unwrap();
 
         // Should contain TOML structure for steering
-        assert!(content.contains("[steering]"));
-        assert!(content.contains("path ="));
+        assert!(content.contains("[[steering.types]]"));
+        assert!(content.contains("name ="));
+        assert!(content.contains("purpose ="));
     }
 }
