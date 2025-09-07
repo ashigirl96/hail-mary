@@ -4,46 +4,47 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/github/workflow/status/ashigirl96/hail-mary/CI)](https://github.com/ashigirl96/hail-mary/actions)
 
-**A sophisticated Rust CLI application for Memory MCP (Model Context Protocol) server and Kiro project specification management.**
+**A sophisticated Rust CLI application for specification-driven development with Kiro project management and file-based context steering.**
 
-Hail-Mary provides intelligent memory management for AI models with full-text search capabilities, multilingual support, and a comprehensive CLI interface for technical knowledge storage and retrieval.
+Hail-Mary provides intelligent project specification management through the Kiro system, designed for spec-driven development workflows. It bridges AI model interactions and persistent project knowledge through a file-based steering system with comprehensive Claude Code integration.
 
 ## ✨ Features
 
-### 🧠 Memory Management System
-- **Intelligent Storage**: Store and categorize technical knowledge with confidence scoring
-- **Full-Text Search**: SQLite FTS5 with Japanese tokenization support
-- **Memory Types**: Tech, ProjectTech, Domain (extensible categorization)
-- **Smart Filtering**: Search by type, tags, confidence levels, and content
-- **Reference Tracking**: Automatic usage statistics and access patterns
+### 🎯 Kiro Specification Management
+- **Structured Specifications**: Complete project specification lifecycle with requirements, design, tasks, and investigation phases
+- **Template Generation**: Automatic creation of comprehensive specification templates
+- **Interactive Archiving**: TUI-based interface for marking completed specs with archive management
+- **Date-based Organization**: Chronological specification organization with automatic naming
+- **Validation**: Kebab-case naming enforcement and specification completeness checking
 
-### 🌐 MCP Protocol Integration
-- **MCP Server**: Model Context Protocol server for AI model integration
-- **Async Architecture**: High-performance async/await with Tokio runtime
-- **Real-time Updates**: Live memory updates with automatic index maintenance
-- **Protocol Compliance**: Full rmcp v0.5.0 implementation
+### 📄 File-based Steering System
+- **Version-Controllable Context**: Git-trackable steering files for transparent project knowledge management
+- **Core Steering Types**: Product overview, technology stack, and project structure documentation
+- **Smart Content Organization**: Criteria-based categorization and intelligent content updates
+- **Backup Protection**: Automatic backup creation before modifications
+- **Team Collaboration**: Shared context through version control without database synchronization
 
-### 🎯 Project Specification Management
-- **Kiro System**: Structured project specification management
-- **Template Generation**: Automatic creation of requirements, design, and task files
-- **Spec Archiving**: Interactive TUI for marking completed specs with archive management
-- **Configuration Management**: TOML-based hierarchical configuration
-- **Document Generation**: Markdown output with organized memory exports
-
-### 🚄 Performance & Reliability
-- **SQLite Backend**: High-performance database with WAL mode
-- **Automatic Migrations**: Versioned schema management with Refinery
-- **Batch Operations**: Efficient bulk operations with transaction support
-- **Comprehensive Testing**: Unit, integration, and repository-level tests
-- **Shell Completion**: Auto-completion support for all major shells
+### 🔗 Claude Code Integration
+- **Seamless Launch**: TTY-aware Claude Code launching with proper job control
+- **Structured Context**: XML-tagged system prompts for easy file reference
+- **Specification Context**: Automatic loading of relevant specification files
+- **Interactive Selection**: TUI for choosing existing specs or creating new ones
+- **Process Management**: Proper backgrounding and terminal control preservation
 
 ### 🖥️ Terminal User Interface (TUI)
-- **Interactive Selection**: Checkbox-based multi-selection interface
-- **Keyboard Navigation**: Intuitive keyboard shortcuts (arrows, j/k, Space, Enter)
-- **Visual Feedback**: Real-time selection count and highlighting
-- **Built with Ratatui**: Modern TUI framework for Rust applications
+- **Interactive Selection**: Specification selector with checkbox-based multi-selection
+- **Keyboard Navigation**: Intuitive shortcuts (arrows, j/k, Space, Enter, q/Esc)
+- **Visual Design**: Clean interface with real-time feedback and highlighting
+- **Built with Ratatui**: Modern terminal UI framework for responsive interfaces
 
-### 🤖 Anthropic API Integration
+### 🔧 Developer Experience
+- **Shell Completions**: Auto-completion support for bash, zsh, fish, PowerShell, and elvish
+- **Clean Architecture**: Well-structured Rust implementation with clear separation of concerns
+- **Comprehensive Testing**: Unit and integration tests with proper filesystem isolation
+- **Error Handling**: Detailed error messages with proper context and recovery guidance
+- **Configuration Management**: TOML-based hierarchical configuration system
+
+### 🤖 Anthropic API Client (Separate Crate)
 - **OAuth Authentication**: Secure OAuth2 flow with automatic token refresh
 - **Claude API Client**: Non-streaming API calls to Claude models
 - **Cloudflare Protection**: Configured to bypass bot detection mechanisms
@@ -75,8 +76,11 @@ just build-package hail-mary
 # Initialize a new project (idempotent - safe to run multiple times)
 cargo run --package hail-mary -- init
 
-# Start the Memory MCP server
-cargo run --package hail-mary -- memory serve --verbose
+# Create a new feature specification
+cargo run --package hail-mary -- new my-feature
+
+# Launch Claude Code with Kiro context
+cargo run --package hail-mary -- code
 ```
 
 ### Project Structure
@@ -105,31 +109,19 @@ The project uses a Cargo workspace structure for better modularity:
 ```bash
 # Initialize new Kiro project with .kiro directory structure
 # This command is idempotent - safe to run multiple times
-# Existing files will be preserved, missing components will be created
+# Creates steering system, config, and directory structure
 hail-mary init
 ```
 
-### MCP Server Operations
+### Claude Code Integration
 
 ```bash
-# Start Memory MCP server (connects with Claude Code)
-hail-mary memory serve
+# Launch Claude Code with Kiro specification context
+# Provides interactive TUI for spec selection
+hail-mary code
 
-# The server provides two tools to AI models:
-# - remember: Store technical knowledge with categorization
-# - recall: Search and retrieve stored memories
-```
-
-### Memory Document Generation
-
-```bash
-# Generate Markdown documentation from all memories
-hail-mary memory document
-
-# Generate documentation for specific memory type
-hail-mary memory document --type tech
-hail-mary memory document --type project-tech
-hail-mary memory document --type domain
+# Skip dangerous permissions flag for certain environments
+hail-mary code --no-danger
 ```
 
 ### Feature Specification Management
@@ -147,14 +139,6 @@ hail-mary complete
 # - Press Space to select specifications
 # - Press Enter to archive selected specs
 # - Press q or Esc to quit
-```
-
-### Database Management
-
-```bash
-# Reindex and optimize database (Phase 3 feature - placeholder)
-hail-mary memory reindex --dry-run
-hail-mary memory reindex --verbose
 ```
 
 ### Anthropic API Client
@@ -191,98 +175,101 @@ hail-mary shell-completions elvish > hail-mary.elv
 ### Project Configuration (`.kiro/config.toml`)
 
 ```toml
-[memory]
-types = ["tech", "project-tech", "domain"]
-instructions = "Technical knowledge management for AI systems"
+[[steering.types]]
+name = "product"
+purpose = "Product overview and value proposition"
+criteria = [
+    "Product Overview: Brief description of what the product is",
+    "Core Features: Bulleted list of main capabilities",
+    "Target Use Case: Specific scenarios the product addresses",
+    "Key Value Proposition: Unique benefits and differentiators",
+]
 
-[memory.document]
-output_dir = ".kiro/memory"
-format = "markdown"
+[[steering.types]]
+name = "tech"
+purpose = "Technical stack and development environment"
+criteria = [
+    "Architecture: High-level system design",
+    "Development Environment: Required tools and setup",
+    "Common Commands: Frequently used development commands",
+]
 
-[memory.database]
-path = ".kiro/memory/db.sqlite3"
+[[steering.types]]
+name = "structure"
+purpose = "Code organization and project structure patterns"
+criteria = [
+    "Root Directory Organization: Top-level structure",
+    "Code Organization Patterns: How code is structured",
+    "Key Architectural Principles: Core design decisions",
+]
 ```
 
-### Memory Types
+### Steering System Types
 
-- **`tech`**: General technical knowledge and programming concepts
-- **`project-tech`**: Project-specific technical implementation details  
-- **`domain`**: Business domain knowledge and requirements
+- **`product`**: Product overview, features, and value proposition documentation
+- **`tech`**: Technology stack, development environment, and command reference
+- **`structure`**: Code organization, architectural patterns, and structural decisions
 
-### Database Schema
+### File System Organization
 
-The system uses SQLite with the following key tables:
-- `memories`: Main storage with metadata and content  
-- `memories_fts`: FTS5 virtual table for full-text search
-- Automatic triggers for index maintenance
+The steering system uses git-trackable markdown files:
+- `.kiro/steering/product.md`: Product context (always loaded)
+- `.kiro/steering/tech.md`: Technical context (always loaded)
+- `.kiro/steering/structure.md`: Structural context (always loaded)
+- `.kiro/steering/draft/`: Temporary drafts for processing
 
-## 🔌 MCP Client Configuration
+## 🔌 Claude Code Integration
 
-### Claude Code Integration
+### System Prompt Integration
 
-To use hail-mary with Claude Code, add this configuration to your Claude Code settings:
+Hail-mary integrates with Claude Code through structured system prompts that provide specification context:
 
-```json
-{
-  "mcpServers": {
-    "hail-mary": {
-      "command": "hail-mary",
-      "args": ["memory", "serve"],
-      "env": {
-        "RUST_LOG": "info"
-      }
-    }
-  }
-}
+```xml
+<kiro_spec_name>my-feature</kiro_spec_name>
+<kiro_spec_path>.kiro/specs/2024-03-15-my-feature/</kiro_spec_path>
+<kiro_requirements_path>.kiro/specs/2024-03-15-my-feature/requirements.md</kiro_requirements_path>
+<kiro_design_path>.kiro/specs/2024-03-15-my-feature/design.md</kiro_design_path>
+<kiro_tasks_path>.kiro/specs/2024-03-15-my-feature/tasks.md</kiro_tasks_path>
+<kiro_memo_path>.kiro/specs/2024-03-15-my-feature/memo.md</kiro_memo_path>
+<kiro_investigation_path>.kiro/specs/2024-03-15-my-feature/investigation.md</kiro_investigation_path>
 ```
 
-### MCP Tools Available
+### Custom Slash Commands
 
-**remember Tool**: Store technical knowledge
-```json
-{
-  "memories": [
-    {
-      "type": "tech",
-      "title": "Rust async programming patterns",
-      "content": "Detailed explanation of async/await...",
-      "tags": ["rust", "async", "tokio"],
-      "confidence": 0.9
-    }
-  ]
-}
-```
+Hail-mary provides custom Claude Code slash commands in `.claude/commands/hm/`:
 
-**recall Tool**: Search stored memories
-```json
-{
-  "query": "async programming",
-  "type": "tech",
-  "tags": ["rust"],
-  "limit": 10
-}
-```
+- `/hm:steering`: Main steering management command - processes drafts and updates steering files
+- `/hm:steering-remember [title]`: Capture learning and insights to drafts for later processing  
+- `/hm:steering-merge`: Advanced merging of steering content with conflict resolution
+
+### Steering System Context
+
+The steering system provides always-available context to Claude Code sessions:
+- **product.md**: Loaded automatically for business context in all sessions
+- **tech.md**: Loaded automatically for technical stack awareness
+- **structure.md**: Loaded automatically for architectural pattern consistency
 
 ## 🏗️ Architecture
 
-Hail-Mary follows hexagonal architecture principles with clear separation of concerns:
+Hail-Mary follows clean architecture principles with clear separation of concerns:
 
 ```mermaid
 flowchart TB
     CLI[CLI Interface] --> CMD[Command Layer]
-    CMD --> SVC[Service Layer]
-    SVC --> REPO[Repository Layer]
-    REPO --> DATA[Data Layer]
+    CMD --> UC[Use Case Layer]
+    UC --> REPO[Repository Layer]
+    REPO --> INFRA[Infrastructure Layer]
 ```
 
 For detailed architectural documentation, see [ARCHITECTURE.md](.kiro/steering/structure.md).
 
 ### Key Components
 
-- **CLI Interface**: Clap-based command routing with structured arguments
-- **Service Layer**: Business logic with validation and async operations
-- **Repository Pattern**: Abstracted data access with SQLite and in-memory implementations
-- **Memory Model**: Rich domain model with builder patterns and metadata
+- **CLI Interface**: Clap-based command routing with structured arguments and shell completions
+- **Use Case Layer**: Business logic with validation for project and specification management
+- **Repository Pattern**: Abstracted file system operations through trait interfaces
+- **Domain Model**: Rich domain entities for project configuration and steering system
+- **Infrastructure Layer**: File system operations, process management, and TUI components
 
 ## 🛠️ Development
 
@@ -317,40 +304,33 @@ just test-watch
 cargo test --test integration_repository_test
 ```
 
-### Database Migrations
-
-```bash
-# Migrations are automatically applied on startup
-# Manual migration testing:
-cargo test test_migration_creates_tables
-```
-
 ## 📚 Documentation
 
 - **[ARCHITECTURE.md](.kiro/steering/structure.md)**: Detailed system architecture and design patterns
-- **[COMMANDS.md](./COMMANDS.md)**: Comprehensive CLI command reference (Japanese)
 - **API Documentation**: Run `just doc` to generate and open Rust documentation
-
-### Memory Management Workflow
-
-1. **Initialize**: Set up `.kiro` directory and configuration
-2. **Store**: Add memories with categorization and metadata
-3. **Search**: Use full-text search with filters and ranking
-4. **Analyze**: Perform clustering, deduplication, and analytics
-5. **Export**: Generate documentation and export data
+- **Steering Files**: `.kiro/steering/` contains project context documentation
 
 ### Specification Management Workflow
 
-1. **Create**: Generate new feature specifications with `hail-mary new`
-2. **Develop**: Work on features in `.kiro/specs` directory
-3. **Complete**: Use interactive TUI with `hail-mary complete` to mark as done
-4. **Archive**: Completed specs are moved to `.kiro/archive` for reference
+1. **Initialize**: Set up `.kiro` directory and steering system with `hail-mary init`
+2. **Create**: Generate new feature specifications with `hail-mary new <feature-name>`
+3. **Develop**: Work on features in `.kiro/specs/<date-feature-name>/` directories
+4. **Integrate**: Use `hail-mary code` to launch Claude Code with specification context
+5. **Complete**: Use interactive TUI with `hail-mary complete` to mark specs as done
+6. **Archive**: Completed specs are moved to `.kiro/archive/` for reference
+
+### Steering System Workflow
+
+1. **Capture**: Use `/hm:steering-remember` during Claude Code sessions to save insights
+2. **Process**: Run `/hm:steering` to intelligently categorize drafts into steering files
+3. **Version Control**: Commit steering changes to share context with team members
+4. **Context Loading**: Steering files automatically provide persistent context for development
 
 ## 🔒 Security
 
 - **Input Validation**: Comprehensive validation at all boundaries
-- **SQL Injection Protection**: Parameterized queries throughout
-- **Path Safety**: Secure file system operations
+- **Path Safety**: Secure file system operations with proper validation
+- **File System Security**: Safe file operations with permission checks
 - **Error Handling**: No sensitive data exposure in error messages
 
 ```bash
@@ -358,26 +338,12 @@ cargo test test_migration_creates_tables
 just audit
 ```
 
-## 🌐 Multilingual Support
-
-The system supports multilingual content with special optimizations for Japanese text:
-
-- **FTS5 Tokenization**: Porter Unicode61 tokenizer for proper text segmentation
-- **Japanese Content**: Native support for Japanese technical documentation
-- **Search Accuracy**: Optimized search algorithms for CJK text
-
 ## 📊 Performance
 
-- **Async Architecture**: Non-blocking operations with Tokio
-- **Optimized Queries**: Strategic indexing for common search patterns
-- **Batch Operations**: Efficient bulk operations with transaction support
-- **Memory Efficiency**: Minimal allocations and smart caching
-
-### Benchmarks
-
-- **Search Performance**: Sub-50ms for typical queries on 10K+ memories
-- **Batch Insert**: 1000+ memories/second with transaction batching
-- **FTS Index**: Real-time updates via SQLite triggers
+- **File System Efficiency**: Optimized path resolution and file operations
+- **Process Management**: TTY-aware process launching with minimal overhead
+- **Template Generation**: Efficient string handling and minimal allocations
+- **Configuration Caching**: TOML parsing optimization for repeated access
 
 ## 🤝 Contributing
 
@@ -416,8 +382,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **Rust Community**: For excellent tooling and libraries
-- **SQLite Team**: For the robust FTS5 implementation
-- **MCP Protocol**: For standardized model context management
+- **Ratatui Community**: For the excellent terminal UI framework
+- **Clap**: For the robust CLI framework foundation
 - **Tokio**: For the async runtime foundation
 
 ---

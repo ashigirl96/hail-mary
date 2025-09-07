@@ -4,49 +4,47 @@
 
 ## Product Overview
 
-Hail-Mary provides intelligent memory management for AI models with full-text search capabilities, multilingual support, and a comprehensive CLI interface for technical knowledge storage and retrieval. It bridges the gap between AI model interactions and persistent project knowledge through two primary systems: Memory MCP for database-driven knowledge storage and Kiro steering for file-based context management.
+Hail-Mary provides intelligent project specification management through the Kiro system, designed for spec-driven development workflows. It bridges the gap between AI model interactions and persistent project knowledge through a file-based steering system that offers version-controllable context management and comprehensive specification lifecycle support.
 
 ## Core Features
 
-- **Memory MCP Server**: Model Context Protocol server for AI integration with structured knowledge storage
-- **Full-Text Search**: SQLite FTS5 with Japanese tokenization support for multilingual content
 - **Kiro Specification Management**: Complete project specification lifecycle with templates and interactive TUI
-- **Steering System**: File-based context management for version-controllable project knowledge
+- **Steering System**: File-based context management for version-controllable project knowledge  
 - **Claude Code Integration**: Seamless integration with Claude Code through system prompts and specifications
-- **Multilingual Support**: Native Japanese text processing with optimized search algorithms
-- **Clean Architecture**: 4-layer hexagonal architecture for maintainability and testing
-- **Anthropic API Client**: OAuth authentication and API client for Claude models
+- **Interactive TUI**: Terminal user interface for specification selection and management
+- **Clean Architecture**: Well-structured Rust implementation with clear separation of concerns
+- **Shell Completions**: Auto-completion support for all major shells
+- **Template System**: Structured specification templates with requirements, design, tasks, and investigation phases
 
 ## Target Use Case
 
 ### Primary Use Cases
-1. **AI Model Context Management**: Persistent technical knowledge storage for AI interactions
-2. **Project Specification Management**: Complete spec-driven development workflow with documentation templates
-3. **Technical Knowledge Base**: Searchable repository of development insights, patterns, and decisions
-4. **Claude Code Enhancement**: Rich context provision for development sessions
+1. **Project Specification Management**: Complete spec-driven development workflow with documentation templates
+2. **Context Management**: File-based steering system for persistent project knowledge
+3. **Claude Code Enhancement**: Rich context provision for AI-assisted development sessions
+4. **Team Collaboration**: Version-controllable project knowledge sharing
 
 ### Specific Scenarios
-- Development teams maintaining technical knowledge across sessions
-- AI-assisted development with persistent project context
-- Spec-driven development with structured documentation workflows
-- Multilingual development teams requiring Japanese text search
-- Projects requiring both database-driven and file-based knowledge management
+- Development teams using spec-driven development methodologies
+- AI-assisted development with persistent project context through steering files
+- Structured documentation workflows with requirements, design, and task management
+- Teams requiring version-controllable project knowledge and decision tracking
+- Projects needing seamless Claude Code integration with comprehensive context
 
 ## Key Value Proposition
 
 ### Unique Benefits
-- **Dual Knowledge Systems**: Both database-driven (Memory MCP) and file-based (Steering) knowledge management
-- **AI-First Design**: Built specifically for AI model integration with MCP protocol
-- **Specification-Driven Development**: Complete workflow from specs to implementation with Claude Code integration
-- **Multilingual Excellence**: Superior Japanese text search and processing capabilities
-- **Developer Experience**: Clean CLI with interactive TUI components and comprehensive testing
-- **Architectural Quality**: Production-ready Rust implementation with hexagonal architecture
-- **Future-Proof**: Extensible design supporting additional memory types and MCP features
+- **File-Based Knowledge Management**: Version-controllable steering system for transparent project context
+- **AI-First Design**: Built specifically for Claude Code integration with structured context provision
+- **Specification-Driven Development**: Complete workflow from specs to implementation with interactive tools
+- **Developer Experience**: Clean CLI with interactive TUI components and shell completions
+- **Architectural Quality**: Well-structured Rust implementation with clean architecture patterns
+- **Team Collaboration**: Shared context through version control without database synchronization
 
 ### Differentiators
-- Native MCP protocol implementation rather than custom solutions
-- File-based steering system complementing database storage
-- Professional CLI application with proper TTY management
-- Comprehensive testing including integration and multilingual scenarios
-- OAuth integration for Anthropic API access
+- File-based approach enabling git-tracked project knowledge evolution
+- Native Claude Code integration with structured system prompts
+- Interactive specification management with comprehensive template system
+- Professional CLI application with proper TTY management and job control
+- Complete specification lifecycle from creation to archival
 
