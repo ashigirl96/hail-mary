@@ -19,6 +19,9 @@ pub fn initialize_project(repository: &impl ProjectRepository) -> Result<(), App
     // Update .gitignore (idempotent)
     repository.update_gitignore()?;
 
+    // Deploy slash command markdown files (always overwrites)
+    repository.deploy_slash_commands()?;
+
     Ok(())
 }
 
@@ -109,6 +112,7 @@ mod tests {
             ("initialize", "ProjectInitializationError"),
             ("ensure_steering_config", "ConfigurationError"),
             ("update_gitignore", "FileSystemError"),
+            ("deploy_slash_commands", "FileSystemError"),
         ];
 
         for (operation, _expected_error_type) in operations {
@@ -119,7 +123,7 @@ mod tests {
 
             let error = result.unwrap_err();
             match operation {
-                "update_gitignore" => {
+                "update_gitignore" | "deploy_slash_commands" => {
                     assert!(
                         matches!(error, ApplicationError::FileSystemError(_)),
                         "Expected FileSystemError for {}, got {:?}",

@@ -175,4 +175,51 @@ mod tests {
         assert!(content.contains("name ="));
         assert!(content.contains("purpose ="));
     }
+
+    #[test]
+    fn test_init_command_deploys_slash_commands() {
+        let _test_dir = TestDirectory::new();
+
+        let cmd = InitCommand::new();
+        let result = cmd.execute();
+        assert!(result.is_ok());
+
+        // Verify slash commands were deployed
+        let hm_dir = Path::new(".claude/commands/hm");
+        assert!(hm_dir.exists(), ".claude/commands/hm should exist");
+
+        // Check all expected files
+        let expected_files = ["steering-remember.md", "steering.md", "steering-merge.md"];
+        for file in &expected_files {
+            let file_path = hm_dir.join(file);
+            assert!(
+                file_path.exists(),
+                "Slash command file {} should exist",
+                file
+            );
+
+            // Verify content
+            let content = fs::read_to_string(&file_path).unwrap();
+            assert!(!content.is_empty(), "File {} should have content", file);
+        }
+    }
+
+    #[test]
+    fn test_init_command_overwrites_slash_commands() {
+        let _test_dir = TestDirectory::new();
+
+        // Create .claude/commands/hm with old content
+        let hm_dir = Path::new(".claude/commands/hm");
+        fs::create_dir_all(hm_dir).unwrap();
+        fs::write(hm_dir.join("steering.md"), "OLD CONTENT").unwrap();
+
+        let cmd = InitCommand::new();
+        let result = cmd.execute();
+        assert!(result.is_ok());
+
+        // Verify file was overwritten with new content
+        let content = fs::read_to_string(hm_dir.join("steering.md")).unwrap();
+        assert!(!content.contains("OLD CONTENT"));
+        assert!(content.contains("Kiro Steering Management")); // Expected content from embedded file
+    }
 }

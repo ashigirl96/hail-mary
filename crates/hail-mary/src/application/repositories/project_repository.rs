@@ -28,6 +28,10 @@ pub trait ProjectRepository: Send + Sync {
 
     /// Ensure steering configuration exists in config.toml (add if missing)
     fn ensure_steering_config(&self) -> Result<(), ApplicationError>;
+
+    /// Deploy embedded slash command markdown files to .claude/commands/hm
+    /// This always overwrites existing files to ensure consistency
+    fn deploy_slash_commands(&self) -> Result<(), ApplicationError>;
 }
 
 #[cfg(test)]
