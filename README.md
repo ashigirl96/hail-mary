@@ -72,7 +72,7 @@ just build
 # Build specific package
 just build-package hail-mary
 
-# Initialize a new project
+# Initialize a new project (idempotent - safe to run multiple times)
 cargo run --package hail-mary -- init
 
 # Start the Memory MCP server
@@ -104,10 +104,9 @@ The project uses a Cargo workspace structure for better modularity:
 
 ```bash
 # Initialize new Kiro project with .kiro directory structure
+# This command is idempotent - safe to run multiple times
+# Existing files will be preserved, missing components will be created
 hail-mary init
-
-# Initialize with force overwrite (if .kiro already exists)
-hail-mary init --force
 ```
 
 ### MCP Server Operations
