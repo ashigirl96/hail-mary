@@ -1,5 +1,7 @@
 use std::path::Path;
 
+const SYSTEM_PROMPT_TEMPLATE: &str = include_str!("system_prompt_template.md");
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SystemPrompt {
     content: String,
@@ -7,53 +9,11 @@ pub struct SystemPrompt {
 
 impl SystemPrompt {
     pub fn new(spec_name: &str, spec_path: &Path) -> Self {
-        let content = format!(
-            r#"# Kiro Specification Context
+        let path_str = spec_path.display().to_string();
 
-You are working on a Kiro project specification. Your task is to implement the requirements defined in the specification files below.
-
-## Current Specification
-
-Name: {}
-Path: {}
-
-## Specification Files
-
-<kiro_spec_name>{}</kiro_spec_name>
-<kiro_spec_path>{}</kiro_spec_path>
-<kiro_requirements_path>{}/requirements.md</kiro_requirements_path>
-<kiro_design_path>{}/design.md</kiro_design_path>
-<kiro_tasks_path>{}/tasks.md</kiro_tasks_path>
-<kiro_memo_path>{}/memo.md</kiro_memo_path>
-<kiro_investigation_path>{}/investigation.md</kiro_investigation_path>
-
-## File Descriptions
-
-- **requirements.md**: Comprehensive requirements including user stories, acceptance criteria, and functional requirements
-- **design.md**: Technical design with architecture decisions and implementation approach
-- **tasks.md**: Implementation tasks with priorities and dependencies
-- **memo.md**: Additional notes and context from the user
-- **investigation.md**: Research findings, key discoveries, and technical considerations from investigation phase
-
-## Instructions
-
-1. Read the requirements in <kiro_requirements_path/> to understand what needs to be built
-2. Review investigation findings in <kiro_investigation_path/> for research insights
-3. Follow the technical approach in <kiro_design_path/>
-4. Track your progress against tasks in <kiro_tasks_path/>
-5. Consider any additional context in <kiro_memo_path/>
-
-When you need to reference these files, use the XML tag paths provided above."#,
-            spec_name,
-            spec_path.display(),
-            spec_name,
-            spec_path.display(),
-            spec_path.display(),
-            spec_path.display(),
-            spec_path.display(),
-            spec_path.display(),
-            spec_path.display()
-        );
+        let content = SYSTEM_PROMPT_TEMPLATE
+            .replace("{spec_name}", spec_name)
+            .replace("{path_str}", &path_str);
 
         Self { content }
     }
