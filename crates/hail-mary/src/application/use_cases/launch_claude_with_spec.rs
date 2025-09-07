@@ -10,6 +10,7 @@ use crate::infrastructure::tui::spec_selector::{SpecSelectionResult, SpecSelecto
 
 pub fn launch_claude_with_spec(
     project_repo: &dyn ProjectRepository,
+    no_danger: bool,
 ) -> Result<(), ApplicationError> {
     // 1. Get list of specifications
     let specs = project_repo.list_spec_directories().map_err(|e| {
@@ -46,7 +47,7 @@ pub fn launch_claude_with_spec(
     // 4. Launch Claude with system prompt
     let launcher = ClaudeProcessLauncher::new();
     launcher
-        .launch(system_prompt.as_str())
+        .launch(system_prompt.as_str(), no_danger)
         .map_err(|e| ApplicationError::ProcessLaunchError(e.to_string()))?;
 
     Ok(())

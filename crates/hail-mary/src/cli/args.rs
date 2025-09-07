@@ -41,7 +41,11 @@ pub enum Commands {
     Complete,
 
     /// Launch Claude Code with Kiro specification context
-    Code,
+    Code {
+        /// Skip the dangerous permissions flag (--dangerously-skip-permissions)
+        #[arg(long)]
+        no_danger: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -104,7 +108,7 @@ impl Commands {
     }
 
     pub fn is_code(&self) -> bool {
-        matches!(self, Commands::Code)
+        matches!(self, Commands::Code { .. })
     }
 }
 
@@ -133,6 +137,13 @@ impl Commands {
     pub fn get_completion_shell(&self) -> Option<&Shell> {
         match self {
             Commands::Completion { shell } => Some(shell),
+            _ => None,
+        }
+    }
+
+    pub fn get_code_no_danger(&self) -> Option<bool> {
+        match self {
+            Commands::Code { no_danger } => Some(*no_danger),
             _ => None,
         }
     }
@@ -260,6 +271,12 @@ mod tests {
         assert!(!memory_cmd.is_init());
         assert!(!memory_cmd.is_new());
         assert!(memory_cmd.is_memory());
+
+        let code_cmd = Commands::Code { no_danger: false };
+        assert!(!code_cmd.is_init());
+        assert!(!code_cmd.is_new());
+        assert!(!code_cmd.is_memory());
+        assert!(code_cmd.is_code());
     }
 
     #[test]

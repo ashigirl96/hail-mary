@@ -5,11 +5,13 @@ use crate::cli::formatters::format_error;
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use crate::infrastructure::repositories::project::ProjectRepository;
 
-pub struct CodeCommand;
+pub struct CodeCommand {
+    no_danger: bool,
+}
 
 impl CodeCommand {
-    pub fn new() -> Self {
-        Self
+    pub fn new(no_danger: bool) -> Self {
+        Self { no_danger }
     }
 
     pub fn execute(&self) -> Result<()> {
@@ -29,7 +31,7 @@ impl CodeCommand {
         let project_repo = ProjectRepository::new(path_manager);
 
         // Execute single use case
-        match launch_claude_with_spec(&project_repo) {
+        match launch_claude_with_spec(&project_repo, self.no_danger) {
             Ok(()) => Ok(()),
             Err(crate::application::errors::ApplicationError::ProcessLaunchError(msg)) => {
                 println!("{}", format_error(&msg));
@@ -62,7 +64,7 @@ impl CodeCommand {
 
 impl Default for CodeCommand {
     fn default() -> Self {
-        Self::new()
+        Self::new(false)
     }
 }
 
@@ -72,16 +74,22 @@ mod tests {
 
     #[test]
     fn test_code_command_new() {
-        let command = CodeCommand::new();
+        let command = CodeCommand::new(false);
         // Just ensure it can be created without panicking
-        assert!(std::mem::size_of_val(&command) == 0);
+        assert!(!command.no_danger);
+    }
+
+    #[test]
+    fn test_code_command_new_with_no_danger() {
+        let command = CodeCommand::new(true);
+        assert!(command.no_danger);
     }
 
     #[test]
     fn test_code_command_default() {
-        let command = CodeCommand::new();
+        let command = CodeCommand::default();
         // Just ensure default works
-        assert!(std::mem::size_of_val(&command) == 0);
+        assert!(!command.no_danger);
     }
 
     // Note: execute() method testing is complex due to TUI and process launching

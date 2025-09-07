@@ -43,8 +43,8 @@ fn run() -> Result<()> {
             let command = CompleteCommand::new();
             command.execute()?;
         }
-        Commands::Code => {
-            let command = CodeCommand::new();
+        Commands::Code { no_danger } => {
+            let command = CodeCommand::new(no_danger);
             command.execute()?;
         }
     }
