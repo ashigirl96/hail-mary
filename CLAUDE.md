@@ -29,8 +29,9 @@ The system follows a 4-layer Clean Architecture with clear separation of concern
 ```
 
 ### Domain Layer (`crates/hail-mary/src/domain/`)
-- **Entities**: `Memory` and `ProjectConfig` - core business objects with identity
+- **Entities**: `Memory`, `ProjectConfig`, and `SteeringConfig` - core business objects with identity
 - **Value Objects**: `Confidence`, `SystemPrompt` - domain-specific types with validation (0.0-1.0)
+- **Steering System**: `SteeringType`, `Criterion` - file-based context management entities
 - **Domain Rules**: Business invariants and validation logic embedded in entities
 - **Domain Errors**: Business rule violations using thiserror
 
@@ -68,7 +69,8 @@ crates/
         ├── domain/                          # Pure business logic
         │   ├── entities/
         │   │   ├── memory.rs               # Memory entity with UUID, type, content
-        │   │   └── project.rs              # Project configuration
+        │   │   ├── project.rs              # Project configuration
+        │   │   └── steering.rs             # Steering system entities (SteeringType, Criterion, SteeringConfig)
         │   ├── value_objects/
         │   │   ├── confidence.rs           # Confidence value (0.0-1.0)
         │   │   └── system_prompt.rs        # System prompt for Claude Code
@@ -120,7 +122,7 @@ crates/
 ```
 
 ### CLI Commands
-- `hail-mary init`: Initialize .kiro directory structure and configuration
+- `hail-mary init`: Initialize .kiro directory structure and configuration (creates steering system)
 - `hail-mary new <name>`: Create feature specification templates with validation (includes requirements.md, design.md, tasks.md, memo.md, investigation.md, and spec.json)
 - `hail-mary complete`: Interactive TUI for marking specifications as complete (archives to .kiro/archive)
 - `hail-mary code`: Launch Claude Code with Kiro specification context
@@ -174,6 +176,43 @@ cargo test -- --nocapture                     # Test output visible
 4. **Reference Tracking**: Async updates to `reference_count` and `last_accessed`
 5. **Export**: Markdown generation with memory grouping by type
 
+## Steering System (File-Based Context Management)
+
+The steering system provides transparent, version-controllable context management as an alternative to the SQLite-based Memory MCP:
+
+### Key Features
+- **File-Based Storage**: Context stored as markdown files in `.kiro/steering/`
+- **Version Control Friendly**: All steering files can be tracked in git
+- **Claude Code Integration**: Slash commands for draft management and categorization
+- **Smart Configuration**: Automatically adds [steering] section to existing config.toml
+
+### Directory Structure
+```
+.kiro/
+├── steering/
+│   ├── product.md              # Product overview and value proposition
+│   ├── tech.md                 # Technical stack and development environment
+│   ├── structure.md            # Code organization patterns
+│   ├── backup/                 # Backups before modifications
+│   └── draft/                  # Temporary drafts for processing
+└── config.toml                 # Contains both [memory] and [steering] sections
+```
+
+### Steering Types
+1. **Product**: Product overview, core features, use cases, value proposition
+2. **Tech**: Architecture, frontend/backend stack, development environment, commands
+3. **Structure**: Directory organization, code patterns, naming conventions, principles
+
+### Slash Commands
+- `/hm:steering-remember [title]`: Save new learnings to draft directory
+- `/hm:steering [--verbose] [--dry-run]`: Process drafts and categorize into steering files
+
+### Workflow
+1. **Initialize**: `hail-mary init` creates steering directories and default files
+2. **Capture**: Use `/hm:steering-remember` during Claude Code sessions to save important context
+3. **Organize**: Use `/hm:steering` to categorize drafts into appropriate steering files
+4. **Reference**: Steering files provide persistent context for future development sessions
+
 ## Key Implementation Details
 
 ### Error Handling Strategy
@@ -198,6 +237,12 @@ cargo test -- --nocapture                     # Test output visible
 - **String-based Types**: Flexible string types defined in configuration (tech, project-tech, domain, workflow, decision)
 - **Configuration Validation**: ProjectConfig validates memory types against allowed values
 - **Type Safety**: Use case functions validate memory types before entity creation
+
+### Steering System Architecture
+- **Criterion Parsing**: Parses "Name: Description" format from config.toml
+- **File Protection**: Never overwrites existing steering files or config.toml (even with --force)
+- **Smart Configuration**: Automatically adds [steering] section to existing config.toml when missing
+- **Template Generation**: Creates structured markdown files with criterions for easy categorization
 
 ### Testing Infrastructure
 - `tests/common/` provides shared test utilities

@@ -1,6 +1,7 @@
 use crate::application::errors::ApplicationError;
 use crate::domain::entities::memory::Memory;
 use crate::domain::entities::project::ProjectConfig;
+use crate::domain::entities::steering::SteeringConfig;
 
 pub trait ProjectRepository: Send + Sync {
     fn initialize(&self) -> Result<(), ApplicationError>;
@@ -21,6 +22,15 @@ pub trait ProjectRepository: Send + Sync {
 
     /// Get the path to a specification directory
     fn get_spec_path(&self, name: &str) -> Result<std::path::PathBuf, ApplicationError>;
+
+    /// Initialize steering system directories
+    fn initialize_steering(&self) -> Result<(), ApplicationError>;
+
+    /// Create steering files from config
+    fn create_steering_files(&self, config: &SteeringConfig) -> Result<(), ApplicationError>;
+
+    /// Ensure steering configuration exists in config.toml (add if missing)
+    fn ensure_steering_config(&self) -> Result<(), ApplicationError>;
 }
 
 #[cfg(test)]

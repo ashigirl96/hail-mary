@@ -119,9 +119,10 @@ mod tests {
         let result2 = cmd2.execute();
         assert!(result2.is_ok());
 
-        // Verify config was overwritten
+        // Verify config was updated with steering section (new behavior: add [steering] to existing config)
         let config_content = fs::read_to_string(config_path).unwrap();
-        assert!(config_content.contains("[memory]"));
+        assert!(config_content.contains("# Modified content"));
+        assert!(config_content.contains("[[steering.types]]"));
     }
 
     #[test]

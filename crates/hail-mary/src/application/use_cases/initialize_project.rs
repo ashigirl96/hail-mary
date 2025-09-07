@@ -1,6 +1,6 @@
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::ProjectRepository;
-use crate::domain::entities::project::ProjectConfig;
+use crate::domain::entities::steering::SteeringConfig;
 
 pub fn initialize_project(
     repository: &impl ProjectRepository,
@@ -14,9 +14,15 @@ pub fn initialize_project(
     // Initialize project structure
     repository.initialize()?;
 
-    // Create default configuration
-    let config = ProjectConfig::default_for_new_project();
-    repository.save_config(&config)?;
+    // Initialize steering directories
+    repository.initialize_steering()?;
+
+    // Ensure steering configuration exists (add [steering] section if missing)
+    repository.ensure_steering_config()?;
+
+    // Create steering files
+    let steering_config = SteeringConfig::default_for_new_project();
+    repository.create_steering_files(&steering_config)?;
 
     // Update .gitignore
     repository.update_gitignore()?;
@@ -90,7 +96,7 @@ mod tests {
     #[test]
     fn test_initialize_project_save_config_failure() {
         let mut repo = MockProjectRepository::new();
-        repo.set_operation_to_fail("save_config");
+        repo.set_operation_to_fail("ensure_steering_config");
 
         let result = initialize_project(&repo, false);
         assert!(result.is_err());
@@ -175,7 +181,7 @@ mod tests {
         let operations = vec![
             ("exists", "FileSystemError"),
             ("initialize", "ProjectInitializationError"),
-            ("save_config", "ConfigurationError"),
+            ("ensure_steering_config", "ConfigurationError"),
             ("update_gitignore", "FileSystemError"),
         ];
 
@@ -203,7 +209,7 @@ mod tests {
                         error
                     );
                 }
-                "save_config" => {
+                "ensure_steering_config" => {
                     assert!(
                         matches!(error, ApplicationError::ConfigurationError(_)),
                         "Expected ConfigurationError for {}, got {:?}",
