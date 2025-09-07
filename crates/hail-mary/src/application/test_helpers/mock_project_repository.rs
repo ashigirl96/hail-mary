@@ -2,6 +2,7 @@ use crate::application::errors::ApplicationError;
 use crate::application::repositories::ProjectRepository;
 use crate::domain::entities::memory::Memory;
 use crate::domain::entities::project::ProjectConfig;
+use crate::domain::entities::steering::SteeringConfig;
 use std::collections::HashMap;
 
 /// Mock implementation of ProjectRepository for testing
@@ -313,5 +314,53 @@ impl ProjectRepository for MockProjectRepository {
         // Return a mock path
         let mock_path = std::path::PathBuf::from(".kiro/specs").join(name);
         Ok(mock_path)
+    }
+
+    fn initialize_steering(&self) -> Result<(), ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::FileSystemError(
+                "Failed to initialize steering".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "initialize_steering"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock initialize_steering failure".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn create_steering_files(&self, _config: &SteeringConfig) -> Result<(), ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::FileSystemError(
+                "Failed to create steering files".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "create_steering_files"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock create_steering_files failure".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn ensure_steering_config(&self) -> Result<(), ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::ConfigurationError(
+                "Failed to ensure steering config".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "ensure_steering_config"
+        {
+            return Err(ApplicationError::ConfigurationError(
+                "Mock ensure_steering_config failure".to_string(),
+            ));
+        }
+        Ok(())
     }
 }

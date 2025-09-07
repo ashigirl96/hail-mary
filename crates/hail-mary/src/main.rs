@@ -145,10 +145,10 @@ mod tests {
                 let result = command.execute();
                 assert!(result.is_ok());
 
-                // Verify config was overwritten
+                // Verify config was updated with steering section (new behavior: add [steering] to existing config)
                 let config = fs::read_to_string(".kiro/config.toml").unwrap();
-                assert!(config.contains("[memory]"));
-                assert!(!config.contains("existing content"));
+                assert!(config.contains("existing content"));
+                assert!(config.contains("[[steering.types]]"));
             }
             _ => panic!("Expected init command"),
         }

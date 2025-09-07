@@ -2,6 +2,7 @@ use crate::application::errors::ApplicationError;
 use crate::application::repositories::ProjectRepository as ProjectRepositoryTrait;
 use crate::domain::entities::memory::Memory;
 use crate::domain::entities::project::{DocumentFormat, ProjectConfig};
+use crate::domain::entities::steering::SteeringConfig;
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -10,6 +11,24 @@ use std::fs;
 #[derive(Debug, Serialize, Deserialize)]
 struct TomlConfig {
     memory: MemoryConfig,
+    steering: Option<SteeringSection>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct SteeringTomlConfig {
+    steering: SteeringSection,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct SteeringSection {
+    types: Vec<SteeringTypeToml>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct SteeringTypeToml {
+    name: String,
+    purpose: String,
+    criterions: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,6 +58,39 @@ impl ProjectRepository {
     pub fn new(path_manager: PathManager) -> Self {
         Self { path_manager }
     }
+
+    fn steering_dir(&self) -> std::path::PathBuf {
+        self.path_manager.kiro_dir(true).join("steering")
+    }
+
+    fn draft_dir(&self) -> std::path::PathBuf {
+        self.steering_dir().join("draft")
+    }
+}
+
+/// Helper function to generate steering section TOML
+fn generate_steering_section(config: &SteeringConfig) -> Result<String, ApplicationError> {
+    let steering_toml = SteeringTomlConfig {
+        steering: SteeringSection {
+            types: config
+                .types
+                .iter()
+                .map(|steering_type| SteeringTypeToml {
+                    name: steering_type.name.clone(),
+                    purpose: steering_type.purpose.clone(),
+                    criterions: steering_type
+                        .criterions
+                        .iter()
+                        .map(|c| format!("{}: {}", c.name, c.description))
+                        .collect(),
+                })
+                .collect(),
+        },
+    };
+
+    toml::to_string_pretty(&steering_toml).map_err(|e| {
+        ApplicationError::ConfigurationError(format!("Failed to serialize steering section: {}", e))
+    })
 }
 
 impl ProjectRepositoryTrait for ProjectRepository {
@@ -70,7 +122,13 @@ impl ProjectRepositoryTrait for ProjectRepository {
     fn save_config(&self, config: &ProjectConfig) -> Result<(), ApplicationError> {
         let config_path = self.path_manager.config_path(true);
 
+        // Never overwrite existing config.toml (even with --force)
+        if config_path.exists() {
+            return Ok(());
+        }
+
         // Create type-safe TOML structure
+        let steering_config = SteeringConfig::default_for_new_project();
         let toml_config = TomlConfig {
             memory: MemoryConfig {
                 types: config.memory_types.clone(),
@@ -87,6 +145,21 @@ impl ProjectRepositoryTrait for ProjectRepository {
                         .to_string(),
                 },
             },
+            steering: Some(SteeringSection {
+                types: steering_config
+                    .types
+                    .iter()
+                    .map(|steering_type| SteeringTypeToml {
+                        name: steering_type.name.clone(),
+                        purpose: steering_type.purpose.clone(),
+                        criterions: steering_type
+                            .criterions
+                            .iter()
+                            .map(|c| format!("{}: {}", c.name, c.description))
+                            .collect(),
+                    })
+                    .collect(),
+            }),
         };
 
         // Serialize to TOML
@@ -409,6 +482,86 @@ impl ProjectRepositoryTrait for ProjectRepository {
         }
 
         Ok(spec_path)
+    }
+
+    fn initialize_steering(&self) -> Result<(), ApplicationError> {
+        // Create .kiro/steering directory
+        let steering_dir = self.steering_dir();
+        fs::create_dir_all(&steering_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create steering directory: {}", e))
+        })?;
+
+        // Create .kiro/steering/draft directory
+        let draft_dir = self.draft_dir();
+        fs::create_dir_all(&draft_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create draft directory: {}", e))
+        })?;
+
+        Ok(())
+    }
+
+    fn create_steering_files(&self, config: &SteeringConfig) -> Result<(), ApplicationError> {
+        for steering_type in &config.types {
+            let file_path = self
+                .steering_dir()
+                .join(format!("{}.md", steering_type.name));
+
+            // Never overwrite existing files
+            if file_path.exists() {
+                continue;
+            }
+
+            // Generate simple markdown header only
+            let content = format!("# {}\n\n", steering_type.name);
+
+            fs::write(file_path, content).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to write steering file {}: {}",
+                    steering_type.name, e
+                ))
+            })?;
+        }
+        Ok(())
+    }
+
+    fn ensure_steering_config(&self) -> Result<(), ApplicationError> {
+        let config_path = self.path_manager.config_path(true);
+
+        if !config_path.exists() {
+            // Create new config with both memory and steering sections
+            let memory_config = ProjectConfig::default_for_new_project();
+            self.save_config(&memory_config)?;
+            return Ok(());
+        }
+
+        // Read existing config content
+        let existing_content = fs::read_to_string(&config_path).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to read existing config: {}", e))
+        })?;
+
+        // Check if steering section already exists
+        if existing_content.contains("[steering]")
+            || existing_content.contains("[[steering.types]]")
+        {
+            // Steering section already exists, nothing to do
+            return Ok(());
+        }
+
+        // Generate steering section to append
+        let steering_config = SteeringConfig::default_for_new_project();
+        let steering_section = generate_steering_section(&steering_config)?;
+
+        // Append steering section to existing content
+        let new_content = format!("{}\n{}", existing_content.trim(), steering_section);
+
+        fs::write(&config_path, new_content).map_err(|e| {
+            ApplicationError::FileSystemError(format!(
+                "Failed to update config with steering section: {}",
+                e
+            ))
+        })?;
+
+        Ok(())
     }
 }
 
