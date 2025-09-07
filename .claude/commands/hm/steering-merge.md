@@ -23,7 +23,7 @@ argument-hint: [--verbose] [--dry-run]
    - !`mkdir -p .kiro/steering/backup && cp .kiro/steering/*.md .kiro/steering/backup/ 2>/dev/null || true`
    
 3. **Categorize**: For each draft:
-   - Read content and analyze against criterions in @.kiro/config.toml
+   - Read content and analyze against criteria in @.kiro/config.toml
    - Match draft content to most appropriate steering type
    - Use $1 for verbose output of categorization logic
    
@@ -72,7 +72,7 @@ Key behaviors:
 
 **Will:**
 - Process all draft files in @.kiro/steering/draft/
-- Categorize based on criterions in @.kiro/config.toml
+- Categorize based on criteria in @.kiro/config.toml
 - Backup existing steering files before modification
 - Use MultiEdit for safe content appending
 - Provide verbose categorization reasoning when requested

@@ -26,7 +26,7 @@ struct SteeringSection {
 struct SteeringTypeToml {
     name: String,
     purpose: String,
-    criterions: Vec<String>,
+    criteria: Vec<String>,
 }
 
 pub struct ProjectRepository {
@@ -57,8 +57,8 @@ fn generate_steering_section(config: &SteeringConfig) -> Result<String, Applicat
                 .map(|steering_type| SteeringTypeToml {
                     name: steering_type.name.clone(),
                     purpose: steering_type.purpose.clone(),
-                    criterions: steering_type
-                        .criterions
+                    criteria: steering_type
+                        .criteria
                         .iter()
                         .map(|c| format!("{}: {}", c.name, c.description))
                         .collect(),
@@ -111,8 +111,8 @@ impl ProjectRepositoryTrait for ProjectRepository {
                     .map(|steering_type| SteeringTypeToml {
                         name: steering_type.name.clone(),
                         purpose: steering_type.purpose.clone(),
-                        criterions: steering_type
-                            .criterions
+                        criteria: steering_type
+                            .criteria
                             .iter()
                             .map(|c| format!("{}: {}", c.name, c.description))
                             .collect(),

@@ -242,7 +242,7 @@ The steering system provides transparent, version-controllable context managemen
 - **Criterion Parsing**: Parses "Name: Description" format from config.toml
 - **File Protection**: Never overwrites existing steering files or config.toml (even with --force)
 - **Smart Configuration**: Automatically adds [steering] section to existing config.toml when missing
-- **Template Generation**: Creates structured markdown files with criterions for easy categorization
+- **Template Generation**: Creates structured markdown files with criteria for easy categorization
 
 ### Testing Infrastructure
 - `tests/common/` provides shared test utilities
