@@ -8,7 +8,7 @@ impl ClaudeProcessLauncher {
         Self
     }
 
-    pub fn launch(&self, system_prompt: &str) -> Result<()> {
+    pub fn launch(&self, system_prompt: &str, no_danger: bool) -> Result<()> {
         // Check if claude command exists
         let claude_exists = Self::check_claude_availability()?;
 
@@ -26,10 +26,29 @@ impl ClaudeProcessLauncher {
             use std::os::unix::process::CommandExt;
 
             // On Unix systems, use exec to replace the current process
-            let error = Command::new("claude")
-                .arg("--append-system-prompt")
+            let mut cmd = Command::new("claude");
+
+            // Set environment variables
+            cmd.env("DISABLE_INTERLEAVED_THINKING", "1")
+                .env("DISABLE_MICROCOMPACT", "1")
+                .env("FORCE_AUTO_BACKGROUND_TASKS", "1")
+                .env("ENABLE_BACKGROUND_TASKS", "1")
+                .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
+
+            // Add arguments
+            cmd.arg("--append-system-prompt")
                 .arg(system_prompt)
-                .exec(); // This never returns if successful
+                .arg("--model")
+                .arg("opus")
+                .arg("--permission-mode")
+                .arg("plan");
+
+            // Conditionally add --dangerously-skip-permissions (add it unless --no-danger is specified)
+            if !no_danger {
+                cmd.arg("--dangerously-skip-permissions");
+            }
+
+            let error = cmd.exec(); // This never returns if successful
 
             // If we reach here, exec failed
             Err(anyhow::anyhow!("Failed to exec Claude Code: {}", error))
@@ -38,10 +57,29 @@ impl ClaudeProcessLauncher {
         #[cfg(not(unix))]
         {
             // Fallback for non-Unix systems
-            Command::new("claude")
-                .arg("--append-system-prompt")
+            let mut cmd = Command::new("claude");
+
+            // Set environment variables
+            cmd.env("DISABLE_INTERLEAVED_THINKING", "1")
+                .env("DISABLE_MICROCOMPACT", "1")
+                .env("FORCE_AUTO_BACKGROUND_TASKS", "1")
+                .env("ENABLE_BACKGROUND_TASKS", "1")
+                .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
+
+            // Add arguments
+            cmd.arg("--append-system-prompt")
                 .arg(system_prompt)
-                .spawn()
+                .arg("--model")
+                .arg("opus")
+                .arg("--permission-mode")
+                .arg("plan");
+
+            // Conditionally add --dangerously-skip-permissions (add it unless --no-danger is specified)
+            if !no_danger {
+                cmd.arg("--dangerously-skip-permissions");
+            }
+
+            cmd.spawn()
                 .map_err(|e| anyhow::anyhow!("Failed to spawn Claude Code: {}", e))?;
 
             Ok(())

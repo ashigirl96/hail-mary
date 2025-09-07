@@ -13,15 +13,9 @@ tokio = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 
-# MCP Protocol
-rmcp = { workspace = true }
-schemars = { workspace = true }
+# JSON/Configuration  
 serde = { workspace = true }
 serde_json = { workspace = true }
-
-# Database
-rusqlite = { workspace = true }
-refinery = { workspace = true }
 
 # TUI
 ratatui = { workspace = true }

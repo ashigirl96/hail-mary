@@ -31,7 +31,6 @@ impl InitCommand {
                 let items = vec![
                     "Created .kiro/".to_string(),
                     "Created .kiro/config.toml (configuration template)".to_string(),
-                    "Created .kiro/memory/".to_string(),
                     "Created .kiro/specs/".to_string(),
                     "Updated .gitignore".to_string(),
                 ];
@@ -80,7 +79,6 @@ mod tests {
 
         // Verify directory structure was created
         assert!(Path::new(".kiro").exists());
-        assert!(Path::new(".kiro/memory").exists());
         assert!(Path::new(".kiro/specs").exists());
         assert!(Path::new(".kiro/config.toml").exists());
         assert!(Path::new(".gitignore").exists());
@@ -136,8 +134,8 @@ mod tests {
         let gitignore_path = Path::new(".gitignore");
         assert!(gitignore_path.exists());
 
-        let content = fs::read_to_string(gitignore_path).unwrap();
-        assert!(content.contains(".kiro/memory/db.sqlite3"));
+        // With file-based steering system, gitignore may be empty
+        let _ = fs::read_to_string(gitignore_path).unwrap();
     }
 
     #[test]
@@ -155,7 +153,6 @@ mod tests {
         let content = fs::read_to_string(gitignore_path).unwrap();
         assert!(content.contains("# Existing content"));
         assert!(content.contains("node_modules/"));
-        assert!(content.contains(".kiro/memory/db.sqlite3"));
     }
 
     #[test]
@@ -168,7 +165,6 @@ mod tests {
 
         // Check all expected directories
         assert!(Path::new(".kiro").is_dir());
-        assert!(Path::new(".kiro/memory").is_dir());
         assert!(Path::new(".kiro/specs").is_dir());
 
         // Check config file
@@ -187,11 +183,8 @@ mod tests {
         let content = fs::read_to_string(config_path).unwrap();
 
         // Verify config contains expected sections
-        assert!(content.contains("[memory]"));
-        assert!(content.contains("types ="));
-        assert!(content.contains("tech"));
-        assert!(content.contains("project-tech"));
-        assert!(content.contains("domain"));
-        assert!(content.contains("instructions ="));
+        assert!(content.contains("[[steering.types]]"));
+        assert!(content.contains("name ="));
+        assert!(content.contains("purpose ="));
     }
 }

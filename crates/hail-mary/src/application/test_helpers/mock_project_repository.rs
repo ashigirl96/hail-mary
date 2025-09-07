@@ -1,6 +1,5 @@
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::ProjectRepository;
-use crate::domain::entities::memory::Memory;
 use crate::domain::entities::project::ProjectConfig;
 use crate::domain::entities::steering::SteeringConfig;
 use std::collections::HashMap;
@@ -159,7 +158,7 @@ impl ProjectRepository for MockProjectRepository {
         Ok(self.initialized)
     }
 
-    fn save_config(&self, _config: &ProjectConfig) -> Result<(), ApplicationError> {
+    fn save_config(&self) -> Result<(), ApplicationError> {
         if self.should_fail_next_operation {
             return Err(ApplicationError::ConfigurationError(
                 "Simulated save_config failure".to_string(),
@@ -235,20 +234,6 @@ impl ProjectRepository for MockProjectRepository {
             || self.created_features.contains(&name.to_string())
         {
             return Err(ApplicationError::FeatureAlreadyExists(name.to_string()));
-        }
-        Ok(())
-    }
-
-    fn save_document(
-        &self,
-        memory_type: &str,
-        _memories: &[Memory],
-    ) -> Result<(), ApplicationError> {
-        if self.should_fail_next_operation {
-            return Err(ApplicationError::DocumentGenerationError(format!(
-                "Failed to save document for type: {}",
-                memory_type
-            )));
         }
         Ok(())
     }

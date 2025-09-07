@@ -18,12 +18,6 @@ pub enum Commands {
         force: bool,
     },
 
-    /// Memory operations
-    Memory {
-        #[command(subcommand)]
-        command: MemoryCommands,
-    },
-
     /// Create a new feature specification
     New {
         /// Feature name in kebab-case
@@ -41,30 +35,10 @@ pub enum Commands {
     Complete,
 
     /// Launch Claude Code with Kiro specification context
-    Code,
-}
-
-#[derive(Subcommand, Debug)]
-pub enum MemoryCommands {
-    /// Start MCP server
-    Serve,
-
-    /// Generate documentation
-    Document {
-        /// Generate documentation for specific memory type
-        #[arg(short = 't', long = "type")]
-        memory_type: Option<String>,
-    },
-
-    /// Reindex database
-    Reindex {
-        /// Run in dry-run mode (no changes)
+    Code {
+        /// Skip the dangerous permissions flag (--dangerously-skip-permissions)
         #[arg(long)]
-        dry_run: bool,
-
-        /// Verbose output
-        #[arg(short, long)]
-        verbose: bool,
+        no_danger: bool,
     },
 }
 
@@ -91,10 +65,6 @@ impl Commands {
         matches!(self, Commands::New { .. })
     }
 
-    pub fn is_memory(&self) -> bool {
-        matches!(self, Commands::Memory { .. })
-    }
-
     pub fn is_completion(&self) -> bool {
         matches!(self, Commands::Completion { .. })
     }
@@ -104,7 +74,7 @@ impl Commands {
     }
 
     pub fn is_code(&self) -> bool {
-        matches!(self, Commands::Code)
+        matches!(self, Commands::Code { .. })
     }
 }
 
@@ -123,44 +93,16 @@ impl Commands {
         }
     }
 
-    pub fn get_memory_command(&self) -> Option<&MemoryCommands> {
-        match self {
-            Commands::Memory { command } => Some(command),
-            _ => None,
-        }
-    }
-
     pub fn get_completion_shell(&self) -> Option<&Shell> {
         match self {
             Commands::Completion { shell } => Some(shell),
             _ => None,
         }
     }
-}
 
-impl MemoryCommands {
-    pub fn is_serve(&self) -> bool {
-        matches!(self, MemoryCommands::Serve)
-    }
-
-    pub fn is_document(&self) -> bool {
-        matches!(self, MemoryCommands::Document { .. })
-    }
-
-    pub fn is_reindex(&self) -> bool {
-        matches!(self, MemoryCommands::Reindex { .. })
-    }
-
-    pub fn get_document_type(&self) -> Option<&str> {
+    pub fn get_code_no_danger(&self) -> Option<bool> {
         match self {
-            MemoryCommands::Document { memory_type } => memory_type.as_deref(),
-            _ => None,
-        }
-    }
-
-    pub fn get_reindex_options(&self) -> Option<(bool, bool)> {
-        match self {
-            MemoryCommands::Reindex { dry_run, verbose } => Some((*dry_run, *verbose)),
+            Commands::Code { no_danger } => Some(*no_danger),
             _ => None,
         }
     }
@@ -192,94 +134,20 @@ mod tests {
     }
 
     #[test]
-    fn test_cli_parse_memory_serve() {
-        let cli = Cli::parse_from(["hail-mary", "memory", "serve"]);
-        assert!(cli.command.is_memory());
-
-        let memory_cmd = cli.command.get_memory_command().unwrap();
-        assert!(memory_cmd.is_serve());
-    }
-
-    #[test]
-    fn test_cli_parse_memory_document() {
-        let cli = Cli::parse_from(["hail-mary", "memory", "document"]);
-        assert!(cli.command.is_memory());
-
-        let memory_cmd = cli.command.get_memory_command().unwrap();
-        assert!(memory_cmd.is_document());
-        assert_eq!(memory_cmd.get_document_type(), None);
-    }
-
-    #[test]
-    fn test_cli_parse_memory_document_with_type() {
-        let cli = Cli::parse_from(["hail-mary", "memory", "document", "--type", "tech"]);
-        assert!(cli.command.is_memory());
-
-        let memory_cmd = cli.command.get_memory_command().unwrap();
-        assert!(memory_cmd.is_document());
-        assert_eq!(memory_cmd.get_document_type(), Some("tech"));
-    }
-
-    #[test]
-    fn test_cli_parse_memory_reindex() {
-        let cli = Cli::parse_from(["hail-mary", "memory", "reindex"]);
-        assert!(cli.command.is_memory());
-
-        let memory_cmd = cli.command.get_memory_command().unwrap();
-        assert!(memory_cmd.is_reindex());
-        assert_eq!(memory_cmd.get_reindex_options(), Some((false, false)));
-    }
-
-    #[test]
-    fn test_cli_parse_memory_reindex_with_options() {
-        let cli = Cli::parse_from(["hail-mary", "memory", "reindex", "--dry-run", "--verbose"]);
-        assert!(cli.command.is_memory());
-
-        let memory_cmd = cli.command.get_memory_command().unwrap();
-        assert!(memory_cmd.is_reindex());
-        assert_eq!(memory_cmd.get_reindex_options(), Some((true, true)));
-    }
-
-    #[test]
     fn test_commands_is_methods() {
         let init_cmd = Commands::Init { force: false };
         assert!(init_cmd.is_init());
         assert!(!init_cmd.is_new());
-        assert!(!init_cmd.is_memory());
 
         let new_cmd = Commands::New {
             name: "test".to_string(),
         };
         assert!(!new_cmd.is_init());
         assert!(new_cmd.is_new());
-        assert!(!new_cmd.is_memory());
 
-        let memory_cmd = Commands::Memory {
-            command: MemoryCommands::Serve,
-        };
-        assert!(!memory_cmd.is_init());
-        assert!(!memory_cmd.is_new());
-        assert!(memory_cmd.is_memory());
-    }
-
-    #[test]
-    fn test_memory_commands_is_methods() {
-        let serve_cmd = MemoryCommands::Serve;
-        assert!(serve_cmd.is_serve());
-        assert!(!serve_cmd.is_document());
-        assert!(!serve_cmd.is_reindex());
-
-        let doc_cmd = MemoryCommands::Document { memory_type: None };
-        assert!(!doc_cmd.is_serve());
-        assert!(doc_cmd.is_document());
-        assert!(!doc_cmd.is_reindex());
-
-        let reindex_cmd = MemoryCommands::Reindex {
-            dry_run: false,
-            verbose: false,
-        };
-        assert!(!reindex_cmd.is_serve());
-        assert!(!reindex_cmd.is_document());
-        assert!(reindex_cmd.is_reindex());
+        let code_cmd = Commands::Code { no_danger: false };
+        assert!(!code_cmd.is_init());
+        assert!(!code_cmd.is_new());
+        assert!(code_cmd.is_code());
     }
 }
