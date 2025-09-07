@@ -9,14 +9,16 @@ Complete removal of Memory MCP components from the hail-mary codebase, as the pr
 - Files to update: ~10 files  
 - Dependencies to remove: 4 (rmcp, rusqlite, refinery, schemars)
 
-## Phase 1: Remove CLI Integration
+## Phase 1: Remove CLI Integration ✅
 Removes command-line interface for memory commands while maintaining compilation.
 
-- [ ] Update `src/main.rs` to remove MemoryCommand handling
-- [ ] Update `src/cli/args.rs` to remove MemoryCommands enum
-- [ ] Delete `src/cli/commands/memory.rs` file
-- [ ] Update main.rs tests to remove memory command tests
-- [ ] Update CLI integration tests that import memory components
+- [x] Update `src/main.rs` to remove MemoryCommand handling
+- [x] Update `src/cli/args.rs` to remove MemoryCommands enum
+- [x] Delete `src/cli/commands/memory.rs` file
+- [x] Update main.rs tests to remove memory command tests
+- [x] Update CLI integration tests that import memory components
+- [x] Update `src/cli/commands/mod.rs` to remove memory module export
+- [x] Update `src/cli/mod.rs` to remove MemoryCommand and MemoryCommands exports
 
 ## Phase 2: Remove Application Layer
 Removes business logic and use cases related to memory management.

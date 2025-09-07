@@ -1,9 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
-use hail_mary::cli::args::{Cli, Commands, MemoryCommands};
-use hail_mary::cli::commands::{
-    CodeCommand, CompleteCommand, InitCommand, MemoryCommand, NewCommand, completion,
-};
+use hail_mary::cli::args::{Cli, Commands};
+use hail_mary::cli::commands::{CodeCommand, CompleteCommand, InitCommand, NewCommand, completion};
 use hail_mary::cli::formatters::format_error;
 use std::process;
 
@@ -26,16 +24,6 @@ fn run() -> Result<()> {
             let command = NewCommand::new(name);
             command.execute()?;
         }
-        Commands::Memory { command } => {
-            let memory_command = match command {
-                MemoryCommands::Serve => MemoryCommand::Serve,
-                MemoryCommands::Document { memory_type } => MemoryCommand::Document { memory_type },
-                MemoryCommands::Reindex { dry_run, verbose } => {
-                    MemoryCommand::Reindex { dry_run, verbose }
-                }
-            };
-            memory_command.execute()?;
-        }
         Commands::Completion { shell } => {
             completion::handle_completion(&shell)?;
         }
@@ -55,14 +43,9 @@ fn run() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hail_mary::application::repositories::memory_repository::MemoryRepository;
-    use hail_mary::domain::entities::memory::Memory;
-    use hail_mary::domain::value_objects::confidence::Confidence;
-    use hail_mary::infrastructure::repositories::memory::SqliteMemoryRepository;
     use std::env;
     use std::fs;
     use std::path::Path;
-    use uuid::Uuid;
 
     use std::sync::{Mutex, MutexGuard};
 
@@ -119,7 +102,6 @@ mod tests {
                 // Verify directory structure was created
                 assert!(Path::new(".kiro").exists());
                 assert!(Path::new(".kiro/config.toml").exists());
-                assert!(Path::new(".kiro/memory").exists());
                 assert!(Path::new(".kiro/specs").exists());
             }
             _ => panic!("Expected init command"),
@@ -218,162 +200,6 @@ mod tests {
                 );
             }
             _ => panic!("Expected new command"),
-        }
-    }
-
-    #[test]
-    fn test_main_memory_serve() {
-        let _test_dir = TestDirectory::new();
-
-        // Initialize project first
-        InitCommand::new(false).execute().unwrap();
-
-        // Test memory serve command parsing
-        let args = vec!["hail-mary", "memory", "serve"];
-        let cli = Cli::parse_from(args);
-
-        match cli.command {
-            Commands::Memory { command } => {
-                match command {
-                    MemoryCommands::Serve => {
-                        // In real execution, this would start the MCP server
-                        // For testing, we just verify the command parses correctly
-                        // No assertion needed - successful parsing is verification enough
-                    }
-                    _ => panic!("Expected serve subcommand"),
-                }
-            }
-            _ => panic!("Expected memory command"),
-        }
-    }
-
-    #[test]
-    fn test_main_memory_document() {
-        let _test_dir = TestDirectory::new();
-
-        // Initialize project and create test memory
-        InitCommand::new(false).execute().unwrap();
-
-        // Create a test database with memories
-        let db_path = ".kiro/memory/memories.db";
-        let mut repo = SqliteMemoryRepository::new(db_path).unwrap();
-
-        let memory = Memory {
-            id: Uuid::new_v4(),
-            memory_type: "tech".to_string(),
-            title: "Test Memory".to_string(),
-            content: "Test content".to_string(),
-            tags: vec!["test".to_string()],
-            confidence: Confidence::new(0.9).unwrap(),
-            reference_count: 0,
-            created_at: chrono::Utc::now(),
-            last_accessed: None,
-            deleted: false,
-        };
-        repo.save(&memory).unwrap();
-
-        // Test memory document command
-        let args = vec!["hail-mary", "memory", "document"];
-        let cli = Cli::parse_from(args);
-
-        match cli.command {
-            Commands::Memory { command } => {
-                match command {
-                    MemoryCommands::Document { memory_type } => {
-                        assert!(memory_type.is_none());
-
-                        let memory_command = MemoryCommand::Document { memory_type };
-                        let result = memory_command.execute();
-                        assert!(result.is_ok());
-
-                        // Verify documentation was created for each type
-                        // When no type is specified, documents are created for all types
-                        assert!(Path::new(".kiro/memory/tech.md").exists());
-                        let doc = fs::read_to_string(".kiro/memory/tech.md").unwrap();
-                        // The document should contain the memory title
-                        // Note: Documents for empty memory types still get created
-                        assert!(doc.contains("tech Memories") || doc.contains("Test Memory"));
-                    }
-                    _ => panic!("Expected document subcommand"),
-                }
-            }
-            _ => panic!("Expected memory command"),
-        }
-    }
-
-    #[test]
-    fn test_main_memory_document_with_type() {
-        let _test_dir = TestDirectory::new();
-
-        // Initialize project
-        InitCommand::new(false).execute().unwrap();
-
-        // Test memory document with type filter
-        let args = vec!["hail-mary", "memory", "document", "--type", "tech"];
-        let cli = Cli::parse_from(args);
-
-        match cli.command {
-            Commands::Memory { command } => match command {
-                MemoryCommands::Document { memory_type } => {
-                    assert_eq!(memory_type, Some("tech".to_string()));
-                }
-                _ => panic!("Expected document subcommand"),
-            },
-            _ => panic!("Expected memory command"),
-        }
-    }
-
-    #[test]
-    fn test_main_memory_reindex() {
-        let _test_dir = TestDirectory::new();
-
-        // Initialize project
-        InitCommand::new(false).execute().unwrap();
-
-        // Create a test database
-        let db_path = ".kiro/memory/memories.db";
-        let _ = SqliteMemoryRepository::new(db_path).unwrap();
-
-        // Test memory reindex command
-        let args = vec!["hail-mary", "memory", "reindex"];
-        let cli = Cli::parse_from(args);
-
-        match cli.command {
-            Commands::Memory { command } => match command {
-                MemoryCommands::Reindex { dry_run, verbose } => {
-                    assert!(!dry_run);
-                    assert!(!verbose);
-
-                    let memory_command = MemoryCommand::Reindex { dry_run, verbose };
-                    let result = memory_command.execute();
-                    assert!(result.is_ok());
-                }
-                _ => panic!("Expected reindex subcommand"),
-            },
-            _ => panic!("Expected memory command"),
-        }
-    }
-
-    #[test]
-    fn test_main_memory_reindex_with_flags() {
-        let _test_dir = TestDirectory::new();
-
-        // Initialize project
-        InitCommand::new(false).execute().unwrap();
-
-        // Test memory reindex with flags
-        let args = vec!["hail-mary", "memory", "reindex", "--dry-run", "--verbose"];
-        let cli = Cli::parse_from(args);
-
-        match cli.command {
-            Commands::Memory { command } => match command {
-                MemoryCommands::Reindex { dry_run, verbose } => {
-                    assert!(dry_run);
-                    assert!(verbose);
-                }
-                _ => panic!("Expected reindex subcommand"),
-            },
-            _ => panic!("Expected memory command"),
         }
     }
 
