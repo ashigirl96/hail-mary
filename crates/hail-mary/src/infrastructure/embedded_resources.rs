@@ -14,16 +14,11 @@ impl EmbeddedSlashCommands {
     /// Steering command documentation
     const STEERING: &'static str = include_str!("../../../../.claude/commands/hm/steering.md");
 
-    /// Steering merge command documentation
-    const STEERING_MERGE: &'static str =
-        include_str!("../../../../.claude/commands/hm/steering-merge.md");
-
     /// Returns all embedded slash command files as (filename, content) pairs
     pub fn get_all() -> Vec<(&'static str, &'static str)> {
         vec![
             ("steering-remember.md", Self::STEERING_REMEMBER),
             ("steering.md", Self::STEERING),
-            ("steering-merge.md", Self::STEERING_MERGE),
         ]
     }
 }
@@ -35,7 +30,7 @@ mod tests {
     #[test]
     fn test_embedded_files_not_empty() {
         let files = EmbeddedSlashCommands::get_all();
-        assert_eq!(files.len(), 3);
+        assert_eq!(files.len(), 2);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");
