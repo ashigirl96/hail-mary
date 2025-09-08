@@ -59,7 +59,7 @@
 pub struct SteeringType {
     pub name: String,
     pub purpose: String,
-    pub criterions: Vec<Criterion>,
+    pub criteria: Vec<Criterion>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -80,7 +80,7 @@ impl SteeringConfig {
                 SteeringType {
                     name: "product".to_string(),
                     purpose: "Product overview and value proposition".to_string(),
-                    criterions: vec![
+                    criteria: vec![
                         Criterion {
                             name: "Product Overview".to_string(),
                             description: "Brief description of what the product is".to_string(),
@@ -102,7 +102,7 @@ impl SteeringConfig {
                 SteeringType {
                     name: "tech".to_string(),
                     purpose: "Technical stack and development environment".to_string(),
-                    criterions: vec![
+                    criteria: vec![
                         Criterion {
                             name: "Architecture".to_string(),
                             description: "High-level system design".to_string(),
@@ -136,7 +136,7 @@ impl SteeringConfig {
                 SteeringType {
                     name: "structure".to_string(),
                     purpose: "Code organization and project structure patterns".to_string(),
-                    criterions: vec![
+                    criteria: vec![
                         Criterion {
                             name: "Root Directory Organization".to_string(),
                             description: "Top-level structure with descriptions".to_string(),
@@ -230,10 +230,10 @@ impl ProjectRepository {
             
             // Generate simple template
             let content = format!(
-                "# {}\n\n{}\n\n## Criterions\n{}\n",
+                "# {}\n\n{}\n\n## criteria\n{}\n",
                 steering_type.name,
                 steering_type.purpose,
-                steering_type.criterions.iter()
+                steering_type.criteria.iter()
                     .map(|c| format!("- {}: {}", c.name, c.description))
                     .collect::<Vec<_>>()
                     .join("\n")
@@ -371,7 +371,7 @@ argument-hint: [--verbose] [--dry-run]
    - !`mkdir -p .kiro/steering/backup && cp .kiro/steering/*.md .kiro/steering/backup/ 2>/dev/null`
    
 3. **Categorize**: For each draft:
-   - Read content and analyze against criterions in @.kiro/config.toml
+   - Read content and analyze against criteria in @.kiro/config.toml
    - Match draft content to most appropriate steering type
    - Use $1 for verbose output of categorization logic
    
@@ -449,7 +449,7 @@ Key behaviors:
 [[steering.types]]
 name = "product"
 purpose = "Product overview and value proposition"
-criterions = [
+criteria = [
     "Product Overview: Brief description of what the product is",
     "Core Features: Bulleted list of main capabilities",
     "Target Use Case: Specific scenarios the product addresses",
@@ -459,7 +459,7 @@ criterions = [
 [[steering.types]]
 name = "tech"
 purpose = "Technical stack and development environment"
-criterions = [
+criteria = [
     "Architecture: High-level system design",
     "Frontend: Frameworks, libraries, build tools (if applicable)",
     "Backend: Language, framework, server technology (if applicable)",
@@ -472,7 +472,7 @@ criterions = [
 [[steering.types]]
 name = "structure"
 purpose = "Code organization and project structure patterns"
-criterions = [
+criteria = [
     "Root Directory Organization: Top-level structure with descriptions",
     "Subdirectory Structures: Detailed breakdown of key directories",
     "Code Organization Patterns: How code is structured",
@@ -548,5 +548,5 @@ criterions = [
 
 - Lazy loading of steering files
 - Batch processing for multiple drafts
-- Caching of configuration and criterions
+- Caching of configuration and criteria
 - Parallel categorization when possible

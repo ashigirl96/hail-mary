@@ -2,20 +2,20 @@
 
 ## Overview
 
-Hail-Mary is a sophisticated Rust CLI application that implements a Memory MCP (Model Context Protocol) server and Kiro project specification management system. The project demonstrates modern Rust architecture patterns with a focus on performance, reliability, and maintainability.
+Hail-Mary is a sophisticated Rust CLI application focused on Kiro project specification management and file-based context steering. The project demonstrates clean Rust architecture patterns with emphasis on developer experience and AI integration.
 
-**Primary Purpose**: CLI tool for Memory MCP server and Rust project specification management
-**Key Features**: Memory database with FTS search, MCP protocol implementation, configuration management
-**Target Use Cases**: AI model context management, technical knowledge storage, project documentation
+**Primary Purpose**: CLI tool for specification-driven development and project context management
+**Key Features**: Interactive specification management, steering system, Claude Code integration, TUI interfaces
+**Target Use Cases**: Spec-driven development workflows, project context management, AI-assisted development
 
 ## 🏗️ System Architecture
 
 ### Architectural Patterns
-- **Hexagonal Architecture**: Clear separation between domain logic and infrastructure
-- **Repository Pattern**: Abstracted data access with multiple implementations
-- **Service Layer**: Business logic encapsulation with validation
+- **Clean Architecture**: Clear separation between domain logic and infrastructure
+- **Repository Pattern**: Abstracted file system operations through trait interfaces
+- **Use Case Pattern**: Business logic encapsulation with validation
 - **Command Pattern**: CLI commands with structured execution
-- **Builder Pattern**: Fluent configuration and object construction
+- **Value Objects**: Domain-specific types for configuration and system prompts
 
 ### Core Components
 
@@ -40,60 +40,65 @@ flowchart TB
         Init["InitCommand<br/>Project setup"]
         New["NewCommand<br/>Spec creation"]
         Code["CodeCommand<br/>Claude Code integration"]
-        Memory["MemoryCommands<br/>MCP operations"]
+        Complete["CompleteCommand<br/>Spec archival"]
+        Shell["CompletionCommand<br/>Shell completions"]
     end
     
-    subgraph SVC ["🔧 Service Layer"]
-        MemSvc["MemoryService<br/>Business logic & validation"]
-        McpSvc["MemoryMcpService<br/>MCP protocol implementation"]
+    subgraph UC ["🔧 Use Case Layer"]
+        InitUC["initialize_project<br/>Project initialization"]
+        CreateUC["create_feature<br/>Feature specification"]
+        CompleteUC["complete_features<br/>Spec archival"]
+        LaunchUC["launch_claude_with_spec<br/>Claude Code integration"]
     end
     
     subgraph REPO ["📦 Repository Layer"]
-        RepoTrait["MemoryRepository<br/>(trait interface)"]
-        SqliteRepo["SqliteMemoryRepository<br/>(production)"]
-        InMemRepo["InMemoryRepository<br/>(testing)"]
+        ProjectRepo["ProjectRepository<br/>(trait interface)"]
+        FsRepo["FilesystemProjectRepository<br/>(implementation)"]
     end
     
-    subgraph DATA ["🗄️ Data Layer"]
-        DB["SQLite Database<br/>with FTS5 search"]
-        Migration["Migration System<br/>(Refinery)"]
-        Config["TOML Configuration<br/>Files"]
+    subgraph INFRA ["🗄️ Infrastructure Layer"]
+        PathMgr["PathManager<br/>Path resolution"]
+        ProcessLauncher["ClaudeProcessLauncher<br/>TTY management"]
+        TUI["SpecSelector<br/>Interactive interface"]
+        Config["TOML Configuration<br/>Steering system"]
     end
     
     Main --> Init
     Main --> New
     Main --> Code
-    Main --> Memory
+    Main --> Complete
+    Main --> Shell
     
-    Init --> MemSvc
-    New --> MemSvc
-    Code --> MemSvc
-    Memory --> MemSvc
-    Memory --> McpSvc
+    Init --> InitUC
+    New --> CreateUC
+    Code --> LaunchUC
+    Complete --> CompleteUC
     
-    MemSvc --> RepoTrait
-    McpSvc --> RepoTrait
+    InitUC --> ProjectRepo
+    CreateUC --> ProjectRepo
+    LaunchUC --> ProjectRepo
+    CompleteUC --> ProjectRepo
     
-    RepoTrait -.-> SqliteRepo
-    RepoTrait -.-> InMemRepo
+    ProjectRepo -.-> FsRepo
     
-    SqliteRepo --> DB
-    SqliteRepo --> Migration
-    MemSvc --> Config
+    FsRepo --> PathMgr
+    FsRepo --> Config
+    LaunchUC --> ProcessLauncher
+    LaunchUC --> TUI
     
     classDef cli fill:#272822,stroke:#66D9EF,stroke-width:2px;
     classDef command fill:#272822,stroke:#A6E22E,stroke-width:2px;
-    classDef service fill:#272822,stroke:#F92672,stroke-width:2px;
+    classDef usecase fill:#272822,stroke:#F92672,stroke-width:2px;
     classDef repo fill:#272822,stroke:#AE81FF,stroke-width:2px;
-    classDef data fill:#272822,stroke:#FD971F,stroke-width:2px;
+    classDef infra fill:#272822,stroke:#FD971F,stroke-width:2px;
     classDef interface fill:#272822,stroke:#66D9EF,stroke-width:2px,stroke-dasharray: 5 5;
     
     class Main cli;
-    class Init,New,Code,Memory command;
-    class MemSvc,McpSvc service;
-    class RepoTrait interface;
-    class SqliteRepo,InMemRepo repo;
-    class DB,Migration,Config data;
+    class Init,New,Code,Complete,Shell command;
+    class InitUC,CreateUC,CompleteUC,LaunchUC usecase;
+    class ProjectRepo interface;
+    class FsRepo repo;
+    class PathMgr,ProcessLauncher,TUI,Config infra;
 ```
 
 ## 📁 Directory Structure
@@ -112,39 +117,39 @@ The project uses a Cargo workspace structure for better modularity and future ex
 │   │       ├── lib.rs                # Library exports for integration tests
 │   │       ├── domain/               # Pure business logic
 │   │       │   ├── entities/        # Core domain objects
-│   │       │   │   ├── memory.rs    # Memory entity with business rules
-│   │       │   │   └── project.rs   # Project configuration entity
+│   │       │   │   ├── project.rs   # Project configuration entity
+│   │       │   │   └── steering.rs  # Steering system entities
 │   │       │   ├── value_objects/   # Domain-specific types
-│   │       │   │   └── confidence.rs # Confidence value (0.0-1.0)
+│   │       │   │   └── system_prompt.rs # System prompt for Claude Code
 │   │       │   └── errors.rs        # Domain errors
 │   │       ├── application/          # Business logic orchestration
 │   │       │   ├── use_cases/       # Application services
 │   │       │   │   ├── initialize_project.rs
 │   │       │   │   ├── create_feature.rs
-│   │       │   │   ├── remember_memory.rs
-│   │       │   │   └── recall_memory.rs
+│   │       │   │   ├── complete_features.rs
+│   │       │   │   └── launch_claude_with_spec.rs
 │   │       │   ├── repositories/    # Repository trait definitions
-│   │       │   │   ├── memory_repository.rs
 │   │       │   │   └── project_repository.rs
+│   │       │   ├── test_helpers/    # Testing utilities
 │   │       │   └── errors.rs        # Application errors
 │   │       ├── cli/                 # Command-line interface
 │   │       │   ├── commands/        # Command implementations
 │   │       │   │   ├── init.rs     # Project initialization
 │   │       │   │   ├── new.rs      # Feature creation
 │   │       │   │   ├── complete.rs # Complete features with TUI
-│   │       │   │   └── memory.rs   # Memory subcommands
+│   │       │   │   ├── completion.rs # Shell completion generation
+│   │       │   │   └── code.rs     # Claude Code integration
 │   │       │   ├── formatters.rs   # Output formatting
 │   │       │   └── args.rs         # CLI argument parsing
 │   │       └── infrastructure/      # External services
 │   │           ├── repositories/    # Repository implementations
-│   │           │   ├── memory.rs   # SQLite memory repository
 │   │           │   └── project.rs  # Filesystem project repository
-│   │           ├── mcp/            # MCP protocol
-│   │           │   └── server.rs   # MCP server implementation
 │   │           ├── filesystem/      # File system operations
 │   │           │   └── path_manager.rs
-│   │           └── migrations/      # Database migrations
-│   │               └── embedded.rs  # Embedded migration system
+│   │           ├── process/         # Process management
+│   │           │   └── claude_launcher.rs # Claude Code launcher
+│   │           └── tui/            # Terminal user interface
+│   │               └── spec_selector.rs # Specification selector
 │   └── anthropic-client/             # Anthropic API OAuth client
 │       ├── Cargo.toml                # OAuth client dependencies
 │       ├── src/
@@ -155,16 +160,10 @@ The project uses a Cargo workspace structure for better modularity and future ex
 
 ### External Organization
 ```
-migrations/               # Database schema management
-├── V001__initial_schema.sql    # Core tables and indexes
-├── V002__add_fts5_index.sql   # Full-text search setup
-└── V003__add_triggers.sql     # Automatic FTS maintenance
-
 tests/                   # Integration tests
 ├── common/             # Shared test utilities
 ├── integration/        # Cross-module integration tests
-├── new_command.rs      # Command testing
-└── integration_repository_test.rs  # Database integration tests
+└── new_command.rs      # Command testing
 
 .claude/                 # Claude Code integration
 └── commands/           # Custom slash commands for Claude Code
@@ -172,6 +171,12 @@ tests/                   # Integration tests
         ├── steering.md          # Main steering management command
         ├── steering-remember.md  # Draft capture command
         └── steering-merge.md     # Merge steering drafts command
+
+.kiro/                  # Project specification management
+├── steering/           # Steering system files
+├── specs/              # Feature specifications
+├── archive/            # Archived completed specs
+└── config.toml         # Project configuration
 ```
 
 ## 🔧 Core Components Detail
@@ -186,63 +191,64 @@ tests/                   # Integration tests
 
 **Command Structure**:
 ```rust
-Commands::Init(InitCommand)        // Project initialization
-Commands::New(NewCommand)          // Specification creation
-Commands::Code(CodeCommand)        // Claude Code integration
-Commands::Memory {
-    MemoryCommands::Serve          // Start MCP server
-    MemoryCommands::Document       // Generate documentation
-    MemoryCommands::Reindex        // Database optimization
-}
+Commands::Init                     // Project initialization
+Commands::New { name }             // Specification creation
+Commands::Code { no_danger }       // Claude Code integration
+Commands::Complete                 // Mark specifications as complete
+Commands::Completion { shell }     // Generate shell completions
 ```
 
-### Memory Domain Model (`models/memory.rs`)
-**Core Entity**: `Memory` struct with rich metadata
-**Memory Types**: Tech, ProjectTech, Domain (extensible enum)
+### Project Domain Model (`domain/entities/project.rs`)
+**Core Entity**: Project configuration and specification management
+**Steering Types**: Product, Tech, Structure (file-based context system)
 **Key Features**:
-- UUID-based identification
-- Builder pattern for fluent construction
-- SQLite integration with custom row mapping
-- Confidence scoring and reference tracking
-- Logical deletion support
+- TOML-based configuration management
+- Specification template generation
+- Steering system integration
+- Path management and validation
 
-**Data Structure**:
+**Configuration Structure**:
 ```rust
-pub struct Memory {
-    pub id: String,                    // UUID v4
-    pub memory_type: MemoryType,       // Categorization
-    pub title: String,                 // Human-readable title
-    pub tags: Vec<String>,             // Searchable metadata
-    pub content: String,               // Main content
-    pub reference_count: u32,          // Usage tracking
-    pub confidence: f32,               // Quality score (0.0-1.0)
-    pub created_at: i64,              // Creation timestamp
-    pub last_accessed: Option<i64>,   // Access tracking
-    pub deleted: bool,                // Logical deletion
+pub struct ProjectConfig {
+    pub steering: SteeringConfig,      // Steering system configuration
+}
+
+pub struct SteeringConfig {
+    pub types: Vec<SteeringType>,      // Configured steering types
+}
+
+pub enum SteeringType {
+    Product,                           // Product overview
+    Tech,                             // Technology stack
+    Structure,                        // Code organization
 }
 ```
 
-### Configuration System (`models/kiro.rs`)
+### Configuration System (`.kiro/config.toml`)
 **Purpose**: Project configuration management with TOML
 **Key Features**:
-- Hierarchical configuration with defaults
+- Hierarchical steering configuration
 - Project root discovery (.kiro directory)
-- Memory type validation
-- Document output configuration
-- Database path management
+- Steering type validation
+- Criteria-based content organization
+- Path management for specifications
 
 **Configuration Hierarchy**:
 ```toml
-[memory]
-types = ["tech", "project-tech", "domain"]
-instructions = "Memory type descriptions"
+[[steering.types]]
+name = "product"
+purpose = "Product overview and value proposition"
+criteria = [
+    "Product Overview: Brief description of what the product is",
+    "Core Features: Bulleted list of main capabilities",
+    "Target Use Case: Specific scenarios the product addresses",
+    "Key Value Proposition: Unique benefits and differentiators",
+]
 
-[memory.document]
-output_dir = ".kiro/memory"
-format = "markdown"
-
-[memory.database]
-path = ".kiro/memory/db.sqlite3"
+[[steering.types]]
+name = "tech"
+purpose = "Technical stack and development environment"
+# ... additional criteria
 ```
 
 ### Kiro Specification Management (`commands/new.rs`)
@@ -323,38 +329,25 @@ pub trait MemoryRepository: Send {
 4. **Search Logic**: FTS queries with business rule filtering
 5. **Reference Tracking**: Async updates without blocking
 
-## 🗄️ Database Architecture
+## 📁 File System Architecture
 
-### Schema Design
-**Primary Table**: `memories` with comprehensive metadata
-**Search Index**: `memories_fts` using SQLite FTS5
-**Performance Indexes**: Type, reference count, creation time
-**Data Integrity**: Constraints, foreign keys, check constraints
+### Steering System Design
+**Primary Storage**: Markdown files in `.kiro/steering/` directory
+**Configuration**: TOML-based type definitions and criteria
+**Versioning**: Git-trackable files for team collaboration
+**Structure**: Hierarchical organization with clear naming conventions
 
-### Migration Strategy
-**Tool**: Refinery for versioned migrations
-**Approach**: Forward-only migrations with embedded SQL
-**Versioning**: V001, V002, V003 prefix convention
+### File Organization Strategy
+**Core Files**: `product.md`, `tech.md`, `structure.md` - always included in Claude Code sessions
+**Custom Files**: Additional domain-specific steering files based on project needs
+**Backup System**: Automatic backup creation before modifications
+**Template System**: Structured content generation based on configured criteria
 
-**Migration Sequence**:
-1. **V001**: Core schema with tables and basic indexes
-2. **V002**: FTS5 virtual table with Japanese tokenization support
-3. **V003**: Automatic triggers for FTS index maintenance
-
-### FTS5 Search Implementation
-**Tokenizer**: `porter unicode61` for multilingual support
-**Features**: Japanese text search, phrase queries, ranking
-**Maintenance**: Automatic via triggers (INSERT, UPDATE, DELETE)
-**Performance**: Indexed search with relevance ranking
-
-**Trigger System**:
-```sql
--- Automatic FTS index maintenance
-CREATE TRIGGER memories_ai AFTER INSERT ON memories    -- Add to FTS
-CREATE TRIGGER memories_au AFTER UPDATE ON memories    -- Update FTS
-CREATE TRIGGER memories_ad AFTER DELETE ON memories    -- Remove from FTS
-CREATE TRIGGER memories_soft_delete AFTER UPDATE       -- Handle logical deletion
-```
+### Path Management
+**PathManager**: Centralized path resolution for project discovery
+**Root Discovery**: Automatic `.kiro` directory detection
+**Safe Operations**: Validation and error handling for all file system operations
+**Cross-Platform**: Compatible path handling for Unix and Windows systems
 
 ## 🧪 Testing Architecture
 
@@ -367,46 +360,46 @@ CREATE TRIGGER memories_soft_delete AFTER UPDATE       -- Handle logical deletio
 **Unit Tests**: Embedded in source files (`#[cfg(test)]`)
 **Integration Tests**: Separate `tests/` directory
 **Test Utilities**: Shared infrastructure in `tests/common/`
-**Database Tests**: Temporary SQLite databases
+**Filesystem Tests**: Temporary directories with proper cleanup
 
 ### Key Testing Patterns
 **Repository Testing**:
-- Abstract trait testing for both implementations
-- Transaction behavior validation
-- FTS search functionality including Japanese
-- Trigger system verification
+- Trait-based testing for filesystem operations
+- File creation and modification validation
+- Configuration parsing and validation
+- Path management and project discovery
 
-**Service Testing**:
+**Use Case Testing**:
 - Business logic validation
 - Error condition handling
-- Async operation testing
-- Configuration validation
+- File system operation testing
+- Configuration management validation
 
 **Integration Testing**:
-- End-to-end workflows
-- Real database operations
-- Multi-language content
-- Performance characteristics
+- End-to-end command workflows
+- Real filesystem operations
+- TUI interaction testing
+- Process management validation
 
 ## 🚀 Concurrency & Performance
 
 ### Async Design
-**Runtime**: Tokio with full feature set
-**Patterns**: Async/await throughout service layer
-**Concurrency**: Non-blocking reference count updates
-**Resource Management**: Connection pooling with Arc<Mutex<>>
+**Runtime**: Tokio with full feature set for future extensibility
+**Patterns**: Async-ready architecture in use case layer
+**Concurrency**: Process management for Claude Code integration
+**Resource Management**: Safe file system operations with proper error handling
 
 ### Performance Optimizations
-**Database**: SQLite WAL mode, optimized pragmas
-**Indexing**: Strategic indexes for common queries
-**Caching**: In-memory repository for testing performance
-**Batch Operations**: Transaction-based bulk operations
+**File System**: Efficient path resolution and caching
+**Template Generation**: Minimal string allocations in content generation
+**Process Management**: TTY-aware process launching without blocking
+**Configuration**: TOML parsing with caching for repeated access
 
 ### Resource Management
 **Memory**: Efficient string handling, minimal cloning
-**Database**: Connection reuse, prepared statements
-**Threading**: Safe sharing with Arc<Mutex<>> patterns
-**Error Handling**: Zero-cost error propagation
+**File System**: Proper file handle management and cleanup
+**Process**: Safe process spawning and TTY management
+**Error Handling**: Zero-cost error propagation with anyhow
 
 ## 🔗 Infrastructure Layer Extensions
 

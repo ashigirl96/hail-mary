@@ -4,7 +4,7 @@ use std::fmt;
 pub struct SteeringType {
     pub name: String,
     pub purpose: String,
-    pub criterions: Vec<Criterion>,
+    pub criteria: Vec<Criterion>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -46,7 +46,7 @@ impl SteeringConfig {
                 SteeringType {
                     name: "product".to_string(),
                     purpose: "Product overview and value proposition".to_string(),
-                    criterions: vec![
+                    criteria: vec![
                         Criterion {
                             name: "Product Overview".to_string(),
                             description: "Brief description of what the product is".to_string(),
@@ -68,7 +68,7 @@ impl SteeringConfig {
                 SteeringType {
                     name: "tech".to_string(),
                     purpose: "Technical stack and development environment".to_string(),
-                    criterions: vec![
+                    criteria: vec![
                         Criterion {
                             name: "Architecture".to_string(),
                             description: "High-level system design".to_string(),
@@ -104,7 +104,7 @@ impl SteeringConfig {
                 SteeringType {
                     name: "structure".to_string(),
                     purpose: "Code organization and project structure patterns".to_string(),
-                    criterions: vec![
+                    criteria: vec![
                         Criterion {
                             name: "Root Directory Organization".to_string(),
                             description: "Top-level structure with descriptions".to_string(),
@@ -141,11 +141,11 @@ impl SteeringConfig {
         purpose: &str,
         criterion_strings: Vec<String>,
     ) -> Result<SteeringType, String> {
-        let mut criterions = Vec::new();
+        let mut criteria = Vec::new();
 
         for criterion_str in criterion_strings {
             if let Some(criterion) = Criterion::parse_from_string(&criterion_str) {
-                criterions.push(criterion);
+                criteria.push(criterion);
             } else {
                 return Err(format!("Invalid criterion format: {}", criterion_str));
             }
@@ -154,7 +154,7 @@ impl SteeringConfig {
         Ok(SteeringType {
             name: name.to_string(),
             purpose: purpose.to_string(),
-            criterions,
+            criteria,
         })
     }
 }
@@ -230,15 +230,15 @@ mod tests {
         let product = &config.types[0];
         assert_eq!(product.name, "product");
         assert_eq!(product.purpose, "Product overview and value proposition");
-        assert_eq!(product.criterions.len(), 4);
-        assert_eq!(product.criterions[0].name, "Product Overview");
+        assert_eq!(product.criteria.len(), 4);
+        assert_eq!(product.criteria[0].name, "Product Overview");
 
         // Test tech type
         let tech = &config.types[1];
         assert_eq!(tech.name, "tech");
         assert_eq!(tech.purpose, "Technical stack and development environment");
-        assert_eq!(tech.criterions.len(), 7);
-        assert_eq!(tech.criterions[0].name, "Architecture");
+        assert_eq!(tech.criteria.len(), 7);
+        assert_eq!(tech.criteria[0].name, "Architecture");
 
         // Test structure type
         let structure = &config.types[2];
@@ -247,8 +247,8 @@ mod tests {
             structure.purpose,
             "Code organization and project structure patterns"
         );
-        assert_eq!(structure.criterions.len(), 6);
-        assert_eq!(structure.criterions[0].name, "Root Directory Organization");
+        assert_eq!(structure.criteria.len(), 6);
+        assert_eq!(structure.criteria[0].name, "Root Directory Organization");
     }
 
     #[test]
@@ -265,9 +265,9 @@ mod tests {
         let steering_type = result.unwrap();
         assert_eq!(steering_type.name, "test");
         assert_eq!(steering_type.purpose, "Test purpose");
-        assert_eq!(steering_type.criterions.len(), 2);
-        assert_eq!(steering_type.criterions[0].name, "Name1");
-        assert_eq!(steering_type.criterions[0].description, "Description1");
+        assert_eq!(steering_type.criteria.len(), 2);
+        assert_eq!(steering_type.criteria[0].name, "Name1");
+        assert_eq!(steering_type.criteria[0].description, "Description1");
     }
 
     #[test]
@@ -293,7 +293,7 @@ mod tests {
         let steering_type = SteeringType {
             name: "test".to_string(),
             purpose: "test purpose".to_string(),
-            criterions: vec![Criterion {
+            criteria: vec![Criterion {
                 name: "test criterion".to_string(),
                 description: "test description".to_string(),
             }],
@@ -328,7 +328,7 @@ mod tests {
             types: vec![SteeringType {
                 name: "test".to_string(),
                 purpose: "test purpose".to_string(),
-                criterions: vec![],
+                criteria: vec![],
             }],
         };
 

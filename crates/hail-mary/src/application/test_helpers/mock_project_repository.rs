@@ -348,4 +348,20 @@ impl ProjectRepository for MockProjectRepository {
         }
         Ok(())
     }
+
+    fn deploy_slash_commands(&self) -> Result<(), ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::FileSystemError(
+                "Failed to deploy slash commands".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "deploy_slash_commands"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock deploy_slash_commands failure".to_string(),
+            ));
+        }
+        Ok(())
+    }
 }

@@ -26,7 +26,7 @@ struct SteeringSection {
 struct SteeringTypeToml {
     name: String,
     purpose: String,
-    criterions: Vec<String>,
+    criteria: Vec<String>,
 }
 
 pub struct ProjectRepository {
@@ -57,8 +57,8 @@ fn generate_steering_section(config: &SteeringConfig) -> Result<String, Applicat
                 .map(|steering_type| SteeringTypeToml {
                     name: steering_type.name.clone(),
                     purpose: steering_type.purpose.clone(),
-                    criterions: steering_type
-                        .criterions
+                    criteria: steering_type
+                        .criteria
                         .iter()
                         .map(|c| format!("{}: {}", c.name, c.description))
                         .collect(),
@@ -111,8 +111,8 @@ impl ProjectRepositoryTrait for ProjectRepository {
                     .map(|steering_type| SteeringTypeToml {
                         name: steering_type.name.clone(),
                         purpose: steering_type.purpose.clone(),
-                        criterions: steering_type
-                            .criterions
+                        criteria: steering_type
+                            .criteria
                             .iter()
                             .map(|c| format!("{}: {}", c.name, c.description))
                             .collect(),
@@ -455,6 +455,36 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         Ok(())
     }
+
+    fn deploy_slash_commands(&self) -> Result<(), ApplicationError> {
+        use crate::infrastructure::embedded_resources::EmbeddedSlashCommands;
+
+        // Create .claude/commands/hm directory
+        let claude_dir = self.path_manager.project_root().join(".claude");
+        let commands_dir = claude_dir.join("commands");
+        let hm_dir = commands_dir.join("hm");
+
+        // Create directory structure
+        fs::create_dir_all(&hm_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!(
+                "Failed to create .claude/commands/hm directory: {}",
+                e
+            ))
+        })?;
+
+        // Deploy all embedded markdown files (force overwrite)
+        for (filename, content) in EmbeddedSlashCommands::get_all() {
+            let file_path = hm_dir.join(filename);
+            fs::write(&file_path, content).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to write slash command file {}: {}",
+                    filename, e
+                ))
+            })?;
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -706,5 +736,66 @@ mod tests {
         assert!(content.contains("[[steering.types]]"));
         assert!(content.contains("name ="));
         assert!(content.contains("purpose ="));
+    }
+
+    #[test]
+    fn test_deploy_slash_commands() {
+        let (repository, _temp_dir) = create_test_repository();
+
+        // Deploy slash commands
+        let result = repository.deploy_slash_commands();
+        assert!(result.is_ok());
+
+        // Verify files were created
+        let hm_dir = repository
+            .path_manager
+            .project_root()
+            .join(".claude/commands/hm");
+        assert!(
+            hm_dir.exists(),
+            ".claude/commands/hm directory should exist"
+        );
+
+        // Check that all expected files exist
+        let expected_files = ["steering-remember.md", "steering.md", "steering-merge.md"];
+        for file in &expected_files {
+            let file_path = hm_dir.join(file);
+            assert!(file_path.exists(), "File {} should exist", file);
+
+            // Verify content is not empty
+            let content = fs::read_to_string(&file_path).unwrap();
+            assert!(!content.is_empty(), "File {} should not be empty", file);
+        }
+    }
+
+    #[test]
+    fn test_deploy_slash_commands_overwrites_existing() {
+        let (repository, _temp_dir) = create_test_repository();
+
+        // Create .claude/commands/hm directory with a test file
+        let hm_dir = repository
+            .path_manager
+            .project_root()
+            .join(".claude/commands/hm");
+        fs::create_dir_all(&hm_dir).unwrap();
+
+        // Write a test file that should be overwritten
+        let test_file = hm_dir.join("steering.md");
+        fs::write(&test_file, "OLD CONTENT").unwrap();
+
+        // Deploy slash commands
+        let result = repository.deploy_slash_commands();
+        assert!(result.is_ok());
+
+        // Verify the file was overwritten
+        let content = fs::read_to_string(&test_file).unwrap();
+        assert!(
+            !content.contains("OLD CONTENT"),
+            "File should be overwritten"
+        );
+        assert!(
+            content.contains("Kiro Steering Management"),
+            "File should contain new content"
+        );
     }
 }

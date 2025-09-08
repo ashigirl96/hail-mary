@@ -1,7 +1,7 @@
 [[steering.types]]
 name = "product"
 purpose = "Product overview and value proposition"
-criterions = [
+criteria = [
     "Product Overview: Brief description of what the product is",
     "Core Features: Bulleted list of main capabilities",
     "Target Use Case: Specific scenarios the product addresses",
@@ -11,7 +11,7 @@ criterions = [
 [[steering.types]]
 name = "tech"
 purpose = "Technical stack and development environment"
-criterions = [
+criteria = [
     "Architecture: High-level system design",
     "Frontend: Frameworks, libraries, build tools (if applicable)",
     "Backend: Language, framework, server technology (if applicable)",
@@ -24,7 +24,7 @@ criterions = [
 [[steering.types]]
 name = "structure"
 purpose = "Code organization and project structure patterns"
-criterions = [
+criteria = [
     "Root Directory Organization: Top-level structure with descriptions",
     "Subdirectory Structures: Detailed breakdown of key directories",
     "Code Organization Patterns: How code is structured",
