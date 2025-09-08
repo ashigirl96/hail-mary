@@ -1,7 +1,7 @@
 ---
-description: Save learning as concise tip in optimal format
-allowed-tools: Read, Write, Bash(date:*), Glob
-argument-hint: [--format rule|guide|knowledge] [--verbose]
+description: Save learning to steering with intelligent type detection and creation
+allowed-tools: Read, Write, Edit, MultiEdit, Bash(date:*), Glob
+argument-hint: [hint] [--format rule|guide|knowledge] [--type <name>]
 ---
 
 ## Triggers
@@ -11,18 +11,80 @@ argument-hint: [--format rule|guide|knowledge] [--verbose]
 
 ## Usage
 ```
-/hm:steering-remember [--format rule|guide|knowledge] [--verbose]
+/hm:steering-remember [hint] [--format rule|guide|knowledge] [--type <name>]
 ```
+
+### Examples
+```bash
+# With topic hint
+/hm:steering-remember "BigQueryについて学んだこと"
+/hm:steering-remember "認証の話" --type security
+
+# No hint - extract from entire conversation
+/hm:steering-remember
+
+# Format override
+/hm:steering-remember "デバッグ手順" --format guide
+```
+
+## Config.toml Structure
+
+This command reads steering type definitions from @.kiro/config.toml:
+
+```toml
+[[steering.types]]
+name = "bigquery"                           # Filename: bigquery.md
+purpose = "BigQuery optimization patterns"  # Description shown in prompts
+criteria = [                                # Patterns for type matching
+    "Query Optimization: Performance techniques",
+    "EXTERNAL_QUERY: Cloud SQL patterns",
+    "Cost Management: Query cost strategies"
+]
+```
+
+### Property Details
+- **`name`**: Determines the steering filename (`{name}.md`)
+- **`purpose`**: Human-readable description shown during type selection
+- **`criteria`**: Array of patterns used for automatic type matching
 
 ## Behavioral Flow
 
-1. **Extract Core Learning**: Identify the essential insight from recent conversation
+1. **Extract Core Learning**: Analyze conversation based on hint (or entire context if no hint)
    - Focus on actionable knowledge, not general observations
-   - Extract concrete examples if code was discussed
+   - Extract concrete examples if code was discussed  
    - Capture the "why" behind decisions
    - **Always auto-generate title**: Create 2-4 word descriptive title from content
 
-2. **Auto-Detect Format**: Analyze content to choose optimal format
+2. **Load Types from Config**: Read @.kiro/config.toml using **Read** tool
+
+3. **Match Against Existing Types**: Analyze learning content
+   - Compare content against each type's criteria
+   - Calculate confidence score based on keyword matches
+   - **If match found (>70% confidence)**:
+     ```
+     > 🔍 Analyzing learning content...
+     > ✅ Found match: 'bigquery' type (confidence: 85%)
+     > 
+     > Append to bigquery.md? [Y/n]: 
+     ```
+     → User confirms → Append to existing steering file using **Edit** or **MultiEdit**
+   - **If no match**:
+     ```
+     > 🔍 Analyzing learning content...
+     > 🤔 No existing type matches this content
+     > 
+     > Create new type? Suggestions:
+     > 1. graphql - GraphQL patterns and optimizations
+     > 2. api-performance - API performance optimizations
+     > 3. backend-patterns - Backend architectural patterns
+     > 4. [Custom] - Enter your own type name
+     > 
+     > Select [1-4]: 
+     ```
+     → User selects → Add type to config.toml using **MultiEdit**
+     → Create new steering file using **Write**
+
+4. **Auto-Detect Format**: Analyze content to choose optimal format
    ```
    if (contains code snippets OR "always/never/must/should/avoid"):
      → Rule format (with ✅/❌ examples)
@@ -34,7 +96,7 @@ argument-hint: [--format rule|guide|knowledge] [--verbose]
      → Rule format (default)
    ```
 
-3. **Generate Concise Output**: Create formatted content based on detected type
+5. **Generate Concise Output**: Create formatted content based on detected type
    
    **Rule Format** (7-15 lines with code):
    ````markdown
@@ -53,6 +115,25 @@ argument-hint: [--format rule|guide|knowledge] [--verbose]
    ```
    ````
    
+   *Example output:*
+   ````markdown
+   ## Service Return Values
+   **When**: Creating service objects in this codebase
+   - Return plain hashes for performance
+   - Wrap in transactions for consistency
+   - Use Japanese error messages
+   
+   ```ruby
+   # ✅ Good
+   def call
+     { success: true, data: @result }
+   end
+   
+   # ❌ Bad
+   OpenStruct.new(success: true)
+   ```
+   ````
+   
    **Guide Format** (8-12 lines):
    ```markdown
    ## [Action-Oriented Title]
@@ -62,6 +143,16 @@ argument-hint: [--format rule|guide|knowledge] [--verbose]
    3. [Third step]
    ⚠️ [Critical warning if any]
    ```
+   
+   *Example output:*
+   ````markdown
+   ## BigQuery Debug Process
+   **Context**: Troubleshooting query failures
+   1. Check Cloud Logging for errors
+   2. Verify connection string format
+   3. Run EXTERNAL_QUERY with minimal scope
+   ⚠️ No Japanese comments in SQL files
+   ````
    
    **Knowledge Format** (10-20 lines):
    ````markdown
@@ -81,117 +172,134 @@ argument-hint: [--format rule|guide|knowledge] [--verbose]
    
    **Context**: [Why this matters, business impact]
    ````
+   
+   *Example output:*
+   `````markdown
+   ## Restaurant Reservation System
+   **Domain**: Booking Management
+   
+   **Definition**: 
+   - 空席管理と予約調整を行うシステム
+   - リアルタイム在庫と予約状態の同期
+   - キャンセル待ちリストの自動管理
+   
+   **Formula**: 
+   ````
+   予約可能数 = 総席数 - 既存予約 - バッファ
+   キャンセル率 = 過去30日のキャンセル数 / 予約総数
+   ````
+   
+   **Flow**:
+   ````mermaid
+   graph LR
+     A[予約リクエスト] --> B{空席確認}
+     B -->|あり| C[予約確定]
+     B -->|なし| D[キャンセル待ち]
+     D --> E[通知登録]
+   ````
+   
+   **Context**: ダブルブッキング防止とキャンセル率を考慮した収益最適化
+   `````
 
-4. **Generate Filename**: Create descriptive filename
-   - Get timestamp: `date +%Y%m%d-%H%M%S`
-   - Sanitize title: lowercase, alphanumeric, max 30 chars
-   - Pattern: `{timestamp}-{format}-{title}.md`
-   - Example: `20250108-143022-rule-batch-memory.md`
-
-5. **Save to Draft**: Write to `.kiro/steering/draft/` directory
-   - Check if draft directory exists
-   - Write formatted content to file
+6. **Save to Steering**: Write directly to `.kiro/steering/{type}.md`
+   - Use **Glob** to check if file exists
+   - If exists: Use **Edit** or **MultiEdit** to append
+   - If new: Use **Write** to create file
    - Confirm successful save
 
-Key behaviors:
+## Tool Usage
+- **Read**: Load @.kiro/config.toml for type definitions
+- **Glob**: Check existing steering files in .kiro/steering/*.md
+- **Write**: Create new steering file when type doesn't exist
+- **Edit/MultiEdit**: Append to existing steering file or update config.toml
+- **Bash(date:*)**: Generate timestamp for tracking
+
+## Key Behaviors
+- **Conversation analysis**: Analyze entire conversation history for relevant learnings when hint provided
+- **Context extraction**: Extract actionable insights from natural conversation flow
 - **Maximum brevity**: Remove all unnecessary explanation
 - **Concrete over abstract**: Include specific examples, not theory
 - **Action-oriented**: Focus on what to DO, not background
-- **One learning per file**: Don't combine multiple insights
+- **One learning per operation**: Don't combine multiple insights in single execution
 - **Auto-detect format**: Code→Rule, Steps→Guide, Concepts→Knowledge
+- **Interactive type selection**: Guide user through type creation
 
 ## Examples
 
-### Rule Format (with code)
+### Example 1: Existing Type Match
 ````
-/hm:steering-remember
-# Analyzes recent conversation about service object patterns
-# Auto-generates title: "service-return-values"
-# Output: 20250108-143022-rule-service-return-values.md
+/hm:steering-remember "BigQueryで学んだこと"
 
-## Service Return Values
-**When**: Creating service objects in this codebase
-- Return plain hashes for performance
-- Wrap in transactions for consistency
-- Use Japanese error messages
+> 🔍 Analyzing conversation for BigQuery-related learnings...
+> ✅ Found match: 'bigquery' type (confidence: 85%)
+> 
+> Append to bigquery.md? [Y/n]: Y
 
-```ruby
-# ✅ Good
-def call
-  { success: true, data: @result }
-end
-
-# ❌ Bad
-OpenStruct.new(success: true)
-```
+> 📝 Added to bigquery.md:
+> ## Query Constraints
+> **When**: Using EXTERNAL_QUERY with Cloud SQL
+> - Japanese comments cause encoding errors
+> - Use English comments only in SQL files
+> - Applies to all BigQuery external queries
 ````
 
-### Guide Format (procedural)
-```
-/hm:steering-remember
-# Analyzes recent conversation about BigQuery debugging steps
-# Auto-generates title: "bigquery-debug-process"
-# Output: 20250108-143523-guide-bigquery-debug-process.md
-
-## BigQuery Debug Process
-**Context**: Troubleshooting query failures
-1. Check Cloud Logging for errors
-2. Verify connection string format
-3. Run EXTERNAL_QUERY with minimal scope
-⚠️ No Japanese comments in SQL files
-```
-
-### Knowledge Format (conceptual)
+### Example 2: Creating New Type
 ````
-/hm:steering-remember
-# Analyzes recent conversation about restaurant reservation systems
-# Auto-generates title: "reservation-system-architecture"
-# Output: 20250108-144012-knowledge-reservation-system-architecture.md
+/hm:steering-remember "GraphQLの話"
 
-## Restaurant Reservation System
-**Domain**: Booking Management
+> 🔍 Analyzing conversation for GraphQL-related learnings...
+> 🤔 No existing type matches this content
+> 
+> Create new type? Suggestions:
+> 1. graphql - GraphQL patterns and optimizations
+> 2. api-performance - API performance optimizations
+> 3. backend-patterns - Backend architectural patterns
+> 4. [Custom] - Enter your own type name
+> 
+> Select [1-4]: 1
 
-**Definition**: 
-- 空席管理と予約調整を行うシステム
-- リアルタイム在庫と予約状態の同期
-- キャンセル待ちリストの自動管理
-
-**Formula**: 
-```
-予約可能数 = 総席数 - 既存予約 - バッファ
-キャンセル率 = 過去30日のキャンセル数 / 予約総数
-```
-
-**Flow**:
-```mermaid
-graph LR
-  A[予約リクエスト] --> B{空席確認}
-  B -->|あり| C[予約確定]
-  B -->|なし| D[キャンセル待ち]
-  D --> E[通知登録]
-```
-
-**Context**: ダブルブッキング防止とキャンセル率を考慮した収益最適化
+> 📝 Creating new type 'graphql'...
+> ✅ Added to config.toml:
+> [[steering.types]]
+> name = "graphql"
+> purpose = "GraphQL patterns and optimizations"
+> criteria = [
+>     "Schema Design: Type definitions and relationships",
+>     "Performance: N+1 prevention and query optimization",
+>     "Security: Query depth limiting and validation",
+>     "Best Practices: Naming conventions and patterns"
+> ]
+> 
+> ✅ Created graphql.md with your learning:
+> ## N+1 Query Prevention
+> **When**: Implementing GraphQL resolvers
+> - Use DataLoader for batch loading
+> - Cache results within request context
+> - Avoid nested resolver queries
 ````
 
-### Manual Format Override
+### Example 3: Manual Type Override
 ```
-/hm:steering-remember --format guide
-# Forces Guide format even if content suggests Rule format
-# Still auto-generates title from conversation context
+/hm:steering-remember --type security "JWT署名は必ず検証"
+# Forces save to security.md even if other types might match
+# Creates security type if it doesn't exist
 ```
 
 ## Boundaries
 
 **Will:**
-- Create one file per learning in draft directory
+- Save learning directly to appropriate steering file
 - Auto-detect optimal format from content
-- Keep output under 15 lines maximum
+- Create new types interactively with user guidance
+- Keep output under **30 lines maximum**
 - Include concrete examples when relevant
 - Support Japanese content naturally
+- Update config.toml when creating new types
 
 **Will Not:**
-- Combine multiple learnings in one file
+- Use draft directories or intermediate storage
+- Combine multiple learnings in one operation
 - Create verbose explanations (100+ lines)
-- Modify existing steering files directly
+- Overwrite existing content (always append)
 - Process without clear learning to capture
+- Create types without user confirmation

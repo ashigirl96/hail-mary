@@ -1,146 +1,136 @@
 ---
-description: Create or update Kiro steering documents intelligently based on project state
+description: Update all steering documents based on config.toml criteria
 allowed-tools: Bash, Read, Write, Edit, MultiEdit, Glob, Grep, LS
 ---
 
 # Kiro Steering Management
 
-Intelligently create or update steering documents in `.kiro/steering/` to maintain accurate project knowledge for spec-driven development. This command detects existing documents and handles them appropriately.
+Update steering documents in `.kiro/steering/` based on types defined in @.kiro/config.toml. This command analyzes the project against each type's criteria and maintains accurate project knowledge.
 
-## Existing Files Check
+## Configuration Check
 
-### Current steering documents status
-- Product overview: !`[ -f ".kiro/steering/product.md" ] && echo "✅ EXISTS - Will be updated preserving custom content" || echo "📝 Not found - Will be created"`
-- Technology stack: !`[ -f ".kiro/steering/tech.md" ] && echo "✅ EXISTS - Will be updated preserving custom content" || echo "📝 Not found - Will be created"`
-- Project structure: !`[ -f ".kiro/steering/structure.md" ] && echo "✅ EXISTS - Will be updated preserving custom content" || echo "📝 Not found - Will be created"`
-- Custom steering files: !`if [ -d ".kiro/steering" ]; then count=$(find .kiro/steering -maxdepth 1 -type f -name '*.md' ! -name 'product.md' ! -name 'tech.md' ! -name 'structure.md' | grep -c .); if [ "$count" -gt 0 ]; then echo "🔧 $count custom file(s) found - Will be preserved"; else echo "📋 No custom files"; fi; else echo "📋 No steering directory yet"; fi`
+### Current config.toml status
+- Config file: !`[ -f ".kiro/config.toml" ] && echo "✅ Config exists" || echo "❌ Config missing - run 'hail-mary init' first"`
+- Steering types defined: !`if [ -f ".kiro/config.toml" ]; then grep -c "^\[\[steering.types\]\]" .kiro/config.toml 2>/dev/null || echo "0"; else echo "Config not found"; fi`
+
+### Current steering files
+- Existing files: !`if [ -d ".kiro/steering" ]; then ls -1 .kiro/steering/*.md 2>/dev/null | xargs -I {} basename {} | tr '\n' ' ' || echo "No steering files yet"; else echo "Steering directory not found"; fi`
 
 ## Project Analysis
 
 ### Current Project State
-- Project files: !`find . -path ./node_modules -prune -o -path ./.git -prune -o -path ./dist -prune -o -type f \( -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" -o -name "*.java" -o -name "*.go" -o -name "*.rs" \) -print 2>/dev/null || echo "No source files found"`
+- Project files: !`find . -path ./node_modules -prune -o -path ./.git -prune -o -path ./dist -prune -o -type f \( -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" -o -name "*.java" -o -name "*.go" -o -name "*.rs" \) -print 2>/dev/null | head -20 || echo "No source files found"`
 - Configuration files: !`find . -maxdepth 3 \( -name "package.json" -o -name "requirements.txt" -o -name "pom.xml" -o -name "Cargo.toml" -o -name "go.mod" -o -name "pyproject.toml" -o -name "tsconfig.json" \) 2>/dev/null || echo "No config files found"`
-- Documentation: !`find . -maxdepth 3 -path ./node_modules -prune -o -path ./.git -prune -o -path ./.kiro -prune -o \( -name "README*" -o -name "CHANGELOG*" -o -name "LICENSE*" -o -name "*.md" \) -print 2>/dev/null || echo "No documentation files found"`
+- Documentation: !`find . -maxdepth 3 -path ./node_modules -prune -o -path ./.git -prune -o -path ./.kiro -prune -o \( -name "README*" -o -name "CHANGELOG*" -o -name "LICENSE*" -o -name "*.md" \) -print 2>/dev/null | head -10 || echo "No documentation files found"`
 
 ### Recent Changes (if updating)
 - Last steering update: !`git log -1 --oneline -- .kiro/steering/ 2>/dev/null || echo "No previous steering commits"`
-- Commits since last steering update: !`LAST_COMMIT=$(git log -1 --format=%H -- .kiro/steering/ 2>/dev/null); if [ -n "$LAST_COMMIT" ]; then git log --oneline ${LAST_COMMIT}..HEAD --max-count=20 2>/dev/null || echo "Not a git repository"; else echo "No previous steering update found"; fi`
-- Working tree status: !`git status --porcelain 2>/dev/null || echo "Not a git repository"`
+- Recent commits: !`git log --oneline -10 2>/dev/null || echo "Not a git repository"`
+- Working tree status: !`git status --porcelain 2>/dev/null | head -10 || echo "Not a git repository"`
 
-### Existing Documentation
+### Existing Documentation References
 - Main README: @README.md
 - Package configuration: @package.json
-- Python requirements: @requirements.txt
-- TypeScript config: @tsconfig.json
+- Cargo configuration: @Cargo.toml
 - Project documentation: @docs/
 
-## Smart Update Strategy
+## Config.toml Structure
 
-Based on the existing files check above, this command will:
+This command reads all steering types from @.kiro/config.toml:
 
-### For NEW files (showing "📝 Not found"):
-Generate comprehensive initial content covering all aspects of the project.
+```toml
+[[steering.types]]
+name = "bigquery"                           # Filename: bigquery.md
+purpose = "BigQuery optimization patterns"  # Description for user prompts
+criteria = [                                # Analysis patterns for this type
+    "Query Optimization: Performance techniques",
+    "EXTERNAL_QUERY: Cloud SQL patterns",
+    "Cost Management: Query cost strategies",
+    "Common Pitfalls: Known issues and solutions"
+]
+```
 
-### For EXISTING files (showing "✅ EXISTS"):
-1. **Preserve user customizations** - Any manual edits or custom sections
+### Property Details
+- **`name`**: Determines the steering filename (`{name}.md`)
+- **`purpose`**: Human-readable description of the type's focus area
+- **`criteria`**: List of patterns used to analyze and categorize project content
+
+## Task: Update All Steering Types from Config
+
+### 1. Load Types from Config
+Use **Read** tool to load @.kiro/config.toml and process all `[[steering.types]]` entries.
+
+### 2. For Each Type in Config
+
+Process each type defined in config.toml:
+
+#### Analysis Phase
+- Use **Grep** to search for patterns matching the type's criteria
+- Use **Glob** to find relevant files based on type context
+- Use **Bash** to check file existence and git history
+
+#### Update Phase
+For each {type.name}.md file:
+
+**If NEW file:**
+- Use **Write** to create comprehensive initial content
+- Include all criteria as section headers
+- Generate content based on project analysis
+
+**If EXISTING file:**
+- Use **Read** to load current content
+- Use **MultiEdit** to update content
+- Backup preserved in .kiro/steering/backup/ before modification
+
+### 3. Detect Uncategorized Patterns
+
+Analyze project for patterns not matching any existing criteria:
+- Use **Glob** and **Grep** to find unmatched patterns
+- If significant patterns found, suggest new types:
+  ```
+  > 🔍 Found patterns not matching existing types:
+  > - SQL queries and database migrations
+  > - Docker configuration files
+  > 
+  > Add new types? Suggestions:
+  > 1. database - Database schemas and queries
+  > 2. deployment - Docker and CI/CD configuration
+  > 3. Skip for now
+  > 
+  > Select [1-3]: 
+  ```
+- If user selects a new type:
+  - Use **MultiEdit** to add `[[steering.types]]` to config.toml
+  - Use **Write** to create new steering file
+
+## Tool Usage
+
+- **Read**: Load @.kiro/config.toml and existing steering files
+- **Glob**: Find project files for analysis (*.py, *.js, *.ts, *.sql, etc.)
+- **Grep**: Search for patterns matching criteria
+- **Write**: Create new steering files for new types
+- **MultiEdit**: Update multiple sections in existing files efficiently
+- **Edit**: Make targeted updates to specific sections
+- **Bash**: Check file existence, git history, and directory structure
+- **LS**: List files in directories for analysis
+
+## Update Strategy
+
+### Smart Content Updates
+1. **Create backup** - Copy existing files to .kiro/steering/backup/
 2. **Update factual information** - Dependencies, file structures, commands
 3. **Add new sections** - Only if significant new capabilities exist
-4. **Mark deprecated content** - Rather than deleting
-5. **Maintain formatting** - Keep consistent with existing style
+4. **Replace outdated content** - Remove obsolete information
+5. **Maintain clear structure** - Use consistent markdown formatting
 
-## Inclusion Modes for Core Steering Files
+### Example Type Processing
 
-The three core steering files (product.md, tech.md, structure.md) are designed to be **Always Included** - loaded in every AI interaction to provide consistent project context.
-
-### Understanding Inclusion Modes
-- **Always Included (Default for core files)**: Loaded in every interaction - ensures consistent project knowledge
-- **Conditional**: Loaded only when working with matching file patterns (mainly for custom steering)
-- **Manual**: Referenced on-demand with @filename syntax (for specialized contexts)
-
-### Core Files Strategy
-- `product.md`: Always - Business context needed for all development decisions
-- `tech.md`: Always - Technical constraints affect all code generation
-- `structure.md`: Always - Architectural decisions impact all file organization
-
-## Task: Create or Update Steering Documents
-
-### 1. Product Overview (`product.md`)
-
-#### For NEW file:
-Generate comprehensive product overview including:
-- **Product Overview**: Brief description of what the product is
-- **Core Features**: Bulleted list of main capabilities
-- **Target Use Case**: Specific scenarios the product addresses
-- **Key Value Proposition**: Unique benefits and differentiators
-
-#### For EXISTING file:
-Update only if there are:
-- **New features** added to the product
-- **Removed features** or deprecated functionality
-- **Changed use cases** or target audience
-- **Updated value propositions** or benefits
-
-### 2. Technology Stack (`tech.md`)
-
-#### For NEW file:
-Document the complete technology landscape:
-- **Architecture**: High-level system design
-- **Frontend**: Frameworks, libraries, build tools (if applicable)
-- **Backend**: Language, framework, server technology (if applicable)
-- **Development Environment**: Required tools and setup
-- **Common Commands**: Frequently used development commands
-- **Environment Variables**: Key configuration variables
-- **Port Configuration**: Standard ports used by services
-
-#### For EXISTING file:
-Check for changes in:
-- **New dependencies** added via package managers
-- **Removed libraries** or frameworks
-- **Version upgrades** of major dependencies
-- **New development tools** or build processes
-- **Changed environment variables** or configuration
-- **Modified port assignments** or service architecture
-
-### 3. Project Structure (`structure.md`)
-
-#### For NEW file:
-Outline the codebase organization:
-- **Root Directory Organization**: Top-level structure with descriptions
-- **Subdirectory Structures**: Detailed breakdown of key directories
-- **Code Organization Patterns**: How code is structured
-- **File Naming Conventions**: Standards for naming files and directories
-- **Import Organization**: How imports/dependencies are organized
-- **Key Architectural Principles**: Core design decisions and patterns
-
-#### For EXISTING file:
-Look for changes in:
-- **New directories** or major reorganization
-- **Changed file organization** patterns
-- **New or modified naming conventions**
-- **Updated architectural patterns** or principles
-- **Refactored code structure** or module boundaries
-
-### 4. Custom Steering Files
-If custom steering files exist:
-- **Preserve them** - Do not modify unless specifically outdated
-- **Check relevance** - Note if they reference removed features
-- **Suggest new custom files** - If new specialized areas emerge
-
-## Instructions
-
-1. **Create `.kiro/steering/` directory** if it doesn't exist
-2. **Check existing files** to determine create vs update mode
-3. **Analyze the codebase** using native tools (Glob, Grep, LS)
-4. **For NEW files**: Generate comprehensive initial documentation
-5. **For EXISTING files**:
-  - Read current content first
-  - Preserve user customizations and comments
-  - Update only factual/technical information
-  - Maintain existing structure and style
-6. **Use clear markdown formatting** with proper headers and sections
-7. **Include concrete examples** where helpful for understanding
-8. **Focus on facts over assumptions** - document what exists
-9. **Follow spec-driven development principles**
+The command processes each type from config.toml systematically:
+1. Search for patterns matching the type's criteria using **Grep**
+2. Check if {type.name}.md exists using **Bash**
+3. Either create new content or update existing file
+4. Structure content around the defined criteria
+5. Include concrete examples from the codebase
 
 ## Important Principles
 
@@ -150,22 +140,28 @@ If custom steering files exist:
 - **Team sharing consideration**: Remember steering files are shared with all project collaborators
 
 ### Content Quality Guidelines
-- **Single domain focus**: Each steering file should cover one specific area
+- **Single domain focus**: Each steering file covers one specific area defined by its type
 - **Clear, descriptive content**: Provide concrete examples and rationale for decisions
 - **Regular maintenance**: Review and update steering files after major project changes
 - **Actionable guidance**: Write specific, implementable guidelines rather than abstract principles
 
-### Preservation Strategy
-- **User sections**: Any section not in the standard template should be preserved
-- **Custom examples**: User-added examples should be maintained
-- **Comments**: Inline comments or notes should be kept
-- **Formatting preferences**: Respect existing markdown style choices
+### Backup Strategy
+- **Pre-update backup**: All existing files copied to .kiro/steering/backup/
+- **Recovery option**: Users can restore from backup if needed
+- **Git integration**: Changes are trackable through version control
 
 ### Update Philosophy
-- **Additive by default**: Add new information rather than replacing
-- **Mark deprecation**: Use strikethrough or [DEPRECATED] tags
-- **Date significant changes**: Add update timestamps for major changes
-- **Explain changes**: Brief notes on why something was updated
+- **Fresh content**: Generate current, relevant information
+- **Clear communication**: Use straightforward language
+- **Factual accuracy**: Document what actually exists in the project
 
-The goal is to maintain living documentation that stays current while respecting user customizations, supporting effective spec-driven development without requiring users to worry about losing their work.
-ultrathink
+## Features
+
+- **Dynamic type loading**: All types loaded from @.kiro/config.toml
+- **Configuration-driven**: All types processed based on config.toml definitions
+- **New type detection**: Automatically suggests new types based on uncategorized patterns
+- **Backup-based safety**: Original content preserved in backup directory
+- **Incremental updates**: Only updates what has changed
+- **Git-aware**: Uses git history to understand project evolution
+
+The goal is to maintain living documentation that adapts to your project's growth while preserving your customizations and insights.
