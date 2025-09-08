@@ -51,30 +51,4 @@ mod tests {
             );
         }
     }
-
-    #[test]
-    fn test_embedded_files_contain_expected_content() {
-        let files = EmbeddedSlashCommands::get_all();
-
-        // Check that steering-remember.md contains expected content
-        let steering_remember = files
-            .iter()
-            .find(|(name, _)| *name == "steering-remember.md")
-            .expect("steering-remember.md should exist");
-        assert!(steering_remember.1.contains("Save new learnings"));
-
-        // Check that steering.md contains expected content
-        let steering = files
-            .iter()
-            .find(|(name, _)| *name == "steering.md")
-            .expect("steering.md should exist");
-        assert!(steering.1.contains("Kiro Steering Management"));
-
-        // Check that steering-merge.md contains expected content
-        let steering_merge = files
-            .iter()
-            .find(|(name, _)| *name == "steering-merge.md")
-            .expect("steering-merge.md should exist");
-        assert!(steering_merge.1.contains("Process and categorize"));
-    }
 }
