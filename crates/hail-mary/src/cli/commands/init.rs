@@ -108,7 +108,6 @@ mod tests {
         assert!(Path::new(".kiro/steering/product.md").exists());
         assert!(Path::new(".kiro/steering/tech.md").exists());
         assert!(Path::new(".kiro/steering/structure.md").exists());
-        assert!(Path::new(".kiro/steering/draft").exists());
     }
 
     #[test]
@@ -189,7 +188,7 @@ mod tests {
         assert!(hm_dir.exists(), ".claude/commands/hm should exist");
 
         // Check all expected files
-        let expected_files = ["steering-remember.md", "steering.md", "steering-merge.md"];
+        let expected_files = ["steering-remember.md", "steering.md"];
         for file in &expected_files {
             let file_path = hm_dir.join(file);
             assert!(

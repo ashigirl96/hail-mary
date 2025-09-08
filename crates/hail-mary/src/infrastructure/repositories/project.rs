@@ -41,10 +41,6 @@ impl ProjectRepository {
     fn steering_dir(&self) -> std::path::PathBuf {
         self.path_manager.kiro_dir(true).join("steering")
     }
-
-    fn draft_dir(&self) -> std::path::PathBuf {
-        self.steering_dir().join("draft")
-    }
 }
 
 /// Helper function to generate steering section TOML
@@ -382,12 +378,6 @@ impl ProjectRepositoryTrait for ProjectRepository {
         let steering_dir = self.steering_dir();
         fs::create_dir_all(&steering_dir).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to create steering directory: {}", e))
-        })?;
-
-        // Create .kiro/steering/draft directory
-        let draft_dir = self.draft_dir();
-        fs::create_dir_all(&draft_dir).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to create draft directory: {}", e))
         })?;
 
         Ok(())
@@ -757,7 +747,7 @@ mod tests {
         );
 
         // Check that all expected files exist
-        let expected_files = ["steering-remember.md", "steering.md", "steering-merge.md"];
+        let expected_files = ["steering-remember.md", "steering.md"];
         for file in &expected_files {
             let file_path = hm_dir.join(file);
             assert!(file_path.exists(), "File {} should exist", file);
