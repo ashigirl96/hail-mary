@@ -12,6 +12,9 @@ pub fn initialize_project(repository: &impl ProjectRepository) -> Result<(), App
     // Ensure steering configuration exists (idempotent)
     repository.ensure_steering_config()?;
 
+    // Ensure steering backup configuration exists (idempotent)
+    repository.ensure_steering_backup_config()?;
+
     // Create steering files (idempotent)
     let steering_config = SteeringConfig::default_for_new_project();
     repository.create_steering_files(&steering_config)?;
