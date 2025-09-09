@@ -1,6 +1,15 @@
 use crate::application::errors::ApplicationError;
 use crate::domain::entities::project::ProjectConfig;
-use crate::domain::entities::steering::SteeringConfig;
+use crate::domain::entities::steering::{SteeringBackupConfig, SteeringConfig};
+use std::path::PathBuf;
+use std::time::SystemTime;
+
+#[derive(Debug, Clone)]
+pub struct BackupInfo {
+    pub name: String,
+    pub created_at: SystemTime,
+    pub path: PathBuf,
+}
 
 pub trait ProjectRepository: Send + Sync {
     fn initialize(&self) -> Result<(), ApplicationError>;
@@ -32,6 +41,29 @@ pub trait ProjectRepository: Send + Sync {
     /// Deploy embedded slash command markdown files to .claude/commands/hm
     /// This always overwrites existing files to ensure consistency
     fn deploy_slash_commands(&self) -> Result<(), ApplicationError>;
+
+    // Steering backup operations
+    /// List all steering markdown files (excluding backup/ and draft/ directories)
+    fn list_steering_files(&self) -> Result<Vec<PathBuf>, ApplicationError>;
+
+    /// Create a backup of steering files in a timestamped directory
+    fn create_steering_backup(
+        &self,
+        timestamp: &str,
+        files: &[PathBuf],
+    ) -> Result<(), ApplicationError>;
+
+    /// List all existing steering backups sorted by creation time (oldest first)
+    fn list_steering_backups(&self) -> Result<Vec<BackupInfo>, ApplicationError>;
+
+    /// Delete the oldest steering backups
+    fn delete_oldest_steering_backups(&self, count: usize) -> Result<(), ApplicationError>;
+
+    /// Load steering backup configuration from config.toml
+    fn load_steering_backup_config(&self) -> Result<SteeringBackupConfig, ApplicationError>;
+
+    /// Ensure steering.backup configuration exists in config.toml
+    fn ensure_steering_backup_config(&self) -> Result<(), ApplicationError>;
 }
 
 #[cfg(test)]
