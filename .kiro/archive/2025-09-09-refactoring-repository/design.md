@@ -23,22 +23,25 @@
 
 ### レイヤー構造
 ```
-Application Layer (Traits)
-    ├── ConfigRepository trait
-    ├── SpecRepository trait 
-    ├── SteeringRepository trait
-    └── ProjectRepository trait (Coordinator)
+Application Layer (Traits/Interfaces)
+    ├── ConfigRepositoryInterface trait
+    ├── SpecRepositoryInterface trait
+    └── SteeringRepositoryInterface trait
     
 Infrastructure Layer (Implementations)
-    ├── ConfigRepositoryImpl
-    ├── SpecRepositoryImpl
-    ├── SteeringRepositoryImpl
-    └── ProjectRepositoryImpl (uses other repositories)
+    ├── ConfigRepository
+    ├── SpecRepository
+    └── SteeringRepository
 ```
+
+### 設計方針
+- **ProjectRepository（Coordinator）は作成しない** - 不要な抽象層を避ける
+- **Use Caseが必要なリポジトリを直接受け取る** - 明示的な依存関係
+- **単一責任の徹底** - 各リポジトリは完全に独立
 
 ## 詳細設計
 
-### 1. ConfigRepository
+### 1. ConfigRepositoryInterface / ConfigRepository
 
 #### 責任範囲
 - 設定ファイル(.kiro/config.toml)の読み込み・保存・更新
@@ -48,7 +51,7 @@ Infrastructure Layer (Implementations)
 #### トレイト定義
 ```rust
 // application/repositories/config_repository.rs
-pub trait ConfigRepository: Send + Sync {
+pub trait ConfigRepositoryInterface: Send + Sync {
     /// TOMLファイルを読み込んでProjectConfigを返す
     fn load_config(&self) -> Result<ProjectConfig, ApplicationError>;
     
@@ -72,11 +75,11 @@ pub trait ConfigRepository: Send + Sync {
 #### 実装詳細
 ```rust
 // infrastructure/repositories/config.rs
-pub struct ConfigRepositoryImpl {
+pub struct ConfigRepository {
     path_manager: PathManager,
 }
 
-impl ConfigRepositoryImpl {
+impl ConfigRepository {
     pub fn new(path_manager: PathManager) -> Self {
         Self { path_manager }
     }
@@ -103,7 +106,7 @@ impl ConfigRepositoryImpl {
 }
 ```
 
-### 2. SpecRepository
+### 2. SpecRepositoryInterface / SpecRepository
 
 #### 責任範囲
 - Spec（Feature）の作成・一覧・完了・アーカイブ
@@ -113,7 +116,7 @@ impl ConfigRepositoryImpl {
 #### トレイト定義
 ```rust
 // application/repositories/spec_repository.rs
-pub trait SpecRepository: Send + Sync {
+pub trait SpecRepositoryInterface: Send + Sync {
     /// 新しいfeature specを作成
     fn create_feature(&self, name: &str) -> Result<(), ApplicationError>;
     
@@ -134,11 +137,11 @@ pub trait SpecRepository: Send + Sync {
 #### 実装詳細
 ```rust
 // infrastructure/repositories/spec.rs
-pub struct SpecRepositoryImpl {
+pub struct SpecRepository {
     path_manager: PathManager,
 }
 
-impl SpecRepositoryImpl {
+impl SpecRepository {
     pub fn new(path_manager: PathManager) -> Self {
         Self { path_manager }
     }
@@ -162,7 +165,7 @@ impl SpecRepositoryImpl {
 }
 ```
 
-### 3. SteeringRepository
+### 3. SteeringRepositoryInterface / SteeringRepository
 
 #### 責任範囲
 - Steeringファイルの作成・一覧・管理
@@ -172,7 +175,7 @@ impl SpecRepositoryImpl {
 #### トレイト定義
 ```rust
 // application/repositories/steering_repository.rs
-pub trait SteeringRepository: Send + Sync {
+pub trait SteeringRepositoryInterface: Send + Sync {
     /// steeringディレクトリを初期化
     fn initialize_steering(&self) -> Result<(), ApplicationError>;
     
@@ -199,11 +202,11 @@ pub trait SteeringRepository: Send + Sync {
 #### 実装詳細
 ```rust
 // infrastructure/repositories/steering.rs
-pub struct SteeringRepositoryImpl {
+pub struct SteeringRepository {
     path_manager: PathManager,
 }
 
-impl SteeringRepositoryImpl {
+impl SteeringRepository {
     pub fn new(path_manager: PathManager) -> Self {
         Self { path_manager }
     }
@@ -218,81 +221,20 @@ impl SteeringRepositoryImpl {
 }
 ```
 
-### 4. ProjectRepository（Coordinator）
+### 4. ProjectRepository削除の理由
 
-#### 責任範囲
-- 各リポジトリの統合・調整
-- プロジェクト全体の初期化
-- gitignore更新などプロジェクト全体の管理
+#### なぜProjectRepositoryを削除するか
+- **不要な抽象層の排除**: CoordinatorパターンはYAGNI原則に反する
+- **明示的な依存関係**: Use Caseレベルで必要なリポジトリが明確になる
+- **柔軟性の向上**: Use Caseごとに必要なリポジトリの組み合わせを自由に選択可能
+- **テストの簡潔性**: モックするリポジトリが最小限で済む
 
-#### トレイト定義（更新版）
-```rust
-// application/repositories/project_repository.rs
-pub trait ProjectRepository: Send + Sync {
-    /// プロジェクトを初期化（各リポジトリの初期化を調整）
-    fn initialize(&self) -> Result<(), ApplicationError>;
-    
-    /// プロジェクトが存在するか確認
-    fn exists(&self) -> Result<bool, ApplicationError>;
-    
-    /// gitignoreを更新
-    fn update_gitignore(&self) -> Result<(), ApplicationError>;
-}
-```
+#### 移行される責任
+旧ProjectRepositoryの責任は以下のように分散されます：
 
-#### 実装詳細
-```rust
-// infrastructure/repositories/project.rs
-pub struct ProjectRepositoryImpl {
-    path_manager: PathManager,
-    config_repository: Arc<dyn ConfigRepository>,
-    spec_repository: Arc<dyn SpecRepository>,
-    steering_repository: Arc<dyn SteeringRepository>,
-}
-
-impl ProjectRepositoryImpl {
-    pub fn new(
-        path_manager: PathManager,
-        config_repository: Arc<dyn ConfigRepository>,
-        spec_repository: Arc<dyn SpecRepository>,
-        steering_repository: Arc<dyn SteeringRepository>,
-    ) -> Self {
-        Self {
-            path_manager,
-            config_repository,
-            spec_repository,
-            steering_repository,
-        }
-    }
-}
-
-impl ProjectRepository for ProjectRepositoryImpl {
-    fn initialize(&self) -> Result<(), ApplicationError> {
-        // 1. .kiroディレクトリ作成
-        let kiro_dir = self.path_manager.kiro_dir(true);
-        fs::create_dir_all(&kiro_dir)?;
-        
-        // 2. specsディレクトリ作成
-        let specs_dir = self.path_manager.specs_dir(true);
-        fs::create_dir_all(&specs_dir)?;
-        
-        // 3. steering初期化を委譲
-        self.steering_repository.initialize_steering()?;
-        
-        // 4. config初期化を委譲
-        let config = ProjectConfig::default_for_new_project();
-        self.config_repository.save_config(&config)?;
-        
-        // 5. steeringファイル作成を委譲
-        self.steering_repository.create_steering_files(&config.steering)?;
-        
-        // 6. slash commands deployを委譲
-        self.steering_repository.deploy_slash_commands()?;
-        
-        Ok(())
-    }
-}
-```
+1. **プロジェクト初期化** → `initialize_project` Use Caseで複数リポジトリを組み合わせる
+2. **プロジェクト存在確認** → SteeringRepositoryまたはConfigRepositoryの責任として統合
+3. **gitignore更新** → 新しい`GitignoreRepository`を作成するか、適切なリポジトリに移動
 
 ## 依存性注入の更新
 
@@ -302,25 +244,38 @@ impl ProjectRepository for ProjectRepositoryImpl {
 let path_manager = PathManager::new(project_root);
 
 // 各リポジトリを個別に作成
-let config_repo = Arc::new(ConfigRepositoryImpl::new(path_manager.clone()));
-let spec_repo = Arc::new(SpecRepositoryImpl::new(path_manager.clone()));
-let steering_repo = Arc::new(SteeringRepositoryImpl::new(path_manager.clone()));
+let config_repo = Arc::new(ConfigRepository::new(path_manager.clone()));
+let spec_repo = Arc::new(SpecRepository::new(path_manager.clone()));
+let steering_repo = Arc::new(SteeringRepository::new(path_manager.clone()));
 
-// ProjectRepositoryに注入
-let project_repo = Arc::new(ProjectRepositoryImpl::new(
-    path_manager.clone(),
-    config_repo.clone(),
-    spec_repo.clone(),
-    steering_repo.clone(),
-));
-
-// Use caseに必要なリポジトリを渡す
+// Use caseに必要なリポジトリを直接渡す（ProjectRepository経由ではない）
 match args.command {
     Commands::Init { force } => {
-        initialize_project(project_repo.as_ref(), force)?;
+        // 複数のリポジトリを直接渡す
+        initialize_project(
+            config_repo.as_ref(),
+            spec_repo.as_ref(),
+            steering_repo.as_ref(),
+            force
+        )?;
     }
     Commands::New { name } => {
+        // 単一のリポジトリだけを渡す
         create_feature(spec_repo.as_ref(), &name)?;
+    }
+    Commands::Complete => {
+        // 必要なリポジトリを渡す
+        complete_features(
+            spec_repo.as_ref(),
+            config_repo.as_ref()
+        )?;
+    }
+    Commands::Code { no_danger } => {
+        launch_claude_with_spec(
+            spec_repo.as_ref(),
+            config_repo.as_ref(),
+            !no_danger
+        )?;
     }
     // ...
 }
@@ -328,31 +283,86 @@ match args.command {
 
 ## Use Case層の更新
 
-各Use Caseは必要なリポジトリのみを受け取るように更新：
+各Use Caseは必要なリポジトリを直接受け取るように更新：
 
 ```rust
 // application/use_cases/initialize_project.rs
 pub fn initialize_project(
-    project_repo: &dyn ProjectRepository,
+    config_repo: &dyn ConfigRepositoryInterface,
+    spec_repo: &dyn SpecRepositoryInterface,
+    steering_repo: &dyn SteeringRepositoryInterface,
     force: bool,
 ) -> Result<(), ApplicationError> {
-    // ProjectRepositoryのみ使用
+    // プロジェクトが既に存在するかチェック
+    if !force && steering_repo.exists()? {
+        return Err(ApplicationError::ProjectAlreadyExists);
+    }
+    
+    // 1. .kiroディレクトリとサブディレクトリを作成
+    steering_repo.initialize_directories()?;
+    spec_repo.initialize_directories()?;
+    
+    // 2. steering初期化
+    steering_repo.initialize_steering()?;
+    
+    // 3. デフォルト設定を保存
+    let config = ProjectConfig::default_for_new_project();
+    config_repo.save_config(&config)?;
+    
+    // 4. steeringファイル作成
+    steering_repo.create_steering_files(&config.steering)?;
+    
+    // 5. slash commands deploy
+    steering_repo.deploy_slash_commands()?;
+    
+    // 6. gitignore更新
+    steering_repo.update_gitignore()?;
+    
+    Ok(())
 }
 
 // application/use_cases/create_feature.rs
 pub fn create_feature(
-    spec_repo: &dyn SpecRepository,
+    spec_repo: &dyn SpecRepositoryInterface,
     name: &str,
 ) -> Result<(), ApplicationError> {
-    // SpecRepositoryのみ使用
+    // SpecRepositoryInterfaceのみ使用
+    spec_repo.create_feature(name)
 }
 
-// application/use_cases/backup_steering.rs
-pub fn backup_steering(
-    config_repo: &dyn ConfigRepository,
-    steering_repo: &dyn SteeringRepository,
+// application/use_cases/complete_features.rs
+pub fn complete_features(
+    spec_repo: &dyn SpecRepositoryInterface,
+    config_repo: &dyn ConfigRepositoryInterface,
 ) -> Result<(), ApplicationError> {
-    // ConfigとSteeringの両方を使用
+    // TUIを表示してspecを選択
+    let selected_specs = show_spec_selector(spec_repo)?;
+    
+    // 選択されたspecをアーカイブ
+    for spec_name in selected_specs {
+        spec_repo.mark_spec_complete(&spec_name)?;
+    }
+    
+    Ok(())
+}
+
+// application/use_cases/launch_claude_with_spec.rs
+pub fn launch_claude_with_spec(
+    spec_repo: &dyn SpecRepositoryInterface,
+    config_repo: &dyn ConfigRepositoryInterface,
+    danger_mode: bool,
+) -> Result<(), ApplicationError> {
+    // 既存のspecを選択または新規作成
+    let spec_name = select_or_create_spec(spec_repo)?;
+    let spec_path = spec_repo.get_spec_path(&spec_name)?;
+    
+    // system promptを生成
+    let system_prompt = generate_system_prompt(&spec_name, &spec_path)?;
+    
+    // Claude Codeを起動
+    launch_claude_process(&system_prompt, danger_mode)?;
+    
+    Ok(())
 }
 ```
 
@@ -415,7 +425,7 @@ mod tests {
     fn test_load_config_when_file_exists() {
         let test_dir = TestDirectory::new_no_cd();
         let path_manager = PathManager::new(test_dir.path().to_path_buf());
-        let repo = ConfigRepositoryImpl::new(path_manager);
+        let repo = ConfigRepository::new(path_manager);
         
         // TOMLファイルを作成
         // ...
@@ -442,18 +452,17 @@ fn test_project_initialization_creates_all_structure() {
     let path_manager = PathManager::new(test_dir.path().to_path_buf());
     
     // 全リポジトリを組み立て
-    let config_repo = Arc::new(ConfigRepositoryImpl::new(path_manager.clone()));
-    let spec_repo = Arc::new(SpecRepositoryImpl::new(path_manager.clone()));
-    let steering_repo = Arc::new(SteeringRepositoryImpl::new(path_manager.clone()));
-    let project_repo = ProjectRepositoryImpl::new(
-        path_manager.clone(),
-        config_repo,
-        spec_repo,
-        steering_repo,
-    );
+    let config_repo = Arc::new(ConfigRepository::new(path_manager.clone()));
+    let spec_repo = Arc::new(SpecRepository::new(path_manager.clone()));
+    let steering_repo = Arc::new(SteeringRepository::new(path_manager.clone()));
     
-    // 初期化実行
-    project_repo.initialize().unwrap();
+    // Use Caseを通じて初期化実行（複数リポジトリを渡す）
+    initialize_project(
+        config_repo.as_ref(),
+        spec_repo.as_ref(),
+        steering_repo.as_ref(),
+        false
+    ).unwrap();
     
     // 全構造が作成されたことを確認
     assert!(test_dir.path().join(".kiro").exists());
@@ -470,10 +479,10 @@ fn test_project_initialization_creates_all_structure() {
 2. SpecRepositoryの実装とテスト
 3. SteeringRepositoryの実装とテスト
 
-### Phase 2: ProjectRepositoryのリファクタリング
-1. 既存メソッドを各リポジトリに移動
-2. ProjectRepositoryをCoordinatorに変更
-3. 依存性注入の更新
+### Phase 2: 既存ProjectRepositoryの削除と移行
+1. 既存メソッドを各リポジトリに適切に分散
+2. ProjectRepositoryトレイトと実装を削除
+3. 必要に応じて新しいヘルパー関数をUse Case層に追加
 
 ### Phase 3: Use Case層の更新
 1. 各Use Caseが適切なリポジトリを使用するよう更新
@@ -492,12 +501,14 @@ fn test_project_initialization_creates_all_structure() {
 4. **拡張性向上**: 新機能追加時の影響が局所化
 5. **コード重複の削減**: TOMLパース処理の一元化
 6. **型安全性向上**: Serdeによる自動シリアライズ/デシリアライズ
+7. **明示的な依存関係**: Use Caseレベルで必要なリポジトリが明確
+8. **不要な抽象層の排除**: ProjectRepository Coordinatorを削除してシンプル化
 
 ## 潜在的な課題と対策
 
-### 課題1: リポジトリ間の依存
-- **問題**: 一部の操作で複数リポジトリが必要
-- **対策**: Use Case層で適切に調整、必要に応じてサービス層を導入
+### 課題1: Use Caseの複雑化
+- **問題**: 一部のUse Caseが複数のリポジトリを扱う必要がある
+- **対策**: Use Case層で適切に調整、明示的な依存関係のメリットが上回る
 
 ### 課題2: パフォーマンス
 - **問題**: ConfigRepositoryが頻繁に呼ばれる場合のI/O
@@ -506,3 +517,7 @@ fn test_project_initialization_creates_all_structure() {
 ### 課題3: 後方互換性
 - **問題**: 既存のconfig.tomlとの互換性
 - **対策**: Serdeのdefault属性で対応、マイグレーション処理を実装
+
+### 課題4: gitignore更新の配置
+- **問題**: gitignore更新がどのリポジトリに属するか不明確
+- **対策**: SteeringRepositoryに含めるか、必要に応じて小さなGitignoreRepositoryを作成

@@ -1,16 +1,17 @@
+[steering.backup]
+max = 10
+
 [[steering.types]]
-name = "product"
-purpose = "Product overview and value proposition"
 criteria = [
     "Product Overview: Brief description of what the product is",
     "Core Features: Bulleted list of main capabilities",
     "Target Use Case: Specific scenarios the product addresses",
     "Key Value Proposition: Unique benefits and differentiators",
 ]
+name = "product"
+purpose = "Product overview and value proposition"
 
 [[steering.types]]
-name = "tech"
-purpose = "Technical stack and development environment"
 criteria = [
     "Architecture: High-level system design",
     "Frontend: Frameworks, libraries, build tools (if applicable)",
@@ -20,10 +21,10 @@ criteria = [
     "Environment Variables: Key configuration variables",
     "Port Configuration: Standard ports used by services",
 ]
+name = "tech"
+purpose = "Technical stack and development environment"
 
 [[steering.types]]
-name = "structure"
-purpose = "Code organization and project structure patterns"
 criteria = [
     "Root Directory Organization: Top-level structure with descriptions",
     "Subdirectory Structures: Detailed breakdown of key directories",
@@ -32,5 +33,5 @@ criteria = [
     "Import Organization: How imports/dependencies are organized",
     "Key Architectural Principles: Core design decisions and patterns",
 ]
-[steering.backup]
-max = 10
+name = "structure"
+purpose = "Code organization and project structure patterns"
