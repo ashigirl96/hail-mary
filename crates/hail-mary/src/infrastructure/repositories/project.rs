@@ -475,6 +475,209 @@ impl ProjectRepositoryTrait for ProjectRepository {
 
         Ok(())
     }
+
+    fn list_steering_files(&self) -> Result<Vec<std::path::PathBuf>, ApplicationError> {
+        let steering_dir = self.steering_dir();
+
+        if !steering_dir.exists() {
+            return Ok(Vec::new());
+        }
+
+        let mut files = Vec::new();
+        let entries = fs::read_dir(&steering_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to read steering directory: {}", e))
+        })?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| {
+                ApplicationError::FileSystemError(format!("Failed to read directory entry: {}", e))
+            })?;
+
+            let path = entry.path();
+            let file_name = entry.file_name().to_string_lossy().to_string();
+
+            // Skip backup and draft directories
+            if file_name == "backup" || file_name == "draft" {
+                continue;
+            }
+
+            // Only include markdown files
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("md") {
+                // Return relative path from steering directory
+                files.push(std::path::PathBuf::from(file_name));
+            }
+        }
+
+        Ok(files)
+    }
+
+    fn create_steering_backup(
+        &self,
+        timestamp: &str,
+        files: &[std::path::PathBuf],
+    ) -> Result<(), ApplicationError> {
+        let steering_dir = self.steering_dir();
+        let backup_dir = steering_dir.join("backup").join(timestamp);
+
+        // Create backup directory
+        fs::create_dir_all(&backup_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create backup directory: {}", e))
+        })?;
+
+        // Copy each file to backup
+        for file in files {
+            let source = steering_dir.join(file);
+            let dest = backup_dir.join(file);
+
+            if source.exists() {
+                fs::copy(&source, &dest).map_err(|e| {
+                    ApplicationError::FileSystemError(format!(
+                        "Failed to backup file {}: {}",
+                        file.display(),
+                        e
+                    ))
+                })?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn list_steering_backups(
+        &self,
+    ) -> Result<Vec<crate::application::repositories::BackupInfo>, ApplicationError> {
+        use crate::application::repositories::BackupInfo;
+
+        let backup_dir = self.steering_dir().join("backup");
+
+        if !backup_dir.exists() {
+            return Ok(Vec::new());
+        }
+
+        let mut backups = Vec::new();
+        let entries = fs::read_dir(&backup_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to read backup directory: {}", e))
+        })?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| {
+                ApplicationError::FileSystemError(format!("Failed to read directory entry: {}", e))
+            })?;
+
+            if entry
+                .file_type()
+                .map_err(|e| {
+                    ApplicationError::FileSystemError(format!("Failed to get file type: {}", e))
+                })?
+                .is_dir()
+            {
+                let metadata = entry.metadata().map_err(|e| {
+                    ApplicationError::FileSystemError(format!("Failed to get metadata: {}", e))
+                })?;
+
+                backups.push(BackupInfo {
+                    name: entry.file_name().to_string_lossy().to_string(),
+                    created_at: metadata.created().unwrap_or_else(|_| {
+                        metadata.modified().unwrap_or(std::time::SystemTime::now())
+                    }),
+                    path: entry.path(),
+                });
+            }
+        }
+
+        // Sort by creation time (oldest first)
+        backups.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+
+        Ok(backups)
+    }
+
+    fn delete_oldest_steering_backups(&self, count: usize) -> Result<(), ApplicationError> {
+        let backups = self.list_steering_backups()?;
+
+        // Take the oldest 'count' backups
+        for backup in backups.iter().take(count) {
+            fs::remove_dir_all(&backup.path).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to delete backup {}: {}",
+                    backup.name, e
+                ))
+            })?;
+        }
+
+        Ok(())
+    }
+
+    fn load_steering_backup_config(
+        &self,
+    ) -> Result<crate::domain::entities::steering::SteeringBackupConfig, ApplicationError> {
+        use crate::domain::entities::steering::SteeringBackupConfig;
+
+        let config_path = self.path_manager.config_path(true);
+
+        if !config_path.exists() {
+            // Return default if config doesn't exist
+            return Ok(SteeringBackupConfig::default());
+        }
+
+        let content = fs::read_to_string(&config_path).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to read config file: {}", e))
+        })?;
+
+        // Parse TOML to check for steering.backup section
+        let parsed: toml::Value = toml::from_str(&content).map_err(|e| {
+            ApplicationError::ConfigurationError(format!("Failed to parse config: {}", e))
+        })?;
+
+        // Check if steering.backup.max exists
+        if let Some(steering) = parsed.get("steering")
+            && let Some(backup) = steering.get("backup")
+            && let Some(max) = backup.get("max")
+            && let Some(max_value) = max.as_integer()
+        {
+            return Ok(SteeringBackupConfig {
+                max: max_value as usize,
+            });
+        }
+
+        // Return default if section doesn't exist
+        Ok(SteeringBackupConfig::default())
+    }
+
+    fn ensure_steering_backup_config(&self) -> Result<(), ApplicationError> {
+        let config_path = self.path_manager.config_path(true);
+
+        if !config_path.exists() {
+            // Config doesn't exist, will be created by save_config with defaults
+            return Ok(());
+        }
+
+        let content = fs::read_to_string(&config_path).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to read config file: {}", e))
+        })?;
+
+        // Parse TOML to check if steering.backup already exists
+        let parsed: toml::Value = toml::from_str(&content).map_err(|e| {
+            ApplicationError::ConfigurationError(format!("Failed to parse config: {}", e))
+        })?;
+
+        // Check if steering.backup section already exists
+        if let Some(steering) = parsed.get("steering")
+            && let Some(_backup) = steering.get("backup")
+        {
+            // Already exists, nothing to do
+            return Ok(());
+        }
+
+        // Append steering.backup section
+        let backup_section = "\n[steering.backup]\nmax = 10\n";
+        let new_content = format!("{}{}", content.trim_end(), backup_section);
+
+        fs::write(&config_path, new_content).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to update config file: {}", e))
+        })?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

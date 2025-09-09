@@ -8,6 +8,17 @@ pub struct SteeringType {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct SteeringBackupConfig {
+    pub max: usize,
+}
+
+impl Default for SteeringBackupConfig {
+    fn default() -> Self {
+        Self { max: 10 }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Criterion {
     pub name: String,
     pub description: String,
@@ -37,11 +48,13 @@ impl fmt::Display for Criterion {
 #[derive(Debug, Clone, PartialEq)]
 pub struct SteeringConfig {
     pub types: Vec<SteeringType>,
+    pub backup: SteeringBackupConfig,
 }
 
 impl SteeringConfig {
     pub fn default_for_new_project() -> Self {
         Self {
+            backup: SteeringBackupConfig::default(),
             types: vec![
                 SteeringType {
                     name: "product".to_string(),
@@ -325,6 +338,7 @@ mod tests {
     #[test]
     fn test_steering_config_clone_and_debug() {
         let config = SteeringConfig {
+            backup: SteeringBackupConfig::default(),
             types: vec![SteeringType {
                 name: "test".to_string(),
                 purpose: "test purpose".to_string(),
@@ -338,5 +352,37 @@ mod tests {
         let debug_str = format!("{:?}", config);
         assert!(debug_str.contains("SteeringConfig"));
         assert!(debug_str.contains("test"));
+    }
+
+    #[test]
+    fn test_steering_backup_config_default() {
+        let config = SteeringBackupConfig::default();
+        assert_eq!(config.max, 10);
+    }
+
+    #[test]
+    fn test_steering_backup_config_clone() {
+        let config = SteeringBackupConfig { max: 5 };
+        let cloned = config.clone();
+        assert_eq!(config, cloned);
+        assert_eq!(cloned.max, 5);
+    }
+
+    #[test]
+    fn test_steering_backup_config_debug() {
+        let config = SteeringBackupConfig { max: 15 };
+        let debug_str = format!("{:?}", config);
+        assert!(debug_str.contains("SteeringBackupConfig"));
+        assert!(debug_str.contains("15"));
+    }
+
+    #[test]
+    fn test_steering_backup_config_partial_eq() {
+        let config1 = SteeringBackupConfig { max: 10 };
+        let config2 = SteeringBackupConfig { max: 10 };
+        let config3 = SteeringBackupConfig { max: 20 };
+
+        assert_eq!(config1, config2);
+        assert_ne!(config1, config3);
     }
 }

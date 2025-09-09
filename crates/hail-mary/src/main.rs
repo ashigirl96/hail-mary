@@ -1,7 +1,9 @@
 use anyhow::Result;
 use clap::Parser;
-use hail_mary::cli::args::{Cli, Commands};
-use hail_mary::cli::commands::{CodeCommand, CompleteCommand, InitCommand, NewCommand, completion};
+use hail_mary::cli::args::{Cli, Commands, SteeringCommands};
+use hail_mary::cli::commands::{
+    CodeCommand, CompleteCommand, InitCommand, NewCommand, SteeringBackupCommand, completion,
+};
 use hail_mary::cli::formatters::format_error;
 use std::process;
 
@@ -35,6 +37,12 @@ fn run() -> Result<()> {
             let command = CodeCommand::new(no_danger);
             command.execute()?;
         }
+        Commands::Steering { command } => match command {
+            SteeringCommands::Backup => {
+                let backup_command = SteeringBackupCommand::new();
+                backup_command.execute()?;
+            }
+        },
     }
 
     Ok(())
@@ -112,9 +120,13 @@ mod tests {
     fn test_main_init_command_idempotent() {
         let _test_dir = TestDirectory::new();
 
-        // Create existing .kiro directory with config
+        // Create existing .kiro directory with valid TOML config
         fs::create_dir_all(".kiro").unwrap();
-        fs::write(".kiro/config.toml", "existing content").unwrap();
+        fs::write(
+            ".kiro/config.toml",
+            "# Existing config\n[custom]\nvalue = \"test\"",
+        )
+        .unwrap();
 
         // Test init is idempotent (no force flag needed)
         let args = vec!["hail-mary", "init"];
@@ -128,7 +140,9 @@ mod tests {
 
                 // Verify existing config is preserved and steering section is added
                 let config = fs::read_to_string(".kiro/config.toml").unwrap();
-                assert!(config.contains("existing content"));
+                assert!(config.contains("# Existing config"));
+                assert!(config.contains("[custom]"));
+                assert!(config.contains("[steering.backup]"));
                 assert!(config.contains("[[steering.types]]"));
             }
             _ => panic!("Expected init command"),

@@ -32,3 +32,5 @@ criteria = [
     "Import Organization: How imports/dependencies are organized",
     "Key Architectural Principles: Core design decisions and patterns",
 ]
+[steering.backup]
+max = 10

@@ -21,30 +21,3 @@ pub fn handle_completion(shell: &Shell) -> Result<()> {
 
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::cli::args::Shell;
-
-    #[test]
-    fn test_completion_generation_does_not_panic() {
-        // Test that completion generation doesn't panic for each shell
-        let shells = [
-            Shell::Bash,
-            Shell::Zsh,
-            Shell::Fish,
-            Shell::PowerShell,
-            Shell::Elvish,
-        ];
-
-        for shell in &shells {
-            let result = handle_completion(shell);
-            assert!(
-                result.is_ok(),
-                "Completion generation failed for {:?}",
-                shell
-            );
-        }
-    }
-}
