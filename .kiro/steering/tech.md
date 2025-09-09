@@ -471,3 +471,27 @@ env::set_current_dir(original_dir).unwrap(); // 手動復元（パニック時�
 - **データ変換設計**: JSONとCSVの相互変換における適切なエスケープ処理
 - **並列テスト設計**: グローバル状態とスレッド間競合を理解した適切な同期化
 - **RAIIパターン**: リソース管理の自動化による例外安全性とコードの簡潔性
+
+## 21. **TOML構造的パース vs 文字列検索**
+**学び**: `toml` crateによる型安全なTOML操作
+```rust
+// ❌ 脆弱な文字列検索
+if content.contains("[steering.backup]") {
+    // コメント内の文字列でも反応してしまう
+}
+
+// ✅ 構造的パース
+let parsed: toml::Value = toml::from_str(&content)?;
+if let Some(steering) = parsed.get("steering")
+    && let Some(_backup) = steering.get("backup")
+{
+    // TOMLの実際の構造を検証
+    // 型安全でパース失敗も適切にハンドリング
+}
+```
+
+**利点**:
+- パース失敗時の適切なエラーハンドリング
+- コメントや文字列リテラル内の誤検知を回避
+- 将来的なTOML構造変更に対応可能
+- コードの意図が明確
