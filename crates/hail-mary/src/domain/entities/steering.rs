@@ -1,14 +1,16 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SteeringType {
     pub name: String,
     pub purpose: String,
     pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SteeringBackupConfig {
+    #[serde(default = "default_backup_max")]
     pub max: usize,
 }
 
@@ -18,7 +20,11 @@ impl Default for SteeringBackupConfig {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+fn default_backup_max() -> usize {
+    10
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Criterion {
     pub name: String,
     pub description: String,
@@ -45,9 +51,11 @@ impl fmt::Display for Criterion {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SteeringConfig {
+    #[serde(default)]
     pub types: Vec<SteeringType>,
+    #[serde(default)]
     pub backup: SteeringBackupConfig,
 }
 

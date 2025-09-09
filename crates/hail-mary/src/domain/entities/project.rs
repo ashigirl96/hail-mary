@@ -1,12 +1,20 @@
-#[derive(Debug, Clone, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub enum DocumentFormat {
+    #[default]
     Markdown,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProjectConfig {
+    #[serde(default = "default_instructions")]
     pub instructions: String,
+    #[serde(default)]
     pub document_format: DocumentFormat,
+    #[serde(
+        default = "crate::domain::entities::steering::SteeringConfig::default_for_new_project"
+    )]
     pub steering: crate::domain::entities::steering::SteeringConfig,
 }
 
@@ -47,6 +55,10 @@ File-based steering system for context management:
 - product.md: Product overview and value proposition
 - tech.md: Technical stack and development environment
 - structure.md: Code organization patterns and conventions"#;
+
+fn default_instructions() -> String {
+    DEFAULT_INSTRUCTIONS.to_string()
+}
 
 #[cfg(test)]
 mod tests {
