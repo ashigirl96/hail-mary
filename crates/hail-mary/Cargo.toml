@@ -9,7 +9,6 @@ clap = { workspace = true }
 clap_complete = { workspace = true }
 
 # Core
-tokio = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 
