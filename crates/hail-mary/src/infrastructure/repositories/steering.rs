@@ -163,8 +163,8 @@ impl SteeringRepository for SteeringRepositoryImpl {
             }
         }
 
-        // Sort by creation time (oldest first)
-        backups.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+        // Sort by name (oldest first) - names are date-based like "2025-01-01"
+        backups.sort_by(|a, b| a.name.cmp(&b.name));
 
         Ok(backups)
     }
