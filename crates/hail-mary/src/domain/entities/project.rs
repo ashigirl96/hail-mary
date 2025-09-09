@@ -27,8 +27,6 @@ impl ProjectConfig {
         }
     }
 
-    // Memory type validation removed - using steering system instead
-
     pub fn validate_spec_name(name: &str) -> Result<(), crate::domain::errors::DomainError> {
         if name.is_empty() {
             return Err(crate::domain::errors::DomainError::InvalidFeatureName(
