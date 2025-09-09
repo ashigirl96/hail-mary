@@ -36,6 +36,18 @@ pub enum Commands {
         #[arg(long)]
         no_danger: bool,
     },
+
+    /// Steering system management
+    Steering {
+        #[command(subcommand)]
+        command: SteeringCommands,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum SteeringCommands {
+    /// Create a backup of steering files
+    Backup,
 }
 
 #[derive(ValueEnum, Clone, Debug)]
