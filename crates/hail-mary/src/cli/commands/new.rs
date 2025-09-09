@@ -1,7 +1,7 @@
 use crate::application::use_cases::create_feature;
 use crate::cli::formatters::{format_error, format_success};
 use crate::infrastructure::filesystem::path_manager::PathManager;
-use crate::infrastructure::repositories::project::ProjectRepository;
+use crate::infrastructure::repositories::spec::SpecRepository;
 use anyhow::Result;
 
 pub struct NewCommand {
@@ -27,10 +27,10 @@ impl NewCommand {
         };
 
         // Create repository
-        let project_repo = ProjectRepository::new(path_manager);
+        let spec_repo = SpecRepository::new(path_manager);
 
         // Execute use case function (validation is done inside)
-        match create_feature(&project_repo, &self.name) {
+        match create_feature(&spec_repo, &self.name) {
             Ok(feature_path) => {
                 println!(
                     "{}",

@@ -14,11 +14,11 @@ use ratatui::{
 use std::collections::HashSet;
 use std::io;
 
-use crate::application::repositories::ProjectRepository as ProjectRepositoryTrait;
+use crate::application::repositories::SpecRepositoryInterface;
 use crate::application::use_cases::complete_features;
 use crate::cli::formatters::{format_error, format_success};
 use crate::infrastructure::filesystem::path_manager::PathManager;
-use crate::infrastructure::repositories::project::ProjectRepository;
+use crate::infrastructure::repositories::spec::SpecRepository;
 
 pub struct CompleteCommand;
 
@@ -46,11 +46,11 @@ impl CompleteCommand {
             }
         };
 
-        // Create project repository
-        let project_repo = ProjectRepository::new(path_manager);
+        // Create spec repository
+        let spec_repo = SpecRepository::new(path_manager);
 
         // Get list of specifications
-        let specs = match project_repo.list_spec_directories() {
+        let specs = match spec_repo.list_spec_directories() {
             Ok(specs) => specs,
             Err(e) => {
                 println!("{}", format_error(&e.to_string()));
@@ -67,10 +67,10 @@ impl CompleteCommand {
         }
 
         // Run the TUI
-        self.run_tui(specs, &project_repo)
+        self.run_tui(specs, &spec_repo)
     }
 
-    fn run_tui(&self, specs: Vec<(String, bool)>, project_repo: &ProjectRepository) -> Result<()> {
+    fn run_tui(&self, specs: Vec<(String, bool)>, spec_repo: &SpecRepository) -> Result<()> {
         // Terminal initialization
         enable_raw_mode()?;
         let mut stdout = io::stdout();
@@ -112,7 +112,7 @@ impl CompleteCommand {
                         }
 
                         // Execute complete features
-                        match complete_features(project_repo, &selected_specs) {
+                        match complete_features(spec_repo, &selected_specs) {
                             Ok(()) => {
                                 break Ok(());
                             }

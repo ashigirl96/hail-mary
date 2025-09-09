@@ -1,7 +1,9 @@
 use crate::application::use_cases::initialize_project;
 use crate::cli::formatters::{format_error, format_success};
 use crate::infrastructure::filesystem::path_manager::PathManager;
-use crate::infrastructure::repositories::project::ProjectRepository;
+use crate::infrastructure::repositories::{
+    config::ConfigRepository, spec::SpecRepository, steering::SteeringRepository,
+};
 use anyhow::Result;
 
 pub struct InitCommand;
@@ -22,11 +24,13 @@ impl InitCommand {
         let current_dir = std::env::current_dir()?;
         let path_manager = PathManager::new(current_dir);
 
-        // Create repository
-        let project_repo = ProjectRepository::new(path_manager);
+        // Create repositories
+        let config_repo = ConfigRepository::new(path_manager.clone());
+        let spec_repo = SpecRepository::new(path_manager.clone());
+        let steering_repo = SteeringRepository::new(path_manager);
 
         // Execute use case function (now idempotent)
-        match initialize_project(&project_repo) {
+        match initialize_project(&config_repo, &spec_repo, &steering_repo) {
             Ok(()) => {
                 println!("{}", format_success("Initialization complete."));
                 Ok(())

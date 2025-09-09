@@ -1,7 +1,7 @@
 use crate::application::use_cases::backup_steering;
 use crate::cli::formatters::{format_error, format_success};
 use crate::infrastructure::filesystem::path_manager::PathManager;
-use crate::infrastructure::repositories::project::ProjectRepository;
+use crate::infrastructure::repositories::{config::ConfigRepository, steering::SteeringRepository};
 use anyhow::Result;
 
 pub struct SteeringBackupCommand;
@@ -22,11 +22,12 @@ impl SteeringBackupCommand {
         let current_dir = std::env::current_dir()?;
         let path_manager = PathManager::new(current_dir);
 
-        // Create repository
-        let project_repo = ProjectRepository::new(path_manager);
+        // Create repositories
+        let config_repo = ConfigRepository::new(path_manager.clone());
+        let steering_repo = SteeringRepository::new(path_manager);
 
         // Execute backup use case
-        match backup_steering(&project_repo) {
+        match backup_steering(&config_repo, &steering_repo) {
             Ok(message) => {
                 println!("{}", format_success(&message));
                 Ok(())

@@ -3,7 +3,7 @@ use anyhow::Result;
 use crate::application::use_cases::launch_claude_with_spec;
 use crate::cli::formatters::format_error;
 use crate::infrastructure::filesystem::path_manager::PathManager;
-use crate::infrastructure::repositories::project::ProjectRepository;
+use crate::infrastructure::repositories::spec::SpecRepository;
 
 pub struct CodeCommand {
     no_danger: bool,
@@ -28,10 +28,10 @@ impl CodeCommand {
         };
 
         // Create repository
-        let project_repo = ProjectRepository::new(path_manager);
+        let spec_repo = SpecRepository::new(path_manager);
 
         // Execute single use case
-        match launch_claude_with_spec(&project_repo, self.no_danger) {
+        match launch_claude_with_spec(&spec_repo, self.no_danger) {
             Ok(()) => Ok(()),
             Err(crate::application::errors::ApplicationError::ProcessLaunchError(msg)) => {
                 println!("{}", format_error(&msg));
