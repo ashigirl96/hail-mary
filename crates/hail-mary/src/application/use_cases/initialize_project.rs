@@ -4,23 +4,12 @@ use crate::application::repositories::{
 };
 use crate::domain::entities::project::ProjectConfig;
 use crate::domain::entities::steering::SteeringConfig;
-use crate::infrastructure::filesystem::path_manager::PathManager;
 
 pub fn initialize_project(
     config_repo: &dyn ConfigRepositoryInterface,
     _spec_repo: &dyn SpecRepositoryInterface,
     steering_repo: &dyn SteeringRepositoryInterface,
 ) -> Result<(), ApplicationError> {
-    // Initialize project structure - create .kiro directory and subdirectories
-    // The SpecRepository handles specs directory creation
-    let path_manager = PathManager::discover()?;
-    let specs_dir = path_manager.specs_dir(false);
-    if !specs_dir.exists() {
-        std::fs::create_dir_all(&specs_dir).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to create specs directory: {}", e))
-        })?;
-    }
-
     // Initialize steering directories (idempotent)
     steering_repo.initialize_steering()?;
 

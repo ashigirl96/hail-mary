@@ -34,6 +34,12 @@ impl SteeringRepositoryInterface for SteeringRepository {
             ApplicationError::FileSystemError(format!("Failed to create steering directory: {}", e))
         })?;
 
+        // Create .kiro/specs directory during initialization
+        let specs_dir = self.path_manager.specs_dir(true);
+        fs::create_dir_all(&specs_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create specs directory: {}", e))
+        })?;
+
         Ok(())
     }
 

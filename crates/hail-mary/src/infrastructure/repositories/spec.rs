@@ -212,10 +212,16 @@ impl SpecRepositoryInterface for SpecRepository {
         // Validate feature name
         self.validate_feature_name(name)?;
 
+        // Ensure specs directory exists (like ConfigRepository pattern)
+        let specs_dir = self.path_manager.specs_dir(true);
+        fs::create_dir_all(&specs_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create specs directory: {}", e))
+        })?;
+
         // Generate directory name with date prefix
         let date = chrono::Utc::now().format("%Y-%m-%d");
         let feature_name = format!("{}-{}", date, name);
-        let feature_dir = self.path_manager.specs_dir(true).join(&feature_name);
+        let feature_dir = specs_dir.join(&feature_name);
 
         // Check if feature already exists
         if feature_dir.exists() {
