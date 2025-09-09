@@ -14,18 +14,17 @@ impl CodeCommand {
         Self { no_danger }
     }
 
+    fn project_not_found_error(&self) -> anyhow::Error {
+        println!(
+            "{}",
+            format_error("Not in a project directory. Run 'hail-mary init' first.")
+        );
+        anyhow::anyhow!("Project not found")
+    }
+
     pub fn execute(&self) -> Result<()> {
         // Discover project root
-        let path_manager = match PathManager::discover() {
-            Ok(pm) => pm,
-            Err(_) => {
-                println!(
-                    "{}",
-                    format_error("Not in a project directory. Run 'hail-mary init' first.")
-                );
-                return Err(anyhow::anyhow!("Project not found"));
-            }
-        };
+        let path_manager = PathManager::discover().map_err(|_| self.project_not_found_error())?;
 
         // Create repository
         let spec_repo = SpecRepository::new(path_manager);
