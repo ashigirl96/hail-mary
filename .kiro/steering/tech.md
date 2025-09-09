@@ -56,11 +56,22 @@ hail-mary shell-completions <shell>         # Generate completion scripts
 
 ### Testing Commands
 ```bash
-# Comprehensive testing
-cargo test                                       # All tests  
-cargo test -- --nocapture                       # Test output visible
-RUST_BACKTRACE=1 cargo test -- --nocapture     # With backtraces
+# Development testing (Preferred)
+just ci                                         # Full CI pipeline - USE THIS
+just fix                                        # Format code before testing
+just test                                       # Run all tests
+
+# Direct cargo test (Avoid - use just commands instead)
+cargo test                                      # All tests  
+cargo test -- --nocapture                      # Test output visible
+RUST_BACKTRACE=1 cargo test -- --nocapture    # With backtraces
 ```
+
+## Testing Guidelines
+**When**: After implementation completion
+- Always use `just fix` and `just ci` instead of direct `cargo test`
+- Ensures consistent formatting and comprehensive validation
+- Maintains CI/CD compatibility
 
 ## Environment Variables
 - `RUST_LOG`: Logging level (debug, info, warn, error)
