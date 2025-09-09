@@ -1,29 +1,46 @@
 use crate::application::errors::ApplicationError;
-use crate::application::repositories::ProjectRepository;
+use crate::application::repositories::{
+    ConfigRepositoryInterface, SpecRepositoryInterface, SteeringRepositoryInterface,
+};
+use crate::domain::entities::project::ProjectConfig;
 use crate::domain::entities::steering::SteeringConfig;
 
-pub fn initialize_project(repository: &impl ProjectRepository) -> Result<(), ApplicationError> {
-    // Initialize project structure (idempotent)
-    repository.initialize()?;
+pub fn initialize_project(
+    config_repo: &dyn ConfigRepositoryInterface,
+    _spec_repo: &dyn SpecRepositoryInterface,
+    steering_repo: &dyn SteeringRepositoryInterface,
+) -> Result<(), ApplicationError> {
+    // Initialize project structure - create .kiro directory and subdirectories
+    // The SpecRepository handles specs directory creation
+    let specs_dir = std::path::PathBuf::from(".kiro/specs");
+    if !specs_dir.exists() {
+        std::fs::create_dir_all(&specs_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create specs directory: {}", e))
+        })?;
+    }
 
     // Initialize steering directories (idempotent)
-    repository.initialize_steering()?;
+    steering_repo.initialize_steering()?;
 
     // Ensure steering configuration exists (idempotent)
-    repository.ensure_steering_config()?;
+    config_repo.ensure_steering_config()?;
 
     // Ensure steering backup configuration exists (idempotent)
-    repository.ensure_steering_backup_config()?;
+    config_repo.ensure_steering_backup_config()?;
+
+    // Save default config if it doesn't exist
+    let config = ProjectConfig::default_for_new_project();
+    config_repo.save_config(&config)?;
 
     // Create steering files (idempotent)
     let steering_config = SteeringConfig::default_for_new_project();
-    repository.create_steering_files(&steering_config)?;
+    steering_repo.create_steering_files(&steering_config)?;
 
     // Update .gitignore (idempotent)
-    repository.update_gitignore()?;
+    steering_repo.update_gitignore()?;
 
     // Deploy slash command markdown files (always overwrites)
-    repository.deploy_slash_commands()?;
+    steering_repo.deploy_slash_commands()?;
 
     Ok(())
 }
@@ -31,45 +48,55 @@ pub fn initialize_project(repository: &impl ProjectRepository) -> Result<(), App
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::test_helpers::MockProjectRepository;
+    use crate::application::test_helpers::{
+        MockConfigRepository, MockSpecRepository, MockSteeringRepository,
+    };
 
     #[test]
     fn test_initialize_project_success() {
-        let repo = MockProjectRepository::new();
+        let config_repo = MockConfigRepository::new();
+        let spec_repo = MockSpecRepository::new();
+        let steering_repo = MockSteeringRepository::new();
 
-        let result = initialize_project(&repo);
+        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_initialize_project_idempotent() {
-        let mut repo = MockProjectRepository::new();
-        repo.set_initialized(true); // Project already exists
+        let config_repo = MockConfigRepository::new();
+        let spec_repo = MockSpecRepository::new();
+        let steering_repo = MockSteeringRepository::new();
+        steering_repo.set_project_exists(true); // Project already exists
 
         // Should succeed even if project already exists (idempotent)
-        let result = initialize_project(&repo);
+        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
         assert!(result.is_ok());
     }
 
     #[test]
-    fn test_initialize_project_initialize_failure() {
-        let mut repo = MockProjectRepository::new();
-        repo.set_operation_to_fail("initialize");
+    fn test_initialize_project_steering_failure() {
+        let config_repo = MockConfigRepository::new();
+        let spec_repo = MockSpecRepository::new();
+        let steering_repo = MockSteeringRepository::new();
+        steering_repo.set_operation_to_fail("initialize_steering");
 
-        let result = initialize_project(&repo);
+        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
         assert!(result.is_err());
         match result.unwrap_err() {
-            ApplicationError::ProjectInitializationError(_) => {}
-            other => panic!("Expected ProjectInitializationError, got {:?}", other),
+            ApplicationError::FileSystemError(_) => {}
+            other => panic!("Expected FileSystemError, got {:?}", other),
         }
     }
 
     #[test]
     fn test_initialize_project_config_failure() {
-        let mut repo = MockProjectRepository::new();
-        repo.set_operation_to_fail("ensure_steering_config");
+        let config_repo = MockConfigRepository::new();
+        config_repo.set_operation_to_fail("ensure_steering_config");
+        let spec_repo = MockSpecRepository::new();
+        let steering_repo = MockSteeringRepository::new();
 
-        let result = initialize_project(&repo);
+        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
         assert!(result.is_err());
         match result.unwrap_err() {
             ApplicationError::ConfigurationError(_) => {}
@@ -79,10 +106,12 @@ mod tests {
 
     #[test]
     fn test_initialize_project_gitignore_failure() {
-        let mut repo = MockProjectRepository::new();
-        repo.set_operation_to_fail("update_gitignore");
+        let config_repo = MockConfigRepository::new();
+        let spec_repo = MockSpecRepository::new();
+        let steering_repo = MockSteeringRepository::new();
+        steering_repo.set_operation_to_fail("update_gitignore");
 
-        let result = initialize_project(&repo);
+        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
         assert!(result.is_err());
         match result.unwrap_err() {
             ApplicationError::FileSystemError(_) => {}
@@ -93,67 +122,71 @@ mod tests {
     #[test]
     fn test_initialize_project_flow_order() {
         // Test that operations are called in the correct order
-        let repo = MockProjectRepository::new();
-        let result = initialize_project(&repo);
+        let config_repo = MockConfigRepository::new();
+        let spec_repo = MockSpecRepository::new();
+        let steering_repo = MockSteeringRepository::new();
+
+        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_initialize_project_with_default_config() {
-        let repo = MockProjectRepository::new();
-        let result = initialize_project(&repo);
+        let config_repo = MockConfigRepository::new();
+        let spec_repo = MockSpecRepository::new();
+        let steering_repo = MockSteeringRepository::new();
+
+        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_initialize_project_error_propagation() {
         // Test that all possible errors from dependencies are properly propagated
-        let mut repo = MockProjectRepository::new();
 
-        // Test each operation failure
-        let operations = vec![
-            ("initialize", "ProjectInitializationError"),
-            ("ensure_steering_config", "ConfigurationError"),
-            ("update_gitignore", "FileSystemError"),
-            ("deploy_slash_commands", "FileSystemError"),
-        ];
+        // Test steering config failure
+        {
+            let config_repo = MockConfigRepository::new();
+            config_repo.set_operation_to_fail("ensure_steering_config");
+            let spec_repo = MockSpecRepository::new();
+            let steering_repo = MockSteeringRepository::new();
 
-        for (operation, _expected_error_type) in operations {
-            repo.set_operation_to_fail(operation);
-
-            let result = initialize_project(&repo);
-            assert!(result.is_err(), "Operation {} should fail", operation);
-
-            let error = result.unwrap_err();
-            match operation {
-                "update_gitignore" | "deploy_slash_commands" => {
-                    assert!(
-                        matches!(error, ApplicationError::FileSystemError(_)),
-                        "Expected FileSystemError for {}, got {:?}",
-                        operation,
-                        error
-                    );
-                }
-                "initialize" => {
-                    assert!(
-                        matches!(error, ApplicationError::ProjectInitializationError(_)),
-                        "Expected ProjectInitializationError for {}, got {:?}",
-                        operation,
-                        error
-                    );
-                }
-                "ensure_steering_config" => {
-                    assert!(
-                        matches!(error, ApplicationError::ConfigurationError(_)),
-                        "Expected ConfigurationError for {}, got {:?}",
-                        operation,
-                        error
-                    );
-                }
-                _ => panic!("Unexpected operation: {}", operation),
+            let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
+            assert!(result.is_err());
+            match result.unwrap_err() {
+                ApplicationError::ConfigurationError(_) => {}
+                other => panic!("Expected ConfigurationError, got {:?}", other),
             }
+        }
 
-            repo.clear_failure();
+        // Test gitignore failure
+        {
+            let config_repo = MockConfigRepository::new();
+            let spec_repo = MockSpecRepository::new();
+            let steering_repo = MockSteeringRepository::new();
+            steering_repo.set_operation_to_fail("update_gitignore");
+
+            let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
+            assert!(result.is_err());
+            match result.unwrap_err() {
+                ApplicationError::FileSystemError(_) => {}
+                other => panic!("Expected FileSystemError, got {:?}", other),
+            }
+        }
+
+        // Test deploy slash commands failure
+        {
+            let config_repo = MockConfigRepository::new();
+            let spec_repo = MockSpecRepository::new();
+            let steering_repo = MockSteeringRepository::new();
+            steering_repo.set_operation_to_fail("deploy_slash_commands");
+
+            let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
+            assert!(result.is_err());
+            match result.unwrap_err() {
+                ApplicationError::FileSystemError(_) => {}
+                other => panic!("Expected FileSystemError, got {:?}", other),
+            }
         }
     }
 }

@@ -1,11 +1,11 @@
 use crate::application::errors::ApplicationError;
-use crate::application::repositories::ProjectRepository;
+use crate::application::repositories::SpecRepositoryInterface;
 
 pub fn create_feature(
-    repository: &impl ProjectRepository,
+    spec_repo: &dyn SpecRepositoryInterface,
     name: &str,
 ) -> Result<String, ApplicationError> {
-    // Validate feature name (must be kebab-case)
+    // Validate feature name (must be kebab-case) at use case level for consistency
     if name.is_empty()
         || !name
             .chars()
@@ -18,7 +18,7 @@ pub fn create_feature(
     }
 
     // Create feature through repository
-    repository.create_feature(name)?;
+    spec_repo.create_feature(name)?;
 
     // Return feature path for user feedback
     let date = chrono::Utc::now().format("%Y-%m-%d");
@@ -28,11 +28,11 @@ pub fn create_feature(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::test_helpers::MockProjectRepository;
+    use crate::application::test_helpers::MockSpecRepository;
 
     #[test]
     fn test_create_feature_success() {
-        let repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
 
         let result = create_feature(&repo, "user-authentication");
         assert!(result.is_ok());
@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn test_create_feature_valid_names() {
-        let repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
 
         let valid_names = vec![
             "user-authentication",
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_create_feature_invalid_names() {
-        let repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
 
         let invalid_names = vec![
             "-invalid-start",     // starts with dash
@@ -108,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_create_feature_repository_failure() {
-        let mut repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
         repo.set_operation_to_fail("create_feature");
 
         let result = create_feature(&repo, "valid-feature");
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_create_feature_path_format() {
-        let repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
 
         let result = create_feature(&repo, "test-feature");
         assert!(result.is_ok());
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_create_feature_validation_edge_cases() {
-        let repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
 
         // Test single character (valid)
         let result = create_feature(&repo, "a");
@@ -183,7 +183,7 @@ mod tests {
     fn test_create_feature_validation_before_repository_call() {
         // This test ensures validation happens before calling repository
         // by using an invalid name with a repo that would fail
-        let mut repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
         repo.set_operation_to_fail("create_feature");
 
         let result = create_feature(&repo, "Invalid-Name");
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_create_feature_error_propagation() {
-        let mut repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
         repo.set_operation_to_fail("create_feature");
 
         let result = create_feature(&repo, "valid-name");
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn test_create_feature_return_value_consistency() {
-        let repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
 
         // Test multiple calls with same name should return same path format
         let result1 = create_feature(&repo, "consistent-test");
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_create_feature_special_characters_validation() {
-        let repo = MockProjectRepository::new();
+        let repo = MockSpecRepository::new();
 
         let special_chars = vec![
             "test@feature",

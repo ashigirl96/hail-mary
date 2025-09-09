@@ -2,18 +2,18 @@ use anyhow::Result;
 use std::io::{self, Write};
 
 use crate::application::errors::ApplicationError;
-use crate::application::repositories::ProjectRepository;
+use crate::application::repositories::SpecRepositoryInterface;
 use crate::domain::entities::project::ProjectConfig;
 use crate::domain::value_objects::system_prompt::SystemPrompt;
 use crate::infrastructure::process::claude_launcher::ClaudeProcessLauncher;
 use crate::infrastructure::tui::spec_selector::{SpecSelectionResult, SpecSelectorTui};
 
 pub fn launch_claude_with_spec(
-    project_repo: &dyn ProjectRepository,
+    spec_repo: &dyn SpecRepositoryInterface,
     no_danger: bool,
 ) -> Result<(), ApplicationError> {
     // 1. Get list of specifications
-    let specs = project_repo.list_spec_directories().map_err(|e| {
+    let specs = spec_repo.list_spec_directories().map_err(|e| {
         ApplicationError::FileSystemError(format!("Failed to list specifications: {}", e))
     })?;
 
@@ -29,7 +29,7 @@ pub fn launch_claude_with_spec(
             // Prompt for name and create new spec
             let name = prompt_for_spec_name()?;
             ProjectConfig::validate_spec_name(&name)?;
-            project_repo.create_feature(&name)?;
+            spec_repo.create_feature(&name)?;
 
             // Generate the actual directory name with date prefix (same logic as create_feature)
             let date = chrono::Utc::now().format("%Y-%m-%d");
@@ -41,7 +41,7 @@ pub fn launch_claude_with_spec(
     };
 
     // 3. Get spec path and generate system prompt
-    let spec_path = project_repo.get_spec_path(&spec_name)?;
+    let spec_path = spec_repo.get_spec_path(&spec_name)?;
     let system_prompt = SystemPrompt::new(&spec_name, &spec_path);
 
     // 4. Launch Claude with system prompt
@@ -70,25 +70,25 @@ fn prompt_for_spec_name() -> Result<String, ApplicationError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::test_helpers::MockProjectRepository;
+    use crate::application::test_helpers::MockSpecRepository;
 
     #[test]
     fn test_launch_claude_with_existing_spec() {
-        let mut mock_repo = MockProjectRepository::new();
-        mock_repo.add_created_feature("test-spec");
+        let mock_repo = MockSpecRepository::with_specs(vec!["2025-09-09-test-spec".to_string()]);
 
-        // Mock the list_spec_directories to return our test spec
-        let _specs = [("test-spec".to_string(), false)];
-        // Note: This test would need a mock TUI to fully test the workflow
-        // For now, we just test that the repository methods work correctly
-
-        let result = mock_repo.get_spec_path("test-spec");
+        // Test that the repository methods work correctly
+        let result = mock_repo.get_spec_path("2025-09-09-test-spec");
         assert!(result.is_ok());
+
+        let specs = mock_repo.list_spec_directories().unwrap();
+        assert_eq!(specs.len(), 1);
+        assert_eq!(specs[0].0, "2025-09-09-test-spec");
+        assert!(!specs[0].1); // not archived
     }
 
     #[test]
     fn test_launch_claude_with_nonexistent_spec() {
-        let mock_repo = MockProjectRepository::new();
+        let mock_repo = MockSpecRepository::new();
 
         let result = mock_repo.get_spec_path("nonexistent-spec");
         assert!(result.is_err());
