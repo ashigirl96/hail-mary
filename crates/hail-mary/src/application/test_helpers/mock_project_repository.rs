@@ -1,8 +1,10 @@
 use crate::application::errors::ApplicationError;
-use crate::application::repositories::ProjectRepository;
+use crate::application::repositories::{BackupInfo, ProjectRepository};
 use crate::domain::entities::project::ProjectConfig;
-use crate::domain::entities::steering::SteeringConfig;
+use crate::domain::entities::steering::{SteeringBackupConfig, SteeringConfig};
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::time::SystemTime;
 
 /// Mock implementation of ProjectRepository for testing
 /// Combines features from all existing mock implementations
@@ -20,6 +22,10 @@ pub struct MockProjectRepository {
     should_fail_operation: Option<String>,
     // Custom behavior
     feature_exists: bool,
+    // Steering backup behavior
+    steering_files: Option<Vec<PathBuf>>,
+    steering_backups: Option<Vec<BackupInfo>>,
+    steering_backup_config: Option<SteeringBackupConfig>,
 }
 
 impl Default for MockProjectRepository {
@@ -34,6 +40,9 @@ impl Default for MockProjectRepository {
             should_fail_next_operation: false,
             should_fail_operation: None,
             feature_exists: false,
+            steering_files: None, // None means use default behavior
+            steering_backups: None,
+            steering_backup_config: None,
         }
     }
 }
@@ -126,6 +135,29 @@ impl MockProjectRepository {
 
     pub fn with_features(mut self, features: Vec<String>) -> Self {
         self.features = features;
+        self
+    }
+
+    // Steering backup control methods
+    pub fn set_steering_files(&mut self, files: Vec<PathBuf>) {
+        self.steering_files = Some(files);
+    }
+
+    pub fn set_steering_backups(&mut self, backups: Vec<BackupInfo>) {
+        self.steering_backups = Some(backups);
+    }
+
+    pub fn set_steering_backup_config(&mut self, config: SteeringBackupConfig) {
+        self.steering_backup_config = Some(config);
+    }
+
+    pub fn with_steering_files(mut self, files: Vec<PathBuf>) -> Self {
+        self.steering_files = Some(files);
+        self
+    }
+
+    pub fn with_empty_steering_files(mut self) -> Self {
+        self.steering_files = Some(Vec::new());
         self
     }
 }
@@ -360,6 +392,141 @@ impl ProjectRepository for MockProjectRepository {
         {
             return Err(ApplicationError::FileSystemError(
                 "Mock deploy_slash_commands failure".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn list_steering_files(&self) -> Result<Vec<PathBuf>, ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::FileSystemError(
+                "Failed to list steering files".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "list_steering_files"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock list_steering_files failure".to_string(),
+            ));
+        }
+
+        // Return configured files or default
+        if let Some(ref files) = self.steering_files {
+            Ok(files.clone())
+        } else {
+            // Default mock steering files
+            Ok(vec![
+                PathBuf::from("product.md"),
+                PathBuf::from("tech.md"),
+                PathBuf::from("structure.md"),
+            ])
+        }
+    }
+
+    fn create_steering_backup(
+        &self,
+        _timestamp: &str,
+        _files: &[PathBuf],
+    ) -> Result<(), ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::FileSystemError(
+                "Failed to create steering backup".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "create_steering_backup"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock create_steering_backup failure".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn list_steering_backups(&self) -> Result<Vec<BackupInfo>, ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::FileSystemError(
+                "Failed to list steering backups".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "list_steering_backups"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock list_steering_backups failure".to_string(),
+            ));
+        }
+
+        // Return configured backups or default
+        if let Some(ref backups) = self.steering_backups {
+            Ok(backups.clone())
+        } else {
+            // Default mock backups
+            Ok(vec![
+                BackupInfo {
+                    name: "2025-01-01-10-00".to_string(),
+                    created_at: SystemTime::now(),
+                    path: PathBuf::from(".kiro/steering/backup/2025-01-01-10-00"),
+                },
+                BackupInfo {
+                    name: "2025-01-02-10-00".to_string(),
+                    created_at: SystemTime::now(),
+                    path: PathBuf::from(".kiro/steering/backup/2025-01-02-10-00"),
+                },
+            ])
+        }
+    }
+
+    fn delete_oldest_steering_backups(&self, _count: usize) -> Result<(), ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::FileSystemError(
+                "Failed to delete steering backups".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "delete_oldest_steering_backups"
+        {
+            return Err(ApplicationError::FileSystemError(
+                "Mock delete_oldest_steering_backups failure".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn load_steering_backup_config(&self) -> Result<SteeringBackupConfig, ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::ConfigurationError(
+                "Failed to load steering backup config".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "load_steering_backup_config"
+        {
+            return Err(ApplicationError::ConfigurationError(
+                "Mock load_steering_backup_config failure".to_string(),
+            ));
+        }
+
+        // Return configured config or default
+        if let Some(ref config) = self.steering_backup_config {
+            Ok(config.clone())
+        } else {
+            Ok(SteeringBackupConfig::default())
+        }
+    }
+
+    fn ensure_steering_backup_config(&self) -> Result<(), ApplicationError> {
+        if self.should_fail_next_operation {
+            return Err(ApplicationError::ConfigurationError(
+                "Failed to ensure steering backup config".to_string(),
+            ));
+        }
+        if let Some(ref fail_op) = self.should_fail_operation
+            && fail_op == "ensure_steering_backup_config"
+        {
+            return Err(ApplicationError::ConfigurationError(
+                "Mock ensure_steering_backup_config failure".to_string(),
             ));
         }
         Ok(())
