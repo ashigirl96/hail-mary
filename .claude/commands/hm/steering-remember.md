@@ -55,19 +55,26 @@ criteria = [                                # Patterns for type matching
    - Capture the "why" behind decisions
    - **Always auto-generate title**: Create 2-4 word descriptive title from content
 
-2. **Load Types from Config**: Read @.kiro/config.toml using **Read** tool
+2. **Auto-Load Types from Config**: Analyze @.kiro/config.toml for type definitions
 
 3. **Match Against Existing Types**: Analyze learning content
    - Compare content against each type's criteria
    - Calculate confidence score based on keyword matches
-   - **If match found (>70% confidence)**:
+   - **If match found (>60% confidence)**:
      ```
      > 🔍 Analyzing learning content...
      > ✅ Found match: 'bigquery' type (confidence: 85%)
      > 
      > Append to bigquery.md? [Y/n]: 
      ```
-     → User confirms → Append to existing steering file using **Edit** or **MultiEdit**
+     
+     **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
+     
+     After user responds:
+     - Response = "Y" or "y" or Enter → Append to existing steering file using **Edit** or **MultiEdit**
+     - Response = "n" or "N" → Skip appending and continue
+     - Any other response → Ask for clarification: "Please enter Y or n"
+     
    - **If no match**:
      ```
      > 🔍 Analyzing learning content...
@@ -81,8 +88,14 @@ criteria = [                                # Patterns for type matching
      > 
      > Select [1-4]: 
      ```
-     → User selects → Add type to config.toml using **MultiEdit**
-     → Create new steering file using **Write**
+     
+     **[STOP HERE AND WAIT FOR USER SELECTION - DO NOT PROCEED]**
+     
+     After user selects:
+     - Selection = 1-3 → Use suggested type name, add to config.toml using **MultiEdit**
+     - Selection = 4 → Ask user: "Enter custom type name: " then wait for input
+     - Invalid selection → Ask for valid input: "Please select 1-4"
+     - After type creation → Create new steering file using **Write**
 
 4. **Auto-Detect Format**: Analyze content to choose optimal format
    ```
@@ -98,7 +111,7 @@ criteria = [                                # Patterns for type matching
 
 5. **Generate Concise Output**: Create formatted content based on detected type
    
-   **Rule Format** (7-15 lines with code):
+   **Rule Format** (20-40 lines with code):
    ````markdown
    ## [Concise Title]
    **When**: [Specific trigger condition]
@@ -134,7 +147,7 @@ criteria = [                                # Patterns for type matching
    ```
    ````
    
-   **Guide Format** (8-12 lines):
+   **Guide Format** (20-40 lines):
    ```markdown
    ## [Action-Oriented Title]
    **Context**: [When/why to use this guide]
@@ -154,7 +167,7 @@ criteria = [                                # Patterns for type matching
    ⚠️ No Japanese comments in SQL files
    ````
    
-   **Knowledge Format** (10-20 lines):
+   **Knowledge Format** (20-40 lines):
    ````markdown
    ## [Concept Name]
    **Domain**: [Business/Technical domain]
@@ -208,7 +221,7 @@ criteria = [                                # Patterns for type matching
    - Confirm successful save
 
 ## Tool Usage
-- **Read**: Load @.kiro/config.toml for type definitions
+- **Auto-loaded**: @.kiro/config.toml for type definitions
 - **Glob**: Check existing steering files in .kiro/steering/*.md
 - **Write**: Create new steering file when type doesn't exist
 - **Edit/MultiEdit**: Append to existing steering file or update config.toml
@@ -233,7 +246,11 @@ criteria = [                                # Patterns for type matching
 > 🔍 Analyzing conversation for BigQuery-related learnings...
 > ✅ Found match: 'bigquery' type (confidence: 85%)
 > 
-> Append to bigquery.md? [Y/n]: Y
+> Append to bigquery.md? [Y/n]: 
+
+[STOP AND WAIT FOR USER INPUT]
+
+User: Y
 
 > 📝 Added to bigquery.md:
 > ## Query Constraints
@@ -256,7 +273,11 @@ criteria = [                                # Patterns for type matching
 > 3. backend-patterns - Backend architectural patterns
 > 4. [Custom] - Enter your own type name
 > 
-> Select [1-4]: 1
+> Select [1-4]: 
+
+[STOP AND WAIT FOR USER SELECTION]
+
+User: 1
 
 > 📝 Creating new type 'graphql'...
 > ✅ Added to config.toml:
@@ -278,7 +299,36 @@ criteria = [                                # Patterns for type matching
 > - Avoid nested resolver queries
 ````
 
-### Example 3: Manual Type Override
+### Example 3: Custom Type Selection
+````
+/hm:steering-remember "独自の認証フロー"
+
+> 🔍 Analyzing conversation for authentication-related learnings...
+> 🤔 No existing type matches this content
+> 
+> Create new type? Suggestions:
+> 1. security - Security patterns and best practices
+> 2. backend-patterns - Backend architectural patterns
+> 3. api-patterns - API design and implementation
+> 4. [Custom] - Enter your own type name
+> 
+> Select [1-4]: 
+
+[STOP AND WAIT FOR USER SELECTION]
+
+User: 4
+
+> Enter custom type name: 
+
+[STOP AND WAIT FOR USER INPUT]
+
+User: auth-flow
+
+> 📝 Creating new type 'auth-flow'...
+> ✅ Added to config.toml and created auth-flow.md
+````
+
+### Example 4: Manual Type Override
 ```
 /hm:steering-remember --type security "JWT署名は必ず検証"
 # Forces save to security.md even if other types might match
