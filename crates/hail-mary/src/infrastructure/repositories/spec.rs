@@ -39,17 +39,27 @@ impl SpecRepository {
 ## Overview
 [Feature description for {}]
 
+## Purpose
+[Why are we building this feature?]
+
 ## User Stories
-- As a [user type], I want to [action] so that [benefit]
+[List of user stories]
 
 ## Acceptance Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
+[Define clear criteria for feature completion]
 
 ## Technical Requirements
-- Database changes
-- API endpoints
-- UI components
+[Technical details and constraints]
+
+## Priority
+
+P0: [Must have]
+P1: [Should have]
+P2: [Could have]
+P3: [Won't have this time]
+
+## Risk and Mitigation
+[Potential risks and how to mitigate them]
 "#,
             name
         );
@@ -57,89 +67,28 @@ impl SpecRepository {
         let design_content = format!(
             r#"# Design
 
-## Architecture Overview
+## Overview
 [High-level architecture for {}]
 
-## Component Design
-### Frontend Components
-- Component 1
-- Component 2
-
-### Backend Services
-- Service 1
-- Service 2
-
-## Data Model
-### Schema Changes
-```sql
--- Schema definition
-```
-
-## API Design
-### Endpoints
-- `GET /api/...`
-- `POST /api/...`
-
-## Security Considerations
-- Authentication requirements
-- Authorization rules
-- Data validation
-
-## Performance Considerations
-- Caching strategy
-- Query optimization
 "#,
             name
         );
 
         let task_content = format!(
-            r#"# Tasks
+            r#"# Tasks: {}
+## Overview
+[Overview of tasks]
 
-## Task List for {}
-
-### Phase 1: Foundation
-- [ ] Task 1.1: Set up basic structure
-- [ ] Task 1.2: Create database schema
-
-### Phase 2: Implementation
-- [ ] Task 2.1: Implement backend API
-- [ ] Task 2.2: Create frontend components
-
-### Phase 3: Testing & Polish
-- [ ] Task 3.1: Write unit tests
-- [ ] Task 3.2: Integration testing
-- [ ] Task 3.3: Documentation
-
-## Dependencies
-- Task 2.1 depends on Task 1.2
-- Task 2.2 depends on Task 2.1
-
-## Time Estimates
-- Phase 1: 2 days
-- Phase 2: 5 days
-- Phase 3: 2 days
+## Phase 1: [Description]
+[List of tasks]
 "#,
             name
         );
 
         let memo_content = format!(
-            r#"# Memo
+            r#"# Memo: {}
 
-## Notes for {}
 
-### Key Decisions
-- Decision 1: [Rationale]
-- Decision 2: [Rationale]
-
-### Open Questions
-- Question 1
-- Question 2
-
-### Meeting Notes
-[Date] - [Meeting summary]
-
-### Implementation Notes
-[Any important notes during implementation]
 "#,
             name
         );
