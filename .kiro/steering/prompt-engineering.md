@@ -56,3 +56,24 @@ Select [1-4]:  # Placeholder for selection
 Wait for user confirmation
 Please stop here
 ```
+
+## Bash Command Execution in Slash Commands
+**When**: Ensuring bash commands execute in custom slash commands
+- Must include `allowed-tools: Bash(command:*)` in frontmatter
+- Use `!` prefix with backticks: `!`command``
+- Command output automatically included in context
+
+```markdown
+# ✅ Good - Proper bash execution setup
+---
+allowed-tools: Bash(git status:*), Bash(git diff:*)
+---
+- Current status: !`git status`
+- Changes: !`git diff HEAD`
+
+# ❌ Bad - Missing required elements
+---
+description: Git status check
+---
+- Status: `git status`  # Won't execute without ! and allowed-tools
+```

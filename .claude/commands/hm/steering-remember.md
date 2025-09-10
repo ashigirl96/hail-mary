@@ -117,7 +117,9 @@ criteria = [                                # Patterns for type matching
    **When**: [Specific trigger condition]
    - [Key rule 1]
    - [Key rule 2]
-   - [Key rule 3 if essential]
+   - [Key rule 3]
+   - [Key rule ...]
+   - ...
    
    ```language
    # ✅ Good
