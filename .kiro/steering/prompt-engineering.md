@@ -34,3 +34,25 @@ After user responds:
 > Append to file? [Y/n]: 
 → Wait for user confirmation → Proceed
 ```
+
+## Bracket Notation in Prompts
+**When**: Using brackets in prompt engineering
+- `[XXX]` for meta-instructions and command markers
+- `<XXX>` for data boundaries and structured I/O
+- `{XXX}` for variable expansion and templates
+- Square brackets signal "system-level" instructions to AI
+
+```markdown
+# ✅ Good - Clear meta-instruction
+[STOP HERE AND WAIT FOR USER INPUT]
+[INST] Your instruction here [/INST]
+Select [1-4]:  # Placeholder for selection
+
+# ✅ Good - Data boundaries
+<email>content here</email>
+<user_input>question</user_input>
+
+# ❌ Bad - Weak instruction
+Wait for user confirmation
+Please stop here
+```
