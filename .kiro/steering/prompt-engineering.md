@@ -77,3 +77,38 @@ description: Git status check
 ---
 - Status: `git status`  # Won't execute without ! and allowed-tools
 ```
+
+## Positional Arguments Usage
+**When**: Designing slash command arguments
+- Use `$1`, `$2` for required, ordered arguments with clear roles
+- Use `[hint]` or flags for optional, flexible arguments
+- Positional args suit fixed sequences (e.g., PR number, priority, assignee)
+- Avoid positional args when all arguments are optional
+
+```bash
+# ✅ Good - Clear required sequence
+/review-pr $1 $2 $3  # PR#, priority, assignee
+/review-pr 456 high alice
+
+# ❌ Bad - Optional/flexible arguments
+/steering-remember $1 $2 $3  # hint?, format?, type?
+/steering-remember "" "" security  # Awkward empty args
+```
+
+## Preventing False Reporting
+**When**: Designing AI commands that modify files
+- Add explicit "Will Not" boundaries to prevent success claims without actual tool usage
+- Use strong prohibitive language: "Report success without actually using Edit/Write tools"
+- Include verification requirements in command specifications
+- Test commands to ensure they actually perform file modifications
+
+```markdown
+# ✅ Good - Strong boundaries
+**Will Not:**
+- Report success without actually using Edit/Write tools to modify files
+- Claim completion without verifying file changes
+
+# ❌ Bad - Weak or missing boundaries
+**Will Not:**
+- Skip file operations (too vague)
+```

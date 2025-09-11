@@ -355,3 +355,4 @@ User: auth-flow
 - Overwrite existing content (always append)
 - Process without clear learning to capture
 - Create types without user confirmation
+- **Report success without actually using MultiEdit/Edit/Write tools to modify files**
