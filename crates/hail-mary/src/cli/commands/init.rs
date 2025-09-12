@@ -223,6 +223,6 @@ mod tests {
         // Verify file was overwritten with new content
         let content = fs::read_to_string(hm_dir.join("steering.md")).unwrap();
         assert!(!content.contains("OLD CONTENT"));
-        assert!(content.contains("Kiro Steering Management")); // Expected content from embedded file
+        assert!(content.contains("/hm:steering - Steering Documentation")); // Expected content from embedded file
     }
 }
