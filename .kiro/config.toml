@@ -46,3 +46,14 @@ criteria = [
 ]
 name = "prompt-engineering"
 purpose = "Claude Code command patterns and best practices"
+
+[[steering.types]]
+criteria = [
+    "Markdown Syntax: Formatting rules and conventions",
+    "Code Block Formatting: Proper nesting and syntax highlighting",
+    "Documentation Structure: Organization and layout patterns",
+    "Writing Style: Clear and concise technical writing",
+    "Formatting Standards: Consistent formatting across documentation"
+]
+name = "documentation"
+purpose = "Documentation standards and best practices"
