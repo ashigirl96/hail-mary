@@ -40,7 +40,7 @@ purpose = "Code organization and project structure patterns"
 criteria = [
     "Command Syntax: Claude Code command structure and patterns",
     "File References: How to reference files in commands (@, paths)",
-    "Tool Usage: Optimal tool selection and usage patterns",
+    "Tool Coordination: Optimal tool selection and usage patterns",
     "Best Practices: Effective command design and implementation",
     "Integration Patterns: Claude Code workflow optimization"
 ]
