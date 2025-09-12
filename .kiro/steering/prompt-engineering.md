@@ -256,3 +256,57 @@ mcp__github__get_issue
 # ❌ Bad - Wildcards not supported
 mcp__github__*
 ```
+
+## Parallel Task Tool Execution
+**When**: Designing commands that require concurrent Task agent execution
+- Use explicit "parallel" keywords 15+ times throughout documentation
+- Include bold instruction: **[send multiple Task tool calls in one response]**
+- Structure independent agent missions with clear boundaries
+- Repeat "independently/concurrent" keywords for reinforcement
+- Visual representation with bullet lists of agents
+
+### Required Section Elements
+```markdown
+# Behavioral Flow
+- Step: "Launch **parallel** Task agents **independently**"
+- Step: "Process tasks **concurrently** across multiple agents"
+
+# Execution Phase  
+**Title**: Include "Parallel" (e.g., "Parallel Execution Phase")
+**Bold Instruction**: **[The implementation will send multiple Task tool calls in one response]**
+**Agent List**: Show numbered/bulleted list of parallel agents
+
+# Independent Agent Structure
+Each parallel task must:
+- Have clear, self-contained scope
+- Operate without dependencies on other agents
+- Define specific deliverables
+- Include "independent" or "concurrent" in description
+
+# Tool Coordination
+- Task: Spawn **parallel** agents for **concurrent** execution
+- "Multiple Task tools sent in single message"
+- "Each agent operates independently with its own context"
+
+# Key Patterns
+- First pattern: "**Parallel Execution**" or "**Concurrent Processing**"
+- Include: "Multiple agents → simultaneous execution → aggregated results"
+```
+
+### ✅ Good - Parallel Execution
+```markdown
+> 🚀 Launching parallel investigation for 3 types...
+> Spawning investigation agents:
+> • [Agent 1] type1 - purpose1
+> • [Agent 2] type2 - purpose2  
+> • [Agent 3] type3 - purpose3
+> [Parallel Task agents processing independently...]
+```
+
+### ❌ Bad - Sequential Execution
+```markdown
+> Starting investigation...
+> Processing type1...
+> Then processing type2...
+> Finally processing type3...
+```
