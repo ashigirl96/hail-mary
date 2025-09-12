@@ -7,7 +7,6 @@
   - Application Layer: Use cases and business logic
   - Domain Layer: Entities and value objects (steering system)
   - Infrastructure Layer: Filesystem operations, process management
-- **Concurrency**: Tokio async runtime for future extensibility
 - **Error Handling**: `anyhow::Result` with `thiserror` for domain errors
 
 ## Core Systems
@@ -16,11 +15,14 @@
 - **TUI Framework**: ratatui with crossterm for interactive interfaces
 - **Serialization**: serde with JSON/TOML support for configuration
 - **Template System**: Structured specification generation
+- **Anthropic Client Crate**: OAuth authentication and API client functionality
+- **HTTP Client**: reqwest configured with rustls-tls-native-roots features
+- **OAuth Authentication**: Token management with automatic refresh
 
 ## Development Environment
 - **Build System**: Cargo workspace with multiple crates
 - **Task Runner**: Just task runner for development commands
-- **Testing**: rstest for parameterized tests, tempfile for isolation
+- **Testing**: Standard #[test] attributes, tempfile for isolation
 - **Code Quality**: clippy, rustfmt, comprehensive test suite
 - **Documentation**: Embedded documentation with cargo doc
 
@@ -37,7 +39,6 @@ just ci                 # Full CI pipeline (format check + lint + test)
 
 # Development utilities  
 just run init           # Initialize project
-just run memory serve  # Start MCP server
 just dev                # Watch mode (check + test + run)
 just test-watch         # Watch mode for tests only
 ```
@@ -88,7 +89,6 @@ RUST_BACKTRACE=1 cargo test -- --nocapture    # With backtraces
 # CLI and async runtime
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
-tokio = { version = "1", features = ["full"] }
 
 # Configuration and serialization
 serde = { version = "1", features = ["derive"] }
@@ -97,7 +97,7 @@ toml = "0.8"
 
 # TUI and terminal interaction
 ratatui = "0.29"
-crossterm = "0.28"
+crossterm = "0.29"
 
 # Error handling and utilities
 anyhow = "1"
@@ -108,6 +108,10 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 pulldown-cmark = "0.11"
 regex = "1"
+
+# Anthropic client crate dependencies
+reqwest = { version = "0.12", features = ["rustls-tls-native-roots"] }
+tokio = { version = "1", features = ["full"] }
 ```
 
 ---

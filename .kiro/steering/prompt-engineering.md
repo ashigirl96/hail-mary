@@ -112,3 +112,147 @@ description: Git status check
 **Will Not:**
 - Skip file operations (too vague)
 ```
+
+## SuperClaude Framework Slash Command Structure
+**When**: Creating slash commands following SuperClaude Framework standards
+- YAML frontmatter with specific required fields
+- 8 mandatory sections in consistent order
+- MCP Integration section when MCP servers used
+- Tool Coordination naming over Tool Usage
+
+### Required Frontmatter Structure
+```yaml
+---
+name: command-name                    # Command identifier
+description: "Brief command purpose"  # Quoted description
+category: utility|workflow|special|session
+complexity: basic|standard|advanced|high
+mcp-servers: [list]                  # Empty array if none
+personas: [list]                     # Empty array if none
+---
+```
+
+### Mandatory Section Order
+1. **## Triggers** - When/why command is used, specific scenarios
+2. **## Usage** - Command syntax with options inline (no separate Options section)
+3. **## Behavioral Flow** - 5-step numbered process with Key behaviors subsection
+4. **## MCP Integration** - Only if mcp-servers specified in frontmatter
+5. **## Tool Coordination** - Tools used
+6. **## Key Patterns** - Arrow notation patterns (A → B → C)
+7. **## Examples** - 3-4 concrete usage examples with code blocks
+8. **## Boundaries** - Will/Will Not format
+
+### Section Content Guidelines
+- **Triggers**: 4 bullet points covering main use cases
+- **Usage**: Options explained directly under usage block, no separate section
+- **Behavioral Flow**: 5 steps + Key behaviors paragraph
+- **Tool Coordination**: Tool names with descriptions, not usage instructions
+- **Key Patterns**: 4 patterns using arrow notation (→)
+- **Examples**: Realistic scenarios with actual command syntax
+- **Boundaries**: Clear Will/Will Not statements
+
+````markdown
+# ✅ Good - SuperClaude Framework compliance
+---
+name: analyze
+description: "Code analysis across quality, security, performance domains"
+category: utility
+complexity: basic
+---
+
+## Triggers
+- Code quality assessment requests
+- Security vulnerability scanning needs
+- Performance bottleneck identification
+- Architecture review requirements
+
+## Usage
+```
+/sc:analyze [target] [--focus quality|security] [--depth quick|deep]
+```
+- `--focus`: Analysis domain focus
+- `--depth`: Analysis thoroughness level
+
+## Tool Coordination
+- **Read**: Source code inspection and analysis
+- **Grep**: Pattern analysis and code search
+- **Write**: Report generation and documentation
+
+# ❌ Bad - Non-compliant structure
+## Options
+- `--focus`: Analysis focus
+- `--depth`: Analysis depth
+
+## Tool Usage
+- Use Read tool to inspect source code
+- Use Grep tool to search for patterns
+````
+
+## Key Behaviors vs Key Patterns
+**When**: Writing SuperClaude Framework slash commands
+- **Key Behaviors**: コマンドの動作特性（どう動作するか）
+- **Key Patterns**: 処理フローパターン（どう処理するか）
+- Key Behaviors is embedded within Behavioral Flow section
+- Key Patterns is independent section with arrow notation (→)
+
+### Format Differences
+```markdown
+# ✅ Good - Key Behaviors (within Behavioral Flow)
+Key behaviors:
+- Interactive type selection with intelligent suggestions
+- Auto-detect format based on content patterns
+- Maximum brevity with concrete examples
+
+# ✅ Good - Key Patterns (independent section)
+## Key Patterns
+- **Learning Extraction**: Conversation analysis → actionable knowledge → title generation
+- **Type Matching**: Content analysis → criteria comparison → confidence scoring
+
+# ❌ Bad - Mixing concepts
+## Key Behaviors
+- **Learning Flow**: Analysis → extraction → formatting (should be Key Pattern)
+- Interactive selection (correct for behaviors)
+```
+
+## MCP Slash Commands
+**When**: Using MCP server exposed slash commands
+- Commands follow pattern: `/mcp__<server-name>__<prompt-name> [arguments]`
+- Dynamically discovered from connected MCP servers
+- Arguments defined by the server, not frontmatter
+- Use `/mcp` command to view available servers and prompts
+
+```
+/mcp__github__list_prs
+/mcp__github__pr_review 456
+```
+
+## Model Selection in Slash Commands
+**When**: Commands need specific Claude models
+- Use `model:` frontmatter field to override conversation model
+- Supports specific model strings (claude-3-5-haiku-20241022, etc.)
+- Inherits from conversation if not specified
+
+```yaml
+---
+model: claude-3-5-haiku-20241022
+description: Fast lightweight task
+---
+```
+
+## MCP Tool Permissions
+**When**: Configuring permissions for MCP tools
+- **No wildcards supported**: `mcp__github__*` is invalid
+- Use server name only: `mcp__github` (approves ALL tools)
+- Use specific tools: `mcp__github__get_issue` (single tool)
+- List each tool individually for granular control
+
+```
+# ✅ Good - All tools from server
+mcp__github
+
+# ✅ Good - Specific tool
+mcp__github__get_issue
+
+# ❌ Bad - Wildcards not supported
+mcp__github__*
+```

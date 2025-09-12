@@ -52,8 +52,9 @@ flowchart TB
     end
     
     subgraph REPO ["📦 Repository Layer"]
-        ProjectRepo["ProjectRepository<br/>(trait interface)"]
-        FsRepo["FilesystemProjectRepository<br/>(implementation)"]
+        ConfigRepo["ConfigRepositoryInterface<br/>(config management)"]
+        SpecRepo["SpecRepositoryInterface<br/>(specification management)"]
+        SteeringRepo["SteeringRepositoryInterface<br/>(steering system)"]
     end
     
     subgraph INFRA ["🗄️ Infrastructure Layer"]
@@ -74,12 +75,15 @@ flowchart TB
     Code --> LaunchUC
     Complete --> CompleteUC
     
-    InitUC --> ProjectRepo
-    CreateUC --> ProjectRepo
-    LaunchUC --> ProjectRepo
-    CompleteUC --> ProjectRepo
+    InitUC --> ConfigRepo
+    InitUC --> SteeringRepo
+    CreateUC --> SpecRepo
+    LaunchUC --> SpecRepo
+    CompleteUC --> SpecRepo
     
-    ProjectRepo -.-> FsRepo
+    ConfigRepo -.-> FsRepo
+    SpecRepo -.-> FsRepo
+    SteeringRepo -.-> FsRepo
     
     FsRepo --> PathMgr
     FsRepo --> Config
@@ -160,17 +164,13 @@ The project uses a Cargo workspace structure for better modularity and future ex
 
 ### External Organization
 ```
-tests/                   # Integration tests
-├── common/             # Shared test utilities
-├── integration/        # Cross-module integration tests
-└── new_command.rs      # Command testing
+# No separate tests/ directory - tests are embedded in source files
 
 .claude/                 # Claude Code integration
 └── commands/           # Custom slash commands for Claude Code
     └── hm/             # Hail-mary specific commands
         ├── steering.md          # Main steering management command
         ├── steering-remember.md  # Draft capture command
-        └── steering-merge.md     # Merge steering drafts command
 
 .kiro/                  # Project specification management
 ├── steering/           # Steering system files
@@ -196,6 +196,7 @@ Commands::New { name }             // Specification creation
 Commands::Code { no_danger }       // Claude Code integration
 Commands::Complete                 // Mark specifications as complete
 Commands::Completion { shell }     // Generate shell completions
+Commands::Steering { subcommand }  // Steering system management
 ```
 
 ### Project Domain Model (`domain/entities/project.rs`)
@@ -295,39 +296,56 @@ purpose = "Technical stack and development environment"
 - **TTY Preservation**: Maintains terminal control for proper Ink (React CLI) operation
 - **Background Support**: Enables `ctrl+z` job control through proper process ownership
 
-### Repository Layer (`repositories/memory.rs`)
-**Pattern**: Repository pattern with trait-based abstraction
-**Implementations**:
-- `SqliteMemoryRepository`: Production persistence with FTS5
-- `InMemoryRepository`: Testing implementation with HashMap
+### Repository Layer (Specialized Repositories)
+**Pattern**: Repository pattern with specialized trait interfaces
+**Architecture**: Three separate repository interfaces for different concerns
+
+**Repository Interfaces**:
+- `ConfigRepositoryInterface`: Configuration and project setup operations
+- `SpecRepositoryInterface`: Specification lifecycle management
+- `SteeringRepositoryInterface`: Steering system file operations
 
 **Core Operations**:
 ```rust
-pub trait MemoryRepository: Send {
-    fn save(&mut self, memory: &Memory) -> Result<()>;
-    fn save_batch(&mut self, memories: &[Memory]) -> Result<()>;
-    fn find_by_id(&self, id: &str) -> Result<Option<Memory>>;
-    fn search_fts(&self, query: &str, limit: usize) -> Result<Vec<Memory>>;
-    fn find_all(&self) -> Result<Vec<Memory>>;
-    fn increment_reference_count(&mut self, id: &str) -> Result<()>;
+pub trait ConfigRepositoryInterface {
+    fn init_project(&self) -> Result<()>;
+    fn load_project_config(&self) -> Result<ProjectConfig>;
+    fn project_exists(&self) -> bool;
+}
+
+pub trait SpecRepositoryInterface {
+    fn create_spec(&self, name: &str) -> Result<()>;
+    fn list_specs(&self) -> Result<Vec<String>>;
+    fn archive_spec(&self, name: &str) -> Result<()>;
+}
+
+pub trait SteeringRepositoryInterface {
+    fn create_steering_files(&self) -> Result<()>;
+    fn backup_steering_files(&self) -> Result<String>;
+    fn update_steering_file(&self, name: &str, content: &str) -> Result<()>;
 }
 ```
 
-### Service Layer (`services/memory.rs`)
-**Purpose**: Business logic and validation with async support
+### Use Case Layer (`application/use_cases/`)
+**Purpose**: Business logic orchestration with function-based approach
 **Key Features**:
-- Input validation against configuration
-- Batch operations with transaction support
-- Search with filtering and sorting
-- Asynchronous reference count updates
-- Markdown document generation
+- Function-based use cases instead of service classes
+- Repository interface coordination
+- Business rule validation
+- Clean error handling and propagation
 
-**Business Logic Flow**:
-1. **Input Validation**: Memory type, required fields, confidence range
-2. **Memory Creation**: UUID generation, defaults, builder pattern
-3. **Persistence**: Repository delegation with error handling
-4. **Search Logic**: FTS queries with business rule filtering
-5. **Reference Tracking**: Async updates without blocking
+**Use Case Functions**:
+- `initialize_project`: Project initialization with steering setup
+- `create_feature`: Feature specification creation with validation
+- `complete_features`: Specification archival and cleanup
+- `launch_claude_with_spec`: Claude Code integration with context
+- `backup_steering`: Steering file backup with timestamped directories
+
+**Steering System Evolution**:
+- Sophisticated steering system with automatic backup functionality
+- `backup_steering.rs` use case for backup management
+- `steering_backup.rs` CLI command implementation
+- Automatic backup creation before modifications
 
 ## 📁 File System Architecture
 
@@ -352,15 +370,22 @@ pub trait MemoryRepository: Send {
 ## 🧪 Testing Architecture
 
 ### Testing Strategy
-**Levels**: Unit, Integration, Repository, Service
-**Tools**: `rstest`, `pretty_assertions`, `tempfile`
-**Approach**: Comprehensive coverage with realistic scenarios
+**Architecture**: Tests embedded in source files with TestDirectory pattern
+**Tools**: Standard `#[test]` attributes, `pretty_assertions`, `tempfile`
+**Approach**: Thread-safe testing with proper isolation
 
 ### Test Organization
-**Unit Tests**: Embedded in source files (`#[cfg(test)]`)
-**Integration Tests**: Separate `tests/` directory
-**Test Utilities**: Shared infrastructure in `tests/common/`
-**Filesystem Tests**: Temporary directories with proper cleanup
+**Primary**: Tests embedded in source files (`#[cfg(test)]`)
+**Integration**: `main.rs` contains integration tests
+**Test Utilities**: `application/test_helpers/` with TestDirectory RAII pattern
+**Thread Safety**: Global mutex for current_dir operations to prevent conflicts
+
+### Test Architecture Pattern
+**TestDirectory Pattern**: Uses global mutex for thread-safe directory management
+- Pattern exists in both `main.rs` and `test_helpers/test_directory.rs`
+- Thread-safe current directory changes with RAII cleanup
+- Proper cleanup mechanisms even during panics
+- Prevents race conditions in parallel test execution
 
 ### Key Testing Patterns
 **Repository Testing**:
@@ -383,11 +408,11 @@ pub trait MemoryRepository: Send {
 
 ## 🚀 Concurrency & Performance
 
-### Async Design
-**Runtime**: Tokio with full feature set for future extensibility
-**Patterns**: Async-ready architecture in use case layer
-**Concurrency**: Process management for Claude Code integration
-**Resource Management**: Safe file system operations with proper error handling
+### Process Management
+**Architecture**: Synchronous operations with process integration
+**TTY Management**: Proper terminal handling for Claude Code integration
+**Concurrency**: File system operations with proper error handling
+**Resource Management**: Safe operations with cleanup patterns
 
 ### Performance Optimizations
 **File System**: Efficient path resolution and caching
@@ -414,7 +439,8 @@ pub trait MemoryRepository: Send {
 ### TUI Components (`infrastructure/tui/`)
 **Purpose**: Terminal user interface for interactive workflows
 **Key Features**:
-- **Specification Selector**: Interactive TUI for spec selection and creation
+- **Specification Selector**: Interactive TUI for spec selection and creation (`spec_selector.rs`)
+- **Completion Interface**: Specification completion interface (`completion_ui.rs`)
 - **Keyboard Navigation**: Standard keybindings (↑/↓/j/k/Enter/q/Esc)
 - **Visual Design**: Consistent styling with existing CLI patterns
 - **State Management**: Proper terminal setup and cleanup

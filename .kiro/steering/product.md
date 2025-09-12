@@ -1,6 +1,6 @@
 # Product Overview
 
-**Hail-Mary** - A sophisticated Rust CLI application for Memory MCP (Model Context Protocol) server and Kiro project specification management.
+**Hail-Mary** - A sophisticated Rust CLI application for Kiro project specification management and file-based context steering.
 
 ## Product Overview
 
@@ -15,6 +15,10 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Clean Architecture**: Well-structured Rust implementation with clear separation of concerns
 - **Shell Completions**: Auto-completion support for all major shells
 - **Template System**: Structured specification templates with requirements, design, tasks, and investigation phases
+- **Anthropic OAuth Client**: Separate crate with OAuth2 token management and Claude API integration
+- **Custom Slash Commands**: `/hm:steering` and `/hm:steering-remember` for Claude Code steering management
+- **Just Task Runner**: Comprehensive development workflow automation
+- **Workspace Architecture**: Multi-crate Cargo workspace with clean separation
 
 ## Target Use Case
 
