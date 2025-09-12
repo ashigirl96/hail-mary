@@ -1,38 +1,70 @@
 ---
-description: Update all steering documents based on config.toml criteria
-allowed-tools: Bash, Read, Write, Edit, MultiEdit, Glob, Grep, LS
+name: steering
+description: "Verify and update steering documentation using parallel investigation agents"
+category: utility
+complexity: standard
+mcp-servers: []
+personas: [analyzer, architect]
+allowed-tools: Bash(hail-mary:*), Read, Write, Edit, MultiEdit, Glob, Grep, Task
+argument-hint: [--type <name>]
 ---
 
-# Kiro Steering Management
+# /hm:steering - Steering Documentation Verification & Update System
 
-Update steering documents in `.kiro/steering/` based on types defined in @.kiro/config.toml. This command analyzes the project against each type's criteria and maintains accurate project knowledge.
+## Triggers
+- Steering documentation accuracy concerns and information drift prevention
+- Periodic verification needs for project knowledge base maintenance
+- Codebase changes that may have invalidated existing steering content
+- Quality assurance requirements for steering file correctness
 
-## Configuration Check
+## Usage
+```
+/hm:steering [--type <name>]
+```
+- `--type <name>`: Focus on specific steering type
 
-### Current config.toml status
-- Config file: !`[ -f ".kiro/config.toml" ] && echo "✅ Config exists" || echo "❌ Config missing - run 'hail-mary init' first"`
-- Steering types defined: !`if [ -f ".kiro/config.toml" ]; then grep -c "^\[\[steering.types\]\]" .kiro/config.toml 2>/dev/null || echo "0"; else echo "Config not found"; fi`
+## Behavioral Flow
 
-### Current steering files
-- Existing files: !`if [ -d ".kiro/steering" ]; then ls -1 .kiro/steering/*.md 2>/dev/null | xargs -I {} basename {} | tr '\n' ' ' || echo "No steering files yet"; else echo "Steering directory not found"; fi`
+1. **Backup**: Execute !`hail-mary steering backup` to create timestamped backup of current steering files
+2. **Load**: Parse steering types from @.kiro/config.toml with criteria and purposes
+3. **Investigate**: Launch parallel Task agents to verify each steering type independently
+4. **Aggregate**: Collect verification results as investigation completes
+5. **Update**: Apply corrections and additions with user confirmation
 
-## Project Analysis
+Key behaviors:
+- **Automatic backup**: Uses `hail-mary steering backup` to create timestamped backup before any modifications
+- **Parallel investigation**: Multiple Task agents process each type independently and concurrently
+- **Correctness-first approach**: Prioritize fixing incorrect information over adding new content
+- **Interactive confirmation**: User approves all changes before applying
+- **Structure preservation**: Maintain existing file format and organization
+- **Intelligent reporting**: Clear status indicators (❌ incorrect, ✅ verified, 🆕 new)
 
-### Current Project State
-- Project files: !`find . -path ./node_modules -prune -o -path ./.git -prune -o -path ./dist -prune -o -type f \( -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" -o -name "*.java" -o -name "*.go" -o -name "*.rs" \) -print 2>/dev/null | head -20 || echo "No source files found"`
-- Configuration files: !`find . -maxdepth 3 \( -name "package.json" -o -name "requirements.txt" -o -name "pom.xml" -o -name "Cargo.toml" -o -name "go.mod" -o -name "pyproject.toml" -o -name "tsconfig.json" \) 2>/dev/null || echo "No config files found"`
-- Documentation: !`find . -maxdepth 3 -path ./node_modules -prune -o -path ./.git -prune -o -path ./.kiro -prune -o \( -name "README*" -o -name "CHANGELOG*" -o -name "LICENSE*" -o -name "*.md" \) -print 2>/dev/null | head -10 || echo "No documentation files found"`
+### Backup Phase
 
-### Recent Changes (if updating)
-- Last steering update: !`git log -1 --oneline -- .kiro/steering/ 2>/dev/null || echo "No previous steering commits"`
-- Recent commits: !`git log --oneline -10 2>/dev/null || echo "Not a git repository"`
-- Working tree status: !`git status --porcelain 2>/dev/null | head -10 || echo "Not a git repository"`
+Execute backup command: !`hail-mary steering backup`
 
-### Existing Documentation References
-- Main README: @README.md
-- Package configuration: @package.json
-- Cargo configuration: @Cargo.toml
-- Project documentation: @docs/
+```
+> 📦 Creating backup of current steering files...
+> ✅ Created backup '2025-09-13-14-30' with 4 files
+```
+
+The `hail-mary steering backup` command creates a timestamped backup directory (e.g., `.kiro/steering/backup/2025-09-13-14-30/`) containing copies of all current steering files. This ensures we can restore the original state if needed.
+
+### Parallel Investigation Phase
+
+Launch parallel Task agents for each steering type:
+
+```
+> 🚀 Launching parallel investigation for {n} steering types...
+> 
+> Spawning investigation agents:
+> • [Agent 1] {type1.name} - {type1.purpose}
+> • [Agent 2] {type2.name} - {type2.purpose}
+> • [Agent 3] {type3.name} - {type3.purpose}
+> • [Agent n] {typeN.name} - {typeN.purpose}
+> 
+> [Parallel Task agents processing independently...]
+```
 
 ## Config.toml Structure
 
@@ -55,113 +87,278 @@ criteria = [                                # Analysis patterns for this type
 - **`purpose`**: Human-readable description of the type's focus area
 - **`criteria`**: List of patterns used to analyze and categorize project content
 
-## Task: Update All Steering Types from Config
+#### Parallel Task Agent Execution
+Launch multiple Task agents in a single message for concurrent investigation:
 
-### 1. Load Types from Config
-Use **Read** tool to load @.kiro/config.toml and process all `[[steering.types]]` entries.
+**[The implementation will send multiple Task tool calls in one response]**
+- Task 1: Investigate {type1.name} steering type
+- Task 2: Investigate {type2.name} steering type
+- Task 3: Investigate {type3.name} steering type
+- Task n: Investigate {typeN.name} steering type
 
-### 2. For Each Type in Config
+Each agent receives an independent mission:
 
-Process each type defined in config.toml:
+```
+Investigate the "{type.name}" steering type.
 
-#### Analysis Phase
-- Use **Grep** to search for patterns matching the type's criteria
-- Use **Glob** to find relevant files based on type context
-- Use **Bash** to check file existence and git history
+Purpose: {type.purpose}
+Criteria: {type.criteria}
 
-#### Update Phase
-For each {type.name}.md file:
+Your mission:
+1. READ the existing steering file: .kiro/steering/{type.name}.md
+2. VERIFY each documented pattern against the actual codebase
+3. IDENTIFY incorrect or outdated information
+4. DISCOVER new patterns matching the criteria
+5. RETURN structured results:
+   - Incorrect items found (with corrections)
+   - Outdated items needing updates
+   - New discoveries to add
+   - Validation status for each criterion
 
-**If NEW file:**
-- Use **Write** to create comprehensive initial content
-- Include all criteria as section headers
-- Generate content based on project analysis
+Use these tools:
+- Read: Load the existing steering file
+- Grep: Search for patterns in codebase
+- Glob: Find relevant files
+- Analyze patterns against the criteria
 
-**If EXISTING file:**
-- Use **Read** to load current content
-- Use **MultiEdit** to update content
-- Backup preserved in .kiro/steering/backup/ before modification
+Focus on CORRECTNESS over completeness.
+Return your findings for aggregation.
+```
 
-### 3. Detect Uncategorized Patterns
+### Aggregation & Review Phase
 
-Analyze project for patterns not matching any existing criteria:
-- Use **Glob** and **Grep** to find unmatched patterns
-- If significant patterns found, suggest new types:
-  ```
-  > 🔍 Found patterns not matching existing types:
-  > - SQL queries and database migrations
-  > - Docker configuration files
-  > 
-  > Add new types? Suggestions:
-  > 1. database - Database schemas and queries
-  > 2. deployment - Docker and CI/CD configuration
-  > 3. Skip for now
-  > 
-  > Select [1-3]: 
-  ```
-- If user selects a new type:
-  - Use **MultiEdit** to add `[[steering.types]]` to config.toml
-  - Use **Write** to create new steering file
+After Task agent completes investigation of all types:
 
-## Tool Usage
+```
+> 📊 Investigation Results:
+> 
+> {type1.name}:
+>   ❌ Incorrect: {n} items need fixing
+>   ⚠️ Outdated: {n} items need updating
+>   ✅ Verified: {n} items are correct
+>   🆕 New: {n} patterns discovered
+> 
+> {type2.name}:
+>   ❌ Incorrect: {n} items need fixing
+>   ✅ Verified: {n} items are correct
+>   🆕 New: {n} patterns discovered
+```
 
-- **Read**: Load @.kiro/config.toml and existing steering files
-- **Glob**: Find project files for analysis (*.py, *.js, *.ts, *.sql, etc.)
-- **Grep**: Search for patterns matching criteria
-- **Write**: Create new steering files for new types
-- **MultiEdit**: Update multiple sections in existing files efficiently
-- **Edit**: Make targeted updates to specific sections
-- **Bash**: Check file existence, git history, and directory structure
-- **LS**: List files in directories for analysis
+### Correction Phase (Priority)
 
-## Update Strategy
+For each type with incorrect information:
 
-### Smart Content Updates
-1. **Create backup** - Copy existing files to .kiro/steering/backup/
-2. **Update factual information** - Dependencies, file structures, commands
-3. **Add new sections** - Only if significant new capabilities exist
-4. **Replace outdated content** - Remove obsolete information
-5. **Maintain clear structure** - Use consistent markdown formatting
+```
+> 🔧 Fixing incorrect information in {type.name}.md
+> 
+> Corrections to apply:
+> • OLD: "Authentication uses JWT tokens"
+>   NEW: "Authentication uses session cookies"
+> • OLD: "Database queries use raw SQL"
+>   NEW: "Database queries use ORM (Prisma)"
+> 
+> Apply corrections? [Y/n]: 
+```
 
-### Example Type Processing
+**[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
-The command processes each type from config.toml systematically:
-1. Search for patterns matching the type's criteria using **Grep**
-2. Check if {type.name}.md exists using **Bash**
-3. Either create new content or update existing file
-4. Structure content around the defined criteria
-5. Include concrete examples from the codebase
+After user responds:
+- Response = "Y" or Enter → Apply corrections with MultiEdit
+- Response = "n" → Skip corrections for this file
 
-## Important Principles
+### Update Phase
 
-### Security Guidelines
-- **Never include sensitive data**: No API keys, passwords, database credentials, or personal information
-- **Review before commit**: Always review steering content before version control
-- **Team sharing consideration**: Remember steering files are shared with all project collaborators
+For verified new discoveries:
 
-### Content Quality Guidelines
-- **Single domain focus**: Each steering file covers one specific area defined by its type
-- **Clear, descriptive content**: Provide concrete examples and rationale for decisions
-- **Regular maintenance**: Review and update steering files after major project changes
-- **Actionable guidance**: Write specific, implementable guidelines rather than abstract principles
+```
+> 📝 Adding new discoveries to {type.name}.md
+> 
+> New patterns found:
+> • GraphQL subscription patterns in api/subscriptions/
+> • WebSocket handling in realtime/events.ts
+> • Rate limiting middleware in middleware/rateLimit.ts
+> 
+> Add new patterns? [Y/n]: 
+```
 
-### Backup Strategy
-- **Pre-update backup**: All existing files copied to .kiro/steering/backup/
-- **Recovery option**: Users can restore from backup if needed
-- **Git integration**: Changes are trackable through version control
+**[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
-### Update Philosophy
-- **Fresh content**: Generate current, relevant information
-- **Clear communication**: Use straightforward language
-- **Factual accuracy**: Document what actually exists in the project
+After user responds:
+- Response = "Y" or Enter → Add patterns with Edit/MultiEdit
+- Response = "n" → Skip additions
 
-## Features
+### Summary
 
-- **Dynamic type loading**: All types loaded from @.kiro/config.toml
-- **Configuration-driven**: All types processed based on config.toml definitions
-- **New type detection**: Automatically suggests new types based on uncategorized patterns
-- **Backup-based safety**: Original content preserved in backup directory
-- **Incremental updates**: Only updates what has changed
-- **Git-aware**: Uses git history to understand project evolution
+```
+> ✅ Steering verification complete:
+> 
+> Corrections Applied:
+> • Fixed {n} incorrect items across {m} files
+> • Updated {n} outdated patterns
+> 
+> New Discoveries:
+> • Added {n} new patterns to documentation
+> 
+> Validation Status:
+> • All steering files now verified against codebase
+> • Last verification: {timestamp}
+```
 
-The goal is to maintain living documentation that adapts to your project's growth while preserving your customizations and insights.
+## Tool Coordination
+
+- **@.kiro/config.toml**: Auto-loaded for configuration (no Read tool needed)
+- **Task**: Spawn **parallel** investigation agents for each steering type
+  - Multiple Task tools sent in single message for concurrent execution
+  - Each agent operates independently with its own context
+- **Grep**: Search for patterns matching criteria across codebase
+- **Glob**: Find files by type and pattern
+- **Read**: Load existing steering files for verification
+- **MultiEdit**: Batch corrections and updates efficiently
+- **Write**: Create new steering files
+- **Bash**: Execute `hail-mary steering backup` and check file existence
+
+## Key Patterns
+- **Parallel Investigation**: Config.toml types → **Parallel Task agent spawning** → concurrent verification → aggregated results
+- **Verification Flow**: Read existing → compare with codebase → identify discrepancies → generate corrections
+- **Correction Priority**: Incorrect fixes → outdated updates → new discoveries → user confirmation
+- **Agent Communication**: Structured mission → **independent parallel investigation** → status reports → main aggregation
+- **Concurrent Execution**: Multiple Task tools in single message → independent processing → synchronized aggregation
+
+## Examples
+
+### Example 1: Investigation with Corrections
+```
+/hm:steering
+
+> 📦 Creating backup of current steering files...
+> ✅ Created backup '2025-09-13-14-30' with 4 files
+> 
+> 🚀 Launching parallel investigation for 3 steering types...
+> 
+> Spawning investigation agents:
+> • [Agent 1] bigquery - BigQuery optimization patterns
+> • [Agent 2] security - Security patterns and vulnerabilities
+> • [Agent 3] api-patterns - API design and contracts
+> 
+> [Parallel Task agents processing independently...]
+> 
+> 📊 Investigation Results:
+> 
+> bigquery:
+>   ❌ Incorrect: 2 items need fixing
+>   ✅ Verified: 8 items are correct
+>   🆕 New: 3 patterns discovered
+> 
+> security:
+>   ⚠️ Outdated: 1 item needs updating
+>   ✅ Verified: 12 items are correct
+>   🆕 New: 5 patterns discovered
+> 
+> api-patterns:
+>   ✅ Verified: 15 items are correct
+>   🆕 New: 2 patterns discovered
+> 
+> 🔧 Fixing incorrect information in bigquery.md
+> 
+> Corrections to apply:
+> • OLD: "EXTERNAL_QUERY uses MySQL syntax"
+>   NEW: "EXTERNAL_QUERY uses PostgreSQL syntax"
+> • OLD: "Partitioning by DATE field"
+>   NEW: "Partitioning by _PARTITIONDATE pseudo column"
+> 
+> Apply corrections? [Y/n]: Y
+> 
+> ✅ Applied 2 corrections to bigquery.md
+> 
+> 📝 Adding new discoveries to security.md
+> 
+> New patterns found:
+> • OAuth2 implementation in auth/oauth.ts
+> • Rate limiting in middleware/rateLimit.ts
+> • CSRF protection in middleware/csrf.ts
+> • API key rotation in services/apiKeys.ts
+> • Audit logging in services/audit.ts
+> 
+> Add new patterns? [Y/n]: Y
+> 
+> ✅ Added 5 new patterns to security.md
+```
+
+### Example 2: Single Type Verification
+```
+/hm:steering --type security
+
+> 📦 Creating backup of current steering files...
+> ✅ Created backup '2025-09-13-14-31' with 4 files
+> 
+> 🚀 Launching investigation for 1 steering type...
+> 
+> Type to investigate:
+> • security - Security patterns and vulnerabilities
+> 
+> [Task agent processing...]
+> 
+> 📊 Investigation Results:
+> 
+> security:
+>   ❌ Incorrect: 1 item needs fixing
+>   ✅ Verified: 14 items are correct
+>   🆕 New: 2 patterns discovered
+> 
+> 🔧 Fixing incorrect information in security.md
+> 
+> Corrections to apply:
+> • OLD: "JWT tokens expire after 24 hours"
+>   NEW: "JWT tokens expire after 1 hour with 7-day refresh token"
+> 
+> Apply corrections? [Y/n]: Y
+> 
+> ✅ Steering verification complete
+```
+
+## Boundaries
+
+### Will
+- **Verify correctness first** - Priority on fixing incorrect information
+- **Use parallel Task agents** - Investigate each type independently and concurrently
+- **Provide clear investigation reports** - Show what's correct, incorrect, and new
+- **Interactive corrections** - User confirms all fixes before applying
+- **Preserve existing file structure** - Maintain current format and organization of steering files
+- **Create backups** using `hail-mary steering backup` before modifying existing files
+- **Use proper @ prefix** for auto-loading configuration
+- **Focus on accuracy** over comprehensiveness
+
+### Will Not
+- Process without valid config.toml (assumes hail-mary init was run)
+- Change or impose new structure on existing steering files
+- Overwrite correct information without verification
+- Delete or remove existing patterns from files
+- Modify files outside of .kiro/steering/ directory
+- Make changes without using actual Write/Edit/MultiEdit tools
+- Claim success without verifying file operations
+- Include sensitive information (API keys, passwords) in steering files
+
+## Config.toml Structure
+
+This command reads steering type definitions from @.kiro/config.toml:
+
+```toml
+[[steering.types]]
+name = "bigquery"                           # Filename: bigquery.md
+purpose = "BigQuery optimization patterns"  # Description shown in prompts
+criteria = [                                # Patterns for type matching
+    "Query Optimization: Performance techniques",
+    "EXTERNAL_QUERY: Cloud SQL patterns",
+    "Cost Management: Query cost strategies"
+]
+```
+
+### Property Details
+- **`name`**: Determines the steering filename (`{name}.md`)
+- **`purpose`**: Human-readable description shown during type selection
+- **`criteria`**: Array of patterns used for automatic type matching
+
+Each steering type in config.toml defines:
+1. The filename for the steering documentation
+2. The purpose shown to users during investigation
+3. The criteria patterns used to search and categorize project content

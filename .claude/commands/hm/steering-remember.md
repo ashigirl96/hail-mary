@@ -1,8 +1,15 @@
 ---
-description: Save learning to steering with intelligent type detection and creation
+name: steering-remember
+description: "Save learning to steering with intelligent type detection and creation"
+category: utility
+complexity: standard
+mcp-servers: []
+personas: []
 allowed-tools: Read, Write, Edit, MultiEdit, Bash(date:*), Glob
 argument-hint: [hint] [--format rule|guide|knowledge] [--type <name>]
 ---
+
+# /hm:steering-remember - Save Learning to Steering
 
 ## Triggers
 - User identifies new learning or pattern to remember
@@ -14,38 +21,9 @@ argument-hint: [hint] [--format rule|guide|knowledge] [--type <name>]
 /hm:steering-remember [hint] [--format rule|guide|knowledge] [--type <name>]
 ```
 
-### Examples
-```bash
-# With topic hint
-/hm:steering-remember "BigQueryについて学んだこと"
-/hm:steering-remember "認証の話" --type security
-
-# No hint - extract from entire conversation
-/hm:steering-remember
-
-# Format override
-/hm:steering-remember "デバッグ手順" --format guide
-```
-
-## Config.toml Structure
-
-This command reads steering type definitions from @.kiro/config.toml:
-
-```toml
-[[steering.types]]
-name = "bigquery"                           # Filename: bigquery.md
-purpose = "BigQuery optimization patterns"  # Description shown in prompts
-criteria = [                                # Patterns for type matching
-    "Query Optimization: Performance techniques",
-    "EXTERNAL_QUERY: Cloud SQL patterns",
-    "Cost Management: Query cost strategies"
-]
-```
-
-### Property Details
-- **`name`**: Determines the steering filename (`{name}.md`)
-- **`purpose`**: Human-readable description shown during type selection
-- **`criteria`**: Array of patterns used for automatic type matching
+- `[hint]`: Topic hint for extracting specific content (optional - analyzes full conversation if omitted)
+- `--format`: Override auto-detected format (rule|guide|knowledge)
+- `--type`: Force specific steering type (creates type if it doesn't exist)
 
 ## Behavioral Flow
 
@@ -222,14 +200,7 @@ criteria = [                                # Patterns for type matching
    - If new: Use **Write** to create file
    - Confirm successful save
 
-## Tool Usage
-- **Auto-loaded**: @.kiro/config.toml for type definitions
-- **Glob**: Check existing steering files in .kiro/steering/*.md
-- **Write**: Create new steering file when type doesn't exist
-- **Edit/MultiEdit**: Append to existing steering file or update config.toml
-- **Bash(date:*)**: Generate timestamp for tracking
-
-## Key Behaviors
+Key behaviors:
 - **Conversation analysis**: Analyze entire conversation history for relevant learnings when hint provided
 - **Context extraction**: Extract actionable insights from natural conversation flow
 - **Maximum brevity**: Remove all unnecessary explanation
@@ -238,6 +209,19 @@ criteria = [                                # Patterns for type matching
 - **One learning per operation**: Don't combine multiple insights in single execution
 - **Auto-detect format**: Code→Rule, Steps→Guide, Concepts→Knowledge
 - **Interactive type selection**: Guide user through type creation
+
+## Tool Coordination
+- **@.kiro/config.toml**: Auto-loaded for type definitions (no Read tool needed)
+- **Glob**: Check existing steering files in .kiro/steering/*.md
+- **Write**: Create new steering file when type doesn't exist
+- **Edit/MultiEdit**: Append to existing steering file or update config.toml
+- **Bash(date:*)**: Generate timestamp for tracking
+
+## Key Patterns
+- **Learning Extraction**: Conversation analysis → actionable knowledge → title generation
+- **Type Matching**: Content analysis → criteria comparison → confidence scoring → user confirmation
+- **Format Detection**: Content patterns → Rule/Guide/Knowledge → structured output
+- **File Management**: Glob check → Edit/Write selection → confirmation
 
 ## Examples
 
@@ -356,3 +340,23 @@ User: auth-flow
 - Process without clear learning to capture
 - Create types without user confirmation
 - **Report success without actually using MultiEdit/Edit/Write tools to modify files**
+
+## Config.toml Structure
+
+This command reads steering type definitions from @.kiro/config.toml:
+
+```toml
+[[steering.types]]
+name = "bigquery"                           # Filename: bigquery.md
+purpose = "BigQuery optimization patterns"  # Description shown in prompts
+criteria = [                                # Patterns for type matching
+    "Query Optimization: Performance techniques",
+    "EXTERNAL_QUERY: Cloud SQL patterns",
+    "Cost Management: Query cost strategies"
+]
+```
+
+### Property Details
+- **`name`**: Determines the steering filename (`{name}.md`)
+- **`purpose`**: Human-readable description shown during type selection
+- **`criteria`**: Array of patterns used for automatic type matching
