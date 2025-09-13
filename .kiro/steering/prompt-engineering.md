@@ -257,6 +257,28 @@ mcp__github__get_issue
 mcp__github__*
 ```
 
+## YAML Frontmatter argument-hint
+**When**: Using argument-hint in slash command YAML frontmatter
+- Quote the value when it contains pipe characters (`|`)
+- Pipe characters have special meaning in YAML and cause parsing errors
+- Simple arguments without special chars don't need quotes
+- Alternative: escape pipes with `\|` instead of quoting
+
+```yaml
+# ✅ Good - Quoted when containing pipes
+argument-hint: "[hint] [--format rule|guide|knowledge] [--type <name>]"
+
+# ✅ Good - Simple arguments without quotes
+argument-hint: [message]
+argument-hint: [pr-number] [priority] [assignee]
+
+# ✅ Good - Escaped pipes
+argument-hint: add [tagId] \| remove [tagId] \| list
+
+# ❌ Bad - Unquoted pipes cause YAML parse errors
+argument-hint: [hint] [--format rule|guide|knowledge] [--type <name>]
+```
+
 ## Parallel Task Tool Execution
 **When**: Designing commands that require concurrent Task agent execution
 - Use explicit "parallel" keywords 15+ times throughout documentation
