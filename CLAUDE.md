@@ -160,6 +160,7 @@ The steering system provides transparent, version-controllable context managemen
 - **Version Control Friendly**: All steering files can be tracked in git
 - **Claude Code Integration**: Slash commands for managing steering content
 - **Smart Configuration**: Automatically adds [steering] section to existing config.toml
+- **Update Strategy Control**: Fine-grained control over which steering files can be automatically updated
 
 ### Directory Structure
 ```
@@ -177,15 +178,39 @@ The steering system provides transparent, version-controllable context managemen
 2. **Tech**: Architecture, frontend/backend stack, development environment, commands
 3. **Structure**: Directory organization, code patterns, naming conventions, principles
 
+### Update Strategy System
+Each steering type has an `allowed_operations` property that controls automatic updates via `/hm:steering`:
+
+- **`["refresh", "discover"]`** - Both update existing and add new information (default for product, tech, structure)
+- **`["refresh"]`** - Only update out-of-date information
+- **`["discover"]`** - Only add new discoveries
+- **`[]`** - No automatic updates (manual updates only via `/hm:steering-remember`)
+
+#### Configuration Example
+```toml
+[[steering.types]]
+name = "product"
+purpose = "Product overview and value proposition"
+criteria = [...]
+allowed_operations = ["refresh", "discover"]
+
+[[steering.types]]
+name = "principles"
+purpose = "Core project principles"
+criteria = [...]
+allowed_operations = []  # Manual updates only
+```
+
 ### Slash Commands
-- `/hm:steering-remember [title]`: Save new learnings directly to steering files
-- `/hm:steering [--verbose] [--dry-run]`: Update and maintain steering files
+- `/hm:steering-remember [title]`: Save new learnings directly to steering files (ignores `allowed_operations`)
+- `/hm:steering [--verbose] [--dry-run]`: Update and maintain steering files (respects `allowed_operations`)
 
 ### Workflow
-1. **Initialize**: `hail-mary init` creates steering directories and default files
+1. **Initialize**: `hail-mary init` creates steering directories, default files, and adds `allowed_operations` to existing types
 2. **Capture**: Use `/hm:steering-remember` during Claude Code sessions to save important context directly to steering files
-3. **Maintain**: Use `/hm:steering` to update and refresh steering files
+3. **Maintain**: Use `/hm:steering` to update and refresh steering files based on their `allowed_operations` settings
 4. **Reference**: Steering files provide persistent context for future development sessions
+5. **Configure**: Manually edit `allowed_operations` in config.toml to control which files can be automatically updated
 
 ## Key Implementation Details
 
