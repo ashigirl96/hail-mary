@@ -332,3 +332,71 @@ Each parallel task must:
 > Then processing type2...
 > Finally processing type3...
 ```
+
+## Task Tool Parameterization
+**When**: Passing arguments to subagents via Task tool
+- Use detailed prompt parameter to pass context dynamically
+- Single subagent can adapt behavior based on received parameters
+- Enables reusable subagents for multiple contexts
+
+```python
+# ✅ Good - Dynamic argument passing
+Task(
+    subagent_type="steering-investigator",
+    description="Verify tech steering type",
+    prompt=f"""
+    Steering Type: {type_name}
+    Purpose: {purpose}
+    Criteria: {criteria_list}
+    File Path: .kiro/steering/{type_name}.md
+
+    Your mission: Investigate against these criteria
+    """
+)
+
+# ❌ Bad - Multiple specialized subagents
+Task(subagent_type="tech-steering-investigator")
+Task(subagent_type="product-steering-investigator")
+```
+
+## Command Compliance Enforcement
+**When**: Ensuring AI follows slash command instructions strictly
+- Use explicit FORBIDDEN and MANDATORY sections with strong language
+- Include state validation rules with IF/THEN logic
+- Add concrete examples of correct vs forbidden behavior
+- Reference Anthropic's stop_sequences patterns for control
+ 
+### ✅ Good - Strong compliance control
+```markdown
+## Boundaries
+
+**Will:**
+...
+
+**Will Not:**
+...
+- **Proceed past STOP markers without actual user input**
+- **Make assumptions about user responses during STOP periods**
+
+## Critical Control Instructions
+**MANDATORY STOPS**: At each user input point, you MUST:
+1. Display the prompt exactly as written
+2. Execute the STOP instruction immediately
+3. Wait for actual user input before ANY further action
+
+**FORBIDDEN ACTIONS**:
+- Proceeding past STOP markers without user input
+- Making assumptions about user responses
+- Executing file operations after user says "n"
+
+**State Validation Rules**:
+- IF user response = "n" → IMMEDIATELY abort current operation
+- IF user response = "Y" → ONLY THEN proceed with action
+- IF invalid response → Ask for clarification, do NOT assume
+```
+
+### ❌ Bad - Weak enforcement
+```
+Follow the instructions carefully
+Please wait for user input
+```

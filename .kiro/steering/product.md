@@ -17,6 +17,7 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Template System**: Structured specification templates with requirements, design, tasks, and investigation phases
 - **Anthropic OAuth Client**: Separate crate with OAuth2 token management and Claude API integration
 - **Custom Slash Commands**: `/hm:steering` and `/hm:steering-remember` for Claude Code steering management
+- **Steering Backup System**: Configurable backup creation and retention management for steering files
 - **Just Task Runner**: Comprehensive development workflow automation
 - **Workspace Architecture**: Multi-crate Cargo workspace with clean separation
 

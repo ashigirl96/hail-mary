@@ -131,9 +131,12 @@ The project uses a Cargo workspace structure for better modularity and future ex
 │   │       │   │   ├── initialize_project.rs
 │   │       │   │   ├── create_feature.rs
 │   │       │   │   ├── complete_features.rs
+│   │       │   │   ├── backup_steering.rs
 │   │       │   │   └── launch_claude_with_spec.rs
 │   │       │   ├── repositories/    # Repository trait definitions
-│   │       │   │   └── project_repository.rs
+│   │       │   │   ├── config_repository.rs
+│   │       │   │   ├── spec_repository.rs
+│   │       │   │   └── steering_repository.rs
 │   │       │   ├── test_helpers/    # Testing utilities
 │   │       │   └── errors.rs        # Application errors
 │   │       ├── cli/                 # Command-line interface
@@ -141,6 +144,7 @@ The project uses a Cargo workspace structure for better modularity and future ex
 │   │       │   │   ├── init.rs     # Project initialization
 │   │       │   │   ├── new.rs      # Feature creation
 │   │       │   │   ├── complete.rs # Complete features with TUI
+│   │       │   │   ├── steering_backup.rs # Steering backup command
 │   │       │   │   ├── completion.rs # Shell completion generation
 │   │       │   │   └── code.rs     # Claude Code integration
 │   │       │   ├── formatters.rs   # Output formatting
@@ -174,6 +178,8 @@ The project uses a Cargo workspace structure for better modularity and future ex
 
 .kiro/                  # Project specification management
 ├── steering/           # Steering system files
+│   ├── subagent.md     # Subagent patterns and best practices
+│   └── backup/         # Timestamped backup directories
 ├── specs/              # Feature specifications
 ├── archive/            # Archived completed specs
 └── config.toml         # Project configuration
@@ -196,6 +202,7 @@ Commands::New { name }             // Specification creation
 Commands::Code { no_danger }       // Claude Code integration
 Commands::Complete                 // Mark specifications as complete
 Commands::Completion { shell }     // Generate shell completions
+Commands::SteeringBackup { max }   // Steering backup management
 Commands::Steering { subcommand }  // Steering system management
 ```
 

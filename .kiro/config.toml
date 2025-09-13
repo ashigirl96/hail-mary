@@ -56,6 +56,8 @@ criteria = [
     "Tool Coordination: Optimal tool selection and usage patterns",
     "Best Practices: Effective command design and implementation",
     "Integration Patterns: Claude Code workflow optimization",
+    "Task Tool Usage: Subagent invocation with arguments",
+    "Parameter Passing: Dynamic prompt construction for subagents"
 ]
 name = "prompt-engineering"
 purpose = "Claude Code command patterns and best practices"
@@ -71,3 +73,15 @@ criteria = [
 ]
 name = "documentation"
 purpose = "Documentation standards and best practices"
+
+[[steering.types]]
+allowed_operations = []
+criteria = [
+    "YAML Front Matter: Agent metadata and configuration",
+    "Agent Structure: Section organization and templates",
+    "Identity Definition: Role and expertise specification",
+    "Behavioral Patterns: Mindset and methodology design",
+    "Quality Standards: Metrics and boundary definitions",
+]
+name = "subagent"
+purpose = "Subagent creation patterns and best practices"

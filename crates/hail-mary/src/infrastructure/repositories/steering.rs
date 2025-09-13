@@ -201,17 +201,26 @@ impl SteeringRepositoryInterface for SteeringRepository {
     }
 
     fn deploy_slash_commands(&self) -> Result<(), ApplicationError> {
-        use crate::infrastructure::embedded_resources::EmbeddedSlashCommands;
+        use crate::infrastructure::embedded_resources::{EmbeddedAgents, EmbeddedSlashCommands};
+
+        // Create .claude directory structure
+        let claude_dir = self.path_manager.project_root().join(".claude");
 
         // Create .claude/commands/hm directory
-        let claude_dir = self.path_manager.project_root().join(".claude");
         let commands_dir = claude_dir.join("commands");
         let hm_dir = commands_dir.join("hm");
-
-        // Create directory structure
         fs::create_dir_all(&hm_dir).map_err(|e| {
             ApplicationError::FileSystemError(format!(
                 "Failed to create .claude/commands/hm directory: {}",
+                e
+            ))
+        })?;
+
+        // Create .claude/agents directory
+        let agents_dir = claude_dir.join("agents");
+        fs::create_dir_all(&agents_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!(
+                "Failed to create .claude/agents directory: {}",
                 e
             ))
         })?;
@@ -224,6 +233,14 @@ impl SteeringRepositoryInterface for SteeringRepository {
                     "Failed to write slash command {}: {}",
                     name, e
                 ))
+            })?;
+        }
+
+        // Deploy embedded agents (always overwrite for consistency)
+        for (name, content) in EmbeddedAgents::get_all() {
+            let file_path = agents_dir.join(name);
+            fs::write(&file_path, content).map_err(|e| {
+                ApplicationError::FileSystemError(format!("Failed to write agent {}: {}", name, e))
             })?;
         }
 
