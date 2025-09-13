@@ -6,7 +6,7 @@ complexity: standard
 mcp-servers: []
 personas: []
 allowed-tools: Read, Write, Edit, MultiEdit, Bash(date:*), Glob
-argument-hint: [hint] [--format rule|guide|knowledge] [--type <name>]
+argument-hint: "[hint] [--format rule|guide|knowledge] [--type <name>]"
 ---
 
 # /hm:steering-remember - Save Learning to Steering
