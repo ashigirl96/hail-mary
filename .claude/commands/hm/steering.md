@@ -26,9 +26,11 @@ argument-hint: [--type <name>]
 ## Behavioral Flow
 
 1. **Backup**: Execute !`hail-mary steering backup` to create timestamped backup of current steering files
-2. **Load**: Parse steering types from @.kiro/config.toml with criteria and purposes
-3. **Investigate**: Launch parallel Task agents to verify each steering type independently
-4. **Aggregate**: Collect verification results as investigation completes
+2. **Load**: Parse steering types from @.kiro/config.toml, filtering out types where `allowed_operations = []`
+3. **Investigate**: Launch parallel Task agents to comprehensively verify each allowed type
+4. **Aggregate**: Collect verification results and filter based on allowed_operations:
+   - If "refresh" in allowed_operations: Apply corrections for outdated information
+   - If "discover" in allowed_operations: Add new patterns found
 5. **Update**: Apply all corrections and additions with single batch confirmation
 
 Key behaviors:
@@ -55,6 +57,12 @@ The `hail-mary steering backup` command creates a timestamped backup directory (
 Launch parallel Task agents for each steering type:
 
 ```
+> 🔍 Analyzing steering types...
+> • {type1.name}.md [{operations status}] - {action description}
+> • {type2.name}.md [{operations status}] - {action description}
+> • {type3.name}.md [{operations status}] - {action description}
+> • {typeN.name}.md [skipped - no operations allowed]
+>
 > 🚀 Launching parallel investigation for {n} steering types...
 >
 > Spawning investigation agents:
@@ -106,53 +114,30 @@ Return your findings for aggregation.
 
 ### Aggregation & Review Phase
 
-After Task agent completes investigation of all types, show detailed results with all changes:
+After Task agents complete investigation of all types, filter results based on `allowed_operations` and show applicable changes:
 
 ```
 > 📊 Investigation Results & Changes
 >
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> 📁 bigquery.md
+> 📁 {type.name}.md [{allowed_operations status}]
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> Status: ❌ 2 incorrect | ✅ 8 verified | 🆕 3 new
+> Status: ❌ {incorrect count} | ✅ {verified count} | 🆕 {new count}
 >
-> 🔧 Corrections to apply:
-> • OLD: "EXTERNAL_QUERY uses MySQL syntax"
->   NEW: "EXTERNAL_QUERY uses PostgreSQL syntax"
-> • OLD: "Partitioning by DATE field"
->   NEW: "Partitioning by _PARTITIONDATE pseudo column"
+> [If "refresh" in allowed_operations:]
+> 🔧 Corrections to apply (refresh allowed):
+> • OLD: "{existing content}"
+>   NEW: "{corrected content}"
 >
-> 🆕 New patterns found:
-> • BigQuery ML patterns in ml/models/
-> • Cost optimization with clustering
-> • Materialized view strategies
+> [If "discover" in allowed_operations:]
+> 🆕 New patterns found (discover allowed):
+> • {new pattern description}
 >
-> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> 📁 security.md
-> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> Status: ❌ 1 incorrect | ✅ 12 verified | 🆕 5 new
->
-> 🔧 Corrections to apply:
-> • OLD: "JWT tokens expire after 24 hours"
->   NEW: "JWT tokens expire after 1 hour with 7-day refresh token"
->
-> 🆕 New patterns found:
-> • OAuth2 implementation in auth/oauth.ts
-> • Rate limiting in middleware/rateLimit.ts
-> • CSRF protection in middleware/csrf.ts
-> • API key rotation in services/apiKeys.ts
-> • Audit logging in services/audit.ts
+> [If allowed_operations is empty:]
+> ⏭️ Skipped - manual updates only
 >
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> 📁 api-patterns.md
-> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> Status: ✅ 15 verified | 🆕 2 new
->
-> 🆕 New patterns found:
-> • GraphQL subscription patterns in api/subscriptions/
-> • REST endpoint versioning in api/v2/
->
-> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> [Repeat for each type...]
 >
 > 🔄 Apply ALL changes listed above? [Y/n]:
 ```
@@ -202,12 +187,19 @@ After user responds:
 
 ## Examples
 
-### Example 1: Batch Mode Update
+### Example 1: All Types (Default)
 ```
 /hm:steering
 
 > 📦 Creating backup of current steering files...
-> ✅ Created backup '2025-09-13-14-30' with 4 files
+> ✅ Created backup '2025-09-13-14-30' with 5 files
+>
+> 🔍 Analyzing steering types...
+> • bigquery.md [refresh ✅, discover ✅] - Will check and update
+> • security.md [refresh ✅, discover ✅] - Will check and update
+> • api-patterns.md [discover ✅] - Will only add new content
+> • principles.md [skipped - no operations allowed]
+> • decisions.md [skipped - no operations allowed]
 >
 > 🚀 Launching parallel investigation for 3 steering types...
 >
@@ -221,31 +213,31 @@ After user responds:
 > 📊 Investigation Results & Changes
 >
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> 📁 bigquery.md
+> 📁 bigquery.md [refresh ✅, discover ✅]
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 > Status: ❌ 2 incorrect | ✅ 8 verified | 🆕 3 new
 >
-> 🔧 Corrections to apply:
+> 🔧 Corrections to apply (refresh allowed):
 > • OLD: "EXTERNAL_QUERY uses MySQL syntax"
 >   NEW: "EXTERNAL_QUERY uses PostgreSQL syntax"
 > • OLD: "Partitioning by DATE field"
 >   NEW: "Partitioning by _PARTITIONDATE pseudo column"
 >
-> 🆕 New patterns found:
+> 🆕 New patterns found (discover allowed):
 > • BigQuery ML patterns in ml/models/
 > • Cost optimization with clustering
 > • Materialized view strategies
 >
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> 📁 security.md
+> 📁 security.md [refresh ✅, discover ✅]
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 > Status: ❌ 1 incorrect | ✅ 12 verified | 🆕 5 new
 >
-> 🔧 Corrections to apply:
+> 🔧 Corrections to apply (refresh allowed):
 > • OLD: "JWT tokens expire after 24 hours"
 >   NEW: "JWT tokens expire after 1 hour with 7-day refresh token"
 >
-> 🆕 New patterns found:
+> 🆕 New patterns found (discover allowed):
 > • OAuth2 implementation in auth/oauth.ts
 > • Rate limiting in middleware/rateLimit.ts
 > • CSRF protection in middleware/csrf.ts
@@ -253,13 +245,20 @@ After user responds:
 > • Audit logging in services/audit.ts
 >
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> 📁 api-patterns.md
+> 📁 decisions.md [discover ✅ only]
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> Status: ✅ 15 verified | 🆕 2 new
+> Status: ❌ 1 incorrect | ✅ 15 verified | 🆕 2 new
 >
-> 🆕 New patterns found:
-> • GraphQL subscription patterns in api/subscriptions/
-> • REST endpoint versioning in api/v2/
+> ⚠️ Found 1 incorrect item but refresh not allowed - skipping corrections
+>
+> 🆕 New patterns found (discover allowed):
+> • GraphQL adoption decision in docs/adr/
+> • Microservices migration strategy
+>
+> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> 📁 principles.md [no operations allowed]
+> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> ⏭️ Skipped - manual updates only
 >
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 >
@@ -271,41 +270,49 @@ After user responds:
 > • All steering files updated successfully
 ```
 
-### Example 2: Skip All Changes
+### Example 2: Specific Type
 ```
-/hm:steering
+/hm:steering --type tech
 
 > 📦 Creating backup of current steering files...
-> ✅ Created backup '2025-09-13-14-32' with 4 files
+> ✅ Created backup '2025-09-13-15-45' with 5 files
 >
-> [Investigation phase completed...]
+> 🔍 Analyzing single steering type...
+> • tech.md [refresh ✅, discover ✅] - Will check and update
+>
+> 🚀 Launching investigation for 1 steering type...
+>
+> Spawning investigation agent:
+> • [Agent 1] tech - Technical stack and development environment
+>
+> [Task agent processing...]
 >
 > 📊 Investigation Results & Changes
 >
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> 📁 security.md
+> 📁 tech.md [refresh ✅, discover ✅]
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> Status: ❌ 2 incorrect | ✅ 14 verified | 🆕 4 new
+> Status: ❌ 2 incorrect | ✅ 14 verified | 🆕 3 new
 >
-> 🔧 Corrections to apply:
-> • OLD: "JWT tokens expire after 24 hours"
->   NEW: "JWT tokens expire after 1 hour with 7-day refresh token"
-> • OLD: "Password hashing uses MD5"
->   NEW: "Password hashing uses bcrypt with salt rounds 10"
+> 🔧 Corrections to apply (refresh allowed):
+> • OLD: "Node.js version 14"
+>   NEW: "Node.js version 20 LTS"
+> • OLD: "Python 3.8"
+>   NEW: "Python 3.11+"
 >
-> 🆕 New patterns found:
-> • WebSocket authentication in ws/auth.ts
-> • Session management in services/session.ts
-> • Two-factor authentication in auth/2fa.ts
-> • Security headers middleware in middleware/security.ts
+> 🆕 New patterns found (discover allowed):
+> • Docker compose configuration in docker/
+> • GitHub Actions workflows in .github/workflows/
+> • Environment variables in .env.example
 >
 > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 >
-> 🔄 Apply ALL changes listed above? [Y/n]: n
+> 🔄 Apply ALL changes listed above? [Y/n]: Y
 >
-> ⏭️ Skipped all updates
->
-> ✅ Steering verification complete (no changes applied)
+> ✅ Update Applied:
+> • Fixed 2 incorrect items in tech.md
+> • Added 3 new patterns to tech.md
+> • Steering file updated successfully
 ```
 
 ## Boundaries
@@ -343,14 +350,15 @@ criteria = [                                # Patterns for type matching
     "EXTERNAL_QUERY: Cloud SQL patterns",
     "Cost Management: Query cost strategies"
 ]
+allowed_operations = ["refresh", "discover"] # Auto-update control
 ```
 
 ### Property Details
 - **`name`**: Determines the steering filename (`{name}.md`)
 - **`purpose`**: Human-readable description shown during type selection
 - **`criteria`**: Array of patterns used for automatic type matching
-
-Each steering type in config.toml defines:
-1. The filename for the steering documentation
-2. The purpose shown to users during investigation
-3. The criteria patterns used to search and categorize project content
+- **`allowed_operations`**: Controls which automatic updates this command can perform
+  - `["refresh", "discover"]` - Both update existing and add new information (default for product/tech/structure)
+  - `["refresh"]` - Only update out-of-date information
+  - `["discover"]` - Only add new discoveries
+  - `[]` - Skip automatic updates (manual-only via `/hm:steering-remember`)

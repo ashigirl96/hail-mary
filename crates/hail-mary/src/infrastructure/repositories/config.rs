@@ -31,6 +31,8 @@ struct SteeringTypeToml {
     name: String,
     purpose: String,
     criteria: Vec<String>,
+    #[serde(default)]
+    allowed_operations: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -116,6 +118,7 @@ impl ConfigRepository {
                         }
                     })
                     .collect(),
+                allowed_operations: t.allowed_operations.clone(),
             })
             .collect();
 
@@ -182,6 +185,7 @@ impl ConfigRepositoryInterface for ConfigRepository {
                             .iter()
                             .map(|c| format!("{}: {}", c.name, c.description))
                             .collect(),
+                        allowed_operations: t.allowed_operations.clone(),
                     })
                     .collect(),
                 backup: Some(SteeringBackupToml {
@@ -251,6 +255,7 @@ impl ConfigRepositoryInterface for ConfigRepository {
                             .iter()
                             .map(|c| format!("{}: {}", c.name, c.description))
                             .collect(),
+                        allowed_operations: t.allowed_operations.clone(),
                     })
                     .collect(),
                 backup: None,
@@ -298,6 +303,68 @@ impl ConfigRepositoryInterface for ConfigRepository {
                 ))
             })?;
             steering_table.insert("backup".to_string(), backup_value);
+            self.save_toml(&toml_value)?;
+        }
+
+        Ok(())
+    }
+
+    fn ensure_allowed_operations(&self) -> Result<(), ApplicationError> {
+        let mut toml_value = self.load_toml()?;
+        let table = toml_value.as_table_mut().ok_or_else(|| {
+            ApplicationError::ConfigurationError("Invalid TOML structure".to_string())
+        })?;
+
+        // Ensure steering section exists first
+        if !table.contains_key("steering") {
+            self.ensure_steering_config()?;
+            toml_value = self.load_toml()?;
+        }
+
+        let table = toml_value.as_table_mut().ok_or_else(|| {
+            ApplicationError::ConfigurationError("Invalid TOML structure".to_string())
+        })?;
+
+        let mut modified = false;
+
+        if let Some(steering) = table.get_mut("steering")
+            && let Some(steering_table) = steering.as_table_mut()
+        {
+            // Get the types array
+            if let Some(types) = steering_table.get_mut("types")
+                && let Some(types_array) = types.as_array_mut()
+            {
+                // Iterate through each steering type in the array
+                for type_value in types_array.iter_mut() {
+                    if let Some(type_table) = type_value.as_table_mut() {
+                        // Check if allowed_operations already exists
+                        if !type_table.contains_key("allowed_operations") {
+                            // Get the type name to determine default operations
+                            let type_name = type_table
+                                .get("name")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("");
+
+                            // Add default based on type name
+                            let default_ops = match type_name {
+                                "product" | "tech" | "structure" => {
+                                    vec!["refresh".to_string(), "discover".to_string()]
+                                }
+                                _ => vec![],
+                            };
+
+                            let ops_value = toml::Value::Array(
+                                default_ops.into_iter().map(toml::Value::String).collect(),
+                            );
+                            type_table.insert("allowed_operations".to_string(), ops_value);
+                            modified = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if modified {
             self.save_toml(&toml_value)?;
         }
 

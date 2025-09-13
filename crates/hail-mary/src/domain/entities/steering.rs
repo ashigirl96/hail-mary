@@ -6,6 +6,12 @@ pub struct SteeringType {
     pub name: String,
     pub purpose: String,
     pub criteria: Vec<Criterion>,
+    #[serde(default = "default_allowed_operations")]
+    pub allowed_operations: Vec<String>,
+}
+
+fn default_allowed_operations() -> Vec<String> {
+    vec![] // Default to manual-only for safety
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -85,6 +91,7 @@ impl SteeringConfig {
                             description: "Unique benefits and differentiators".to_string(),
                         },
                     ],
+                    allowed_operations: vec!["refresh".to_string(), "discover".to_string()],
                 },
                 SteeringType {
                     name: "tech".to_string(),
@@ -121,6 +128,7 @@ impl SteeringConfig {
                             description: "Standard ports used by services".to_string(),
                         },
                     ],
+                    allowed_operations: vec!["refresh".to_string(), "discover".to_string()],
                 },
                 SteeringType {
                     name: "structure".to_string(),
@@ -151,6 +159,7 @@ impl SteeringConfig {
                             description: "Core design decisions and patterns".to_string(),
                         },
                     ],
+                    allowed_operations: vec!["refresh".to_string(), "discover".to_string()],
                 },
             ],
         }
@@ -176,6 +185,7 @@ impl SteeringConfig {
             name: name.to_string(),
             purpose: purpose.to_string(),
             criteria,
+            allowed_operations: vec![], // New types default to manual-only
         })
     }
 }
@@ -253,6 +263,7 @@ mod tests {
         assert_eq!(product.purpose, "Product overview and value proposition");
         assert_eq!(product.criteria.len(), 4);
         assert_eq!(product.criteria[0].name, "Product Overview");
+        assert_eq!(product.allowed_operations, vec!["refresh", "discover"]);
 
         // Test tech type
         let tech = &config.types[1];
@@ -260,6 +271,7 @@ mod tests {
         assert_eq!(tech.purpose, "Technical stack and development environment");
         assert_eq!(tech.criteria.len(), 7);
         assert_eq!(tech.criteria[0].name, "Architecture");
+        assert_eq!(tech.allowed_operations, vec!["refresh", "discover"]);
 
         // Test structure type
         let structure = &config.types[2];
@@ -270,6 +282,7 @@ mod tests {
         );
         assert_eq!(structure.criteria.len(), 6);
         assert_eq!(structure.criteria[0].name, "Root Directory Organization");
+        assert_eq!(structure.allowed_operations, vec!["refresh", "discover"]);
     }
 
     #[test]
@@ -289,6 +302,7 @@ mod tests {
         assert_eq!(steering_type.criteria.len(), 2);
         assert_eq!(steering_type.criteria[0].name, "Name1");
         assert_eq!(steering_type.criteria[0].description, "Description1");
+        assert_eq!(steering_type.allowed_operations, Vec::<String>::new()); // New types default to empty
     }
 
     #[test]
@@ -318,6 +332,7 @@ mod tests {
                 name: "test criterion".to_string(),
                 description: "test description".to_string(),
             }],
+            allowed_operations: vec!["refresh".to_string()],
         };
 
         let cloned = steering_type.clone();
@@ -351,6 +366,7 @@ mod tests {
                 name: "test".to_string(),
                 purpose: "test purpose".to_string(),
                 criteria: vec![],
+                allowed_operations: vec![],
             }],
         };
 
