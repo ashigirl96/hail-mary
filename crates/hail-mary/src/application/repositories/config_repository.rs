@@ -21,4 +21,7 @@ pub trait ConfigRepositoryInterface {
 
     /// Ensure steering backup configuration exists, adding defaults if missing
     fn ensure_steering_backup_config(&self) -> Result<(), ApplicationError>;
+
+    /// Ensure allowed_operations exists for all steering types, adding defaults if missing
+    fn ensure_allowed_operations(&self) -> Result<(), ApplicationError>;
 }

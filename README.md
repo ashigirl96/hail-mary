@@ -184,6 +184,7 @@ criteria = [
     "Target Use Case: Specific scenarios the product addresses",
     "Key Value Proposition: Unique benefits and differentiators",
 ]
+allowed_operations = ["refresh", "discover"]  # Default for core types
 
 [[steering.types]]
 name = "tech"
@@ -193,6 +194,7 @@ criteria = [
     "Development Environment: Required tools and setup",
     "Common Commands: Frequently used development commands",
 ]
+allowed_operations = ["refresh", "discover"]  # Default for core types
 
 [[steering.types]]
 name = "structure"
@@ -202,6 +204,16 @@ criteria = [
     "Code Organization Patterns: How code is structured",
     "Key Architectural Principles: Core design decisions",
 ]
+allowed_operations = ["refresh", "discover"]  # Default for core types
+
+[[steering.types]]
+name = "principles"
+purpose = "Core project principles"
+criteria = [
+    "Design Principles: Fundamental design decisions",
+    "Development Guidelines: Code quality standards",
+]
+allowed_operations = []  # Manual updates only
 ```
 
 ### Steering System Types
@@ -209,6 +221,15 @@ criteria = [
 - **`product`**: Product overview, features, and value proposition documentation
 - **`tech`**: Technology stack, development environment, and command reference
 - **`structure`**: Code organization, architectural patterns, and structural decisions
+
+### Update Strategy Control
+
+Each steering type includes an `allowed_operations` property that controls automatic updates:
+
+- **`["refresh", "discover"]`** - Update existing info and add new discoveries (default for product, tech, structure)
+- **`["refresh"]`** - Only update existing information
+- **`["discover"]`** - Only add new discoveries
+- **`[]`** - Manual updates only via `/hm:steering-remember`
 
 ### File System Organization
 
@@ -320,10 +341,11 @@ cargo test --test integration_repository_test
 
 ### Steering System Workflow
 
-1. **Capture**: Use `/hm:steering-remember` during Claude Code sessions to save insights
-2. **Maintain**: Run `/hm:steering` to update and refresh steering files
-3. **Version Control**: Commit steering changes to share context with team members
-4. **Context Loading**: Steering files automatically provide persistent context for development
+1. **Capture**: Use `/hm:steering-remember` during Claude Code sessions to save insights (ignores `allowed_operations`)
+2. **Maintain**: Run `/hm:steering` to update and refresh steering files (respects `allowed_operations` settings)
+3. **Configure**: Edit `allowed_operations` in config.toml to control which files can be automatically updated
+4. **Version Control**: Commit steering changes to share context with team members
+5. **Context Loading**: Steering files automatically provide persistent context for development
 
 ## 🔒 Security
 

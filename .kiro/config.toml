@@ -2,6 +2,10 @@
 max = 10
 
 [[steering.types]]
+allowed_operations = [
+    "refresh",
+    "discover",
+]
 criteria = [
     "Product Overview: Brief description of what the product is",
     "Core Features: Bulleted list of main capabilities",
@@ -12,6 +16,10 @@ name = "product"
 purpose = "Product overview and value proposition"
 
 [[steering.types]]
+allowed_operations = [
+    "refresh",
+    "discover",
+]
 criteria = [
     "Architecture: High-level system design",
     "Frontend: Frameworks, libraries, build tools (if applicable)",
@@ -25,6 +33,10 @@ name = "tech"
 purpose = "Technical stack and development environment"
 
 [[steering.types]]
+allowed_operations = [
+    "refresh",
+    "discover",
+]
 criteria = [
     "Root Directory Organization: Top-level structure with descriptions",
     "Subdirectory Structures: Detailed breakdown of key directories",
@@ -37,23 +49,25 @@ name = "structure"
 purpose = "Code organization and project structure patterns"
 
 [[steering.types]]
+allowed_operations = []
 criteria = [
     "Command Syntax: Claude Code command structure and patterns",
     "File References: How to reference files in commands (@, paths)",
     "Tool Coordination: Optimal tool selection and usage patterns",
     "Best Practices: Effective command design and implementation",
-    "Integration Patterns: Claude Code workflow optimization"
+    "Integration Patterns: Claude Code workflow optimization",
 ]
 name = "prompt-engineering"
 purpose = "Claude Code command patterns and best practices"
 
 [[steering.types]]
+allowed_operations = []
 criteria = [
     "Markdown Syntax: Formatting rules and conventions",
     "Code Block Formatting: Proper nesting and syntax highlighting",
     "Documentation Structure: Organization and layout patterns",
     "Writing Style: Clear and concise technical writing",
-    "Formatting Standards: Consistent formatting across documentation"
+    "Formatting Standards: Consistent formatting across documentation",
 ]
 name = "documentation"
 purpose = "Documentation standards and best practices"

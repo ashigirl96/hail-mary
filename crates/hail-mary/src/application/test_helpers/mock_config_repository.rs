@@ -127,4 +127,15 @@ impl ConfigRepositoryInterface for MockConfigRepository {
         // For testing purposes, this is a no-op
         Ok(())
     }
+
+    fn ensure_allowed_operations(&self) -> Result<(), ApplicationError> {
+        if self.should_fail("ensure_allowed_operations") {
+            return Err(ApplicationError::ConfigurationError(
+                "Mock ensure allowed operations failure".to_string(),
+            ));
+        }
+
+        // For testing purposes, this is a no-op
+        Ok(())
+    }
 }

@@ -276,6 +276,7 @@ User: 1
 >     "Security: Query depth limiting and validation",
 >     "Best Practices: Naming conventions and patterns"
 > ]
+> allowed_operations = []
 > 
 > ✅ Created graphql.md with your learning:
 > ## N+1 Query Prevention
@@ -354,9 +355,15 @@ criteria = [                                # Patterns for type matching
     "EXTERNAL_QUERY: Cloud SQL patterns",
     "Cost Management: Query cost strategies"
 ]
+allowed_operations = []                     # Auto-update control (new types default to manual-only)
 ```
 
 ### Property Details
 - **`name`**: Determines the steering filename (`{name}.md`)
 - **`purpose`**: Human-readable description shown during type selection
 - **`criteria`**: Array of patterns used for automatic type matching
+- **`allowed_operations`**: Controls automatic updates via `/hm:steering` command
+  - `["refresh", "discover"]` - Both update existing and add new information (default for product/tech/structure)
+  - `["refresh"]` - Only update out-of-date information
+  - `["discover"]` - Only add new discoveries
+  - `[]` - No automatic updates (manual-only via `/hm:steering-remember`) - **default for new types**

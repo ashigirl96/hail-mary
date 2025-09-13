@@ -19,6 +19,9 @@ pub fn initialize_project(
     // Ensure steering backup configuration exists (idempotent)
     config_repo.ensure_steering_backup_config()?;
 
+    // Ensure allowed_operations exists for all steering types (idempotent)
+    config_repo.ensure_allowed_operations()?;
+
     // Save default config if it doesn't exist
     let config = ProjectConfig::default_for_new_project();
     config_repo.save_config(&config)?;
