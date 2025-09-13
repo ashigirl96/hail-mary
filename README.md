@@ -216,7 +216,6 @@ The steering system uses git-trackable markdown files:
 - `.kiro/steering/product.md`: Product context (always loaded)
 - `.kiro/steering/tech.md`: Technical context (always loaded)
 - `.kiro/steering/structure.md`: Structural context (always loaded)
-- `.kiro/steering/draft/`: Temporary drafts for processing
 
 ## 🔌 Claude Code Integration
 
@@ -238,8 +237,8 @@ Hail-mary integrates with Claude Code through structured system prompts that pro
 
 Hail-mary provides custom Claude Code slash commands in `.claude/commands/hm/`:
 
-- `/hm:steering`: Main steering management command - processes drafts and updates steering files
-- `/hm:steering-remember [title]`: Capture learning and insights to drafts for later processing  
+- `/hm:steering`: Main steering management command - updates and maintains steering files
+- `/hm:steering-remember [title]`: Capture learning and insights directly to steering files  
 - `/hm:steering-merge`: Advanced merging of steering content with conflict resolution
 
 ### Steering System Context
@@ -322,7 +321,7 @@ cargo test --test integration_repository_test
 ### Steering System Workflow
 
 1. **Capture**: Use `/hm:steering-remember` during Claude Code sessions to save insights
-2. **Process**: Run `/hm:steering` to intelligently categorize drafts into steering files
+2. **Maintain**: Run `/hm:steering` to update and refresh steering files
 3. **Version Control**: Commit steering changes to share context with team members
 4. **Context Loading**: Steering files automatically provide persistent context for development
 

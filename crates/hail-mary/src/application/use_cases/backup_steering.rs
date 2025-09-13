@@ -5,7 +5,7 @@ use chrono::Local;
 /// Creates a backup of all steering files with automatic rotation
 ///
 /// This function:
-/// 1. Lists all steering markdown files (excluding backup/draft directories)
+/// 1. Lists all steering markdown files (excluding backup directory)
 /// 2. Creates a timestamped backup directory
 /// 3. Copies all files to the backup
 /// 4. Enforces the maximum backup limit by deleting oldest backups

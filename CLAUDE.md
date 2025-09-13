@@ -158,7 +158,7 @@ The steering system provides transparent, version-controllable context managemen
 ### Key Features
 - **File-Based Storage**: Context stored as markdown files in `.kiro/steering/`
 - **Version Control Friendly**: All steering files can be tracked in git
-- **Claude Code Integration**: Slash commands for draft management and categorization
+- **Claude Code Integration**: Slash commands for managing steering content
 - **Smart Configuration**: Automatically adds [steering] section to existing config.toml
 
 ### Directory Structure
@@ -168,8 +168,7 @@ The steering system provides transparent, version-controllable context managemen
 │   ├── product.md              # Product overview and value proposition
 │   ├── tech.md                 # Technical stack and development environment
 │   ├── structure.md            # Code organization patterns
-│   ├── backup/                 # Backups before modifications
-│   └── draft/                  # Temporary drafts for processing
+│   └── backup/                 # Backups before modifications
 └── config.toml                 # Contains [steering] configuration
 ```
 
@@ -179,13 +178,13 @@ The steering system provides transparent, version-controllable context managemen
 3. **Structure**: Directory organization, code patterns, naming conventions, principles
 
 ### Slash Commands
-- `/hm:steering-remember [title]`: Save new learnings to draft directory
-- `/hm:steering [--verbose] [--dry-run]`: Process drafts and categorize into steering files
+- `/hm:steering-remember [title]`: Save new learnings directly to steering files
+- `/hm:steering [--verbose] [--dry-run]`: Update and maintain steering files
 
 ### Workflow
 1. **Initialize**: `hail-mary init` creates steering directories and default files
-2. **Capture**: Use `/hm:steering-remember` during Claude Code sessions to save important context
-3. **Organize**: Use `/hm:steering` to categorize drafts into appropriate steering files
+2. **Capture**: Use `/hm:steering-remember` during Claude Code sessions to save important context directly to steering files
+3. **Maintain**: Use `/hm:steering` to update and refresh steering files
 4. **Reference**: Steering files provide persistent context for future development sessions
 
 ## Key Implementation Details

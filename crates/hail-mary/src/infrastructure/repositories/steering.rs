@@ -88,8 +88,8 @@ impl SteeringRepositoryInterface for SteeringRepository {
             let path = entry.path();
             let file_name = path.file_name().unwrap_or_default().to_string_lossy();
 
-            // Skip backup and draft directories
-            if file_name == "backup" || file_name == "draft" {
+            // Skip backup directory
+            if file_name == "backup" {
                 continue;
             }
 
