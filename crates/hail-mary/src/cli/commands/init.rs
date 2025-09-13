@@ -191,15 +191,30 @@ mod tests {
         let hm_dir = Path::new(".claude/commands/hm");
         assert!(hm_dir.exists(), ".claude/commands/hm should exist");
 
-        // Check all expected files
-        let expected_files = ["steering-remember.md", "steering.md"];
-        for file in &expected_files {
+        // Check all expected command files
+        let expected_commands = ["steering-remember.md", "steering.md"];
+        for file in &expected_commands {
             let file_path = hm_dir.join(file);
             assert!(
                 file_path.exists(),
                 "Slash command file {} should exist",
                 file
             );
+
+            // Verify content
+            let content = fs::read_to_string(&file_path).unwrap();
+            assert!(!content.is_empty(), "File {} should have content", file);
+        }
+
+        // Verify agents were deployed
+        let agents_dir = Path::new(".claude/agents");
+        assert!(agents_dir.exists(), ".claude/agents should exist");
+
+        // Check all expected agent files
+        let expected_agents = ["steering-investigator.md"];
+        for file in &expected_agents {
+            let file_path = agents_dir.join(file);
+            assert!(file_path.exists(), "Agent file {} should exist", file);
 
             // Verify content
             let content = fs::read_to_string(&file_path).unwrap();

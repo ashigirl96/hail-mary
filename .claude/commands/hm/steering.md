@@ -54,7 +54,7 @@ The `hail-mary steering backup` command creates a timestamped backup directory (
 
 ### Parallel Investigation Phase
 
-Launch parallel Task agents for each steering type:
+Launch parallel steering-investigator subagents for each steering type:
 
 ```
 > 🔍 Analyzing steering types...
@@ -63,53 +63,53 @@ Launch parallel Task agents for each steering type:
 > • {type3.name}.md [{operations status}] - {action description}
 > • {typeN.name}.md [skipped - no operations allowed]
 >
-> 🚀 Launching parallel investigation for {n} steering types...
+> 🚀 Launching specialized steering investigators for {n} types...
 >
-> Spawning investigation agents:
-> • [Agent 1] {type1.name} - {type1.purpose}
-> • [Agent 2] {type2.name} - {type2.purpose}
-> • [Agent 3] {type3.name} - {type3.purpose}
-> • [Agent n] {typeN.name} - {typeN.purpose}
+> Spawning steering-investigator agents:
+> • [Investigator 1] {type1.name} - {type1.purpose}
+> • [Investigator 2] {type2.name} - {type2.purpose}
+> • [Investigator 3] {type3.name} - {type3.purpose}
+> • [Investigator n] {typeN.name} - {typeN.purpose}
 >
-> [Parallel Task agents processing independently...]
+> [Parallel steering-investigator agents processing independently...]
 ```
 
-#### Parallel Task Agent Execution
-Launch multiple Task agents in a single message for concurrent investigation:
+#### Parallel Steering Investigator Execution
+Launch multiple steering-investigator subagents in a single message for concurrent investigation:
 
-**[The implementation will send multiple Task tool calls in one response]**
-- Task 1: Investigate {type1.name} steering type
-- Task 2: Investigate {type2.name} steering type
-- Task 3: Investigate {type3.name} steering type
-- Task n: Investigate {typeN.name} steering type
+**[The implementation will send multiple Task tool calls with subagent_type="steering-investigator"]**
+- Task 1: steering-investigator for {type1.name}
+- Task 2: steering-investigator for {type2.name}
+- Task 3: steering-investigator for {type3.name}
+- Task n: steering-investigator for {typeN.name}
 
-Each agent receives an independent mission:
+Each steering-investigator receives type-specific context via prompt:
 
-```
-Investigate the "{type.name}" steering type.
+```python
+Task(
+    subagent_type="steering-investigator",
+    description="Verify {type.name} steering documentation",
+    prompt="""
+    Steering Type: {type.name}
+    Purpose: {type.purpose}
+    Criteria: {type.criteria}
+    Allowed Operations: {allowed_operations}
+    File Path: .kiro/steering/{type.name}.md
 
-Purpose: {type.purpose}
-Criteria: {type.criteria}
+    Mission: Verify and update the steering documentation for this type.
 
-Your mission:
-1. READ the existing steering file: .kiro/steering/{type.name}.md
-2. VERIFY each documented pattern against the actual codebase
-3. IDENTIFY incorrect or outdated information
-4. DISCOVER new patterns matching the criteria
-5. RETURN structured results:
-   - Incorrect items found (with corrections)
-   - Outdated items needing updates
-   - New discoveries to add
-   - Validation status for each criterion
+    Instructions:
+    1. LOAD the existing steering file
+    2. VERIFY each documented pattern against codebase reality
+    3. DISCOVER new patterns matching the criteria
+    4. RESPECT allowed_operations when suggesting changes:
+       - If "refresh" allowed: Report corrections for outdated info
+       - If "discover" allowed: Report new pattern discoveries
+       - If neither: Only report verification status
 
-Use these tools:
-- Read: Load the existing steering file
-- Grep: Search for patterns in codebase
-- Glob: Find relevant files
-- Analyze patterns against the criteria
-
-Focus on CORRECTNESS over completeness.
-Return your findings for aggregation.
+    Return structured findings for aggregation.
+    """
+)
 ```
 
 ### Aggregation & Review Phase
@@ -168,21 +168,23 @@ After user responds:
 ## Tool Coordination
 
 - **@.kiro/config.toml**: Auto-loaded for configuration (no Read tool needed)
-- **Task**: Spawn **parallel** investigation agents for each steering type
-  - Multiple Task tools sent in single message for concurrent execution
-  - Each agent operates independently with its own context
-- **Grep**: Search for patterns matching criteria across codebase
-- **Glob**: Find files by type and pattern
-- **Read**: Load existing steering files for verification
+- **Task**: Spawn **parallel** steering-investigator subagents for each steering type
+  - Multiple Task tools with `subagent_type="steering-investigator"` sent in single message
+  - Each investigator receives type-specific context via prompt parameter
+  - Subagents operate independently with specialized verification methodology
+- **Grep**: Search for patterns matching criteria across codebase (used by subagents)
+- **Glob**: Find files by type and pattern (used by subagents)
+- **Read**: Load existing steering files for verification (used by subagents)
 - **MultiEdit**: Batch corrections and updates efficiently
 - **Write**: Create new steering files
 - **Bash**: Execute `hail-mary steering backup` and check file existence
 
 ## Key Patterns
-- **Parallel Investigation**: Config.toml types → **Parallel Task agent spawning** → concurrent verification → aggregated results
-- **Verification Flow**: Read existing → compare with codebase → identify discrepancies → generate corrections
+- **Specialized Investigation**: Config.toml types → **Parallel steering-investigator subagents** → evidence-based verification → aggregated results
+- **Parameterized Subagent**: Single subagent type handles all steering types via prompt parameters
+- **Multi-Hypothesis Verification**: Each investigator maintains 3-7 competing theories during verification
+- **Evidence Chain Documentation**: Subagents document complete evidence trails for all findings
 - **Batch Update Flow**: Collect all changes → display detailed summary → single confirmation → batch apply
-- **Agent Communication**: Structured mission → **independent parallel investigation** → status reports → main aggregation
 - **Concurrent Execution**: Multiple Task tools in single message → independent processing → synchronized aggregation
 
 ## Examples

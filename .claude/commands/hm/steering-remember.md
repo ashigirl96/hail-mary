@@ -341,6 +341,46 @@ User: auth-flow
 - Process without clear learning to capture
 - Create types without user confirmation
 - **Report success without actually using MultiEdit/Edit/Write tools to modify files**
+- **Proceed past STOP markers without actual user input**
+- **Make assumptions about user responses during STOP periods**
+
+## Critical Control Instructions
+
+**MANDATORY STOPS**: At each user input point, you MUST:
+1. Display the prompt exactly as written in the specification
+2. Execute the STOP instruction immediately without proceeding
+3. Wait for actual user input before ANY further action
+4. Process ONLY the user's actual response, not assumed responses
+
+**FORBIDDEN ACTIONS**:
+- Proceeding past STOP markers without user input
+- Making assumptions about user responses during STOP periods
+- Executing file operations after user says "n"
+- Continuing workflow when user declines confirmation
+- Reading or modifying files during STOP waiting periods
+
+**State Validation Rules**:
+- IF user response = "n" OR "N" → IMMEDIATELY abort current file operation path
+- IF user response = "Y" OR "y" OR Enter → ONLY THEN proceed with file modification
+- IF user gives invalid response → Ask for clarification: "Please enter Y or n"
+- IF user gives no response → WAIT indefinitely, do NOT assume or proceed
+
+**Example of CORRECT behavior**:
+```
+> Append to XXX.md? [Y/n]:
+**[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
+
+User types: n
+Result: Abandon XXX.md operation completely, proceed to new type creation
+```
+
+**Example of FORBIDDEN behavior**:
+```
+> Append to XXX.md? [Y/n]:
+**[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
+User types: n
+AI continues to: Read XXX.md, Edit XXX.md ← COMPLETELY FORBIDDEN
+```
 
 ## Config.toml Structure
 

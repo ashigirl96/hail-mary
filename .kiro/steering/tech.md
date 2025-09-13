@@ -1,7 +1,7 @@
 # Technology Stack
 
 ## Architecture
-- **Language**: Rust (stable, latest version via rustup)
+- **Language**: Rust 1.89.0 (edition 2024 for hail-mary crate, edition 2021 for anthropic-client)
 - **Architecture Pattern**: Clean layered architecture
   - CLI Layer: Command routing with clap
   - Application Layer: Use cases and business logic
@@ -52,6 +52,7 @@ hail-mary complete                          # Interactive TUI for spec completio
 hail-mary code [--no-danger]                # Launch Claude Code with context
 
 # Shell completions
+hail-mary steering backup                   # Create backups of steering files
 hail-mary shell-completions <shell>         # Generate completion scripts
 ```
 
@@ -93,7 +94,7 @@ clap_complete = "4.5"
 # Configuration and serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-toml = "0.8"
+toml = "0.9"
 
 # TUI and terminal interaction
 ratatui = "0.29"
@@ -101,17 +102,28 @@ crossterm = "0.29"
 
 # Error handling and utilities
 anyhow = "1"
-thiserror = "1"
+thiserror = "2"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
-pulldown-cmark = "0.11"
+pulldown-cmark = "0.13"
 regex = "1"
 
+# Database and MCP Protocol
+rmcp = { version = "0.5.0", features = ["server", "macros", "transport-io"] }
+schemars = "1"
+rusqlite = { version = "0.33", features = ["bundled"] }
+refinery = "0.8.16"
+
+# Enhanced testing infrastructure
+rstest = "0.23"
+pretty_assertions = "1"
+
 # Anthropic client crate dependencies
-reqwest = { version = "0.12", features = ["rustls-tls-native-roots"] }
+reqwest = { version = "0.12", features = ["rustls-tls-native-roots", "json", "cookies", "gzip", "brotli", "deflate", "zstd", "charset", "http2", "stream"] }
 tokio = { version = "1", features = ["full"] }
+dirs = "5.0"
 ```
 
 ---
