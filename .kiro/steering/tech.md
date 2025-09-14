@@ -511,3 +511,22 @@ if let Some(steering) = parsed.get("steering")
 - コメントや文字列リテラル内の誤検知を回避
 - 将来的なTOML構造変更に対応可能
 - コードの意図が明確
+
+## 22. **Template Content Testing**
+**When**: Writing tests for template-based systems
+- Avoid testing specific template text content
+- Template content changes frequently and breaks tests
+- Focus on structural tests instead of content tests
+- Test data transformation logic, not template strings
+
+```rust
+# ❌ Bad - Testing specific template content
+assert!(content.contains("# Kiro Specification Context"));
+assert!(content.contains("## RULES"));
+assert!(content.contains("DO NOT read memo.md"));
+
+# ✅ Good - Testing structure and logic
+assert!(content.contains("<steering>"));
+assert!(content.contains("</steering>"));
+assert_eq!(prompt1, prompt2);  // Test equality logic
+```
