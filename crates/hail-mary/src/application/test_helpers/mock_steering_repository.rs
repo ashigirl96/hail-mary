@@ -4,7 +4,7 @@ use crate::application::errors::ApplicationError;
 use crate::application::repositories::steering_repository::{
     BackupInfo, SteeringRepositoryInterface,
 };
-use crate::domain::entities::steering::SteeringConfig;
+use crate::domain::entities::steering::{Steering, SteeringConfig};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::RwLock;
@@ -179,5 +179,19 @@ impl SteeringRepositoryInterface for MockSteeringRepository {
         }
 
         Ok(*self.project_exists.read().unwrap())
+    }
+
+    fn load_steering_files(
+        &self,
+        _config: &SteeringConfig,
+    ) -> Result<Vec<Steering>, ApplicationError> {
+        if self.should_fail("load_steering_files") {
+            return Err(ApplicationError::FileSystemError(
+                "Mock load steering failure".to_string(),
+            ));
+        }
+
+        // For testing purposes, return empty vector
+        Ok(vec![])
     }
 }

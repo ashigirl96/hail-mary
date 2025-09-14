@@ -2,7 +2,7 @@ use crate::application::errors::ApplicationError;
 use crate::application::repositories::steering_repository::{
     BackupInfo, SteeringRepositoryInterface,
 };
-use crate::domain::entities::steering::SteeringConfig;
+use crate::domain::entities::steering::{Steering, SteeringConfig};
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use std::fs;
 use std::path::PathBuf;
@@ -268,5 +268,37 @@ impl SteeringRepositoryInterface for SteeringRepository {
 
     fn exists(&self) -> Result<bool, ApplicationError> {
         Ok(self.path_manager.kiro_dir(true).exists())
+    }
+
+    fn load_steering_files(
+        &self,
+        config: &SteeringConfig,
+    ) -> Result<Vec<Steering>, ApplicationError> {
+        let mut steerings = Vec::new();
+        let steering_dir = self.steering_dir();
+
+        for steering_type in &config.types {
+            let file_path = steering_dir.join(format!("{}.md", steering_type.name));
+
+            // Skip if file doesn't exist
+            if !file_path.exists() {
+                continue;
+            }
+
+            // Read file content
+            let content = fs::read_to_string(&file_path).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to read steering file {}: {}",
+                    steering_type.name, e
+                ))
+            })?;
+
+            steerings.push(Steering {
+                steering_type: steering_type.clone(),
+                content,
+            });
+        }
+
+        Ok(steerings)
     }
 }
