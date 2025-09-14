@@ -381,3 +381,41 @@ Task(subagent_type="tech-steering-investigator")
 Task(subagent_type="product-steering-investigator")
 ```
 
+## Framework Standards vs Execution Reproducibility
+**When**: Designing complex slash commands with detailed behavioral flows
+- Framework compliance favors concise 5-step Behavioral Flow structure
+- Execution reproducibility requires detailed implementation sections with explicit instructions
+- Complex commands prioritize reproducibility over framework adherence
+- Simple commands can follow standard framework structure
+
+```markdown
+# ✅ Good - Complex command prioritizing reproducibility
+## Behavioral Flow
+1-5 overview steps
+
+### Detailed Implementation Phase
+Execute backup command: !`hail-mary steering backup`
+**[The implementation will send multiple Task tool calls...]**
+[Specific code examples and stop markers]
+
+# ✅ Good - Simple command following framework standards
+## Behavioral Flow
+1. Step one overview
+2. Step two overview
+3. Step three overview
+4. Step four overview
+5. Step five overview
+
+Key behaviors:
+- Behavior description
+- Implementation approach
+
+# ❌ Bad - Complex command sacrificing reproducibility for framework compliance
+## Behavioral Flow
+1. Backup: Create timestamped backup
+2. Load: Parse allowed steering types
+3. Investigate: Launch parallel Task agents
+4. Aggregate: Collect results
+5. Update: Apply changes
+```
+
