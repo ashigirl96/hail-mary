@@ -339,6 +339,7 @@ User: auth-flow
 - Include concrete examples when relevant
 - Support Japanese content naturally
 - Update config.toml when creating new types
+- Follow output format shown in Examples section
 
 **Will Not:**
 - Use draft directories or intermediate storage
@@ -347,32 +348,7 @@ User: auth-flow
 - Overwrite existing content (always append)
 - Process without clear learning to capture
 - Create types without user confirmation
+- Create custom output formats not shown in Examples
 - **Report success without actually using MultiEdit/Edit/Write tools to modify files**
 - **Proceed past STOP markers without actual user input**
 - **Make assumptions about user responses during STOP periods**
-
-## Config.toml Structure
-
-This command reads steering type definitions from @.kiro/config.toml:
-
-```toml
-[[steering.types]]
-name = "bigquery"                           # Filename: bigquery.md
-purpose = "BigQuery optimization patterns"  # Description shown in prompts
-criteria = [                                # Patterns for type matching
-    "Query Optimization: Performance techniques",
-    "EXTERNAL_QUERY: Cloud SQL patterns",
-    "Cost Management: Query cost strategies"
-]
-allowed_operations = []                     # Auto-update control (new types default to manual-only)
-```
-
-### Property Details
-- **`name`**: Determines the steering filename (`{name}.md`)
-- **`purpose`**: Human-readable description shown during type selection
-- **`criteria`**: Array of patterns used for automatic type matching
-- **`allowed_operations`**: Controls automatic updates via `/hm:steering` command
-  - `["refresh", "discover"]` - Both update existing and add new information (default for product/tech/structure)
-  - `["refresh"]` - Only update out-of-date information
-  - `["discover"]` - Only add new discoveries
-  - `[]` - No automatic updates (manual-only via `/hm:steering-remember`) - **default for new types**
