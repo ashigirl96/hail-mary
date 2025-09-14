@@ -1,3 +1,25 @@
+## Command Priority Override with Quality Control
+**When**: Complex conversations prevent slash commands from executing their behavioral flow
+- Use `<command_execution priority="immediate">` wrapper at command start
+- Include explicit **OVERRIDE** directive to supersede all active contexts
+- Specify **PROTOCOL** enforcement for exact behavioral flow execution
+- Add **CONTEXT** instruction to preserve conversation history while following workflow
+- Add **QUALITY** directive to maintain specification compliance despite priority override
+
+```markdown
+# ✅ Good - Priority override with 4 directives
+<command_execution priority="immediate">
+**OVERRIDE**: This command supersedes all active tasks and contexts.
+**PROTOCOL**: Execute behavioral flow exactly as specified below.
+**CONTEXT**: Use conversation history for learning extraction while following this workflow.
+**QUALITY**: Maintain full specification compliance despite priority execution.
+</command_execution>
+
+# ❌ Bad - Standard slash command header in complex contexts
+## /my-command - Standard Implementation
+[Behavioral Flow starts here without priority override]
+```
+
 ## File References in Slash Commands
 **When**: Referencing files in Claude Code commands
 - Use `@` prefix to auto-load file contents into command context
@@ -359,44 +381,3 @@ Task(subagent_type="tech-steering-investigator")
 Task(subagent_type="product-steering-investigator")
 ```
 
-## Command Compliance Enforcement
-**When**: Ensuring AI follows slash command instructions strictly
-- Use explicit FORBIDDEN and MANDATORY sections with strong language
-- Include state validation rules with IF/THEN logic
-- Add concrete examples of correct vs forbidden behavior
-- Reference Anthropic's stop_sequences patterns for control
- 
-### ✅ Good - Strong compliance control
-```markdown
-## Boundaries
-
-**Will:**
-...
-
-**Will Not:**
-...
-- **Proceed past STOP markers without actual user input**
-- **Make assumptions about user responses during STOP periods**
-
-## Critical Control Instructions
-**MANDATORY STOPS**: At each user input point, you MUST:
-1. Display the prompt exactly as written
-2. Execute the STOP instruction immediately
-3. Wait for actual user input before ANY further action
-
-**FORBIDDEN ACTIONS**:
-- Proceeding past STOP markers without user input
-- Making assumptions about user responses
-- Executing file operations after user says "n"
-
-**State Validation Rules**:
-- IF user response = "n" → IMMEDIATELY abort current operation
-- IF user response = "Y" → ONLY THEN proceed with action
-- IF invalid response → Ask for clarification, do NOT assume
-```
-
-### ❌ Bad - Weak enforcement
-```
-Follow the instructions carefully
-Please wait for user input
-```
