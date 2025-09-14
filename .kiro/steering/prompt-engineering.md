@@ -217,6 +217,27 @@ complexity: basic
 - Key Behaviors is embedded within Behavioral Flow section
 - Key Patterns is independent section with arrow notation (→)
 
+### Conceptual Difference
+**Key Behaviors**: Behavioral Flowの中で記述される「動作の特性」
+- 実行時の振る舞いを説明（インタラクティブ、自動検出、並列実行など）
+- Flowの各ステップがどのように動作するかを補足
+
+**Key Patterns**: 独立セクションで記述される「変換ルール」
+- 入力を出力に変換する「交差点での判断基準」
+- 同じFlowでも異なる結果を生み出すための処理パターン
+
+### Relationship Example
+```yaml
+Behavioral Flow (固定の道順):
+  1. Analyze: 入力を分析する
+     Key Behavior: "Auto-detect format based on content"
+     Key Pattern適用: "Context Detection: API keyword → Backend persona"
+
+  2. Execute: 処理を実行する
+     Key Behavior: "Parallel execution for efficiency"
+     Key Pattern適用: "Multi-Persona: Backend + Security → Secure API code"
+```
+
 ### Format Differences
 ```markdown
 # ✅ Good - Key Behaviors (within Behavioral Flow)
@@ -224,17 +245,84 @@ Key behaviors:
 - Interactive type selection with intelligent suggestions
 - Auto-detect format based on content patterns
 - Maximum brevity with concrete examples
+- Parallel execution for multi-file operations
 
 # ✅ Good - Key Patterns (independent section)
 ## Key Patterns
 - **Learning Extraction**: Conversation analysis → actionable knowledge → title generation
 - **Type Matching**: Content analysis → criteria comparison → confidence scoring
+- **Context Detection**: Framework/library → appropriate MCP server activation
+- **Severity Assessment**: Issue classification → prioritized recommendations
 
 # ❌ Bad - Mixing concepts
 ## Key Behaviors
 - **Learning Flow**: Analysis → extraction → formatting (should be Key Pattern)
 - Interactive selection (correct for behaviors)
 ```
+
+### Detailed Pattern Examples
+
+#### Example 1: `/sc:improve` with Different Inputs
+```yaml
+Input A: "/sc:improve --type performance"
+Behavioral Flow Step 1 - Analyze:
+  Key Behavior: "Examines codebase systematically"
+  Key Pattern: "Performance Optimization: profiling → bottleneck identification"
+  Result: Performance personaを活性化、プロファイリングツール選択
+
+Input B: "/sc:improve --type security"
+Behavioral Flow Step 1 - Analyze:
+  Key Behavior: "Examines codebase systematically" (同じBehavior)
+  Key Pattern: "Security Hardening: vulnerability scan → threat modeling"
+  Result: Security personaを活性化、OWASP検査ツール選択
+```
+
+#### Example 2: `/sc:analyze` Domain-Specific Transformation
+```yaml
+Key Pattern: "Domain Analysis: Quality/Security/Performance → specialized assessment"
+
+実行例:
+- Quality domain選択時:
+  Behavior変化: 静的解析ツールを使用、コード複雑度を測定
+  期待結果: 技術的負債レポート、リファクタリング推奨事項
+
+- Security domain選択時:
+  Behavior変化: 脆弱性スキャナーを使用、依存関係を検査
+  期待結果: セキュリティリスクレポート、修正優先度リスト
+
+- Performance domain選択時:
+  Behavior変化: プロファイラーを使用、ボトルネック分析
+  期待結果: パフォーマンスメトリクス、最適化提案
+```
+
+#### Example 3: `/sc:implement` Multi-Persona Coordination
+```yaml
+Key Pattern: "Multi-Persona: Frontend + Backend + Security → comprehensive solution"
+
+シナリオ: "/sc:implement user dashboard with real-time updates"
+
+Pattern適用前のBehavior:
+- 単一視点でのコード生成
+- 基本的な機能実装のみ
+
+Pattern適用後のBehavior変化:
+- Frontend persona: WebSocket接続、React状態管理、UIコンポーネント
+- Backend persona: リアルタイムAPI、データストリーミング、キャッシュ戦略
+- Security persona: 認証トークン検証、レート制限、XSS対策
+
+期待される統合結果:
+- セキュアなWebSocket接続を持つダッシュボード
+- 効率的なデータ更新メカニズム
+- 包括的なエラーハンドリングと認証
+```
+
+### Pattern Impact Summary
+**Key Patterns**は「変換ルール」として機能し、同じBehavioral Flowでも：
+1. 入力に応じて異なるツール・personaを選択
+2. ドメインに特化した処理方法を適用
+3. 複数の専門知識を統合して包括的な解決策を生成
+
+これにより、固定的なFlowに柔軟性と適応性を与えています。
 
 ## MCP Slash Commands
 **When**: Using MCP server exposed slash commands
@@ -418,4 +506,3 @@ Key behaviors:
 4. Aggregate: Collect results
 5. Update: Apply changes
 ```
-
