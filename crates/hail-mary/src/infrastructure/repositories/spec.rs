@@ -32,37 +32,8 @@ impl SpecRepository {
         feature_dir: &std::path::Path,
         name: &str,
     ) -> Result<(), ApplicationError> {
-        // Create template files
-        let requirements_content = format!(
-            r#"# Requirements
-
-## Overview
-[Feature description for {}]
-
-## Purpose
-[Why are we building this feature?]
-
-## User Stories
-[List of user stories]
-
-## Acceptance Criteria
-[Define clear criteria for feature completion]
-
-## Technical Requirements
-[Technical details and constraints]
-
-## Priority
-
-P0: [Must have]
-P1: [Should have]
-P2: [Could have]
-P3: [Won't have this time]
-
-## Risk and Mitigation
-[Potential risks and how to mitigate them]
-"#,
-            name
-        );
+        // Create only essential template files
+        // Note: requirements.md, tasks.md, and spec.json are created on-demand via slash commands
 
         let design_content = format!(
             r#"# Design
@@ -70,17 +41,6 @@ P3: [Won't have this time]
 ## Overview
 [High-level architecture for {}]
 
-"#,
-            name
-        );
-
-        let task_content = format!(
-            r#"# Tasks: {}
-## Overview
-[Overview of tasks]
-
-## Phase 1: [Description]
-[List of tasks]
 "#,
             name
         );
@@ -127,17 +87,9 @@ P3: [Won't have this time]
             name
         );
 
-        // Write template files
-        fs::write(feature_dir.join("requirements.md"), requirements_content).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to write requirements.md: {}", e))
-        })?;
-
+        // Write only essential template files
         fs::write(feature_dir.join("design.md"), design_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write design.md: {}", e))
-        })?;
-
-        fs::write(feature_dir.join("tasks.md"), task_content).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to write tasks.md: {}", e))
         })?;
 
         fs::write(feature_dir.join("memo.md"), memo_content).map_err(|e| {
@@ -146,10 +98,6 @@ P3: [Won't have this time]
 
         fs::write(feature_dir.join("investigation.md"), investigation_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write investigation.md: {}", e))
-        })?;
-
-        fs::write(feature_dir.join("spec.json"), "{}").map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to write spec.json: {}", e))
         })?;
 
         Ok(())

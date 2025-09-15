@@ -135,12 +135,12 @@ description: Git status check
 - Skip file operations (too vague)
 ```
 
-## SuperClaude Framework Slash Command Structure
-**When**: Creating slash commands following SuperClaude Framework standards
-- YAML frontmatter with specific required fields
-- 8 mandatory sections in consistent order
-- MCP Integration section when MCP servers used
-- Tool Coordination naming over Tool Usage
+## Slash Command Structure
+**When**: Creating slash commands with logical execution flow
+- YAML frontmatter for static configuration
+- 7 mandatory sections following execution flow
+- Tool Coordination includes both Claude Code Tools and MCP Integration
+- Key Patterns positioned before Behavioral Flow for strategy determination
 
 ### Required Frontmatter Structure
 ```yaml
@@ -151,63 +151,106 @@ category: utility|workflow|special|session
 complexity: basic|standard|advanced|high
 mcp-servers: [list]                  # Empty array if none
 personas: [list]                     # Empty array if none
+allowed-tools: Tool1, Tool2, mcp__server__tool
+argument-hint: "[--type prd|bug] [--issue <url>]"  # Quote if contains pipes
 ---
 ```
 
-### Mandatory Section Order
+### Section Order (Execution Flow)
 1. **## Triggers** - When/why command is used, specific scenarios
 2. **## Usage** - Command syntax with options inline (no separate Options section)
-3. **## Behavioral Flow** - 5-step numbered process with Key behaviors subsection
-4. **## MCP Integration** - Only if mcp-servers specified in frontmatter
-5. **## Tool Coordination** - Tools used
-6. **## Key Patterns** - Arrow notation patterns (A → B → C)
+3. **## Key Patterns** - Input transformation rules (IF-THEN patterns)
+4. **## Boundaries** - What the command will and will not do
+5. **## Tool Coordination** - Claude Code Tools + MCP Integration subsections
+6. **## Behavioral Flow** - Execution steps with Key behaviors embedded
 7. **## Examples** - 3-4 concrete usage examples with code blocks
-8. **## Boundaries** - Will/Will Not format
 
-### Section Content Guidelines
-- **Triggers**: 4 bullet points covering main use cases
-- **Usage**: Options explained directly under usage block, no separate section
-- **Behavioral Flow**: 5 steps + Key behaviors paragraph
-- **Tool Coordination**: Tool names with descriptions, not usage instructions
-- **Key Patterns**: 4 patterns using arrow notation (→)
-- **Examples**: Realistic scenarios with actual command syntax
-- **Boundaries**: Clear Will/Will Not statements
+### Section Responsibilities
+- **Triggers**: 4 bullet points covering main activation scenarios
+- **Usage**: Command syntax with inline option explanations
+- **Key Patterns**: Transform input → strategy (type detection, source routing, complexity assessment)
+- **Boundaries**: Will/Will Not statements establishing execution context
+- **Tool Coordination**:
+  - Claude Code Tools: Read, Write, Edit, Bash, etc.
+  - MCP Integration: External server connections and usage
+- **Behavioral Flow**: 5-step execution with Key behaviors paragraph
+- **Examples**: Complete scenarios showing full command execution
+
+### Design Philosophy
+```
+Input → Interpretation → Validation → Preparation → Execution
+```
+This structure follows actual program execution flow, enabling:
+- Early pattern matching and strategy decisions
+- Boundary validation before execution
+- Clear dependency chain through sections
+- Logical flow from trigger to completion
 
 ````markdown
-# ✅ Good - SuperClaude Framework compliance
+# ✅ Good - Logical execution flow structure
 ---
-name: analyze
-description: "Code analysis across quality, security, performance domains"
-category: utility
-complexity: basic
+name: requirements
+description: "Generate structured requirement documents"
+category: workflow
+complexity: standard
+mcp-servers: [github]
 ---
 
 ## Triggers
-- Code quality assessment requests
-- Security vulnerability scanning needs
-- Performance bottleneck identification
-- Architecture review requirements
+- Starting new feature development
+- Bug reporting needs documentation
+- GitHub issue conversion needed
 
 ## Usage
 ```
-/sc:analyze [target] [--focus quality|security] [--depth quick|deep]
+/hm:requirements [--type prd|bug] [--issue <github-url>]
 ```
-- `--focus`: Analysis domain focus
-- `--depth`: Analysis thoroughness level
+- `--type`: Document type (prd or bug)
+- `--issue`: Optional GitHub issue URL
+
+## Key Patterns
+- **Type Detection**: --type prd → PRD template activation
+- **Source Detection**: --issue present → GitHub MCP activation
+- **Complexity Assessment**: PRD → multiple iterations
+
+## Boundaries
+**Will:**
+- Generate requirements.md only
+- Iterate based on feedback
+
+**Will Not:**
+- Perform design or investigation
+- Auto-generate without confirmation
 
 ## Tool Coordination
-- **Read**: Source code inspection and analysis
-- **Grep**: Pattern analysis and code search
-- **Write**: Report generation and documentation
+**Claude Code Tools:**
+- **Read**: Check existing requirements
+- **Write/Edit**: Update document
 
-# ❌ Bad - Non-compliant structure
+**MCP Integration:**
+- **GitHub**: Fetch issue content
+
+## Behavioral Flow
+1. Initialize and apply patterns
+2. Gather requirements
+3. Generate document
+4. Refinement loop
+5. Finalize
+
+Key behaviors:
+- Interactive refinement
+- Completeness tracking
+
+## Examples
+[Usage scenarios...]
+
+# ❌ Bad - Old structure mixing concerns
+## Tool Usage
+- Use Read tool to inspect
 ## Options
 - `--focus`: Analysis focus
-- `--depth`: Analysis depth
-
-## Tool Usage
-- Use Read tool to inspect source code
-- Use Grep tool to search for patterns
+## MCP Integration
+- Separate from tools
 ````
 
 ## Key Behaviors vs Key Patterns
@@ -505,4 +548,41 @@ Key behaviors:
 3. Investigate: Launch parallel Task agents
 4. Aggregate: Collect results
 5. Update: Apply changes
+```
+
+## Preventing Unnecessary File Exploration
+**When**: Handling file-not-found errors in slash commands
+- Attempt Read once, then proceed if error
+- Never use ls/Bash/Glob to search for missing files
+- Let Write/MultiEdit create directories automatically
+- Make error handling explicit in Behavioral Flow
+
+### Tool Coordination
+```markdown
+# ✅ Good
+**Claude Code Tools:**
+- **Read**: Attempt to read (ignore errors if file doesn't exist)
+- **Write/MultiEdit**: Create or update (Write creates parent directories automatically)
+
+# ❌ Bad
+**Claude Code Tools:**
+- **Read**: Read file to understand context
+- **Bash**: Use ls to find files if needed
+```
+
+### Behavioral Flow
+```markdown
+# ✅ Good
+1. **Initialize**: Parse arguments and setup
+- **Attempt** to Read <file_path> for existing content:
+  - If file exists: Load and analyze
+  - If file not found: Skip silently and proceed to step 2
+  - **DO NOT**: Use ls, Bash, or Glob to search for files
+  - **DO NOT**: Create directories or investigate structure
+
+# ❌ Bad
+1. **Initialize**: Parse arguments and setup
+- Read existing file for context
+- If error, check directory structure
+- Create directories if needed
 ```
