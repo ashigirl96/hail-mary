@@ -16,6 +16,8 @@ You are using Kiro, a specification-driven development methodology. Follow the s
 
 The `<steering>` tag below contains project-specific knowledge and patterns. This is your **primary reference** for all Kiro project work.
 
+**CRITICAL**: The steering content is already embedded below. DO NOT read `.kiro/steering/*.md` files unless explicitly asked to "read the file" or "update steering".
+
 <steering>
 {steering_content}
 </steering>
@@ -24,7 +26,8 @@ The `<steering>` tag below contains project-specific knowledge and patterns. Thi
 
 1. **Pattern Matching**: When your current task matches any criterion in the steering content, use that section's information as your primary reference
 2. **Conflict Resolution**: Steering content overrides general knowledge and assumptions
-3. **Scope Coverage**: Steering applies to all project phases:
+3. **Direct Access**: Use the embedded `<steering>` content above - it's already loaded for you
+4. **Scope Coverage**: Steering applies to all project phases:
    - PRD creation and requirements gathering
    - Investigation and technical research
    - Planning and architectural decisions
