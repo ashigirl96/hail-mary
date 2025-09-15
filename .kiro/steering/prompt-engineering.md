@@ -1,3 +1,25 @@
+## Command Priority Override with Quality Control
+**When**: Complex conversations prevent slash commands from executing their behavioral flow
+- Use `<command_execution priority="immediate">` wrapper at command start
+- Include explicit **OVERRIDE** directive to supersede all active contexts
+- Specify **PROTOCOL** enforcement for exact behavioral flow execution
+- Add **CONTEXT** instruction to preserve conversation history while following workflow
+- Add **QUALITY** directive to maintain specification compliance despite priority override
+
+```markdown
+# ✅ Good - Priority override with 4 directives
+<command_execution priority="immediate">
+**OVERRIDE**: This command supersedes all active tasks and contexts.
+**PROTOCOL**: Execute behavioral flow exactly as specified below.
+**CONTEXT**: Use conversation history for learning extraction while following this workflow.
+**QUALITY**: Maintain full specification compliance despite priority execution.
+</command_execution>
+
+# ❌ Bad - Standard slash command header in complex contexts
+## /my-command - Standard Implementation
+[Behavioral Flow starts here without priority override]
+```
+
 ## File References in Slash Commands
 **When**: Referencing files in Claude Code commands
 - Use `@` prefix to auto-load file contents into command context
@@ -195,6 +217,27 @@ complexity: basic
 - Key Behaviors is embedded within Behavioral Flow section
 - Key Patterns is independent section with arrow notation (→)
 
+### Conceptual Difference
+**Key Behaviors**: Behavioral Flowの中で記述される「動作の特性」
+- 実行時の振る舞いを説明（インタラクティブ、自動検出、並列実行など）
+- Flowの各ステップがどのように動作するかを補足
+
+**Key Patterns**: 独立セクションで記述される「変換ルール」
+- 入力を出力に変換する「交差点での判断基準」
+- 同じFlowでも異なる結果を生み出すための処理パターン
+
+### Relationship Example
+```yaml
+Behavioral Flow (固定の道順):
+  1. Analyze: 入力を分析する
+     Key Behavior: "Auto-detect format based on content"
+     Key Pattern適用: "Context Detection: API keyword → Backend persona"
+
+  2. Execute: 処理を実行する
+     Key Behavior: "Parallel execution for efficiency"
+     Key Pattern適用: "Multi-Persona: Backend + Security → Secure API code"
+```
+
 ### Format Differences
 ```markdown
 # ✅ Good - Key Behaviors (within Behavioral Flow)
@@ -202,17 +245,84 @@ Key behaviors:
 - Interactive type selection with intelligent suggestions
 - Auto-detect format based on content patterns
 - Maximum brevity with concrete examples
+- Parallel execution for multi-file operations
 
 # ✅ Good - Key Patterns (independent section)
 ## Key Patterns
 - **Learning Extraction**: Conversation analysis → actionable knowledge → title generation
 - **Type Matching**: Content analysis → criteria comparison → confidence scoring
+- **Context Detection**: Framework/library → appropriate MCP server activation
+- **Severity Assessment**: Issue classification → prioritized recommendations
 
 # ❌ Bad - Mixing concepts
 ## Key Behaviors
 - **Learning Flow**: Analysis → extraction → formatting (should be Key Pattern)
 - Interactive selection (correct for behaviors)
 ```
+
+### Detailed Pattern Examples
+
+#### Example 1: `/sc:improve` with Different Inputs
+```yaml
+Input A: "/sc:improve --type performance"
+Behavioral Flow Step 1 - Analyze:
+  Key Behavior: "Examines codebase systematically"
+  Key Pattern: "Performance Optimization: profiling → bottleneck identification"
+  Result: Performance personaを活性化、プロファイリングツール選択
+
+Input B: "/sc:improve --type security"
+Behavioral Flow Step 1 - Analyze:
+  Key Behavior: "Examines codebase systematically" (同じBehavior)
+  Key Pattern: "Security Hardening: vulnerability scan → threat modeling"
+  Result: Security personaを活性化、OWASP検査ツール選択
+```
+
+#### Example 2: `/sc:analyze` Domain-Specific Transformation
+```yaml
+Key Pattern: "Domain Analysis: Quality/Security/Performance → specialized assessment"
+
+実行例:
+- Quality domain選択時:
+  Behavior変化: 静的解析ツールを使用、コード複雑度を測定
+  期待結果: 技術的負債レポート、リファクタリング推奨事項
+
+- Security domain選択時:
+  Behavior変化: 脆弱性スキャナーを使用、依存関係を検査
+  期待結果: セキュリティリスクレポート、修正優先度リスト
+
+- Performance domain選択時:
+  Behavior変化: プロファイラーを使用、ボトルネック分析
+  期待結果: パフォーマンスメトリクス、最適化提案
+```
+
+#### Example 3: `/sc:implement` Multi-Persona Coordination
+```yaml
+Key Pattern: "Multi-Persona: Frontend + Backend + Security → comprehensive solution"
+
+シナリオ: "/sc:implement user dashboard with real-time updates"
+
+Pattern適用前のBehavior:
+- 単一視点でのコード生成
+- 基本的な機能実装のみ
+
+Pattern適用後のBehavior変化:
+- Frontend persona: WebSocket接続、React状態管理、UIコンポーネント
+- Backend persona: リアルタイムAPI、データストリーミング、キャッシュ戦略
+- Security persona: 認証トークン検証、レート制限、XSS対策
+
+期待される統合結果:
+- セキュアなWebSocket接続を持つダッシュボード
+- 効率的なデータ更新メカニズム
+- 包括的なエラーハンドリングと認証
+```
+
+### Pattern Impact Summary
+**Key Patterns**は「変換ルール」として機能し、同じBehavioral Flowでも：
+1. 入力に応じて異なるツール・personaを選択
+2. ドメインに特化した処理方法を適用
+3. 複数の専門知識を統合して包括的な解決策を生成
+
+これにより、固定的なFlowに柔軟性と適応性を与えています。
 
 ## MCP Slash Commands
 **When**: Using MCP server exposed slash commands
@@ -359,44 +469,40 @@ Task(subagent_type="tech-steering-investigator")
 Task(subagent_type="product-steering-investigator")
 ```
 
-## Command Compliance Enforcement
-**When**: Ensuring AI follows slash command instructions strictly
-- Use explicit FORBIDDEN and MANDATORY sections with strong language
-- Include state validation rules with IF/THEN logic
-- Add concrete examples of correct vs forbidden behavior
-- Reference Anthropic's stop_sequences patterns for control
- 
-### ✅ Good - Strong compliance control
+## Framework Standards vs Execution Reproducibility
+**When**: Designing complex slash commands with detailed behavioral flows
+- Framework compliance favors concise 5-step Behavioral Flow structure
+- Execution reproducibility requires detailed implementation sections with explicit instructions
+- Complex commands prioritize reproducibility over framework adherence
+- Simple commands can follow standard framework structure
+
 ```markdown
-## Boundaries
+# ✅ Good - Complex command prioritizing reproducibility
+## Behavioral Flow
+1-5 overview steps
 
-**Will:**
-...
+### Detailed Implementation Phase
+Execute backup command: !`hail-mary steering backup`
+**[The implementation will send multiple Task tool calls...]**
+[Specific code examples and stop markers]
 
-**Will Not:**
-...
-- **Proceed past STOP markers without actual user input**
-- **Make assumptions about user responses during STOP periods**
+# ✅ Good - Simple command following framework standards
+## Behavioral Flow
+1. Step one overview
+2. Step two overview
+3. Step three overview
+4. Step four overview
+5. Step five overview
 
-## Critical Control Instructions
-**MANDATORY STOPS**: At each user input point, you MUST:
-1. Display the prompt exactly as written
-2. Execute the STOP instruction immediately
-3. Wait for actual user input before ANY further action
+Key behaviors:
+- Behavior description
+- Implementation approach
 
-**FORBIDDEN ACTIONS**:
-- Proceeding past STOP markers without user input
-- Making assumptions about user responses
-- Executing file operations after user says "n"
-
-**State Validation Rules**:
-- IF user response = "n" → IMMEDIATELY abort current operation
-- IF user response = "Y" → ONLY THEN proceed with action
-- IF invalid response → Ask for clarification, do NOT assume
-```
-
-### ❌ Bad - Weak enforcement
-```
-Follow the instructions carefully
-Please wait for user input
+# ❌ Bad - Complex command sacrificing reproducibility for framework compliance
+## Behavioral Flow
+1. Backup: Create timestamped backup
+2. Load: Parse allowed steering types
+3. Investigate: Launch parallel Task agents
+4. Aggregate: Collect results
+5. Update: Apply changes
 ```

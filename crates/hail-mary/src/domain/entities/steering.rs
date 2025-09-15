@@ -1,6 +1,54 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+/// Combines a SteeringType with its file content
+#[derive(Debug, Clone, PartialEq)]
+pub struct Steering {
+    pub steering_type: SteeringType,
+    pub content: String,
+}
+
+impl fmt::Display for Steering {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let criteria_str = self
+            .steering_type
+            .criteria
+            .iter()
+            .map(|c| format!("- {}", c))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        write!(
+            f,
+            "name: {name}\ncriteria:\n{criteria}\ncontent:\n{content}",
+            name = self.steering_type.name,
+            criteria = criteria_str,
+            content = self.content
+        )
+    }
+}
+
+/// Wrapper for Vec<Steering> to provide Display implementation
+#[derive(Debug, Clone, PartialEq)]
+pub struct Steerings(pub Vec<Steering>);
+
+impl fmt::Display for Steerings {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.0.is_empty() {
+            return Ok(());
+        }
+
+        let steerings_str = self
+            .0
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join("\n-----\n");
+
+        write!(f, "{}", steerings_str)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SteeringType {
     pub name: String,
@@ -408,5 +456,102 @@ mod tests {
 
         assert_eq!(config1, config2);
         assert_ne!(config1, config3);
+    }
+
+    #[test]
+    fn test_steering_display() {
+        let steering = Steering {
+            steering_type: SteeringType {
+                name: "product".to_string(),
+                purpose: "Product overview".to_string(),
+                criteria: vec![
+                    Criterion {
+                        name: "Overview".to_string(),
+                        description: "Brief description".to_string(),
+                    },
+                    Criterion {
+                        name: "Features".to_string(),
+                        description: "Main capabilities".to_string(),
+                    },
+                ],
+                allowed_operations: vec![],
+            },
+            content: "This is the product content".to_string(),
+        };
+
+        let display = steering.to_string();
+        assert!(display.contains("name: product"));
+        assert!(display.contains("criteria:"));
+        assert!(display.contains("- Overview: Brief description"));
+        assert!(display.contains("- Features: Main capabilities"));
+        assert!(display.contains("content:\nThis is the product content"));
+    }
+
+    #[test]
+    fn test_steerings_display_empty() {
+        let steerings = Steerings(vec![]);
+        assert_eq!(steerings.to_string(), "");
+    }
+
+    #[test]
+    fn test_steerings_display_single() {
+        let steering = Steering {
+            steering_type: SteeringType {
+                name: "tech".to_string(),
+                purpose: "Technical stack".to_string(),
+                criteria: vec![Criterion {
+                    name: "Architecture".to_string(),
+                    description: "System design".to_string(),
+                }],
+                allowed_operations: vec![],
+            },
+            content: "Tech stack details".to_string(),
+        };
+
+        let steerings = Steerings(vec![steering]);
+        let display = steerings.to_string();
+
+        assert!(display.contains("name: tech"));
+        assert!(display.contains("- Architecture: System design"));
+        assert!(display.contains("Tech stack details"));
+        assert!(!display.contains("-----")); // No separator for single item
+    }
+
+    #[test]
+    fn test_steerings_display_multiple() {
+        let steering1 = Steering {
+            steering_type: SteeringType {
+                name: "product".to_string(),
+                purpose: "Product overview".to_string(),
+                criteria: vec![Criterion {
+                    name: "Overview".to_string(),
+                    description: "Brief description".to_string(),
+                }],
+                allowed_operations: vec![],
+            },
+            content: "Product content".to_string(),
+        };
+
+        let steering2 = Steering {
+            steering_type: SteeringType {
+                name: "tech".to_string(),
+                purpose: "Technical stack".to_string(),
+                criteria: vec![Criterion {
+                    name: "Architecture".to_string(),
+                    description: "System design".to_string(),
+                }],
+                allowed_operations: vec![],
+            },
+            content: "Tech content".to_string(),
+        };
+
+        let steerings = Steerings(vec![steering1, steering2]);
+        let display = steerings.to_string();
+
+        assert!(display.contains("name: product"));
+        assert!(display.contains("Product content"));
+        assert!(display.contains("\n-----\n"));
+        assert!(display.contains("name: tech"));
+        assert!(display.contains("Tech content"));
     }
 }

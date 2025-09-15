@@ -2,14 +2,20 @@ use anyhow::Result;
 use std::io::{self, Write};
 
 use crate::application::errors::ApplicationError;
-use crate::application::repositories::SpecRepositoryInterface;
+use crate::application::repositories::{
+    ConfigRepositoryInterface, SpecRepositoryInterface,
+    steering_repository::SteeringRepositoryInterface,
+};
 use crate::domain::entities::project::ProjectConfig;
+use crate::domain::entities::steering::Steerings;
 use crate::domain::value_objects::system_prompt::SystemPrompt;
 use crate::infrastructure::process::claude_launcher::ClaudeProcessLauncher;
 use crate::infrastructure::tui::spec_selector::{SpecSelectionResult, SpecSelectorTui};
 
 pub fn launch_claude_with_spec(
     spec_repo: &dyn SpecRepositoryInterface,
+    config_repo: &dyn ConfigRepositoryInterface,
+    steering_repo: &dyn SteeringRepositoryInterface,
     no_danger: bool,
 ) -> Result<(), ApplicationError> {
     // 1. Get list of specifications
@@ -40,11 +46,16 @@ pub fn launch_claude_with_spec(
         }
     };
 
-    // 3. Get spec path and generate system prompt
-    let spec_path = spec_repo.get_spec_path(&spec_name)?;
-    let system_prompt = SystemPrompt::new(&spec_name, &spec_path);
+    // 3. Load project configuration and steering files
+    let config = config_repo.load_config()?;
+    let steering_files = steering_repo.load_steering_files(&config.steering)?;
+    let steerings = Steerings(steering_files);
 
-    // 4. Launch Claude with system prompt
+    // 4. Get spec path and generate system prompt with steering
+    let spec_path = spec_repo.get_spec_path(&spec_name)?;
+    let system_prompt = SystemPrompt::new(&spec_name, &spec_path, &steerings);
+
+    // 5. Launch Claude with system prompt
     let launcher = ClaudeProcessLauncher::new();
     launcher
         .launch(system_prompt.as_str(), no_danger)

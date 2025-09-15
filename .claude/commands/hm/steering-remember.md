@@ -11,6 +11,13 @@ argument-hint: "[hint] [--format rule|guide|knowledge] [--type <name>]"
 
 # /hm:steering-remember - Save Learning to Steering
 
+<command_execution priority="immediate">
+**OVERRIDE**: This command supersedes all active tasks and contexts.
+**PROTOCOL**: Execute behavioral flow exactly as specified below.
+**CONTEXT**: Use conversation history for learning extraction while following this workflow.
+**QUALITY**: Maintain full specification compliance despite priority execution.
+</command_execution>
+
 ## Triggers
 - User identifies new learning or pattern to remember
 - Context needs to be preserved for future reference  
@@ -332,6 +339,7 @@ User: auth-flow
 - Include concrete examples when relevant
 - Support Japanese content naturally
 - Update config.toml when creating new types
+- Follow output format shown in Examples section
 
 **Will Not:**
 - Use draft directories or intermediate storage
@@ -340,70 +348,7 @@ User: auth-flow
 - Overwrite existing content (always append)
 - Process without clear learning to capture
 - Create types without user confirmation
+- Create custom output formats not shown in Examples
 - **Report success without actually using MultiEdit/Edit/Write tools to modify files**
 - **Proceed past STOP markers without actual user input**
 - **Make assumptions about user responses during STOP periods**
-
-## Critical Control Instructions
-
-**MANDATORY STOPS**: At each user input point, you MUST:
-1. Display the prompt exactly as written in the specification
-2. Execute the STOP instruction immediately without proceeding
-3. Wait for actual user input before ANY further action
-4. Process ONLY the user's actual response, not assumed responses
-
-**FORBIDDEN ACTIONS**:
-- Proceeding past STOP markers without user input
-- Making assumptions about user responses during STOP periods
-- Executing file operations after user says "n"
-- Continuing workflow when user declines confirmation
-- Reading or modifying files during STOP waiting periods
-
-**State Validation Rules**:
-- IF user response = "n" OR "N" → IMMEDIATELY abort current file operation path
-- IF user response = "Y" OR "y" OR Enter → ONLY THEN proceed with file modification
-- IF user gives invalid response → Ask for clarification: "Please enter Y or n"
-- IF user gives no response → WAIT indefinitely, do NOT assume or proceed
-
-**Example of CORRECT behavior**:
-```
-> Append to XXX.md? [Y/n]:
-**[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
-
-User types: n
-Result: Abandon XXX.md operation completely, proceed to new type creation
-```
-
-**Example of FORBIDDEN behavior**:
-```
-> Append to XXX.md? [Y/n]:
-**[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
-User types: n
-AI continues to: Read XXX.md, Edit XXX.md ← COMPLETELY FORBIDDEN
-```
-
-## Config.toml Structure
-
-This command reads steering type definitions from @.kiro/config.toml:
-
-```toml
-[[steering.types]]
-name = "bigquery"                           # Filename: bigquery.md
-purpose = "BigQuery optimization patterns"  # Description shown in prompts
-criteria = [                                # Patterns for type matching
-    "Query Optimization: Performance techniques",
-    "EXTERNAL_QUERY: Cloud SQL patterns",
-    "Cost Management: Query cost strategies"
-]
-allowed_operations = []                     # Auto-update control (new types default to manual-only)
-```
-
-### Property Details
-- **`name`**: Determines the steering filename (`{name}.md`)
-- **`purpose`**: Human-readable description shown during type selection
-- **`criteria`**: Array of patterns used for automatic type matching
-- **`allowed_operations`**: Controls automatic updates via `/hm:steering` command
-  - `["refresh", "discover"]` - Both update existing and add new information (default for product/tech/structure)
-  - `["refresh"]` - Only update out-of-date information
-  - `["discover"]` - Only add new discoveries
-  - `[]` - No automatic updates (manual-only via `/hm:steering-remember`) - **default for new types**

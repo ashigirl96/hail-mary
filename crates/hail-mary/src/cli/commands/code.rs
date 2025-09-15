@@ -3,7 +3,9 @@ use anyhow::Result;
 use crate::application::use_cases::launch_claude_with_spec;
 use crate::cli::formatters::format_error;
 use crate::infrastructure::filesystem::path_manager::PathManager;
-use crate::infrastructure::repositories::spec::SpecRepository;
+use crate::infrastructure::repositories::{
+    config::ConfigRepository, spec::SpecRepository, steering::SteeringRepository,
+};
 
 pub struct CodeCommand {
     no_danger: bool,
@@ -26,11 +28,13 @@ impl CodeCommand {
         // Discover project root
         let path_manager = PathManager::discover().map_err(|_| self.project_not_found_error())?;
 
-        // Create repository
-        let spec_repo = SpecRepository::new(path_manager);
+        // Create repositories
+        let spec_repo = SpecRepository::new(path_manager.clone());
+        let config_repo = ConfigRepository::new(path_manager.clone());
+        let steering_repo = SteeringRepository::new(path_manager);
 
         // Execute single use case
-        match launch_claude_with_spec(&spec_repo, self.no_danger) {
+        match launch_claude_with_spec(&spec_repo, &config_repo, &steering_repo, self.no_danger) {
             Ok(()) => Ok(()),
             Err(crate::application::errors::ApplicationError::ProcessLaunchError(msg)) => {
                 println!("{}", format_error(&msg));

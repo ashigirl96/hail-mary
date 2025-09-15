@@ -1,5 +1,5 @@
 use crate::application::errors::ApplicationError;
-use crate::domain::entities::steering::SteeringConfig;
+use crate::domain::entities::steering::{Steering, SteeringConfig};
 use std::path::PathBuf;
 use std::time::SystemTime;
 
@@ -42,4 +42,10 @@ pub trait SteeringRepositoryInterface {
 
     /// Check if project exists
     fn exists(&self) -> Result<bool, ApplicationError>;
+
+    /// Load steering files with their content
+    fn load_steering_files(
+        &self,
+        config: &SteeringConfig,
+    ) -> Result<Vec<Steering>, ApplicationError>;
 }

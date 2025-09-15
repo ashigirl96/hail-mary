@@ -26,12 +26,112 @@ argument-hint: [--type <name>]
 ## Behavioral Flow
 
 1. **Backup**: Execute !`hail-mary steering backup` to create timestamped backup of current steering files
+   ```
+   > 📦 Creating backup of current steering files...
+   > ✅ Created backup '2025-09-13-14-30' with 4 files
+   ```
+   The `hail-mary steering backup` command creates a timestamped backup directory (e.g., `.kiro/steering/backup/2025-09-13-14-30/`) containing copies of all current steering files. This ensures we can restore the original state if needed.
+
 2. **Load**: Parse steering types from @.kiro/config.toml, filtering out types where `allowed_operations = []`
-3. **Investigate**: Launch parallel Task agents to comprehensively verify each allowed type
-4. **Aggregate**: Collect verification results and filter based on allowed_operations:
-   - If "refresh" in allowed_operations: Apply corrections for outdated information
-   - If "discover" in allowed_operations: Add new patterns found
-5. **Update**: Apply all corrections and additions with single batch confirmation
+   ```
+   > 🔍 Analyzing steering types...
+   > • {type1.name}.md [{operations status}] - {action description}
+   > • {type2.name}.md [{operations status}] - {action description}
+   > • {type3.name}.md [{operations status}] - {action description}
+   > • {typeN.name}.md [skipped - no operations allowed]
+   ```
+
+3. **Parallel Investigation**: Launch parallel Task agents to comprehensively verify each allowed type
+   ```
+   > 🚀 Launching specialized steering investigators for {n} types...
+   >
+   > Spawning steering-investigator agents:
+   > • [Investigator 1] {type1.name} - {type1.purpose}
+   > • [Investigator 2] {type2.name} - {type2.purpose}
+   > • [Investigator 3] {type3.name} - {type3.purpose}
+   > • [Investigator n] {typeN.name} - {typeN.purpose}
+   >
+   > [Parallel steering-investigator agents processing independently...]
+   ```
+
+   **[The implementation will send multiple Task tool calls with subagent_type="steering-investigator"]**
+
+   Each steering-investigator receives type-specific context via prompt:
+   ```python
+   Task(
+       subagent_type="steering-investigator",
+       description="Verify {type.name} steering documentation",
+       prompt="""
+       Steering Type: {type.name}
+       Purpose: {type.purpose}
+       Criteria: {type.criteria}
+       Allowed Operations: {allowed_operations}
+       File Path: .kiro/steering/{type.name}.md
+
+       Mission: Verify and update the steering documentation for this type.
+
+       Instructions:
+       1. LOAD the existing steering file
+       2. VERIFY each documented pattern against codebase reality
+       3. DISCOVER new patterns matching the criteria
+       4. RESPECT allowed_operations when suggesting changes:
+          - If "refresh" allowed: Report corrections for outdated info
+          - If "discover" allowed: Report new pattern discoveries
+          - If neither: Only report verification status
+
+       Return structured findings for aggregation.
+       """
+   )
+   ```
+
+4. **Aggregation & Review**: Collect verification results and filter based on allowed_operations:
+   ```
+   > 📊 Investigation Results & Changes
+   >
+   > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   > 📁 {type.name}.md [{allowed_operations status}]
+   > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   > Status: ❌ {incorrect count} | ✅ {verified count} | 🆕 {new count}
+   >
+   > [If "refresh" in allowed_operations:]
+   > 🔧 Corrections to apply (refresh allowed):
+   > • OLD: "{existing content}"
+   >   NEW: "{corrected content}"
+   >
+   > [If "discover" in allowed_operations:]
+   > 🆕 New patterns found (discover allowed):
+   > • {new pattern description}
+   >
+   > [If allowed_operations is empty:]
+   > ⏭️ Skipped - manual updates only
+   >
+   > ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   > [Repeat for each type...]
+   >
+   > 🔄 Apply ALL changes listed above? [Y/n]:
+   ```
+
+   **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
+
+   After user responds:
+   - Response = "Y" or Enter → Apply ALL corrections and updates with MultiEdit in batch
+   - Response = "n" → Skip all updates
+
+5. **Summary**: Apply all corrections and additions with single batch confirmation
+   ```
+   > ✅ Steering verification complete:
+   >
+   > Corrections Applied:
+   > • Fixed {n} incorrect items across {m} files
+   > • Updated {n} outdated patterns
+   >
+   > New Discoveries:
+   > • Added {n} new patterns to documentation
+   >
+   > Validation Status:
+   > • All steering files now verified against codebase
+   > • Last verification: {timestamp}
+   ```
 
 Key behaviors:
 - **Automatic backup**: Uses `hail-mary steering backup` to create timestamped backup before any modifications
@@ -40,130 +140,6 @@ Key behaviors:
 - **Batch confirmation**: User approves all changes at once before applying
 - **Structure preservation**: Maintain existing file format and organization
 - **Intelligent reporting**: Clear status indicators (❌ incorrect, ✅ verified, 🆕 new)
-
-### Backup Phase
-
-Execute backup command: !`hail-mary steering backup`
-
-```
-> 📦 Creating backup of current steering files...
-> ✅ Created backup '2025-09-13-14-30' with 4 files
-```
-
-The `hail-mary steering backup` command creates a timestamped backup directory (e.g., `.kiro/steering/backup/2025-09-13-14-30/`) containing copies of all current steering files. This ensures we can restore the original state if needed.
-
-### Parallel Investigation Phase
-
-Launch parallel steering-investigator subagents for each steering type:
-
-```
-> 🔍 Analyzing steering types...
-> • {type1.name}.md [{operations status}] - {action description}
-> • {type2.name}.md [{operations status}] - {action description}
-> • {type3.name}.md [{operations status}] - {action description}
-> • {typeN.name}.md [skipped - no operations allowed]
->
-> 🚀 Launching specialized steering investigators for {n} types...
->
-> Spawning steering-investigator agents:
-> • [Investigator 1] {type1.name} - {type1.purpose}
-> • [Investigator 2] {type2.name} - {type2.purpose}
-> • [Investigator 3] {type3.name} - {type3.purpose}
-> • [Investigator n] {typeN.name} - {typeN.purpose}
->
-> [Parallel steering-investigator agents processing independently...]
-```
-
-#### Parallel Steering Investigator Execution
-Launch multiple steering-investigator subagents in a single message for concurrent investigation:
-
-**[The implementation will send multiple Task tool calls with subagent_type="steering-investigator"]**
-- Task 1: steering-investigator for {type1.name}
-- Task 2: steering-investigator for {type2.name}
-- Task 3: steering-investigator for {type3.name}
-- Task n: steering-investigator for {typeN.name}
-
-Each steering-investigator receives type-specific context via prompt:
-
-```python
-Task(
-    subagent_type="steering-investigator",
-    description="Verify {type.name} steering documentation",
-    prompt="""
-    Steering Type: {type.name}
-    Purpose: {type.purpose}
-    Criteria: {type.criteria}
-    Allowed Operations: {allowed_operations}
-    File Path: .kiro/steering/{type.name}.md
-
-    Mission: Verify and update the steering documentation for this type.
-
-    Instructions:
-    1. LOAD the existing steering file
-    2. VERIFY each documented pattern against codebase reality
-    3. DISCOVER new patterns matching the criteria
-    4. RESPECT allowed_operations when suggesting changes:
-       - If "refresh" allowed: Report corrections for outdated info
-       - If "discover" allowed: Report new pattern discoveries
-       - If neither: Only report verification status
-
-    Return structured findings for aggregation.
-    """
-)
-```
-
-### Aggregation & Review Phase
-
-After Task agents complete investigation of all types, filter results based on `allowed_operations` and show applicable changes:
-
-```
-> 📊 Investigation Results & Changes
->
-> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> 📁 {type.name}.md [{allowed_operations status}]
-> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> Status: ❌ {incorrect count} | ✅ {verified count} | 🆕 {new count}
->
-> [If "refresh" in allowed_operations:]
-> 🔧 Corrections to apply (refresh allowed):
-> • OLD: "{existing content}"
->   NEW: "{corrected content}"
->
-> [If "discover" in allowed_operations:]
-> 🆕 New patterns found (discover allowed):
-> • {new pattern description}
->
-> [If allowed_operations is empty:]
-> ⏭️ Skipped - manual updates only
->
-> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-> [Repeat for each type...]
->
-> 🔄 Apply ALL changes listed above? [Y/n]:
-```
-
-**[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
-
-After user responds:
-- Response = "Y" or Enter → Apply ALL corrections and updates with MultiEdit in batch
-- Response = "n" → Skip all updates
-
-### Summary
-
-```
-> ✅ Steering verification complete:
-> 
-> Corrections Applied:
-> • Fixed {n} incorrect items across {m} files
-> • Updated {n} outdated patterns
-> 
-> New Discoveries:
-> • Added {n} new patterns to documentation
-> 
-> Validation Status:
-> • All steering files now verified against codebase
-> • Last verification: {timestamp}
-```
 
 ## Tool Coordination
 
@@ -338,29 +314,3 @@ After user responds:
 - Make changes without using actual Write/Edit/MultiEdit tools
 - Claim success without verifying file operations
 - Include sensitive information (API keys, passwords) in steering files
-
-## Config.toml Structure
-
-This command reads steering type definitions from @.kiro/config.toml:
-
-```toml
-[[steering.types]]
-name = "bigquery"                           # Filename: bigquery.md
-purpose = "BigQuery optimization patterns"  # Description shown in prompts
-criteria = [                                # Patterns for type matching
-    "Query Optimization: Performance techniques",
-    "EXTERNAL_QUERY: Cloud SQL patterns",
-    "Cost Management: Query cost strategies"
-]
-allowed_operations = ["refresh", "discover"] # Auto-update control
-```
-
-### Property Details
-- **`name`**: Determines the steering filename (`{name}.md`)
-- **`purpose`**: Human-readable description shown during type selection
-- **`criteria`**: Array of patterns used for automatic type matching
-- **`allowed_operations`**: Controls which automatic updates this command can perform
-  - `["refresh", "discover"]` - Both update existing and add new information (default for product/tech/structure)
-  - `["refresh"]` - Only update out-of-date information
-  - `["discover"]` - Only add new discoveries
-  - `[]` - Skip automatic updates (manual-only via `/hm:steering-remember`)
