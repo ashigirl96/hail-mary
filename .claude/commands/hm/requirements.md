@@ -152,8 +152,6 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 ## Behavioral Flow
 
 1. **Initialize**: Parse command arguments and determine document type
-- Validate type parameter (prd or bug, defaults to prd)
-- If --issue provided, fetch GitHub issue content using MCP
 - **Attempt** to Read <kiro_requirements_path> for existing content:
   - If file exists: Load and analyze current completeness
   - If file not found: Skip silently and proceed to step 2
