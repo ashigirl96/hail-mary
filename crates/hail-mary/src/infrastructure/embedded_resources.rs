@@ -18,12 +18,17 @@ impl EmbeddedSlashCommands {
     const REQUIREMENTS: &'static str =
         include_str!("../../../../.claude/commands/hm/requirements.md");
 
+    /// Investigate command documentation
+    const INVESTIGATE: &'static str =
+        include_str!("../../../../.claude/commands/hm/investigate.md");
+
     /// Returns all embedded slash command files as (filename, content) pairs
     pub fn get_all() -> Vec<(&'static str, &'static str)> {
         vec![
             ("steering-remember.md", Self::STEERING_REMEMBER),
             ("steering.md", Self::STEERING),
             ("requirements.md", Self::REQUIREMENTS),
+            ("investigate.md", Self::INVESTIGATE),
         ]
     }
 }
@@ -49,7 +54,7 @@ mod tests {
     #[test]
     fn test_embedded_commands_not_empty() {
         let files = EmbeddedSlashCommands::get_all();
-        assert_eq!(files.len(), 3);
+        assert_eq!(files.len(), 4);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");
