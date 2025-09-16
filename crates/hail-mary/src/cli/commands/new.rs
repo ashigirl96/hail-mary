@@ -93,15 +93,18 @@ mod tests {
 
         assert!(result.is_ok());
 
-        // Verify feature directory was created
+        // Verify feature directory was created with only essential files
         let date = chrono::Utc::now().format("%Y-%m-%d");
         let feature_dir = format!(".kiro/specs/{}-user-authentication", date);
         assert!(Path::new(&feature_dir).exists());
-        assert!(Path::new(&format!("{}/requirements.md", feature_dir)).exists());
+        // Only essential files should be created
         assert!(Path::new(&format!("{}/design.md", feature_dir)).exists());
-        assert!(Path::new(&format!("{}/tasks.md", feature_dir)).exists());
         assert!(Path::new(&format!("{}/investigation.md", feature_dir)).exists());
-        assert!(Path::new(&format!("{}/spec.json", feature_dir)).exists());
+        assert!(Path::new(&format!("{}/memo.md", feature_dir)).exists());
+        // These files should NOT be created automatically
+        assert!(!Path::new(&format!("{}/requirements.md", feature_dir)).exists());
+        assert!(!Path::new(&format!("{}/tasks.md", feature_dir)).exists());
+        assert!(!Path::new(&format!("{}/spec.json", feature_dir)).exists());
     }
 
     #[test]
