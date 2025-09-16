@@ -1,6 +1,6 @@
 # Product Overview
 
-**Hail-Mary** - A sophisticated Rust CLI application for Kiro project specification management and file-based context steering.
+**Hail-Mary** - A sophisticated Rust CLI application for Kiro project specification management and file-based context steering (note: CLI description still references legacy Memory MCP system).
 
 ## Product Overview
 
@@ -15,7 +15,7 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Clean Architecture**: Well-structured Rust implementation with clear separation of concerns
 - **Shell Completions**: Auto-completion support for all major shells
 - **Template System**: Structured specification templates with requirements, design, tasks, and investigation phases
-- **Anthropic OAuth Client**: Separate crate with OAuth2 token management and Claude API integration
+- **Anthropic API Client**: Internal crate with OAuth2 authentication and Claude API integration for hail-mary operations
 - **Custom Slash Commands**: `/hm:steering` and `/hm:steering-remember` for Claude Code steering management
 - **Steering Backup System**: Configurable backup creation and retention management for steering files
 - **Just Task Runner**: Comprehensive development workflow automation
@@ -52,4 +52,9 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - Interactive specification management with comprehensive template system
 - Professional CLI application with proper TTY management and job control
 - Complete specification lifecycle from creation to archival
+
+### Steering System Extensions
+- **Dynamic Steering Configuration**: Configurable steering types with criteria and operation validation
+- **Multi-Hypothesis Investigation**: Evidence-based verification with parallel Task agent coordination
+- **Archive-Based Lifecycle**: Complete spec lifecycle from `.kiro/specs/` to `.kiro/archive/` with automatic archival
 
