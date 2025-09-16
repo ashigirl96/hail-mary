@@ -192,7 +192,12 @@ mod tests {
         assert!(hm_dir.exists(), ".claude/commands/hm should exist");
 
         // Check all expected command files
-        let expected_commands = ["steering-remember.md", "steering.md", "requirements.md"];
+        let expected_commands = [
+            "steering-remember.md",
+            "steering.md",
+            "requirements.md",
+            "investigate.md",
+        ];
         for file in &expected_commands {
             let file_path = hm_dir.join(file);
             assert!(
