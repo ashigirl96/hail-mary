@@ -81,3 +81,12 @@ reference:
 
 - Task Toolの話もしたい
 - `Example 3: Multi-Topic Session` がおかしい。`/hm:investigate --topic` で会話して、保存が終わった後に、また `/hm:investigate --topic` が実行されたら、「前のtopic？」と聞くんじゃなくて、新しいtopicを調査したい
+
+
+
+`問題: これらは「実行の詳細」であり、Boundaries の責務（何をする/しない）を超えている。Behavioral Flow に属する内容` をより詳細に書いてほしい
+Task agentsを使うべきとか、調査の後に保存とかは確かに実行的な話でもあるけど、責務としてやってほしいことを書いておかないと、忘れそうじゃない？
+
+じゃあ、以下は修正して
+- Key Patternsの重複箇所
+- Document Templateの位置

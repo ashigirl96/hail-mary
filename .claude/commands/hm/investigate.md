@@ -25,7 +25,6 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 - `--for`: Link investigation to <kiro_requirements_path> or <kiro_design_path>
 
 ## Key Patterns
-- **Topic Resolution**: `--topic <name>` → resume/update existing | no `--topic` → new investigation
 - **Topic Analysis**: User input → title generation → scope determination
 - **Steering Guidance**: Embedded steering → investigation focus → targeted search patterns
 - **Depth Detection**: Simple question → standard depth | Complex/multi-system → deep investigation
@@ -40,11 +39,7 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 - Use steering patterns to guide and focus investigation approach
 - Create new investigation section when no `--topic` flag provided
 - Resume/update existing topic section when `--topic <name>` matches existing topic
-- Launch parallel Task agents for comprehensive investigation
-- Save to <kiro_investigation_path> after each investigation round
 - Link findings to <kiro_requirements_path> or <kiro_design_path> when `--for` flag present
-- Calculate and display confidence scores for findings
-- Maintain investigation history and corrections within same topic section
 
 **Will Not:**
 - Read `.kiro/steering/*.md` files directly to retrieve steering information
@@ -200,7 +195,7 @@ Key behaviors:
 - **Session Scope**: Each command invocation handles one topic (with deepening)
 - **Topic Management**: `--topic <name>` resumes existing, no flag creates new
 - **Section Management**: Same topic updates section, new command creates new section
-- **Confidence Tracking**: Display trust level for all findings
+- **Confidence Tracking**: Calculate and display trust level for all findings
 - **History Preservation**: Maintain investigation notes and corrections within topic
 
 ## Examples

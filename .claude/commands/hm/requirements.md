@@ -229,7 +229,7 @@ User: Y
 > ✅ Requirements saved to <kiro_requirements_path>
 >
 > **Next steps:**
-> - Run `/hm:investigate` to complete technical sections (65% → 100%)
+> - Run `/hm:investigate --for requirements` to complete technical sections (65% → 100%)
 > - After investigation, proceed with `/hm:design` for implementation planning
 ```
 
@@ -255,7 +255,7 @@ User: n
 > ✅ Bug requirements saved to <kiro_requirements_path>
 >
 > **Next steps:**
-> - Run `/hm:investigate` to identify root cause (70% → 100%)
+> - Run `/hm:investigate --for requirements` to identify root cause (70% → 100%)
 > - After investigation, proceed with `/hm:design` for fix planning
 ```
 
@@ -284,7 +284,7 @@ User: n, we also need to consider mobile users and API integration
 > ✅ Acceptance Criteria: Complete (API criteria added)
 > ⏳ Technical Requirements: Pending investigation
 >
-> Maximum 70% reached - technical details require /hm:investigate.
+> Maximum 70% reached - technical details require `/hm:investigate --for requirements`.
 > [Updated document with mobile and API sections...]
 > Is this accurate? [Y/n]:
 
@@ -293,6 +293,6 @@ User: Y
 > ✅ Requirements finalized (Completeness: 70%)
 >
 > **Next steps:**
-> - Run `/hm:investigate` to complete technical analysis (70% → 100%)
+> - Run `/hm:investigate --for requirements` to complete technical analysis (70% → 100%)
 > - After investigation, proceed with `/hm:design` for implementation planning
 ```
