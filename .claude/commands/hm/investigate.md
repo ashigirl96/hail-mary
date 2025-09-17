@@ -66,27 +66,41 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 
 ## Behavioral Flow
 
-1. **Initialize**: Parse arguments and load existing investigation
+1. **Initialize & Topic Gathering**: Parse arguments, load context, and determine investigation topic
    - Read existing <kiro_investigation_path>
-   - Determine mode: standalone or linked (`--for`)
-   - If `--topic <name>`: search for matching section to resume/update
-   - If no `--topic`: prepare for new investigation
-   - Load existing topics for reference
 
-2. **Topic Gathering**: Determine investigation topic
-   - If `--topic <name>` provided: Resume specified existing topic
-   - Otherwise, ask for new topic:
-   ```
-   > 🔍 What would you like to investigate?
-   > [Provide specific technical question or area]
-   ```
+   - **If `--for requirements` or `--for design` provided**:
+     - Read corresponding <kiro_requirements_path> or <kiro_design_path>
+     - Analyze document for incomplete technical sections (marked [TBD] or pending investigation)
+     - Display: "📋 Found {document}.md with technical gaps"
+     - Show list of sections needing investigation with brief descriptions
+     - Suggest: "🔍 Suggested investigations based on {document}.md:"
+       * List 2-3 specific technical areas that would complete the document
+       * Include why each investigation would be valuable
+     - Ask: "What would you like to investigate? (You can choose from suggestions above or provide your own topic):"
+
+   - **If `--topic <name>` provided**:
+     - Search existing <kiro_investigation_path> for matching topic section
+     - Load and analyze previous investigation content
+     - Display: "📋 Found existing investigation for '{topic}' (Section #{n})"
+     - Show summary of what has been investigated so far
+     - Suggest: "🔍 Additional investigations to deepen '{topic}':"
+       * List 2-3 specific follow-up questions or unexplored areas
+       * Include potential impact of each investigation
+     - Ask: "What would you like to investigate? (You can explore suggestions above or provide your own focus):"
+
+   - **If no flags provided**:
+     - Ask: "🔍 What would you like to investigate?"
+     - Sub-prompt: "[Provide specific technical question or area to explore]"
 
    **[STOP HERE AND WAIT FOR USER INPUT - DO NOT PROCEED]**
 
-   - Auto-generate concise title (2-4 words) from user input in English kebab-case
-   - Create new section for this investigation
+   - After user responds:
+     - If `--topic <name>` provided: Continue with existing topic name
+     - If no `--topic`: Auto-generate concise title (2-4 words) in English kebab-case from user input
+     - Prepare for investigation phase
 
-3. **Parallel Investigation**: Launch Task agents with plan display
+2. **Parallel Investigation**: Launch Task agents with plan display
    ```
    > 🚀 Investigation Plan for "[Topic]":
    >
@@ -104,17 +118,21 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
    - Aggregate findings with source priority
    - Calculate confidence scores
 
-4. **Progressive Documentation**: Save findings immediately
-   - Append to <kiro_investigation_path>
+3. **Progressive Documentation**: Save findings immediately
+   - **Document update strategy**:
+     - If `--topic <name>` provided: Append to existing section (継続調査)
+     - If no `--topic` flag: Create new section with auto-generated title (新規調査)
+   - Write to <kiro_investigation_path>
    - Display save confirmation
 
    ```
    > 📝 Investigation saved to <kiro_investigation_path>
    > Topic: "[Title]" (Section #[n])
+   > Mode: [Updated existing section | Created new section]
    > Confidence: [level] ([percentage]%)
    ```
 
-5. **Interactive Continuation**: Topic refinement loop
+4. **Interactive Continuation**: Topic refinement loop
    ```
    > 🔄 Continue investigating "[Topic]"?
    > - [Y/Enter]: Deepen current topic
@@ -125,10 +143,10 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 
    **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
-   - Y/follow-up → Update same section with new findings (return to step 3)
-   - n/done → Proceed to step 6
+   - Y/follow-up → Update same section with new findings (return to step 2)
+   - n/done → Proceed to step 5
 
-6. **Finalization**: Link to other documents if `--for` present
+5. **Finalization**: Link to other documents if `--for` present
    - If `--for` requirements: Extract relevant → Update <kiro_requirements_path>
    - If `--for` design: Extract architectural → Update <kiro_design_path>
 

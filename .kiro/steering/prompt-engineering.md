@@ -586,3 +586,38 @@ Key behaviors:
 - If error, check directory structure
 - Create directories if needed
 ```
+
+## Behavioral Flow Flag Conditions
+**When**: Writing conditional logic in Behavioral Flow sections based on command flags
+- Use clear If statements with bold formatting: **If `--flag` provided:**
+- Group related conditions under same If block
+- Separate different flag scenarios with clear visual hierarchy
+- Include "If no flags provided" as catch-all scenario
+
+```markdown
+# ✅ Good
+1. **Initialize & Topic Gathering**: Parse arguments and determine topic
+   - Read existing <kiro_investigation_path>
+
+   - **If `--for requirements` or `--for design` provided:**
+     - Read corresponding document
+     - Analyze for technical gaps
+     - Display suggestions
+     - Ask: "What would you like to investigate?"
+
+   - **If `--topic <name>` provided:**
+     - Search for existing topic section
+     - Load previous investigation
+     - Display follow-up suggestions
+     - Ask: "What would you like to investigate?"
+
+   - **If no flags provided:**
+     - Ask: "What would you like to investigate?"
+     - Sub-prompt: "[Provide technical question]"
+
+# ❌ Bad
+1. **Initialize**: Check flags
+   - Check if --for flag exists
+   - Check if --topic flag exists
+   - Handle different cases
+```
