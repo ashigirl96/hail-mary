@@ -160,8 +160,14 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
   - **DO NOT**: Create directories or investigate structure
 
 2. **Interactive Requirements Gathering**: Present type-specific questions
-- **For PRD**: "What new feature or capability would you like to develop? Please describe the problem you're solving, target users, and desired outcomes."
-- **For Bug**: "Please describe the current problematic behavior and what the expected behavior should be. Include steps to reproduce if possible."
+- **If existing document found**:
+  - Display: "📋 Found existing requirements.md (Completeness: XX%)"
+  - Show summary of current document sections and their content and status
+  - **For PRD**: "Would you like to update or add to the current PRD? Please describe any changes or additions:"
+  - **For Bug**: "Would you like to update or add to the current bug report? Please describe any changes or additions:"
+- **If no existing document**:
+  - **For PRD**: "What new feature or capability would you like to develop? Please describe the problem you're solving, target users, and desired outcomes."
+  - **For Bug**: "Please describe the current problematic behavior and what the expected behavior should be. Include steps to reproduce if possible."
 
 **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
