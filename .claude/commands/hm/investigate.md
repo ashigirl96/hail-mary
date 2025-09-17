@@ -83,7 +83,7 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 
    **[STOP HERE AND WAIT FOR USER INPUT - DO NOT PROCEED]**
 
-   - Auto-generate concise title (2-4 words) from user input
+   - Auto-generate concise title (2-4 words) from user input in English kebab-case
    - Create new section for this investigation
 
 3. **Parallel Investigation**: Launch Task agents with plan display
