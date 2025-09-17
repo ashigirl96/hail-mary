@@ -74,6 +74,10 @@ dev:
 test-watch:
     cargo watch -x test
 
+# Watch for changes and install binary
+watch-install:
+    cargo watch -x "install --path crates/hail-mary"
+
 # Security audit
 audit:
     cargo audit

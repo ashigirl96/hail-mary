@@ -41,6 +41,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 - Iterate based on user feedback until satisfaction or reaching 70% completion
 - Structure content differently for PRD vs Bug types
 - Include references to source documents and materials used
+- Think in English, document in Japanese
 
 **Will Not:**
 - Exceed 70% completeness (requires `/hm:investigate` for technical discovery)

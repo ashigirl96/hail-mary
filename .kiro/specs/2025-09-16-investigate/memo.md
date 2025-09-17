@@ -90,3 +90,51 @@ Task agentsを使うべきとか、調査の後に保存とかは確かに実行
 じゃあ、以下は修正して
 - Key Patternsの重複箇所
 - Document Templateの位置
+
+
+---
+
+- /hm:investigate しただけなのに、requirements.md とかdesign.mdを見に行ってた。 `--for` をつけてない場合は探さないでほしい（Will Notに書く内容？)
+- 現在、フォーマットに合わせた結果、欲しい情報に対して、フォーマットが邪魔をしている感じがする。
+  - なので、フォーマットに従うという項目は消して良い(sectionごと消して良い)
+  - 例えば、Data FlowをMermaidで書くのは良いけど、Evidenceに入れたいし、Root Causeにも入れたいし、Recommendationsにも入れたい。Code Snippetsも同様
+  - code snippetsがある場合は、意味について説明を書く
+  - root causesについて書くときは、必ず Recommendations も記載する
+- フォーマット遵守になってたりしてるので、一旦Examplesは全部消してほしい
+
+- 以下のように表示されているのに、
+```
+Launching parallel investigators:
+• [Code Explorer] Search implementation in codebase
+• [Docs Researcher] Query Context7 for best practices
+• [Web Searcher] Find recent solutions and updates
+`⏺ steering-investigator(Search Anthropic client headers)` 
+```
+  と１つだけしかsteering-investigatorしか呼び出されていない。
+  複数subagentを呼び出すなら、なぜそのsubagentを呼び出すのか理由の記載と、呼び出すって言ってるならちゃんと呼び出すようにしてほしい
+
+
+subagentを作る、切り分ける
+  
+Examples
+- New Topic Investigation
+- Resume Existing Topic
+- Multiple Separate Investigations 
+- Investigation Guided by Steering
+  > 🚀 Investigation Plan for "Production Database Query":
+  >
+  > Using steering guidance from `bigquery` type:
+  > - Focus on EXTERNAL_QUERY patterns for Cloud SQL
+  > - Check security best practices
+  > - Look for performance optimization patterns
+
+ドキュメント
+- confidence, primary sources, guided by
+- summary
+- root cause / core finding: architecture diagram, data flow diagram, code snippets, system designs, data flows
+- evidence, from codebase, from context7, from web
+- recommendations
+- Investigation notes, update, correction, note, steering applied
+
+
+---
