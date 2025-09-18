@@ -39,7 +39,6 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 - Create new investigation section when no `--topic` flag provided
 - Resume/update existing topic section when `--topic <name>` matches existing topic
 - Link findings to <kiro_requirements_path> or <kiro_design_path> when `--for` flag present
-- Think in English, but document in Japanese
 
 **Will Not:**
 - Read `.kiro/steering/*.md` files directly to retrieve steering information
@@ -100,37 +99,86 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
      - If no `--topic`: Auto-generate concise title (2-4 words) in English kebab-case from user input
      - Prepare for investigation phase
 
-2. **Parallel Investigation**: Launch Task agents with plan display
+2. **Investigation Planning & Approval**: Analyze approach and get user confirmation
+   - Think about investigation strategy based on topic and context
+   - Determine optimal agent configuration and specialization
+   - Present investigation plan:
+
    ```
-   > 🚀 Investigation Plan for "[Topic]":
+   > 🔍 Investigation Strategy for "[Topic]":
    >
-   > Using steering patterns to guide investigation focus
+   > **Approach**: [Describe investigation methodology]
+   > **Agent Configuration**: [N] specialized agents for parallel execution
    >
-   > Launching parallel investigators:
-   > • [Code Explorer] Search implementation in codebase
-   > • [Docs Researcher] Query Context7 for best practices
-   > • [Web Searcher] Find recent solutions and updates
+   > **Parallel Investigation Agents**:
+   > • [Agent 1: Type] - [Specific investigation scope]
+   >   Focus: [What this agent will search/analyze]
+   > • [Agent 2: Type] - [Specific investigation scope]
+   >   Focus: [What this agent will search/analyze]
+   > • [Agent 3: Type] - [Specific investigation scope]
+   >   Focus: [What this agent will search/analyze]
+   > [Additional agents as needed...]
    >
-   > Priority: codebase > Context7 > web
+   > **Execution**: All agents will run **concurrently** for efficiency
+   > **Priority**: codebase evidence > official docs > community solutions
+   >
+   > Proceed with this investigation plan? [Y/n]:
    ```
 
-   - Execute parallel Task agents
-   - Aggregate findings with source priority
-   - Calculate confidence scores
+   **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
-3. **Progressive Documentation**: Save findings immediately
+   - After user responds:
+     - Response = "Y" or "y" or Enter → Execute parallel Task agents
+     - Response = "n" or custom requirements → Rethink strategy based on feedback:
+       * Analyze user's alternative approach
+       * Reconfigure agent specialization
+       * Present revised plan (return to start of step 2)
+     - Invalid response → Ask: "Please enter Y to proceed or n to revise the plan"
+
+   - **Execute Parallel Investigation**: Launch approved Task agents
+     - **[The implementation will send multiple Task tool calls in one response]**
+     - Each agent operates **independently** with its own investigation context
+     - Agents process **concurrently** without dependencies
+
+   - Aggregate findings with source priority and confidence scoring
+
+3. **Progressive Documentation**: Review and save findings with user confirmation
    - **Document update strategy**:
-     - If `--topic <name>` provided: Append to existing section (継続調査)
-     - If no `--topic` flag: Create new section with auto-generated title (新規調査)
-   - Write to <kiro_investigation_path>
-   - Display save confirmation
+     - If `--topic <name>` provided: Append to existing section (continue investigation)
+     - If no `--topic` flag: Create new section with auto-generated title (new investigation)
+
+   - Present findings for review:
 
    ```
-   > 📝 Investigation saved to <kiro_investigation_path>
-   > Topic: "[Title]" (Section #[n])
-   > Mode: [Updated existing section | Created new section]
-   > Confidence: [level] ([percentage]%)
+   > 📝 Investigation Results for "[Topic]":
+   >
+   > **Summary**: [Brief overview of key findings]
+   > **Confidence**: [level] ([percentage]%)
+   > **Sources**: [Number] codebase references, [Number] docs, [Number] web sources
+   >
+   > --- Content to Save ---
+   > ## [Topic Title]
+   > **Confidence**: [percentage]%
+   >
+   > [Investigation findings formatted in markdown]
+   > [Key discoveries, patterns, implementations]
+   > [Code examples if relevant]
+   > [Recommendations or next steps]
+   > --- End of Content ---
+   >
+   > Save this investigation to <kiro_investigation_path>? [Y/n]:
    ```
+
+   **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
+
+   - After user responds:
+     - Response = "Y"  → Write to <kiro_investigation_path>
+       * Display: "✅ Investigation saved (Section #[n], Mode: [new|append])"
+     - Response = "n" or additional requirements → Refine content:
+       * Examples: "add performance metrics", "include error handling", "simplify format"
+       * Reformat/enhance based on feedback
+       * Present updated content (return to start of step 3)
+     - Invalid response → Ask: "Please enter Y to save or provide refinement instructions"
 
 4. **Interactive Continuation**: Topic refinement loop
    ```

@@ -21,10 +21,6 @@ objective:
   - また `/hm:investigate --topic "YYY"` をしたら、以前の分客とは切り出して、新たなtopicとして、調査をして、それがまた１つのsectionとなるようにする
 - @.claude/commands/hm/steering.md のように、Task tool(subagent)を使って並列で調査をする。調査するときに、それぞれのTask Toolがなにを調査するかのプランも表示されていると嬉しい
 
-reference:
-- @reference/slash-command-structure.md の構造を参考にしたいので、 @.claude/commands/hm/requirements.md が良いと思う
-- @reference/slash-commands.md
-- @.claude/commands/hm/steering-remember.md
 
 また決めきれていないこと:
 - 調査において、どういうフォーマットがありそうか; conciseで、必要な情報が揃っている。行の長さは調査の複雑さによって変わるようにしたい
@@ -112,3 +108,13 @@ Launching parallel investigators:
   - 例えば、Data FlowをMermaidで書くのは良いけど、Evidenceに入れたいし、Root Causeにも入れたいし、Recommendationsにも入れたい。Code Snippetsも同様
   - code snippetsがある場合は、意味について説明を書く
   - root causesについて書くときは、必ず Recommendations も記載する
+
+
+
+---
+
+reference:
+- @reference/slash-command-structure.md の構造を参考にしたいので、 @.claude/commands/hm/requirements.md が良いと思う
+- @reference/slash-commands.md
+- @.claude/commands/hm/steering-remember.md
+- steering for prompt engineering: @.kiro/steering/prompt-engineering.md
