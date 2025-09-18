@@ -41,9 +41,16 @@ impl EmbeddedAgents {
     const STEERING_INVESTIGATOR: &'static str =
         include_str!("../../../../.claude/agents/steering-investigator.md");
 
+    /// Root cause investigator agent
+    const ROOT_CAUSE_INVESTIGATOR: &'static str =
+        include_str!("../../../../.claude/agents/root-cause-investigator.md");
+
     /// Returns all embedded agent files as (filename, content) pairs
     pub fn get_all() -> Vec<(&'static str, &'static str)> {
-        vec![("steering-investigator.md", Self::STEERING_INVESTIGATOR)]
+        vec![
+            ("steering-investigator.md", Self::STEERING_INVESTIGATOR),
+            ("root-cause-investigator.md", Self::ROOT_CAUSE_INVESTIGATOR),
+        ]
     }
 }
 
@@ -74,7 +81,7 @@ mod tests {
     #[test]
     fn test_embedded_agents_not_empty() {
         let files = EmbeddedAgents::get_all();
-        assert_eq!(files.len(), 1);
+        assert_eq!(files.len(), 2);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");

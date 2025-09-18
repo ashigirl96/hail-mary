@@ -111,13 +111,13 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
    > **Agent Configuration**: [N] specialized agents for parallel execution
    >
    > **Parallel Investigation Agents**:
-   > • [Agent 1: Type] - [Specific investigation scope]
-   >   Focus: [What this agent will search/analyze]
-   > • [Agent 2: Type] - [Specific investigation scope]
-   >   Focus: [What this agent will search/analyze]
-   > • [Agent 3: Type] - [Specific investigation scope]
-   >   Focus: [What this agent will search/analyze]
-   > [Additional agents as needed...]
+   > • [Agent 1: root-cause-investigator] - Evidence-based systematic investigation
+   >   Focus: Gather logs, form hypotheses, test methodically
+   > • [Agent 2: analyzer] - Codebase pattern analysis
+   >   Focus: Search implementation patterns, identify correlations
+   > • [Agent 3: architect] - Architecture and design investigation
+   >   Focus: Dependency analysis, scalability assessment
+   > [Additional agents based on topic: security-engineer, performance-engineer, etc.]
    >
    > **Execution**: All agents will run **concurrently** for efficiency
    > **Priority**: codebase evidence > official docs > community solutions
@@ -208,7 +208,21 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 Key behaviors:
 - **Steering as Guide**: Use embedded `<steering>` to focus investigation, not as evidence source
 - **Source Priority**: Code > docs > web for evidence
-- **Parallel Execution**: Multiple Task agents investigate simultaneously
+- **Parallel Execution**: Multiple Task agents investigate simultaneously using specialized subagents:
+  ```
+  Task(
+      subagent_type="root-cause-investigator",
+      description="Systematic evidence-based investigation",
+      prompt=f"""
+      Topic: {topic_name}
+      Scope: {investigation_scope}
+      Context: {existing_findings}
+
+      Your mission: Investigate systematically with evidence-based analysis
+      Focus: {specific_focus_area}
+      """
+  )
+  ```
 - **Progressive Save**: Write to <kiro_investigation_path> after each round, not just at end
 - **Session Scope**: Each command invocation handles one topic (with deepening)
 - **Topic Management**: `--topic <name>` resumes existing, no flag creates new
