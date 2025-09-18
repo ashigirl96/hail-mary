@@ -27,10 +27,9 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 ## Key Patterns
 - **Topic Analysis**: User input → title generation → scope determination
 - **Steering Guidance**: Embedded `<steering>` → investigation focus → targeted search patterns
-- **Depth Detection**: Simple question → standard depth | Complex/multi-system → deep investigation
-- **Source Priority**: codebase search → Context7 docs → web (steering guides but not evidence)
-- **Confidence Scoring**: Source trust × content match × recency = confidence level
-- **Interactive Loop**: Investigate → Present → Refine → Document
+- **Depth Detection**: Simple question → direct investigation | Complex/multi-system → parallel Task agents
+- **Interactive Loop**: Plan → Investigate → Present → Refine → Document
+- **Agent Selection**: Topic complexity → agent specialization → parallel execution strategy
 
 ## Boundaries
 **Will:**
@@ -107,20 +106,19 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
    ```
    > 🔍 Investigation Strategy for "[Topic]":
    >
-   > **Approach**: [Describe investigation methodology]
+   > **Approach**: [Describe investigation coordination strategy]
    > **Agent Configuration**: [N] specialized agents for parallel execution
    >
    > **Parallel Investigation Agents**:
    > • [Agent 1: root-cause-investigator] - Evidence-based systematic investigation
-   >   Focus: Gather logs, form hypotheses, test methodically
+   >   Mission: Apply systematic investigation methodology with source prioritization
    > • [Agent 2: analyzer] - Codebase pattern analysis
-   >   Focus: Search implementation patterns, identify correlations
+   >   Mission: Search implementation patterns, identify correlations
    > • [Agent 3: architect] - Architecture and design investigation
-   >   Focus: Dependency analysis, scalability assessment
+   >   Mission: Dependency analysis, scalability assessment
    > [Additional agents based on topic: security-engineer, performance-engineer, etc.]
    >
    > **Execution**: All agents will run **concurrently** for efficiency
-   > **Priority**: codebase evidence > official docs > community solutions
    >
    > Proceed with this investigation plan? [Y/n]:
    ```
@@ -206,8 +204,10 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
    ```
 
 Key behaviors:
-- **Steering as Guide**: Use embedded `<steering>` to focus investigation, not as evidence source
-- **Source Priority**: Code > docs > web for evidence
+- **Steering as Guide**: Use embedded `<steering>` to focus investigation direction
+- **Task Agent Usage**:
+  - **Simple investigations**: Direct investigation without Task agents (e.g., "What does this function do?" → use Read/Grep directly)
+  - **Complex investigations**: Use parallel Task agents with specialized subagents (e.g., multi-component analysis, root cause investigation → spawn multiple agents)
 - **Parallel Execution**: Multiple Task agents investigate simultaneously using specialized subagents:
   ```
   Task(
