@@ -6,7 +6,7 @@ complexity: advanced
 mcp-servers: [context7, sequential-thinking]
 personas: [analyzer, architect]
 allowed-tools: Read, Write, MultiEdit, Grep, Glob, Task, WebSearch, mcp__context7__*, mcp__sequential-thinking__*
-argument-hint: "[--topic [name]] [--for requirements|design]"
+argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
 ---
 
 # /hm:investigate - Technical Investigation Tool
@@ -19,17 +19,17 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 
 ## Usage
 ```
-/hm:investigate [--topic <name>] [--for requirements|design]
+/hm:investigate [--topic <name>] [--for requirements|design] [--parallel]
 ```
 - `--topic <name>`: Resume/update existing topic by name
 - `--for`: Link investigation to <kiro_requirements_path> or <kiro_design_path>
+- `--parallel`: Enable multi-agent parallel investigation for complex topics
 
 ## Key Patterns
 - **Topic Analysis**: User input → title generation → scope determination
 - **Steering Guidance**: Embedded `<steering>` → investigation focus → targeted search patterns
-- **Depth Detection**: Simple question → direct investigation | Complex/multi-system → parallel Task agents
-- **Interactive Loop**: Plan → Investigate → Present → Refine → Document
-- **Agent Selection**: Topic complexity → agent specialization → parallel execution strategy
+- **Interactive Loop**: Investigate → Document → Review → Refine → Continue
+- **Documentation Flow**: Write first → Ask approval → Refine if needed
 
 ## Boundaries
 **Will:**
@@ -49,6 +49,17 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 - Generate speculative technical details without evidence
 - Continue to new topic within same command invocation
 - Skip source verification or confidence scoring
+
+### Documentation Boundaries
+**Will:**
+- Include confidence percentages for all findings
+- Provide concrete code examples when relevant
+- Focus on factual discoveries and implementations
+
+**Will Not:**
+- Include future-oriented content (e.g., "今後の拡張可能性", "Next Steps", "Future Work", "Potential enhancements")
+- Add speculative sections about what could be done later
+- Use marketing language or superlatives
 
 ## Tool Coordination
 **Claude Code Tools:**
@@ -98,7 +109,9 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
      - If no `--topic`: Auto-generate concise title (2-4 words) in English kebab-case from user input
      - Prepare for investigation phase
 
-2. **Investigation Planning & Approval**: Analyze approach and get user confirmation
+2. **Investigation Execution**: Direct investigation or parallel agent planning based on `--parallel` flag
+
+   **If `--parallel` flag provided:**
    - Think about investigation strategy based on topic and context
    - Determine optimal agent configuration and specialization
    - Present investigation plan:
@@ -138,14 +151,24 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
      - Each agent operates **independently** with its own investigation context
      - Agents process **concurrently** without dependencies
 
-   - Aggregate findings with source priority and confidence scoring
+   **If no `--parallel` flag (default):**
+   - Directly investigate using native tools (Read, Grep, Glob, WebSearch, MCP tools)
+   - No planning phase or approval needed
+   - Immediately proceed to investigation based on topic and context
+   - Use steering guidance to focus investigation direction
 
-3. **Progressive Documentation**: Review and save findings with user confirmation
+   - **Aggregate findings** with source priority and confidence scoring (both modes)
+
+3. **Progressive Documentation**: Write findings immediately then seek user approval
    - **Document update strategy**:
      - If `--topic <name>` provided: Append to existing section (continue investigation)
      - If no `--topic` flag: Create new section with auto-generated title (new investigation)
 
-   - Present findings for review:
+   - **Write findings immediately** to <kiro_investigation_path>
+     * Mode: [new section | append to existing]
+     * Format: Markdown with structured sections
+
+   - Present written content and ask for approval:
 
    ```
    > 📝 Investigation Results for "[Topic]":
@@ -154,7 +177,9 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
    > **Confidence**: [level] ([percentage]%)
    > **Sources**: [Number] codebase references, [Number] docs, [Number] web sources
    >
-   > --- Content to Save ---
+   > ✅ Investigation saved to <kiro_investigation_path> (Section #[n], Mode: [new|append])
+   >
+   > --- Written Content ---
    > ## [Topic Title]
    > **Confidence**: [percentage]%
    >
@@ -162,21 +187,21 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
    > [Key discoveries, patterns, implementations]
    > [Code examples if relevant]
    > [Recommendations or next steps]
-   > --- End of Content ---
+   > --- End of Written Content ---
    >
-   > Save this investigation to <kiro_investigation_path>? [Y/n]:
+   > Is this investigation content satisfactory? [Y/n]:
    ```
 
    **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
    - After user responds:
-     - Response = "Y"  → Write to <kiro_investigation_path>
-       * Display: "✅ Investigation saved (Section #[n], Mode: [new|append])"
-     - Response = "n" or additional requirements → Refine content:
+     - Response = "Y" or Enter → Proceed to step 4
+     - Response = "n" or additional requirements → Refine and rewrite:
        * Examples: "add performance metrics", "include error handling", "simplify format"
        * Reformat/enhance based on feedback
-       * Present updated content (return to start of step 3)
-     - Invalid response → Ask: "Please enter Y to save or provide refinement instructions"
+       * **Write refined content** to <kiro_investigation_path> (overwrite previous)
+       * Present updated content (return to "Present written content" above)
+     - Invalid response → Ask: "Please enter Y to accept or provide refinement instructions"
 
 4. **Interactive Continuation**: Topic refinement loop
    ```
@@ -205,10 +230,10 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 
 Key behaviors:
 - **Steering as Guide**: Use embedded `<steering>` to focus investigation direction
-- **Task Agent Usage**:
-  - **Simple investigations**: Direct investigation without Task agents (e.g., "What does this function do?" → use Read/Grep directly)
-  - **Complex investigations**: Use parallel Task agents with specialized subagents (e.g., multi-component analysis, root cause investigation → spawn multiple agents)
-- **Parallel Execution**: Multiple Task agents investigate simultaneously using specialized subagents:
+- **Mode-Based Execution**:
+  - **Default (no flag)**: Direct investigation using native tools immediately without planning
+  - **With `--parallel`**: Plan → Approve → Execute parallel Task agents for complex analysis
+- **Parallel Task Execution** (when `--parallel` used):
   ```
   Task(
       subagent_type="root-cause-investigator",
@@ -223,7 +248,7 @@ Key behaviors:
       """
   )
   ```
-- **Progressive Save**: Write to <kiro_investigation_path> after each round, not just at end
+- **Progressive Documentation**: Write immediately to <kiro_investigation_path> then seek approval
 - **Session Scope**: Each command invocation handles one topic (with deepening)
 - **Topic Management**: `--topic <name>` resumes existing, no flag creates new
 - **Section Management**: Same topic updates section, new command creates new section
