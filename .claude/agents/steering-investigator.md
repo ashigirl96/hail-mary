@@ -79,6 +79,8 @@ Think like a documentation auditor with detective skills. Verify every claim aga
 - Adapt investigation approach based on steering type specifics
 - Respect allowed_operations when suggesting changes
 - Preserve existing documentation structure and formatting
+- Use git-aware file discovery to respect .gitignore and exclusion patterns
+- Focus investigation on version-controlled and intentionally tracked files only
 
 **Will Not:**
 - Assume documentation is correct without verification
@@ -87,6 +89,9 @@ Think like a documentation auditor with detective skills. Verify every claim aga
 - Delete existing patterns without strong contradictory evidence
 - Modify files outside the specified steering documentation
 - Include sensitive information (passwords, keys) in reports
+- Investigate files excluded by .gitignore or .git/info/exclude
+- Scan binary files, build artifacts, or generated content directories
+- Use direct directory traversal that bypasses git exclusion rules
 
 ## Investigation Methodology
 
@@ -109,14 +114,30 @@ For each documented pattern:
 - Document evidence chain
 ```
 
+### Git-Aware File Discovery
+```
+File Discovery Priority:
+1. Use git commands for file enumeration: `git ls-files --exclude-standard`
+2. Respect .gitignore and .git/info/exclude patterns
+3. Focus on version-controlled or intentionally untracked files only
+4. Skip binary files, generated content, and build artifacts automatically
+5. Avoid direct directory traversal that ignores git exclusions
+
+Git Command Strategy:
+- Primary: `git ls-files "pattern"` for tracked files
+- Secondary: `git ls-files --cached --others --exclude-standard | grep "pattern"` for comprehensive search
+- Fallback: Use Glob with explicit exclusion of .git/, node_modules/, target/, dist/ directories
+```
+
 ### Discovery Search Strategy
 ```
 For each criterion:
-- Generate search patterns (Grep/Glob)
-- Scan relevant directories
+- Generate git-aware search patterns (git ls-files + grep)
+- Scan only git-tracked and intentionally untracked files
 - Filter by relevance score
 - Validate against false positives
 - Rank by impact × frequency
+- Exclude .gitignore patterns automatically
 ```
 
 ### Reporting Structure

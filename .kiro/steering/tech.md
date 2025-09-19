@@ -34,11 +34,11 @@
 just build              # Standard build
 just test               # Run all tests (unit + integration)
 just fmt                # Format code
-just lint               # Clippy with -D warnings
+just lint-basic         # Basic clippy OR just lint (comprehensive)
 just ci                 # Full CI pipeline (format check + lint + test)
 
 # Development utilities  
-just run init           # Initialize project
+just run init           # Run the hail-mary project with init arg
 just dev                # Watch mode (check + test + run)
 just test-watch         # Watch mode for tests only
 ```
@@ -53,7 +53,7 @@ hail-mary code [--no-danger]                # Launch Claude Code with context
 
 # Shell completions
 hail-mary steering backup                   # Create backups of steering files
-hail-mary shell-completions <shell>         # Generate completion scripts
+hail-mary shell-completions <shell>         # Generate completion scripts (bash|zsh|fish|powershell|elvish)
 ```
 
 ### Testing Commands
@@ -65,7 +65,7 @@ just test                                       # Run all tests
 
 # Direct cargo test (Avoid - use just commands instead)
 cargo test                                      # All tests  
-cargo test -- --nocapture                      # Test output visible
+just test-verbose                               # Test with output visible
 RUST_BACKTRACE=1 cargo test -- --nocapture    # With backtraces
 ```
 
@@ -110,15 +110,8 @@ tracing-subscriber = "0.3"
 pulldown-cmark = "0.13"
 regex = "1"
 
-# Database and MCP Protocol
-rmcp = { version = "0.5.0", features = ["server", "macros", "transport-io"] }
-schemars = "1"
-rusqlite = { version = "0.33", features = ["bundled"] }
-refinery = "0.8.16"
-
-# Enhanced testing infrastructure
-rstest = "0.23"
-pretty_assertions = "1"
+# No additional dependencies beyond workspace dependencies
+# See actual Cargo.toml files for current dependencies
 
 # Anthropic client crate dependencies
 reqwest = { version = "0.12", features = ["rustls-tls-native-roots", "json", "cookies", "gzip", "brotli", "deflate", "zstd", "charset", "http2", "stream"] }

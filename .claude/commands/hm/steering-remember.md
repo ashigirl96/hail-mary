@@ -45,42 +45,43 @@ argument-hint: "[hint] [--format rule|guide|knowledge] [--type <name>]"
 3. **Match Against Existing Types**: Analyze learning content
    - Compare content against each type's criteria
    - Calculate confidence score based on keyword matches
-   - **If match found (>60% confidence)**:
+   - Sort existing types by confidence (descending)
+   - **Show all types with selection**:
      ```
      > 🔍 Analyzing learning content...
-     > ✅ Found match: 'bigquery' type (confidence: 85%)
-     > 
-     > Append to bigquery.md? [Y/n]: 
+     >
+     > Select steering type to append to:
+     > 1. tech (confidence: 75%) - Technology stack
+     > 2. structure (confidence: 45%) - Code organization
+     > 3. product (confidence: 30%) - Product overview
+     > 4. documentation (confidence: 15%) - Documentation standards
+     > 5. [New Type] - Create a new steering type
+     >
+     > Select [1-5]:
      ```
-     
-     **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
-     
-     After user responds:
-     - Response = "Y" or "y" or Enter → Append to existing steering file using **Edit** or **MultiEdit**
-     - Response = "n" or "N" → Skip appending and continue
-     - Any other response → Ask for clarification: "Please enter Y or n"
-     
-   - **If no match**:
-     ```
-     > 🔍 Analyzing learning content...
-     > 🤔 No existing type matches this content
-     > 
-     > Create new type? Suggestions:
-     > 1. graphql - GraphQL patterns and optimizations
-     > 2. api-performance - API performance optimizations
-     > 3. backend-patterns - Backend architectural patterns
-     > 4. [Custom] - Enter your own type name
-     > 
-     > Select [1-4]: 
-     ```
-     
+
      **[STOP HERE AND WAIT FOR USER SELECTION - DO NOT PROCEED]**
-     
+
      After user selects:
-     - Selection = 1-3 → Use suggested type name, add to config.toml using **MultiEdit**
-     - Selection = 4 → Ask user: "Enter custom type name: " then wait for input
-     - Invalid selection → Ask for valid input: "Please select 1-4"
-     - After type creation → Create new steering file using **Write**
+     - Selection = 1-4 → Append to selected steering file using **Edit** or **MultiEdit**
+     - Selection = 5 → Continue to new type creation flow:
+       ```
+       > Create new type? Suggestions:
+       > 1. graphql - GraphQL patterns and optimizations
+       > 2. api-performance - API performance optimizations
+       > 3. backend-patterns - Backend architectural patterns
+       > 4. [Custom] - Enter your own type name
+       >
+       > Select [1-4]:
+       ```
+
+       **[STOP HERE AND WAIT FOR USER SELECTION - DO NOT PROCEED]**
+
+       After user selects:
+       - Selection = 1-3 → Use suggested type name, add to config.toml using **MultiEdit**
+       - Selection = 4 → Ask user: "Enter custom type name: " then wait for input
+     - Invalid selection → Ask for valid input: "Please select valid option"
+     - After type selection/creation → Proceed to save content
 
 4. **Auto-Detect Format**: Analyze content to choose optimal format
    ```
@@ -203,7 +204,7 @@ argument-hint: "[hint] [--format rule|guide|knowledge] [--type <name>]"
 
 6. **Save to Steering**: Write directly to `.kiro/steering/{type}.md`
    - Use **Glob** to check if file exists
-   - If exists: Use **Edit** or **MultiEdit** to append
+   - If exists: Use **Read** first, then **MultiEdit** to append
    - If new: Use **Write** to create file
    - Confirm successful save
 
@@ -232,18 +233,24 @@ Key behaviors:
 
 ## Examples
 
-### Example 1: Existing Type Match
+### Example 1: Existing Type Selection
 ````
 /hm:steering-remember "BigQueryで学んだこと"
 
 > 🔍 Analyzing conversation for BigQuery-related learnings...
-> ✅ Found match: 'bigquery' type (confidence: 85%)
-> 
-> Append to bigquery.md? [Y/n]: 
+>
+> Select steering type to append to:
+> 1. bigquery (confidence: 85%) - BigQuery optimization patterns
+> 2. tech (confidence: 45%) - Technology stack
+> 3. structure (confidence: 20%) - Code organization
+> 4. product (confidence: 10%) - Product overview
+> 5. [New Type] - Create a new steering type
+>
+> Select [1-5]:
 
-[STOP AND WAIT FOR USER INPUT]
+[STOP AND WAIT FOR USER SELECTION]
 
-User: Y
+User: 1
 
 > 📝 Added to bigquery.md:
 > ## Query Constraints
@@ -258,15 +265,27 @@ User: Y
 /hm:steering-remember "GraphQLの話"
 
 > 🔍 Analyzing conversation for GraphQL-related learnings...
-> 🤔 No existing type matches this content
-> 
+>
+> Select steering type to append to:
+> 1. tech (confidence: 40%) - Technology stack
+> 2. structure (confidence: 25%) - Code organization
+> 3. product (confidence: 10%) - Product overview
+> 4. documentation (confidence: 5%) - Documentation standards
+> 5. [New Type] - Create a new steering type
+>
+> Select [1-5]:
+
+[STOP AND WAIT FOR USER SELECTION]
+
+User: 5
+
 > Create new type? Suggestions:
 > 1. graphql - GraphQL patterns and optimizations
 > 2. api-performance - API performance optimizations
 > 3. backend-patterns - Backend architectural patterns
 > 4. [Custom] - Enter your own type name
-> 
-> Select [1-4]: 
+>
+> Select [1-4]:
 
 [STOP AND WAIT FOR USER SELECTION]
 
@@ -284,7 +303,7 @@ User: 1
 >     "Best Practices: Naming conventions and patterns"
 > ]
 > allowed_operations = []
-> 
+>
 > ✅ Created graphql.md with your learning:
 > ## N+1 Query Prevention
 > **When**: Implementing GraphQL resolvers
@@ -298,21 +317,33 @@ User: 1
 /hm:steering-remember "独自の認証フロー"
 
 > 🔍 Analyzing conversation for authentication-related learnings...
-> 🤔 No existing type matches this content
-> 
+>
+> Select steering type to append to:
+> 1. tech (confidence: 50%) - Technology stack
+> 2. structure (confidence: 35%) - Code organization
+> 3. product (confidence: 15%) - Product overview
+> 4. documentation (confidence: 5%) - Documentation standards
+> 5. [New Type] - Create a new steering type
+>
+> Select [1-5]:
+
+[STOP AND WAIT FOR USER SELECTION]
+
+User: 5
+
 > Create new type? Suggestions:
 > 1. security - Security patterns and best practices
 > 2. backend-patterns - Backend architectural patterns
 > 3. api-patterns - API design and implementation
 > 4. [Custom] - Enter your own type name
-> 
-> Select [1-4]: 
+>
+> Select [1-4]:
 
 [STOP AND WAIT FOR USER SELECTION]
 
 User: 4
 
-> Enter custom type name: 
+> Enter custom type name:
 
 [STOP AND WAIT FOR USER INPUT]
 

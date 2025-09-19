@@ -41,6 +41,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 - Iterate based on user feedback until satisfaction or reaching 70% completion
 - Structure content differently for PRD vs Bug types
 - Include references to source documents and materials used
+- Think in English, but document in Japanese
 
 **Will Not:**
 - Exceed 70% completeness (requires `/hm:investigate` for technical discovery)
@@ -152,8 +153,6 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 ## Behavioral Flow
 
 1. **Initialize**: Parse command arguments and determine document type
-- Validate type parameter (prd or bug, defaults to prd)
-- If --issue provided, fetch GitHub issue content using MCP
 - **Attempt** to Read <kiro_requirements_path> for existing content:
   - If file exists: Load and analyze current completeness
   - If file not found: Skip silently and proceed to step 2
@@ -161,8 +160,14 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
   - **DO NOT**: Create directories or investigate structure
 
 2. **Interactive Requirements Gathering**: Present type-specific questions
-- **For PRD**: "What new feature or capability would you like to develop? Please describe the problem you're solving, target users, and desired outcomes."
-- **For Bug**: "Please describe the current problematic behavior and what the expected behavior should be. Include steps to reproduce if possible."
+- **If existing document found**:
+  - Display: "📋 Found existing requirements.md (Completeness: XX%)"
+  - Show summary of current document sections and their content and status
+  - **For PRD**: "Would you like to update or add to the current PRD? Please describe any changes or additions:"
+  - **For Bug**: "Would you like to update or add to the current bug report? Please describe any changes or additions:"
+- **If no existing document**:
+  - **For PRD**: "What new feature or capability would you like to develop? Please describe the problem you're solving, target users, and desired outcomes."
+  - **For Bug**: "Please describe the current problematic behavior and what the expected behavior should be. Include steps to reproduce if possible."
 
 **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
@@ -231,7 +236,7 @@ User: Y
 > ✅ Requirements saved to <kiro_requirements_path>
 >
 > **Next steps:**
-> - Run `/hm:investigate` to complete technical sections (65% → 100%)
+> - Run `/hm:investigate --for requirements` to complete technical sections (65% → 100%)
 > - After investigation, proceed with `/hm:design` for implementation planning
 ```
 
@@ -257,7 +262,7 @@ User: n
 > ✅ Bug requirements saved to <kiro_requirements_path>
 >
 > **Next steps:**
-> - Run `/hm:investigate` to identify root cause (70% → 100%)
+> - Run `/hm:investigate --for requirements` to identify root cause (70% → 100%)
 > - After investigation, proceed with `/hm:design` for fix planning
 ```
 
@@ -286,7 +291,7 @@ User: n, we also need to consider mobile users and API integration
 > ✅ Acceptance Criteria: Complete (API criteria added)
 > ⏳ Technical Requirements: Pending investigation
 >
-> Maximum 70% reached - technical details require /hm:investigate.
+> Maximum 70% reached - technical details require `/hm:investigate --for requirements`.
 > [Updated document with mobile and API sections...]
 > Is this accurate? [Y/n]:
 
@@ -295,6 +300,6 @@ User: Y
 > ✅ Requirements finalized (Completeness: 70%)
 >
 > **Next steps:**
-> - Run `/hm:investigate` to complete technical analysis (70% → 100%)
+> - Run `/hm:investigate --for requirements` to complete technical analysis (70% → 100%)
 > - After investigation, proceed with `/hm:design` for implementation planning
 ```

@@ -85,3 +85,15 @@ criteria = [
 ]
 name = "subagent"
 purpose = "Subagent creation patterns and best practices"
+
+[[steering.types]]
+allowed_operations = []
+criteria = [
+    "Cargo Tools: cargo-machete, cargo-udeps, and other Rust tooling",
+    "Development Commands: Common rust development workflow commands",
+    "Dependency Management: Analyzing and optimizing project dependencies",
+    "Build Tools: Compilation, testing, and project management tools",
+    "Environment Setup: Rust toolchain and development environment configuration",
+]
+name = "rust-dev"
+purpose = "Rust development tools and commands"

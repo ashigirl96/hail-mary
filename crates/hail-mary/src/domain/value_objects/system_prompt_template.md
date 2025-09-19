@@ -66,3 +66,5 @@ allowed_operations = []                     # Update permissions (see below)
   - `["refresh"]`: Update outdated information only
   - `["discover"]`: Add new discoveries only
   - `[]`: Manual updates only (default for new types)
+
+# For Your Information

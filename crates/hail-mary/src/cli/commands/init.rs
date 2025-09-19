@@ -192,7 +192,12 @@ mod tests {
         assert!(hm_dir.exists(), ".claude/commands/hm should exist");
 
         // Check all expected command files
-        let expected_commands = ["steering-remember.md", "steering.md"];
+        let expected_commands = [
+            "steering-remember.md",
+            "steering.md",
+            "requirements.md",
+            "investigate.md",
+        ];
         for file in &expected_commands {
             let file_path = hm_dir.join(file);
             assert!(
@@ -211,7 +216,7 @@ mod tests {
         assert!(agents_dir.exists(), ".claude/agents should exist");
 
         // Check all expected agent files
-        let expected_agents = ["steering-investigator.md"];
+        let expected_agents = ["steering-investigator.md", "root-cause-investigator.md"];
         for file in &expected_agents {
             let file_path = agents_dir.join(file);
             assert!(file_path.exists(), "Agent file {} should exist", file);

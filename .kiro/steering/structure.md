@@ -175,14 +175,25 @@ The project uses a Cargo workspace structure for better modularity and future ex
     └── hm/             # Hail-mary specific commands
         ├── steering.md          # Main steering management command
         ├── steering-remember.md  # Draft capture command
+        ├── requirements.md       # Requirements document generator
+        └── investigate.md        # Technical investigation tool
 
 .kiro/                  # Project specification management
 ├── steering/           # Steering system files
+│   ├── product.md      # Product overview and value proposition
+│   ├── tech.md         # Technical stack and development environment
+│   ├── structure.md    # Code organization and project structure patterns
+│   ├── documentation.md # Documentation standards and best practices
+│   ├── prompt-engineering.md # Claude Code command patterns and best practices
+│   ├── rust-dev.md     # Rust development tools and commands
 │   ├── subagent.md     # Subagent patterns and best practices
 │   └── backup/         # Timestamped backup directories
 ├── specs/              # Feature specifications
 ├── archive/            # Archived completed specs
-└── config.toml         # Project configuration
+└── config.toml         # Project configuration with steering type definitions
+
+reference/              # External documentation storage
+experimental/           # Prototype code and experiments
 ```
 
 ## 🔧 Core Components Detail
@@ -353,6 +364,12 @@ pub trait SteeringRepositoryInterface {
 - `backup_steering.rs` use case for backup management
 - `steering_backup.rs` CLI command implementation
 - Automatic backup creation before modifications
+
+**Slash Command Extensions**:
+- `/hm:requirements`: Requirements document generator for PRD and bug reports
+- `/hm:investigate`: Technical investigation tool with parallel Task agents
+- Interactive refinement workflows with evidence-based analysis
+- Support for GitHub issue integration and completeness scoring
 
 ## 📁 File System Architecture
 
