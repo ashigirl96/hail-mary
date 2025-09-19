@@ -52,12 +52,24 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
 
 ### Documentation Boundaries
 **Will:**
-- Include confidence percentages for all findings
-- Provide concrete code examples when relevant
-- Focus on factual discoveries and implementations
+
+- **For Domain-Heavy Investigations (e.g., financial, scientific):**
+  - Explain domain terminology in plain language
+  - Connect code to business meaning (e.g., "exposure = risk amount in JPY")
+  - Simplify complex algorithms to core concepts
+  - Include "Why this matters" for business context
+- **For Codebase Navigation:**
+  - Provide exact file paths and line numbers
+  - Map features to implementation locations
+  - Trace request flow (URL → Router → Component → API)
+  - Document "How to find similar patterns"
+- **Always Include:**
+  - Confidence percentages for findings
+  - Concrete code examples
+  - Practical usage examples
 
 **Will Not:**
-- Include future-oriented content (e.g., "今後の拡張可能性", "Next Steps", "Future Work", "Potential enhancements")
+- Include future-oriented content (e.g., "Future Work", "Potential enhancements")
 - Add speculative sections about what could be done later
 - Use marketing language or superlatives
 
