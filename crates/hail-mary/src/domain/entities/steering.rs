@@ -38,14 +38,17 @@ impl fmt::Display for Steerings {
             return Ok(());
         }
 
-        let steerings_str = self
-            .0
-            .iter()
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>()
-            .join("\n-----\n");
+        // Generate individual steering tags for each type
+        for steering in &self.0 {
+            writeln!(
+                f,
+                "<steering-{}>\n{}\n</steering-{}>",
+                steering.steering_type.name, steering.content, steering.steering_type.name
+            )?;
+            writeln!(f)?; // Add blank line between steering sections
+        }
 
-        write!(f, "{}", steerings_str)
+        Ok(())
     }
 }
 
@@ -511,10 +514,11 @@ mod tests {
         let steerings = Steerings(vec![steering]);
         let display = steerings.to_string();
 
-        assert!(display.contains("name: tech"));
-        assert!(display.contains("- Architecture: System design"));
+        // Check for individual tag format
+        assert!(display.contains("<steering-tech>"));
         assert!(display.contains("Tech stack details"));
-        assert!(!display.contains("-----")); // No separator for single item
+        assert!(display.contains("</steering-tech>"));
+        assert!(!display.contains("-----")); // No separator in new format
     }
 
     #[test]
@@ -548,10 +552,13 @@ mod tests {
         let steerings = Steerings(vec![steering1, steering2]);
         let display = steerings.to_string();
 
-        assert!(display.contains("name: product"));
+        // Check for individual tag format
+        assert!(display.contains("<steering-product>"));
         assert!(display.contains("Product content"));
-        assert!(display.contains("\n-----\n"));
-        assert!(display.contains("name: tech"));
+        assert!(display.contains("</steering-product>"));
+        assert!(display.contains("<steering-tech>"));
         assert!(display.contains("Tech content"));
+        assert!(display.contains("</steering-tech>"));
+        assert!(!display.contains("-----")); // No separator in new format
     }
 }

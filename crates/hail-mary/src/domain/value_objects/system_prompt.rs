@@ -53,7 +53,7 @@ mod tests {
         let spec_name = "test-spec";
         let spec_path = PathBuf::from(".kiro/specs/test-spec");
 
-        let steering = Steering {
+        let product_steering = Steering {
             steering_type: SteeringType {
                 name: "product".to_string(),
                 purpose: "Product overview".to_string(),
@@ -66,14 +66,33 @@ mod tests {
             content: "Product content here".to_string(),
         };
 
-        let steerings = Steerings(vec![steering]);
+        let tech_steering = Steering {
+            steering_type: SteeringType {
+                name: "tech".to_string(),
+                purpose: "Technical stack".to_string(),
+                criteria: vec![Criterion {
+                    name: "Stack".to_string(),
+                    description: "Technology choices".to_string(),
+                }],
+                allowed_operations: vec![],
+            },
+            content: "Tech content here".to_string(),
+        };
+
+        let steerings = Steerings(vec![product_steering, tech_steering]);
         let prompt = SystemPrompt::new(spec_name, &spec_path, &steerings);
         let content = prompt.as_str();
 
-        // Check that steering content is included
-        assert!(content.contains("name: product"));
-        assert!(content.contains("criteria:"));
-        assert!(content.contains("- Overview: Brief description"));
-        assert!(content.contains("content:\nProduct content here"));
+        // Check that steering content is included with individual tags
+        assert!(content.contains("<steering-product>"));
+        assert!(content.contains("Product content here"));
+        assert!(content.contains("</steering-product>"));
+
+        assert!(content.contains("<steering-tech>"));
+        assert!(content.contains("Tech content here"));
+        assert!(content.contains("</steering-tech>"));
+
+        // Check that the old format is NOT present
+        assert!(!content.contains("<steering>\n"));
     }
 }

@@ -57,11 +57,11 @@ fn test_system_prompt_includes_steering_content() {
     let system_prompt = SystemPrompt::new(spec_name, &spec_path, &steerings);
     let content = system_prompt.as_str();
 
-    // Verify the system prompt contains steering information
-    assert!(content.contains("<steering>"));
-    assert!(content.contains("</steering>"));
-    assert!(content.contains("name: product"));
-    assert!(content.contains("name: tech"));
+    // Verify the system prompt contains steering information with individual tags
+    assert!(content.contains("<steering-product>"));
+    assert!(content.contains("</steering-product>"));
+    assert!(content.contains("<steering-tech>"));
+    assert!(content.contains("</steering-tech>"));
     assert!(content.contains("This is a test product with amazing features"));
     assert!(content.contains("We use Rust for everything"));
 }
@@ -108,13 +108,18 @@ fn test_system_prompt_with_empty_steering() {
     let system_prompt = SystemPrompt::new(spec_name, &spec_path, &steerings);
     let content = system_prompt.as_str();
 
-    // Verify the system prompt still has the steering section structure
-    assert!(content.contains("<steering>"));
-    assert!(content.contains("</steering>"));
+    // When there are no steering files, the steering vector should be empty
+    assert_eq!(steerings.0.len(), 0, "Steerings should be empty");
 
-    // But no actual steering content
-    assert!(!content.contains("name: product"));
-    assert!(!content.contains("name: tech"));
+    // The template text is still present
+    assert!(content.contains("steering tags below")); // Template text is still there
+
+    // But no actual steering content tags should be generated when steerings is empty
+    // Note: The template contains example references like "`<steering-product>`" but not actual tags
+    assert!(!content.contains("<steering-product>\n")); // Actual tag would have newline
+    assert!(!content.contains("<steering-tech>\n")); // Actual tag would have newline
+    assert!(!content.contains("</steering-product>")); // Actual closing tag
+    assert!(!content.contains("</steering-tech>")); // Actual closing tag
 }
 
 #[test]
@@ -149,4 +154,46 @@ fn test_steering_display_format() {
     assert!(formatted.contains("- Criterion 1: Description 1"));
     assert!(formatted.contains("- Criterion 2: Description 2"));
     assert!(formatted.contains("content:\nTest content here"));
+}
+
+#[test]
+fn test_steerings_display_format_with_individual_tags() {
+    use hail_mary::domain::entities::steering::{Steering, SteeringType, Steerings};
+
+    // Create test steering data
+    let product_steering = Steering {
+        steering_type: SteeringType {
+            name: "product".to_string(),
+            purpose: "Product purpose".to_string(),
+            criteria: vec![],
+            allowed_operations: vec![],
+        },
+        content: "Product content".to_string(),
+    };
+
+    let tech_steering = Steering {
+        steering_type: SteeringType {
+            name: "tech".to_string(),
+            purpose: "Tech purpose".to_string(),
+            criteria: vec![],
+            allowed_operations: vec![],
+        },
+        content: "Tech content".to_string(),
+    };
+
+    let steerings = Steerings(vec![product_steering, tech_steering]);
+    let formatted = steerings.to_string();
+
+    // Verify each steering has its own tag
+    assert!(formatted.contains("<steering-product>"));
+    assert!(formatted.contains("Product content"));
+    assert!(formatted.contains("</steering-product>"));
+
+    assert!(formatted.contains("<steering-tech>"));
+    assert!(formatted.contains("Tech content"));
+    assert!(formatted.contains("</steering-tech>"));
+
+    // Verify the old single steering tag is NOT present
+    assert!(!formatted.contains("<steering>\n"));
+    assert!(!formatted.contains("-----"));
 }
