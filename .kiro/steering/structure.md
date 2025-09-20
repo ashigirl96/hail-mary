@@ -1,627 +1,228 @@
-# Hail-Mary Project Architecture
+# Project Structure and Organization
 
-## Overview
-
-Hail-Mary is a sophisticated Rust CLI application focused on Kiro project specification management and file-based context steering. The project demonstrates clean Rust architecture patterns with emphasis on developer experience and AI integration.
-
-**Primary Purpose**: CLI tool for specification-driven development and project context management
-**Key Features**: Interactive specification management, steering system, Claude Code integration, TUI interfaces
-**Target Use Cases**: Spec-driven development workflows, project context management, AI-assisted development
-
-## 🏗️ System Architecture
-
-### Architectural Patterns
-- **Clean Architecture**: Clear separation between domain logic and infrastructure
-- **Repository Pattern**: Abstracted file system operations through trait interfaces
-- **Use Case Pattern**: Business logic encapsulation with validation
-- **Command Pattern**: CLI commands with structured execution
-- **Value Objects**: Domain-specific types for configuration and system prompts
-
-### Core Components
-
-```mermaid
-%%{init: {
-  'theme': 'dark',
-  'themeCSS': '
-    .nodeLabel { color: #FD971F !important; }
-    .edgeLabel { color: #A6E22E !important; background-color: transparent !important; }
-    .cluster rect { fill: #272822 !important; stroke: #F92672 !important; stroke-width: 2px !important; rx: 5px !important; ry: 5px !important; }
-    .node rect, .node circle, .node ellipse, .node polygon, .node path { fill: #272822 !important; stroke: #A6E22E !important; stroke-width: 2px !important; }
-    .flowchart-link { stroke: #66D9EF !important; stroke-width: 2px !important; }
-  '
-}}%%
-
-flowchart TB
-    subgraph CLI ["🖥️ CLI Interface Layer"]
-        Main["main.rs<br/>Command routing & argument parsing"]
-    end
-    
-    subgraph CMD ["⚡ Command Layer"]
-        Init["InitCommand<br/>Project setup"]
-        New["NewCommand<br/>Spec creation"]
-        Code["CodeCommand<br/>Claude Code integration"]
-        Complete["CompleteCommand<br/>Spec archival"]
-        Shell["CompletionCommand<br/>Shell completions"]
-    end
-    
-    subgraph UC ["🔧 Use Case Layer"]
-        InitUC["initialize_project<br/>Project initialization"]
-        CreateUC["create_feature<br/>Feature specification"]
-        CompleteUC["complete_features<br/>Spec archival"]
-        LaunchUC["launch_claude_with_spec<br/>Claude Code integration"]
-    end
-    
-    subgraph REPO ["📦 Repository Layer"]
-        ConfigRepo["ConfigRepositoryInterface<br/>(config management)"]
-        SpecRepo["SpecRepositoryInterface<br/>(specification management)"]
-        SteeringRepo["SteeringRepositoryInterface<br/>(steering system)"]
-    end
-    
-    subgraph INFRA ["🗄️ Infrastructure Layer"]
-        PathMgr["PathManager<br/>Path resolution"]
-        ProcessLauncher["ClaudeProcessLauncher<br/>TTY management"]
-        TUI["SpecSelector<br/>Interactive interface"]
-        Config["TOML Configuration<br/>Steering system"]
-    end
-    
-    Main --> Init
-    Main --> New
-    Main --> Code
-    Main --> Complete
-    Main --> Shell
-    
-    Init --> InitUC
-    New --> CreateUC
-    Code --> LaunchUC
-    Complete --> CompleteUC
-    
-    InitUC --> ConfigRepo
-    InitUC --> SteeringRepo
-    CreateUC --> SpecRepo
-    LaunchUC --> SpecRepo
-    CompleteUC --> SpecRepo
-    
-    ConfigRepo -.-> FsRepo
-    SpecRepo -.-> FsRepo
-    SteeringRepo -.-> FsRepo
-    
-    FsRepo --> PathMgr
-    FsRepo --> Config
-    LaunchUC --> ProcessLauncher
-    LaunchUC --> TUI
-    
-    classDef cli fill:#272822,stroke:#66D9EF,stroke-width:2px;
-    classDef command fill:#272822,stroke:#A6E22E,stroke-width:2px;
-    classDef usecase fill:#272822,stroke:#F92672,stroke-width:2px;
-    classDef repo fill:#272822,stroke:#AE81FF,stroke-width:2px;
-    classDef infra fill:#272822,stroke:#FD971F,stroke-width:2px;
-    classDef interface fill:#272822,stroke:#66D9EF,stroke-width:2px,stroke-dasharray: 5 5;
-    
-    class Main cli;
-    class Init,New,Code,Complete,Shell command;
-    class InitUC,CreateUC,CompleteUC,LaunchUC usecase;
-    class ProjectRepo interface;
-    class FsRepo repo;
-    class PathMgr,ProcessLauncher,TUI,Config infra;
-```
-
-## 📁 Directory Structure
-
-### Workspace Organization
-The project uses a Cargo workspace structure for better modularity and future extensibility.
+## Root Directory Organization
 
 ```
-.
-├── Cargo.toml                    # Workspace root configuration
-├── crates/
-│   ├── hail-mary/                    # Main application crate
-│   │   ├── Cargo.toml                # Application package configuration  
-│   │   └── src/                      # Source code
-│   │       ├── main.rs               # CLI entry point and command routing
-│   │       ├── lib.rs                # Library exports for integration tests
-│   │       ├── domain/               # Pure business logic
-│   │       │   ├── entities/        # Core domain objects
-│   │       │   │   ├── project.rs   # Project configuration entity
-│   │       │   │   └── steering.rs  # Steering system entities
-│   │       │   ├── value_objects/   # Domain-specific types
-│   │       │   │   └── system_prompt.rs # System prompt for Claude Code
-│   │       │   └── errors.rs        # Domain errors
-│   │       ├── application/          # Business logic orchestration
-│   │       │   ├── use_cases/       # Application services
-│   │       │   │   ├── initialize_project.rs
-│   │       │   │   ├── create_feature.rs
-│   │       │   │   ├── complete_features.rs
-│   │       │   │   ├── backup_steering.rs
-│   │       │   │   └── launch_claude_with_spec.rs
-│   │       │   ├── repositories/    # Repository trait definitions
-│   │       │   │   ├── config_repository.rs
-│   │       │   │   ├── spec_repository.rs
-│   │       │   │   └── steering_repository.rs
-│   │       │   ├── test_helpers/    # Testing utilities
-│   │       │   └── errors.rs        # Application errors
-│   │       ├── cli/                 # Command-line interface
-│   │       │   ├── commands/        # Command implementations
-│   │       │   │   ├── init.rs     # Project initialization
-│   │       │   │   ├── new.rs      # Feature creation
-│   │       │   │   ├── complete.rs # Complete features with TUI
-│   │       │   │   ├── steering_backup.rs # Steering backup command
-│   │       │   │   ├── completion.rs # Shell completion generation
-│   │       │   │   └── code.rs     # Claude Code integration
-│   │       │   ├── formatters.rs   # Output formatting
-│   │       │   └── args.rs         # CLI argument parsing
-│   │       └── infrastructure/      # External services
-│   │           ├── repositories/    # Repository implementations
-│   │           │   └── project.rs  # Filesystem project repository
-│   │           ├── filesystem/      # File system operations
-│   │           │   └── path_manager.rs
-│   │           ├── process/         # Process management
-│   │           │   └── claude_launcher.rs # Claude Code launcher
-│   │           └── tui/            # Terminal user interface
-│   │               └── spec_selector.rs # Specification selector
-│   └── anthropic-client/             # Anthropic API OAuth client
-│       ├── Cargo.toml                # OAuth client dependencies
-│       ├── src/
-│       │   └── lib.rs               # OAuth implementation & API client
-│       └── examples/
-│           └── basic_chat.rs        # Example usage with Claude API
+hail-mary/                        # Project root
+├── Cargo.toml                   # Workspace configuration
+├── crates/                      # Multi-crate workspace
+│   ├── hail-mary/              # Main CLI application
+│   └── anthropic-client/        # OAuth client library
+├── .kiro/                       # Kiro specification system
+│   ├── config.toml             # Steering configuration
+│   ├── specs/                  # Active specifications
+│   ├── archive/                # Completed specifications
+│   └── steering/               # Steering documentation
+├── .claude/                     # Claude Code integration
+│   ├── agents/                 # Specialized agents
+│   ├── commands/               # Custom slash commands
+│   └── hooks/                  # Hook configurations
+├── reference/                   # External documentation
+├── experimental/               # Prototype code
+└── tests/                      # Integration tests
 ```
 
-### External Organization
+## Subdirectory Structures
+
+### Core Application Structure (`crates/hail-mary/src/`)
 ```
-# No separate tests/ directory - tests are embedded in source files
-
-.claude/                 # Claude Code integration
-└── commands/           # Custom slash commands for Claude Code
-    └── hm/             # Hail-mary specific commands
-        ├── steering.md          # Main steering management command
-        ├── steering-remember.md  # Draft capture command
-        ├── requirements.md       # Requirements document generator
-        └── investigate.md        # Technical investigation tool
-
-.kiro/                  # Project specification management
-├── steering/           # Steering system files
-│   ├── product.md      # Product overview and value proposition
-│   ├── tech.md         # Technical stack and development environment
-│   ├── structure.md    # Code organization and project structure patterns
-│   ├── documentation.md # Documentation standards and best practices
-│   ├── prompt-engineering.md # Claude Code command patterns and best practices
-│   ├── rust-dev.md     # Rust development tools and commands
-│   ├── subagent.md     # Subagent patterns and best practices
-│   └── backup/         # Timestamped backup directories
-├── specs/              # Feature specifications
-├── archive/            # Archived completed specs
-└── config.toml         # Project configuration with steering type definitions
-
-reference/              # External documentation storage
-experimental/           # Prototype code and experiments
+src/
+├── main.rs                     # CLI entry point
+├── lib.rs                      # Library exports
+├── domain/                     # Business logic layer
+│   ├── entities/              # Core domain objects
+│   │   ├── project.rs        # Project configuration
+│   │   ├── steering.rs       # Steering entities
+│   │   └── steering_reminder.rs
+│   ├── value_objects/         # Immutable domain types
+│   │   ├── system_prompt.rs
+│   │   ├── system_prompt_template.md
+│   │   └── steering_analysis_prompt.rs
+│   └── errors.rs              # Domain errors
+├── application/                # Use case layer
+│   ├── use_cases/            # Business operations
+│   │   ├── initialize_project.rs
+│   │   ├── create_feature.rs
+│   │   ├── complete_features.rs
+│   │   ├── backup_steering.rs
+│   │   ├── remind_steering.rs
+│   │   └── launch_claude_with_spec.rs
+│   ├── repositories/          # Repository interfaces
+│   │   ├── config_repository.rs
+│   │   ├── spec_repository.rs
+│   │   ├── steering_repository.rs
+│   │   └── anthropic_repository.rs
+│   └── test_helpers/          # Test utilities
+├── cli/                        # Presentation layer
+│   ├── commands/             # Command implementations
+│   │   ├── init.rs
+│   │   ├── new.rs
+│   │   ├── code.rs
+│   │   ├── complete.rs
+│   │   ├── completion.rs
+│   │   ├── steering_backup.rs
+│   │   └── steering_remind.rs
+│   ├── args.rs               # CLI argument parsing
+│   └── formatters.rs         # Output formatting
+└── infrastructure/            # External services layer
+    ├── repositories/         # Repository implementations
+    │   ├── config.rs
+    │   ├── spec.rs
+    │   ├── steering.rs
+    │   └── anthropic.rs
+    ├── filesystem/           # File operations
+    │   └── path_manager.rs
+    ├── process/              # Process management
+    │   └── claude_launcher.rs
+    ├── tui/                  # Terminal UI
+    │   ├── spec_selector.rs
+    │   └── completion_ui.rs
+    └── embedded_resources.rs # Template resources
 ```
 
-## 🔧 Core Components Detail
+### Kiro System Structure (`.kiro/`)
+```
+.kiro/
+├── config.toml                 # Project configuration
+├── specs/                      # Active specifications
+│   └── YYYY-MM-DD-{name}/    # Date-prefixed specs
+│       ├── requirements.md    # User stories & criteria
+│       ├── design.md          # Technical decisions
+│       ├── tasks.md           # Implementation tasks
+│       ├── investigation.md   # Research findings
+│       ├── memo.md           # Additional notes
+│       └── spec.json         # Metadata
+├── archive/                    # Completed specs
+│   └── [archived specs]       # Same structure as specs/
+├── steering/                   # Context management
+│   ├── product.md            # Product overview
+│   ├── tech.md               # Technology stack
+│   ├── structure.md          # This file
+│   ├── documentation.md      # Doc standards
+│   ├── prompt-engineering.md # Claude patterns
+│   ├── rust-dev.md          # Rust specifics
+│   ├── subagent.md          # Agent patterns
+│   └── backup/              # Timestamped backups
+│       └── YYYYMMDD-HHMMSS/ # Backup snapshots
+└── draft/                     # Temporary drafts
+```
 
-### CLI Interface (`main.rs`)
-**Purpose**: Command routing and argument parsing with clap
-**Key Features**:
-- Structured command hierarchy with subcommands
-- Type-safe argument parsing using derive macros
-- Async runtime support with Tokio
-- Comprehensive error handling
+### Claude Integration Structure (`.claude/`)
+```
+.claude/
+├── agents/                    # Specialized agents
+│   ├── steering-investigator.md
+│   └── root-cause-investigator.md
+├── commands/                  # Custom commands
+│   └── hm/                   # Hail-mary commands
+│       ├── steering.md
+│       ├── steering-remember.md
+│       ├── requirements.md
+│       └── investigate.md
+└── hooks/                     # Hook scripts
+    ├── README.md
+    └── user_prompt_submit.sh
+```
 
-**Command Structure**:
+## Code Organization Patterns
+
+### Clean Architecture Layers
+1. **Domain Layer** (`domain/`)
+   - Pure business logic
+   - No external dependencies
+   - Entities and value objects
+
+2. **Application Layer** (`application/`)
+   - Use case orchestration
+   - Repository interfaces
+   - Business rule enforcement
+
+3. **Infrastructure Layer** (`infrastructure/`)
+   - External service implementations
+   - File system operations
+   - Process management
+
+4. **CLI Layer** (`cli/`)
+   - Command routing
+   - Argument parsing
+   - Output formatting
+
+### Repository Pattern
+- **Trait Interfaces**: Define contracts in `application/repositories/`
+- **Implementations**: Concrete implementations in `infrastructure/repositories/`
+- **Test Doubles**: Mock implementations in `application/test_helpers/`
+
+### Command Pattern
+- Each CLI command as separate module
+- Consistent execute pattern
+- Separation of parsing and execution
+
+## File Naming Conventions
+
+### Rust Files
+- **Module files**: `snake_case.rs` (e.g., `path_manager.rs`)
+- **Test files**: Embedded in source with `#[cfg(test)]`
+- **Integration tests**: `tests/{name}_test.rs`
+
+### Kiro Specifications
+- **Spec directories**: `YYYY-MM-DD-{kebab-case-name}/`
+- **Template files**: `{name}.md` within spec directory
+- **Metadata**: `spec.json` for tracking
+
+### Configuration Files
+- **TOML configs**: `{name}.toml` (e.g., `config.toml`)
+- **Shell scripts**: `{kebab-case}.sh`
+- **Markdown docs**: `{kebab-case}.md`
+
+## Import Organization
+
+### Standard Import Order
 ```rust
-Commands::Init                     // Project initialization
-Commands::New { name }             // Specification creation
-Commands::Code { no_danger }       // Claude Code integration
-Commands::Complete                 // Mark specifications as complete
-Commands::Completion { shell }     // Generate shell completions
-Commands::SteeringBackup { max }   // Steering backup management
-Commands::Steering { subcommand }  // Steering system management
+// 1. Standard library
+use std::fs;
+use std::path::PathBuf;
+
+// 2. External crates
+use anyhow::Result;
+use clap::Parser;
+
+// 3. Internal modules
+use crate::domain::entities::Project;
+use crate::application::use_cases;
+
+// 4. Super/self imports
+use super::Repository;
+use self::helpers::*;
 ```
 
-### Project Domain Model (`domain/entities/project.rs`)
-**Core Entity**: Project configuration and specification management
-**Steering Types**: Product, Tech, Structure (file-based context system)
-**Key Features**:
-- TOML-based configuration management
-- Specification template generation
-- Steering system integration
-- Path management and validation
-
-**Configuration Structure**:
-```rust
-pub struct ProjectConfig {
-    pub steering: SteeringConfig,      // Steering system configuration
-}
-
-pub struct SteeringConfig {
-    pub types: Vec<SteeringType>,      // Configured steering types
-}
-
-pub enum SteeringType {
-    Product,                           // Product overview
-    Tech,                             // Technology stack
-    Structure,                        // Code organization
-}
-```
-
-### Configuration System (`.kiro/config.toml`)
-**Purpose**: Project configuration management with TOML
-**Key Features**:
-- Hierarchical steering configuration
-- Project root discovery (.kiro directory)
-- Steering type validation
-- Criteria-based content organization
-- Path management for specifications
-
-**Configuration Hierarchy**:
-```toml
-[[steering.types]]
-name = "product"
-purpose = "Product overview and value proposition"
-criteria = [
-    "Product Overview: Brief description of what the product is",
-    "Core Features: Bulleted list of main capabilities",
-    "Target Use Case: Specific scenarios the product addresses",
-    "Key Value Proposition: Unique benefits and differentiators",
-]
-
-[[steering.types]]
-name = "tech"
-purpose = "Technical stack and development environment"
-# ... additional criteria
-```
-
-### Kiro Specification Management (`commands/new.rs`)
-**Purpose**: Create and manage project specifications with structured documentation
-**Key Components**:
-- **Specification Templates**: Auto-generated markdown files for comprehensive project documentation
-- **Date-based Naming**: Automatic prefixing with creation date for chronological organization
-- **Validation**: Kebab-case naming enforcement for consistency
-
-**Specification Files Created**:
-- **requirements.md**: User stories, acceptance criteria, and functional requirements
-- **design.md**: Technical architecture decisions and implementation approach
-- **tasks.md**: Implementation tasks with priorities and dependencies
-- **memo.md**: Additional notes and context from the user
-- **investigation.md**: Research findings, key discoveries, and technical considerations
-- **spec.json**: Metadata for specification tracking
-
-### Claude Code Integration (`commands/code.rs`)
-**Purpose**: Launch Claude Code with Kiro specification context
-**Key Components**:
-- **TUI Specification Selector**: Interactive selection of existing specs or creation of new ones
-- **System Prompt Generation**: XML-tagged context for structured file references
-- **Process Management**: TTY-aware Claude Code launching with proper backgrounding support
-
-**Architecture Flow**:
-1. **Specification Discovery**: List available specs via ProjectRepository
-2. **Interactive Selection**: TUI for spec choice with "Create new" option
-3. **Context Generation**: SystemPrompt value object with XML-tagged file paths
-4. **Process Launch**: ClaudeProcessLauncher with exec replacement for TTY preservation
-
-**System Prompt Template**:
-```xml
-<kiro_spec_name>{name}</kiro_spec_name>
-<kiro_spec_path>{path}</kiro_spec_path>
-<kiro_requirements_path>{path}/requirements.md</kiro_requirements_path>
-<kiro_design_path>{path}/design.md</kiro_design_path>
-<kiro_tasks_path>{path}/tasks.md</kiro_tasks_path>
-<kiro_memo_path>{path}/memo.md</kiro_memo_path>
-<kiro_investigation_path>{path}/investigation.md</kiro_investigation_path>
-```
-
-**TTY Management Strategy**:
-- **Process Replacement**: Uses `exec()` on Unix systems to replace hail-mary process with Claude Code
-- **TTY Preservation**: Maintains terminal control for proper Ink (React CLI) operation
-- **Background Support**: Enables `ctrl+z` job control through proper process ownership
-
-### Repository Layer (Specialized Repositories)
-**Pattern**: Repository pattern with specialized trait interfaces
-**Architecture**: Three separate repository interfaces for different concerns
-
-**Repository Interfaces**:
-- `ConfigRepositoryInterface`: Configuration and project setup operations
-- `SpecRepositoryInterface`: Specification lifecycle management
-- `SteeringRepositoryInterface`: Steering system file operations
-
-**Core Operations**:
-```rust
-pub trait ConfigRepositoryInterface {
-    fn init_project(&self) -> Result<()>;
-    fn load_project_config(&self) -> Result<ProjectConfig>;
-    fn project_exists(&self) -> bool;
-}
-
-pub trait SpecRepositoryInterface {
-    fn create_spec(&self, name: &str) -> Result<()>;
-    fn list_specs(&self) -> Result<Vec<String>>;
-    fn archive_spec(&self, name: &str) -> Result<()>;
-}
-
-pub trait SteeringRepositoryInterface {
-    fn create_steering_files(&self) -> Result<()>;
-    fn backup_steering_files(&self) -> Result<String>;
-    fn update_steering_file(&self, name: &str, content: &str) -> Result<()>;
-}
-```
-
-### Use Case Layer (`application/use_cases/`)
-**Purpose**: Business logic orchestration with function-based approach
-**Key Features**:
-- Function-based use cases instead of service classes
-- Repository interface coordination
-- Business rule validation
-- Clean error handling and propagation
-
-**Use Case Functions**:
-- `initialize_project`: Project initialization with steering setup
-- `create_feature`: Feature specification creation with validation
-- `complete_features`: Specification archival and cleanup
-- `launch_claude_with_spec`: Claude Code integration with context
-- `backup_steering`: Steering file backup with timestamped directories
-
-**Steering System Evolution**:
-- Sophisticated steering system with automatic backup functionality
-- `backup_steering.rs` use case for backup management
-- `steering_backup.rs` CLI command implementation
-- Automatic backup creation before modifications
-
-**Slash Command Extensions**:
-- `/hm:requirements`: Requirements document generator for PRD and bug reports
-- `/hm:investigate`: Technical investigation tool with parallel Task agents
-- Interactive refinement workflows with evidence-based analysis
-- Support for GitHub issue integration and completeness scoring
-
-## 📁 File System Architecture
-
-### Steering System Design
-**Primary Storage**: Markdown files in `.kiro/steering/` directory
-**Configuration**: TOML-based type definitions and criteria
-**Versioning**: Git-trackable files for team collaboration
-**Structure**: Hierarchical organization with clear naming conventions
-
-### File Organization Strategy
-**Core Files**: `product.md`, `tech.md`, `structure.md` - always included in Claude Code sessions
-**Custom Files**: Additional domain-specific steering files based on project needs
-**Backup System**: Automatic backup creation before modifications
-**Template System**: Structured content generation based on configured criteria
-
-### Path Management
-**PathManager**: Centralized path resolution for project discovery
-**Root Discovery**: Automatic `.kiro` directory detection
-**Safe Operations**: Validation and error handling for all file system operations
-**Cross-Platform**: Compatible path handling for Unix and Windows systems
-
-## 🧪 Testing Architecture
-
-### Testing Strategy
-**Architecture**: Tests embedded in source files with TestDirectory pattern
-**Tools**: Standard `#[test]` attributes, `pretty_assertions`, `tempfile`
-**Approach**: Thread-safe testing with proper isolation
-
-### Test Organization
-**Primary**: Tests embedded in source files (`#[cfg(test)]`)
-**Integration**: `main.rs` contains integration tests
-**Test Utilities**: `application/test_helpers/` with TestDirectory RAII pattern
-**Thread Safety**: Global mutex for current_dir operations to prevent conflicts
-
-### Test Architecture Pattern
-**TestDirectory Pattern**: Uses global mutex for thread-safe directory management
-- Pattern exists in both `main.rs` and `test_helpers/test_directory.rs`
-- Thread-safe current directory changes with RAII cleanup
-- Proper cleanup mechanisms even during panics
-- Prevents race conditions in parallel test execution
-
-### Key Testing Patterns
-**Repository Testing**:
-- Trait-based testing for filesystem operations
-- File creation and modification validation
-- Configuration parsing and validation
-- Path management and project discovery
-
-**Use Case Testing**:
-- Business logic validation
-- Error condition handling
-- File system operation testing
-- Configuration management validation
-
-**Integration Testing**:
-- End-to-end command workflows
-- Real filesystem operations
-- TUI interaction testing
-- Process management validation
-
-## 🚀 Concurrency & Performance
-
-### Process Management
-**Architecture**: Synchronous operations with process integration
-**TTY Management**: Proper terminal handling for Claude Code integration
-**Concurrency**: File system operations with proper error handling
-**Resource Management**: Safe operations with cleanup patterns
-
-### Performance Optimizations
-**File System**: Efficient path resolution and caching
-**Template Generation**: Minimal string allocations in content generation
-**Process Management**: TTY-aware process launching without blocking
-**Configuration**: TOML parsing with caching for repeated access
-
-### Resource Management
-**Memory**: Efficient string handling, minimal cloning
-**File System**: Proper file handle management and cleanup
-**Process**: Safe process spawning and TTY management
-**Error Handling**: Zero-cost error propagation with anyhow
-
-## 🔗 Infrastructure Layer Extensions
-
-### Process Management (`infrastructure/process/`)
-**Purpose**: External process integration with proper TTY handling
-**Key Features**:
-- **Claude Code Integration**: Launch Claude with system prompts
-- **TTY Management**: Process replacement (`exec()`) for terminal control preservation
-- **Cross-platform Support**: Unix/Windows compatibility with fallback mechanisms
-- **Error Handling**: Comprehensive process launch error management
-
-### TUI Components (`infrastructure/tui/`)
-**Purpose**: Terminal user interface for interactive workflows
-**Key Features**:
-- **Specification Selector**: Interactive TUI for spec selection and creation (`spec_selector.rs`)
-- **Completion Interface**: Specification completion interface (`completion_ui.rs`)
-- **Keyboard Navigation**: Standard keybindings (↑/↓/j/k/Enter/q/Esc)
-- **Visual Design**: Consistent styling with existing CLI patterns
-- **State Management**: Proper terminal setup and cleanup
-
-## 🔒 Error Handling Strategy
-
-### Error Architecture
-**Primary**: `anyhow::Result` for application errors
-**Custom**: `thiserror` for domain-specific errors
-**Propagation**: `?` operator for clean error flow
-**Context**: Rich error messages with context
-
-**Error Types**:
-```rust
-pub enum MemoryError {
-    NotFound(String),           // Resource not found
-    InvalidInput(String),       // Validation failures
-    DatabaseError(String),      // Persistence issues
-    ConfigurationError(String), // Config problems
-    Io(std::io::Error),        // File system errors
-}
-```
-
-### Error Handling Patterns
-**Validation**: Early validation with descriptive messages
-**Recovery**: Graceful degradation where possible
-**Logging**: Structured logging with tracing
-**Propagation**: Context preservation through error chain
-
-## 🔧 Dependencies & External Libraries
-
-### Core Dependencies
-**CLI Framework**: `clap` v4.5 with derive features
-**Async Runtime**: `tokio` v1 with full features
-**Database**: `rusqlite` v0.31 with bundled SQLite
-**Migrations**: `refinery` v0.8 for schema management
-**Serialization**: `serde` v1 with derive features
-
-### Development Dependencies
-**Testing**: `rstest` v0.23 for parameterized tests
-**Assertions**: `pretty_assertions` v1 for readable output
-**Temporary Files**: `tempfile` v3 for test isolation
-
-### Protocol Dependencies
-**MCP Protocol**: `rmcp` v0.5.0 for server implementation
-**JSON Schema**: `schemars` v1 for API documentation
-**JSON Processing**: `serde_json` v1 for message handling
-
-## 🎯 Quality Attributes
-
-### Maintainability
-**Modularity**: Clear separation of concerns
-**Documentation**: Comprehensive inline documentation
-**Testing**: High test coverage with realistic scenarios
-**Code Style**: Consistent formatting and naming
-
-### Reliability
-**Error Handling**: Comprehensive error coverage
-**Data Integrity**: Database constraints and validation
-**Transaction Safety**: ACID compliance for batch operations
-**Testing**: Thorough edge case coverage
-
-### Performance
-**Database**: Optimized queries with proper indexing
-**Memory**: Efficient data structures and minimal copying
-**Concurrency**: Non-blocking operations where beneficial
-**Caching**: Strategic use of in-memory storage
-
-### Security
-**Input Validation**: Comprehensive validation at boundaries
-**SQL Injection**: Parameterized queries throughout
-**Path Safety**: Secure file system operations
-**Error Information**: No sensitive data in error messages
-
-## 🔮 Extension Points
-
-### Architectural Flexibility
-**Repository Pattern**: Easy to add new storage backends
-**Service Layer**: Business logic changes isolated from infrastructure
-**Command Pattern**: Simple to add new CLI commands
-**Configuration**: TOML-based extensible configuration
-
-### Planned Extensions
-**Memory Types**: Additional categorization schemes
-**Search Features**: Advanced query syntax and filters
-**Export Formats**: Multiple output formats beyond Markdown
-**MCP Features**: Extended protocol capability implementation
-
-## 🔌 External Integrations
-
-### Anthropic Client (`crates/anthropic-client`)
-**Purpose**: OAuth authentication and API client for Anthropic's Claude API
-**Key Features**:
-- OAuth token management with automatic refresh
-- Secure authentication from `~/.local/share/opencode/auth.json`
-- Non-streaming API calls to Claude models
-- Cloudflare bot detection mitigation
-
-**Architecture Highlights**:
-- **Token Management**: Automatic refresh when expired with persistent storage
-- **HTTP Client**: Configured with `rustls-tls-native-roots` for proper TLS behavior
-- **Error Handling**: Comprehensive error handling with `anyhow::Result`
-- **Security**: OAuth2 flow with secure token storage and refresh
-
-**Usage Example**:
-```rust
-use anthropic_client::{load_auth, complete};
-
-let mut auth = load_auth().await?;
-let response = complete("claude-3-5-sonnet", "Hello?", &mut auth).await?;
-```
-
-### Claude Code Integration & Steering System
-
-**Purpose**: File-based context management system complementing the SQLite Memory MCP, designed for version-controllable project knowledge.
-
-#### Steering System Architecture
-**Storage Location**: `.kiro/steering/` directory with markdown-based context files
-**Configuration**: `.kiro/config.toml` with `[[steering.types]]` sections for type definitions
-
-**Core Steering Files** (Always Included in Claude Code sessions):
-- `product.md`: Product overview and value proposition
-- `tech.md`: Technology stack and development environment
-- `structure.md`: Code organization and architectural patterns
-
-#### Custom Claude Code Commands
-**Location**: `.claude/commands/hm/` directory
-
-**Available Slash Commands**:
-- `/hm:steering`: Main steering management command - processes drafts and updates steering files intelligently
-- `/hm:steering-remember [title]`: Capture learning and insights to `.kiro/steering/draft/` for later processing
-- `/hm:steering-merge`: Advanced merging of steering content with conflict resolution capabilities
-
-#### Domain Integration
-**Steering Entities** (`domain/entities/steering.rs`):
-- `SteeringType`: Enum for steering categories (Product, Tech, Structure)
-- `Criterion`: Structured criteria for content categorization and validation
-- `SteeringConfig`: Configuration management with type validation
-
-**Repository Integration**:
-- `ProjectRepository` handles all steering file operations with proper error handling
-- Automatic backup creation before any steering file modifications
-- Smart configuration updates that preserve existing settings
-
-#### Key Benefits
-- **Version Controllable**: All steering files are git-trackable for team collaboration
-- **Transparency**: Clear visibility into project context evolution and decision history
-- **Team Collaboration**: Shared context without database synchronization requirements
-- **Complementary Design**: Works alongside Memory MCP for different knowledge management patterns
-- **Always Available**: Core steering files loaded in every Claude Code session for consistent context
-
-#### Workflow Integration
-1. **Capture Phase**: Use `/hm:steering-remember` during development to save insights
-2. **Processing Phase**: Run `/hm:steering` to intelligently categorize and organize drafts
-3. **Version Control**: Commit steering changes to share context with team members
-4. **Context Loading**: Steering files automatically provide persistent context for development sessions
-
----
-
-*This architecture documentation reflects the current implementation and design decisions. The system demonstrates solid architectural principles with room for growth and adaptation.*
+### Module Organization
+- Public API at module root
+- Private implementation in submodules
+- Re-export pattern for clean interfaces
+
+## Key Architectural Principles
+
+### Separation of Concerns
+- Each layer has single responsibility
+- Dependencies point inward (clean architecture)
+- Business logic isolated from infrastructure
+
+### Dependency Inversion
+- Depend on abstractions (traits), not concretions
+- Infrastructure implements domain interfaces
+- Testability through dependency injection
+
+### RAII Pattern
+- Resource management through ownership
+- Automatic cleanup with Drop trait
+- TestDirectory pattern for test isolation
+
+### Error Propagation
+- `anyhow::Result` for application errors
+- `thiserror` for domain-specific errors
+- Context preservation through error chain
+
+### Template Management
+- Embedded resources for distribution
+- Structured templates for specifications
+- Version-controlled steering files

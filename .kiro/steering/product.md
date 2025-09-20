@@ -1,6 +1,6 @@
 # Product Overview
 
-**Hail-Mary** - A sophisticated Rust CLI application for Kiro project specification management and file-based context steering (note: CLI description still references legacy Memory MCP system).
+**Hail-Mary** - A sophisticated Rust CLI application for Kiro project specification management and file-based context steering.
 
 ## Product Overview
 
@@ -9,16 +9,13 @@ Hail-Mary provides intelligent project specification management through the Kiro
 ## Core Features
 
 - **Kiro Specification Management**: Complete project specification lifecycle with templates and interactive TUI
-- **Steering System**: File-based context management for version-controllable project knowledge  
+- **Steering System**: File-based context management for version-controllable project knowledge
 - **Claude Code Integration**: Seamless integration with Claude Code through system prompts and specifications
 - **Interactive TUI**: Terminal user interface for specification selection and management
-- **Clean Architecture**: Well-structured Rust implementation with clear separation of concerns
 - **Shell Completions**: Auto-completion support for all major shells
 - **Template System**: Structured specification templates with requirements, design, tasks, and investigation phases
-- **Anthropic API Client**: Internal crate with OAuth2 authentication and Claude API integration for hail-mary operations
-- **Custom Slash Commands**: `/hm:steering` and `/hm:steering-remember` for Claude Code steering management
+- **Custom Slash Commands**: `/hm:steering`, `/hm:steering-remember`, `/hm:investigate`, and `/hm:requirements` for Claude Code integration
 - **Steering Backup System**: Configurable backup creation and retention management for steering files
-- **Just Task Runner**: Comprehensive development workflow automation
 - **Workspace Architecture**: Multi-crate Cargo workspace with clean separation
 
 ## Target Use Case
@@ -53,8 +50,10 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - Professional CLI application with proper TTY management and job control
 - Complete specification lifecycle from creation to archival
 
-### Steering System Extensions
+### Extended Capabilities
 - **Dynamic Steering Configuration**: Configurable steering types with criteria and operation validation
 - **Multi-Hypothesis Investigation**: Evidence-based verification with parallel Task agent coordination
 - **Archive-Based Lifecycle**: Complete spec lifecycle from `.kiro/specs/` to `.kiro/archive/` with automatic archival
-
+- **Extended Steering Types**: Beyond core three (product, tech, structure), includes prompt-engineering, documentation, subagent, rust-dev
+- **Active Specification Management**: Current spec `2025-09-20-intereactive-summarize` in active development
+- **Backup Retention**: Configurable backup management with max retention of 10 backups
