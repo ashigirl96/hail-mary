@@ -18,6 +18,22 @@ impl ClaudeProcessLauncher {
             ));
         }
 
+        // Create inline settings JSON with UserPromptSubmit hook
+        let settings_json = r#"{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.prompt' | hail-mary steering remind --hook"
+          }
+        ]
+      }
+    ]
+  }
+}"#;
+
         // Use exec to replace current process with Claude Code
         // This preserves TTY access while allowing backgrounding via shell job control
 
@@ -41,7 +57,9 @@ impl ClaudeProcessLauncher {
                 .arg("--model")
                 .arg("opus")
                 .arg("--permission-mode")
-                .arg("plan");
+                .arg("plan")
+                .arg("--settings")
+                .arg(settings_json);
 
             // Conditionally add --dangerously-skip-permissions (add it unless --no-danger is specified)
             if !no_danger {
@@ -72,7 +90,9 @@ impl ClaudeProcessLauncher {
                 .arg("--model")
                 .arg("opus")
                 .arg("--permission-mode")
-                .arg("plan");
+                .arg("plan")
+                .arg("--settings")
+                .arg(settings_json);
 
             // Conditionally add --dangerously-skip-permissions (add it unless --no-danger is specified)
             if !no_danger {
