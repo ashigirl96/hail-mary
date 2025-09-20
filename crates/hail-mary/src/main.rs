@@ -2,19 +2,21 @@ use anyhow::Result;
 use clap::Parser;
 use hail_mary::cli::args::{Cli, Commands, SteeringCommands};
 use hail_mary::cli::commands::{
-    CodeCommand, CompleteCommand, InitCommand, NewCommand, SteeringBackupCommand, completion,
+    CodeCommand, CompleteCommand, InitCommand, NewCommand, SteeringBackupCommand,
+    SteeringRemindCommand, completion,
 };
 use hail_mary::cli::formatters::format_error;
 use std::process;
 
-fn main() {
-    if let Err(e) = run() {
+#[tokio::main]
+async fn main() {
+    if let Err(e) = run().await {
         eprintln!("{}", format_error(&format!("{:#}", e)));
         process::exit(1);
     }
 }
 
-fn run() -> Result<()> {
+async fn run() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -41,6 +43,15 @@ fn run() -> Result<()> {
             SteeringCommands::Backup => {
                 let backup_command = SteeringBackupCommand::new();
                 backup_command.execute()?;
+            }
+            SteeringCommands::Remind {
+                input,
+                hook,
+                analyze,
+                format,
+            } => {
+                let remind_command = SteeringRemindCommand::new(input, hook, analyze, format);
+                remind_command.execute().await?;
             }
         },
     }

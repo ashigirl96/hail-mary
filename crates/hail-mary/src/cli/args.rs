@@ -48,6 +48,33 @@ pub enum Commands {
 pub enum SteeringCommands {
     /// Create a backup of steering files
     Backup,
+
+    /// Remind relevant steering sections based on input
+    Remind {
+        /// Input text to analyze
+        #[arg(value_name = "INPUT", conflicts_with = "hook")]
+        input: Option<String>,
+
+        /// Hook mode: read from stdin and passthrough
+        #[arg(long)]
+        hook: bool,
+
+        /// Enable AI-powered relevance analysis using Claude Haiku
+        #[arg(long, alias = "haiku")]
+        analyze: bool,
+
+        /// Output format (text or json)
+        #[arg(long, default_value = "text")]
+        format: OutputFormat,
+    },
+}
+
+#[derive(ValueEnum, Clone, Debug)]
+pub enum OutputFormat {
+    /// Plain text output
+    Text,
+    /// JSON output
+    Json,
 }
 
 #[derive(ValueEnum, Clone, Debug)]
