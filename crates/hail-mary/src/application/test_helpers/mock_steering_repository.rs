@@ -105,6 +105,20 @@ impl SteeringRepositoryInterface for MockSteeringRepository {
         Ok(files)
     }
 
+    fn get_steering_path(&self, name: &str) -> Result<PathBuf, ApplicationError> {
+        // Return a path that will be checked by the mock
+        let path = PathBuf::from(format!(".kiro/steering/{}.md", name));
+        // Check if this file was set in our mock
+        if self.steering_files.read().unwrap().contains(&path) {
+            // Return a special marker path that exists (current directory)
+            // This is a workaround for testing since we check file_path.exists()
+            Ok(std::env::current_dir().unwrap())
+        } else {
+            // Return a path that definitely doesn't exist
+            Ok(PathBuf::from("/nonexistent/path/that/will/not/exist"))
+        }
+    }
+
     fn create_steering_backup(
         &self,
         timestamp: &str,

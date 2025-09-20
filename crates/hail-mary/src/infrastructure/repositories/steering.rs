@@ -95,15 +95,18 @@ impl SteeringRepositoryInterface for SteeringRepository {
 
             // Only include markdown files
             if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("md") {
-                // Return relative path from steering directory
-                if let Ok(relative) = path.strip_prefix(&steering_dir) {
-                    files.push(relative.to_path_buf());
-                }
+                // Return ABSOLUTE path, not relative
+                files.push(path);
             }
         }
 
         files.sort();
         Ok(files)
+    }
+
+    fn get_steering_path(&self, name: &str) -> Result<PathBuf, ApplicationError> {
+        let path = self.steering_dir().join(format!("{}.md", name));
+        Ok(path)
     }
 
     fn create_steering_backup(

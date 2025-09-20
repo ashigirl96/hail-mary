@@ -21,6 +21,9 @@ pub trait SteeringRepositoryInterface {
     /// List all steering markdown files (excluding backup/ and draft/)
     fn list_steering_files(&self) -> Result<Vec<PathBuf>, ApplicationError>;
 
+    /// Get the path for a specific steering file
+    fn get_steering_path(&self, name: &str) -> Result<PathBuf, ApplicationError>;
+
     /// Create a backup of steering files
     fn create_steering_backup(
         &self,
