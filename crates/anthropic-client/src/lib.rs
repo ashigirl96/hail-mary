@@ -4,6 +4,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+// Message structure for conversations
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Message {
+    pub role: String,
+    pub content: String,
+}
+
 // OAuth authentication structure matching TypeScript
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OAuthAuth {
@@ -152,6 +159,101 @@ pub async fn complete(model: &str, message: &str, auth: &mut OAuthAuth) -> Resul
                 "text": message
             }]
         }]
+    });
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post("https://console.anthropic.com/v1/messages")
+        .headers(headers)
+        .json(&payload)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await?;
+        return Err(anyhow::anyhow!(
+            "Request failed ({}): {}",
+            status,
+            error_text
+        ));
+    }
+
+    let response_json: Value = response.json().await?;
+
+    // Extract text from response
+    let mut result = String::new();
+    if let Some(content) = response_json["content"].as_array() {
+        for block in content {
+            if block["type"] == "text" {
+                if let Some(text) = block["text"].as_str() {
+                    result.push_str(text);
+                }
+            }
+        }
+    }
+
+    Ok(result)
+}
+
+// Flexible complete request with custom system prompts
+pub async fn complete_with_system(
+    model: &str,
+    system_prompts: Vec<String>,
+    messages: Vec<Message>,
+    auth: &mut OAuthAuth,
+) -> Result<String> {
+    // Refresh token if expired
+    if is_token_expired(auth) {
+        refresh_token(auth).await?;
+    }
+
+    let access_token = auth
+        .access
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("No access token available"))?;
+
+    // Prepare request headers
+    let mut headers = HeaderMap::new();
+    headers.insert("content-type", HeaderValue::from_static("application/json"));
+    headers.insert("anthropic-version", HeaderValue::from_static("2023-06-01"));
+    headers.insert(
+        "authorization",
+        HeaderValue::from_str(&format!("Bearer {}", access_token))?,
+    );
+    headers.insert("anthropic-beta", HeaderValue::from_static("oauth-2025-04-20,claude-code-20250219,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14"));
+    headers.insert("x-api-key", HeaderValue::from_static(""));
+    headers.insert("user-agent", HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"));
+
+    // Convert system prompts to JSON format
+    let system_prompts_json: Vec<Value> = system_prompts
+        .iter()
+        .map(|prompt| json!({"type": "text", "text": prompt}))
+        .collect();
+
+    // Convert messages to JSON format
+    let messages_json: Vec<Value> = messages
+        .iter()
+        .map(|msg| {
+            json!({
+                "role": msg.role,
+                "content": [{
+                    "type": "text",
+                    "text": msg.content
+                }]
+            })
+        })
+        .collect();
+
+    // Prepare request payload
+    // Haiku model has max_tokens limit of 4096
+    let max_tokens = if model.contains("haiku") { 4096 } else { 8192 };
+    let payload = json!({
+        "model": model,
+        "max_tokens": max_tokens,
+        "temperature": 0.3,  // Lower temperature for steering analysis
+        "system": system_prompts_json,
+        "messages": messages_json
     });
 
     let client = reqwest::Client::new();
