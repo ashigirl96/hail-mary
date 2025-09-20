@@ -108,21 +108,32 @@ impl AnthropicRepositoryInterface for AnthropicRepository {
         user_input: &str,
         steering_contents: HashMap<String, String>,
     ) -> Result<Vec<SteeringReminder>> {
+        let start_total = std::time::Instant::now();
+
         // Ensure we have authentication
+        let start_auth = std::time::Instant::now();
         let mut auth = if let Some(ref auth) = self.auth {
             auth.clone()
         } else {
+            eprintln!("🔑 Loading authentication...");
             load_auth().await?
         };
+        eprintln!("⏱️ Authentication took: {:?}", start_auth.elapsed());
 
         // Build the system prompt using the value object
+        let start_prompt = std::time::Instant::now();
         let prompt_builder = SteeringAnalysisPrompt::new(steering_contents);
         let system_prompt = prompt_builder.build_system_prompt();
+        eprintln!("📝 System prompt size: {} chars", system_prompt.len());
+        eprintln!("⏱️ Prompt building took: {:?}", start_prompt.elapsed());
 
         // Create the user message
         let user_message = SteeringAnalysisPrompt::build_user_message(user_input);
+        eprintln!("💬 User message: {}", user_input);
 
         // Call Anthropic API
+        let start_api = std::time::Instant::now();
+        eprintln!("📡 Calling Anthropic API with model: {}", self.model);
         let response = complete_with_system(
             &self.model,
             vec![system_prompt],
@@ -133,9 +144,20 @@ impl AnthropicRepositoryInterface for AnthropicRepository {
             &mut auth,
         )
         .await?;
+        eprintln!("✅ API response received ({} chars)", response.len());
+        eprintln!("⏱️ API call took: {:?}", start_api.elapsed());
 
         // Parse response into SteeringReminder entities
-        self.parse_response(&response)
+        let start_parse = std::time::Instant::now();
+        let result = self.parse_response(&response)?;
+        eprintln!("🎨 Parsed {} reminders", result.len());
+        eprintln!("⏱️ Response parsing took: {:?}", start_parse.elapsed());
+
+        eprintln!(
+            "⏱️ Total analyze_steering_relevance took: {:?}",
+            start_total.elapsed()
+        );
+        Ok(result)
     }
 }
 

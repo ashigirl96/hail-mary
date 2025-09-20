@@ -62,7 +62,10 @@ async fn remind_steering_with_ai(
     steering_repo: &impl SteeringRepositoryInterface,
     anthropic_repo: &impl AnthropicRepositoryInterface,
 ) -> Result<Vec<SteeringReminder>> {
+    let start_total = std::time::Instant::now();
+
     // 1. Load all steering markdown files
+    let start_load = std::time::Instant::now();
     let steering_files = steering_repo
         .list_steering_files()
         .map_err(|e| anyhow::anyhow!("Failed to list steering files: {}", e))?;
@@ -76,13 +79,18 @@ async fn remind_steering_with_ai(
             }
         }
     }
+    eprintln!("📁 Loading steering files took: {:?}", start_load.elapsed());
 
     // 2. Analyze with AI
+    let start_api = std::time::Instant::now();
+    eprintln!("🚀 Starting Anthropic API call...");
     let mut reminders = anthropic_repo
         .analyze_steering_relevance(user_input, steering_contents)
         .await?;
+    eprintln!("🤖 Anthropic API call took: {:?}", start_api.elapsed());
 
     // 3. Apply business rules (confidence threshold)
+    let start_filter = std::time::Instant::now();
     let threshold = env::var("STEERING_CONFIDENCE_THRESHOLD")
         .ok()
         .and_then(|v| v.parse::<f64>().ok())
@@ -96,7 +104,12 @@ async fn remind_steering_with_ai(
             .partial_cmp(&a.confidence)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
+    eprintln!(
+        "🔍 Filtering and sorting took: {:?}",
+        start_filter.elapsed()
+    );
 
+    eprintln!("⏱️ Total AI analysis time: {:?}", start_total.elapsed());
     Ok(reminders)
 }
 

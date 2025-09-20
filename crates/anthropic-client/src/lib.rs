@@ -257,12 +257,17 @@ pub async fn complete_with_system(
     });
 
     let client = reqwest::Client::new();
+
+    let start_http = std::time::Instant::now();
+    eprintln!("🌐 Sending HTTP request to Anthropic API (complete_with_system)...");
+    eprintln!("   Model: {}, Max tokens: {}", model, max_tokens);
     let response = client
         .post("https://console.anthropic.com/v1/messages")
         .headers(headers)
         .json(&payload)
         .send()
         .await?;
+    eprintln!("⏱️ HTTP request took: {:?}", start_http.elapsed());
 
     if !response.status().is_success() {
         let status = response.status();
@@ -274,7 +279,9 @@ pub async fn complete_with_system(
         ));
     }
 
+    let start_json = std::time::Instant::now();
     let response_json: Value = response.json().await?;
+    eprintln!("⏱️ JSON parsing took: {:?}", start_json.elapsed());
 
     // Extract text from response
     let mut result = String::new();
