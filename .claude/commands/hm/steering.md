@@ -162,6 +162,7 @@ Key behaviors:
 - **Evidence Chain Documentation**: Subagents document complete evidence trails for all findings
 - **Batch Update Flow**: Collect all changes → display detailed summary → single confirmation → batch apply
 - **Concurrent Execution**: Multiple Task tools in single message → independent processing → synchronized aggregation
+- ultrathink
 
 ## Examples
 
