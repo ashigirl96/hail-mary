@@ -21,9 +21,11 @@ build-release:
 run *ARGS:
     cargo run --package hail-mary {{ARGS}}
 
-# Run tests
-test:
-    cargo test --quiet
+# Run tests with format and lint checks
+test *ARGS:
+    cargo fmt --check || cargo fmt
+    cargo clippy --all-targets --all-features -- -D warnings
+    cargo test --quiet {{ARGS}}
 
 # Run tests with output
 test-verbose:
@@ -89,14 +91,6 @@ update:
 # Install the binary
 install:
     cargo install --path crates/hail-mary
-
-# Auto-fix format and lint issues
-fix:
-    cargo fmt
-    cargo clippy --fix --allow-dirty --allow-staged
-
-# Run all checks (format, lint, test) - same as CI pipeline
-ci: fmt-check lint test
 
 # Setup development environment
 setup: deps
