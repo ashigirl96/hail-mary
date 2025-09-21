@@ -95,8 +95,8 @@ impl SteeringRepositoryInterface for SteeringRepository {
 
             // Only include markdown files
             if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("md") {
-                // Return ABSOLUTE path, not relative
-                files.push(path);
+                // Return RELATIVE path (just the filename), not absolute
+                files.push(PathBuf::from(path.file_name().unwrap()));
             }
         }
 

@@ -26,20 +26,21 @@ pub fn backup_steering(
         return Ok("No steering files found to backup".to_string());
     }
 
+    // Check current backup count BEFORE creating new backup
+    let existing_backups = steering_repo.list_steering_backups()?;
+
+    // If we're at or above the limit, delete oldest to make room
+    if existing_backups.len() >= config.max {
+        // Calculate how many to delete (at least 1 to make room for new backup)
+        let excess_count = existing_backups.len() - config.max + 1;
+        steering_repo.delete_oldest_steering_backups(excess_count)?;
+    }
+
     // Generate timestamp for backup directory
     let timestamp = Local::now().format("%Y-%m-%d-%H-%M").to_string();
 
-    // Create the backup
+    // Create the backup (now we have room)
     steering_repo.create_steering_backup(&timestamp, &files)?;
-
-    // Check if we need to enforce the max backup limit
-    let backups = steering_repo.list_steering_backups()?;
-
-    if backups.len() > config.max {
-        // Calculate how many to delete
-        let excess_count = backups.len() - config.max;
-        steering_repo.delete_oldest_steering_backups(excess_count)?;
-    }
 
     Ok(format!(
         "Created backup '{}' with {} files",
