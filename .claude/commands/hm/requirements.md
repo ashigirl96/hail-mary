@@ -34,7 +34,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 
 ## Boundaries
 **Will:**
-- Generate and update <kiro_requirements_path> only
+- Generate and update <kiro_requirements> only
 - Fetch and parse GitHub issues when provided
 - Calculate and display completeness scores
 - Achieve maximum 70% completeness through interactive refinement with user
@@ -47,7 +47,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 - Exceed 70% completeness (requires `/hm:investigate` for technical discovery)
 - Attempt to fill technical sections without codebase investigation
 - Perform investigation, design, or task decomposition
-- Modify files other than <kiro_requirements_path>
+- Modify files other than <kiro_requirements>
 - Auto-generate content without user input
 - Proceed without explicit user confirmation at [STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED] points
 - Make assumptions about technical implementation details
@@ -55,8 +55,8 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 
 ## Tool Coordination
 **Claude Code Tools:**
-- **Read**: Attempt to read <kiro_requirements_path> (ignore errors if file doesn't exist)
-- **Write/MultiEdit**: Create or update <kiro_requirements_path> (Write creates parent directories automatically)
+- **Read**: Attempt to read <kiro_requirements> (ignore errors if file doesn't exist)
+- **Write/MultiEdit**: Create or update <kiro_requirements> (Write creates parent directories automatically)
 
 **MCP Integration:**
 - **GitHub Server**: Use `mcp__github__get_issue` to fetch issue details
@@ -153,7 +153,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 ## Behavioral Flow
 
 1. **Initialize**: Parse command arguments and determine document type
-- **Attempt** to Read <kiro_requirements_path> for existing content:
+- **Attempt** to Read <kiro_requirements> for existing content:
   - If file exists: Load and analyze current completeness
   - If file not found: Skip silently and proceed to step 2
   - **DO NOT**: Use ls, Bash, or Glob to search for files
@@ -171,7 +171,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 
 **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
-3. **Document Generation**: Create initial <kiro_requirements_path> draft
+3. **Document Generation**: Create initial <kiro_requirements> draft
 - Parse user input and structure into appropriate sections
 - Calculate completeness score (weighted by section importance)
 - Display generated document with completeness percentage
@@ -182,7 +182,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 **[STOP HERE AND WAIT FOR USER CONFIRMATION - DO NOT PROCEED]**
 
 4. **Iterative Refinement**: Process user feedback and save
-- If "Y" or Enter → Write to <kiro_requirements_path> and proceed to step 5
+- If "Y" or Enter → Write to <kiro_requirements> and proceed to step 5
 - If "n" or clarification provided → Update document based on feedback
 - Recalculate completeness score
 - Return to step 3 for re-confirmation
@@ -233,7 +233,7 @@ User: "We need a dashboard for monitoring system health..."
 
 User: Y
 
-> ✅ Requirements saved to <kiro_requirements_path>
+> ✅ Requirements saved to <kiro_requirements>
 >
 > **Next steps:**
 > - Run `/hm:investigate --for requirements` to complete technical sections (65% → 100%)
@@ -259,7 +259,7 @@ User: Y
 
 User: n
 
-> ✅ Bug requirements saved to <kiro_requirements_path>
+> ✅ Bug requirements saved to <kiro_requirements>
 >
 > **Next steps:**
 > - Run `/hm:investigate --for requirements` to identify root cause (70% → 100%)

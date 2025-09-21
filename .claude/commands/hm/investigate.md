@@ -22,7 +22,7 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
 /hm:investigate [--topic <name>] [--for requirements|design] [--parallel]
 ```
 - `--topic <name>`: Resume/update existing topic by name
-- `--for`: Link investigation to <kiro_requirements_path> or <kiro_design_path>
+- `--for`: Link investigation to <kiro_requirements> or <kiro_design>
 - `--parallel`: Enable multi-agent parallel investigation for complex topics
 
 ## Key Patterns
@@ -37,7 +37,7 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
 - Use steering patterns to guide and focus investigation approach
 - Create new investigation section when no `--topic` flag provided
 - Resume/update existing topic section when `--topic <name>` matches existing topic
-- Link findings to <kiro_requirements_path> or <kiro_design_path> when `--for` flag present
+- Link findings to <kiro_requirements> or <kiro_design> when `--for` flag present
 
 **Will Not:**
 - Read `.kiro/steering/*.md` files directly to retrieve steering information
@@ -75,7 +75,7 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
 
 ## Tool Coordination
 **Claude Code Tools:**
-- **Read**: Load existing <kiro_investigation_path> for continuity
+- **Read**: Load existing <kiro_investigation> for continuity
 - **Write/MultiEdit**: Save investigation findings progressively
 - **Grep/Glob**: Search codebase for patterns and implementations
 - **Task**: Spawn parallel investigation agents
@@ -88,10 +88,10 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
 ## Behavioral Flow
 
 1. **Initialize & Topic Gathering**: Parse arguments, load context, and determine investigation topic
-   - Read existing <kiro_investigation_path>
+   - Read existing <kiro_investigation>
 
    - **If `--for requirements` or `--for design` provided**:
-     - Read corresponding <kiro_requirements_path> or <kiro_design_path>
+     - Read corresponding <kiro_requirements> or <kiro_design>
      - Analyze document for incomplete technical sections (marked [TBD] or pending investigation)
      - Display: "📋 Found {document}.md with technical gaps"
      - Show list of sections needing investigation with brief descriptions
@@ -101,7 +101,7 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
      - Ask: "What would you like to investigate? (You can choose from suggestions above or provide your own topic):"
 
    - **If `--topic <name>` provided**:
-     - Search existing <kiro_investigation_path> for matching topic section
+     - Search existing <kiro_investigation> for matching topic section
      - Load and analyze previous investigation content
      - Display: "📋 Found existing investigation for '{topic}' (Section #{n})"
      - Show summary of what has been investigated so far
@@ -176,7 +176,7 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
      - If `--topic <name>` provided: Append to existing section (continue investigation)
      - If no `--topic` flag: Create new section with auto-generated title (new investigation)
 
-   - **Write findings immediately** to <kiro_investigation_path>
+   - **Write findings immediately** to <kiro_investigation>
      * Mode: [new section | append to existing]
      * Format: Markdown with structured sections
 
@@ -189,7 +189,7 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
    > **Confidence**: [level] ([percentage]%)
    > **Sources**: [Number] codebase references, [Number] docs, [Number] web sources
    >
-   > ✅ Investigation saved to <kiro_investigation_path> (Section #[n], Mode: [new|append])
+   > ✅ Investigation saved to <kiro_investigation> (Section #[n], Mode: [new|append])
    >
    > --- Written Content ---
    > ## [Topic Title]
@@ -211,7 +211,7 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
      - Response = "n" or additional requirements → Refine and rewrite:
        * Examples: "add performance metrics", "include error handling", "simplify format"
        * Reformat/enhance based on feedback
-       * **Write refined content** to <kiro_investigation_path> (overwrite previous)
+       * **Write refined content** to <kiro_investigation> (overwrite previous)
        * Present updated content (return to "Present written content" above)
      - Invalid response → Ask: "Please enter Y to accept or provide refinement instructions"
 
@@ -230,8 +230,8 @@ argument-hint: "[--topic [name]] [--for requirements|design] [--parallel]"
    - n/done → Proceed to step 5
 
 5. **Finalization**: Link to other documents if `--for` present
-   - If `--for` requirements: Extract relevant → Update <kiro_requirements_path>
-   - If `--for` design: Extract architectural → Update <kiro_design_path>
+   - If `--for` requirements: Extract relevant → Update <kiro_requirements>
+   - If `--for` design: Extract architectural → Update <kiro_design>
 
    ```
    > ✅ Investigation complete
@@ -260,7 +260,7 @@ Key behaviors:
       """
   )
   ```
-- **Progressive Documentation**: Write immediately to <kiro_investigation_path> then seek approval
+- **Progressive Documentation**: Write immediately to <kiro_investigation> then seek approval
 - **Session Scope**: Each command invocation handles one topic (with deepening)
 - **Topic Management**: `--topic <name>` resumes existing, no flag creates new
 - **Section Management**: Same topic updates section, new command creates new section

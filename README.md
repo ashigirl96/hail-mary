@@ -247,11 +247,11 @@ Hail-mary integrates with Claude Code through structured system prompts that pro
 ```xml
 <kiro_spec_name>my-feature</kiro_spec_name>
 <kiro_spec_path>.kiro/specs/2024-03-15-my-feature/</kiro_spec_path>
-<kiro_requirements_path>.kiro/specs/2024-03-15-my-feature/requirements.md</kiro_requirements_path>
-<kiro_design_path>.kiro/specs/2024-03-15-my-feature/design.md</kiro_design_path>
-<kiro_tasks_path>.kiro/specs/2024-03-15-my-feature/tasks.md</kiro_tasks_path>
-<kiro_memo_path>.kiro/specs/2024-03-15-my-feature/memo.md</kiro_memo_path>
-<kiro_investigation_path>.kiro/specs/2024-03-15-my-feature/investigation.md</kiro_investigation_path>
+<kiro_requirements>.kiro/specs/2024-03-15-my-feature/requirements.md</kiro_requirements>
+<kiro_design>.kiro/specs/2024-03-15-my-feature/design.md</kiro_design>
+<kiro_tasks>.kiro/specs/2024-03-15-my-feature/tasks.md</kiro_tasks>
+<kiro_memo>.kiro/specs/2024-03-15-my-feature/memo.md</kiro_memo>
+<kiro_investigation>.kiro/specs/2024-03-15-my-feature/investigation.md</kiro_investigation>
 ```
 
 ### Custom Slash Commands
