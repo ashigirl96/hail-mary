@@ -44,3 +44,12 @@ const x = 1
 # Steering Remind ��-
 ������3��Y�
 ```
+
+## Slash Command Design Process
+**Context**: Implementing new slash commands for Kiro specs
+1. Read reference documentation (`@reference/slash-commands.md`, `@reference/slash-command-structure.md`)
+2. Understand user requirements through dialogue
+3. Create design document following `@.kiro/archive/2025-09-16-investigate/design.md` format
+4. Read existing `<kiro_design>` first, then Write/MultiEdit to save
+5. Include Japanese overview and embedded command markdown
+⚠️ Use 4-backtick blocks when embedding command markdown in design
