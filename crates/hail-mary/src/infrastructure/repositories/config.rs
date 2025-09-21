@@ -1,7 +1,6 @@
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::ConfigRepositoryInterface;
-use crate::domain::entities::project::{DocumentFormat, ProjectConfig};
-use crate::domain::entities::steering::{
+use crate::domain::value_objects::steering::{
     Criterion, SteeringBackupConfig, SteeringConfig, SteeringType,
 };
 use crate::infrastructure::filesystem::path_manager::PathManager;
@@ -10,10 +9,6 @@ use std::fs;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TomlConfig {
-    #[serde(default = "default_instructions")]
-    instructions: Option<String>,
-    #[serde(default)]
-    document_format: Option<DocumentFormat>,
     #[serde(default)]
     steering: Option<SteeringSection>,
 }
@@ -39,10 +34,6 @@ struct SteeringTypeToml {
 struct SteeringBackupToml {
     #[serde(default = "default_backup_max")]
     max: usize,
-}
-
-fn default_instructions() -> Option<String> {
-    Some("Follow the project guidelines and best practices.".to_string())
 }
 
 fn default_backup_max() -> usize {
@@ -138,69 +129,6 @@ impl ConfigRepository {
 }
 
 impl ConfigRepositoryInterface for ConfigRepository {
-    fn load_config(&self) -> Result<ProjectConfig, ApplicationError> {
-        let toml_value = self.load_toml()?;
-
-        if let Ok(config) = toml_value.try_into::<TomlConfig>() {
-            let steering = config
-                .steering
-                .as_ref()
-                .map(Self::parse_steering_config)
-                .unwrap_or_else(SteeringConfig::default_for_new_project);
-
-            Ok(ProjectConfig {
-                instructions: config
-                    .instructions
-                    .unwrap_or_else(|| default_instructions().unwrap()),
-                document_format: config.document_format.unwrap_or_default(),
-                steering,
-            })
-        } else {
-            // Return default config if parsing fails
-            Ok(ProjectConfig::default_for_new_project())
-        }
-    }
-
-    fn save_config(&self, config: &ProjectConfig) -> Result<(), ApplicationError> {
-        let config_path = self.path_manager.config_path(true);
-
-        // Never overwrite existing config.toml
-        if config_path.exists() {
-            return Ok(());
-        }
-
-        let toml_config = TomlConfig {
-            instructions: Some(config.instructions.clone()),
-            document_format: Some(config.document_format.clone()),
-            steering: Some(SteeringSection {
-                types: config
-                    .steering
-                    .types
-                    .iter()
-                    .map(|t| SteeringTypeToml {
-                        name: t.name.clone(),
-                        purpose: t.purpose.clone(),
-                        criteria: t
-                            .criteria
-                            .iter()
-                            .map(|c| format!("{}: {}", c.name, c.description))
-                            .collect(),
-                        allowed_operations: t.allowed_operations.clone(),
-                    })
-                    .collect(),
-                backup: Some(SteeringBackupToml {
-                    max: default_backup_max(),
-                }),
-            }),
-        };
-
-        let toml_value = toml::Value::try_from(toml_config).map_err(|e| {
-            ApplicationError::ConfigurationError(format!("Failed to convert to TOML: {}", e))
-        })?;
-
-        self.save_toml(&toml_value)
-    }
-
     fn load_steering_config(&self) -> Result<SteeringConfig, ApplicationError> {
         let toml_value = self.load_toml()?;
 

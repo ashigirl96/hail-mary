@@ -6,8 +6,8 @@ use std::env;
 use anthropic_client::{Message, OAuthAuth, complete_with_system, load_auth};
 
 use crate::application::repositories::AnthropicRepositoryInterface;
-use crate::domain::entities::steering_reminder::SteeringReminder;
-use crate::domain::value_objects::steering_analysis_prompt::SteeringAnalysisPrompt;
+use crate::domain::value_objects::steering_analysis::SteeringAnalysisPrompt;
+use crate::domain::value_objects::steering_reminder::SteeringReminder;
 
 /// Concrete implementation of Anthropic repository
 pub struct AnthropicRepository {

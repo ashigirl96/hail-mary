@@ -2,7 +2,7 @@ use crate::application::errors::ApplicationError;
 use crate::application::repositories::steering_repository::{
     BackupInfo, SteeringRepositoryInterface,
 };
-use crate::domain::entities::steering::{Steering, SteeringConfig};
+use crate::domain::value_objects::steering::{Steering, SteeringConfig};
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use std::fs;
 use std::path::PathBuf;
