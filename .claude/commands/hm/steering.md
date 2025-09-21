@@ -68,7 +68,7 @@ argument-hint: [--type <name>]
        Allowed Operations: {allowed_operations}
        File Path: .kiro/steering/{type.name}.md
 
-       Mission: Verify and update the steering documentation for this type.
+       Mission: Verify and update the steering documentation for this type. --ultrathink
 
        Instructions:
        1. LOAD the existing steering file
@@ -114,11 +114,19 @@ argument-hint: [--type <name>]
    **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
    After user responds:
-   - Response = "Y" or Enter → Apply ALL corrections and updates with MultiEdit in batch
+   - Response = "Y" or Enter → Read all files then apply ALL corrections and updates with MultiEdit in batch
    - Response = "n" → Skip all updates
 
-5. **Summary**: Apply all corrections and additions with single batch confirmation
+5. **Update Phase**: Read all files then apply corrections with MultiEdit
    ```
+   > 📖 Reading all steering files for update...
+   > • Reading {type1.name}.md...
+   > • Reading {type2.name}.md...
+   > • Reading {typeN.name}.md...
+   >
+   > ✏️ Applying batch updates with MultiEdit...
+   > • Updating {n} files with corrections and discoveries
+   >
    > ✅ Steering verification complete:
    >
    > Corrections Applied:
@@ -138,6 +146,7 @@ Key behaviors:
 - **Parallel investigation**: Multiple Task agents process each type independently and concurrently
 - **Correctness-first approach**: Prioritize fixing incorrect information over adding new content
 - **Batch confirmation**: User approves all changes at once before applying
+- **Read-before-edit**: Read ALL steering files first before applying MultiEdit updates
 - **Structure preservation**: Maintain existing file format and organization
 - **Intelligent reporting**: Clear status indicators (❌ incorrect, ✅ verified, 🆕 new)
 
@@ -150,8 +159,8 @@ Key behaviors:
   - Subagents operate independently with specialized verification methodology
 - **Grep**: Search for patterns matching criteria across codebase (used by subagents)
 - **Glob**: Find files by type and pattern (used by subagents)
-- **Read**: Load existing steering files for verification (used by subagents)
-- **MultiEdit**: Batch corrections and updates efficiently
+- **Read**: Load ALL steering files before applying updates (batch read operation)
+- **MultiEdit**: Batch corrections and updates efficiently after reading all files
 - **Write**: Create new steering files
 - **Bash**: Execute `hail-mary steering backup` and check file existence
 

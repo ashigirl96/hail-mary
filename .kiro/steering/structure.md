@@ -5,6 +5,10 @@
 ```
 hail-mary/                        # Project root
 ├── Cargo.toml                   # Workspace configuration
+├── justfile                     # Task automation with just command runner
+├── rust-toolchain.toml         # Rust toolchain configuration
+├── .env                         # Environment configuration
+├── .node-version               # Node.js version specification
 ├── crates/                      # Multi-crate workspace
 │   ├── hail-mary/              # Main CLI application
 │   └── anthropic-client/        # OAuth client library
@@ -16,10 +20,9 @@ hail-mary/                        # Project root
 ├── .claude/                     # Claude Code integration
 │   ├── agents/                 # Specialized agents
 │   ├── commands/               # Custom slash commands
-│   └── hooks/                  # Hook configurations
+│   └── settings.local.json     # Local Claude Code configuration
 ├── reference/                   # External documentation
-├── experimental/               # Prototype code
-└── tests/                      # Integration tests
+└── experimental/               # Prototype code
 ```
 
 ## Subdirectory Structures
@@ -30,10 +33,7 @@ src/
 ├── main.rs                     # CLI entry point
 ├── lib.rs                      # Library exports
 ├── domain/                     # Business logic layer
-│   ├── entities/              # Core domain objects
-│   │   ├── project.rs        # Project configuration
-│   │   ├── steering.rs       # Steering entities
-│   │   └── steering_reminder.rs
+│   ├── entities/              # Core domain objects (currently minimal structure)
 │   ├── value_objects/         # Immutable domain types
 │   │   ├── spec.rs           # Spec validation
 │   │   ├── system_prompt/    # System prompt with templates
@@ -89,18 +89,18 @@ src/
     └── embedded_resources.rs # Template resources
 ```
 
+**Note**: Integration tests are located in `crates/hail-mary/tests/` rather than root `tests/` directory.
+```
+
 ### Kiro System Structure (`.kiro/`)
 ```
 .kiro/
 ├── config.toml                 # Project configuration
 ├── specs/                      # Active specifications
 │   └── YYYY-MM-DD-{name}/    # Date-prefixed specs
-│       ├── requirements.md    # User stories & criteria
 │       ├── design.md          # Technical decisions
-│       ├── tasks.md           # Implementation tasks
 │       ├── investigation.md   # Research findings
-│       ├── memo.md           # Additional notes
-│       └── spec.json         # Metadata
+│       └── memo.md           # Additional notes
 ├── archive/                    # Completed specs
 │   └── [archived specs]       # Same structure as specs/
 ├── steering/                   # Context management
@@ -113,7 +113,6 @@ src/
 │   ├── subagent.md          # Agent patterns
 │   └── backup/              # Timestamped backups
 │       └── YYYYMMDD-HHMMSS/ # Backup snapshots
-└── draft/                     # Temporary drafts
 ```
 
 ### Claude Integration Structure (`.claude/`)
@@ -128,9 +127,7 @@ src/
 │       ├── steering-remember.md
 │       ├── requirements.md
 │       └── investigate.md
-└── hooks/                     # Hook scripts
-    ├── README.md
-    └── user_prompt_submit.sh
+└── settings.local.json       # Local configuration
 ```
 
 ## Code Organization Patterns
@@ -175,8 +172,7 @@ src/
 
 ### Kiro Specifications
 - **Spec directories**: `YYYY-MM-DD-{kebab-case-name}/`
-- **Template files**: `{name}.md` within spec directory
-- **Metadata**: `spec.json` for tracking
+- **Template files**: Minimal spec structure with `design.md`, `investigation.md`, `memo.md`
 
 ### Configuration Files
 - **TOML configs**: `{name}.toml` (e.g., `config.toml`)

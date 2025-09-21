@@ -55,5 +55,8 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Multi-Hypothesis Investigation**: Evidence-based verification with parallel Task agent coordination
 - **Archive-Based Lifecycle**: Complete spec lifecycle from `.kiro/specs/` to `.kiro/archive/` with automatic archival
 - **Extended Steering Types**: Beyond core three (product, tech, structure), includes prompt-engineering, documentation, subagent, rust-dev
-- **Active Specification Management**: Current spec `2025-09-20-intereactive-summarize` in active development
+- **Active Specification Management**: Current spec `2025-09-20-interactive-summarize` in active development
+- **Anthropic Client Crate**: Dedicated crate with reqwest HTTP client for Anthropic API integration
+- **Investigation Phase Support**: Template system includes investigation phase beyond requirements/design/tasks
+- **Justfile Build Integration**: Just command runner integration for workspace management
 - **Backup Retention**: Configurable backup management with max retention of 10 backups
