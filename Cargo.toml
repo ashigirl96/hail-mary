@@ -4,8 +4,8 @@ resolver = "2"
 
 [workspace.dependencies]
 # CLI
-clap = { version = "4.5", features = ["derive"] }
-clap_complete = "4.5"
+clap = { version = "4.5.48", features = ["derive"] }
+clap_complete = "4.5.58"
 
 # Core
 tokio = { version = "1", features = ["full", "test-util"] }
