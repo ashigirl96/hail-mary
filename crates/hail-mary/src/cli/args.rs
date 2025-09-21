@@ -62,19 +62,7 @@ pub enum SteeringCommands {
         /// Enable AI-powered relevance analysis using Claude Haiku
         #[arg(long, alias = "haiku")]
         analyze: bool,
-
-        /// Output format (text or json)
-        #[arg(long, default_value = "text")]
-        format: OutputFormat,
     },
-}
-
-#[derive(ValueEnum, Clone, Debug)]
-pub enum OutputFormat {
-    /// Plain text output
-    Text,
-    /// JSON output
-    Json,
 }
 
 #[derive(ValueEnum, Clone, Debug)]

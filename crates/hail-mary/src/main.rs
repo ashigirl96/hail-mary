@@ -48,9 +48,8 @@ async fn run() -> Result<()> {
                 input,
                 hook,
                 analyze,
-                format,
             } => {
-                let remind_command = SteeringRemindCommand::new(input, hook, analyze, format);
+                let remind_command = SteeringRemindCommand::new(input, hook, analyze);
                 remind_command.execute().await?;
             }
         },

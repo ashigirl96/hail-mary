@@ -3,7 +3,7 @@ use hail_mary::application::repositories::{
     steering_repository::SteeringRepositoryInterface,
 };
 use hail_mary::application::use_cases::{create_feature, initialize_project};
-use hail_mary::domain::entities::steering::Steerings;
+use hail_mary::domain::value_objects::steering::Steerings;
 use hail_mary::domain::value_objects::system_prompt::SystemPrompt;
 use hail_mary::infrastructure::filesystem::path_manager::PathManager;
 use hail_mary::infrastructure::repositories::{
@@ -44,8 +44,8 @@ fn test_system_prompt_includes_steering_content() {
     create_feature(&spec_repo, "test-feature").unwrap();
 
     // Load config and steering
-    let config = config_repo.load_config().unwrap();
-    let steering_files = steering_repo.load_steering_files(&config.steering).unwrap();
+    let steering_config = config_repo.load_steering_config().unwrap();
+    let steering_files = steering_repo.load_steering_files(&steering_config).unwrap();
     let steerings = Steerings(steering_files);
 
     // Get spec path
@@ -54,7 +54,7 @@ fn test_system_prompt_includes_steering_content() {
     let spec_path = spec_repo.get_spec_path(spec_name).unwrap();
 
     // Create system prompt
-    let system_prompt = SystemPrompt::new(spec_name, &spec_path, &steerings);
+    let system_prompt = SystemPrompt::new(Some(spec_name.as_str()), Some(&spec_path), &steerings);
     let content = system_prompt.as_str();
 
     // Verify the system prompt contains steering information with individual tags
@@ -95,8 +95,8 @@ fn test_system_prompt_with_empty_steering() {
     create_feature(&spec_repo, "test-feature").unwrap();
 
     // Load config and steering (now with no steering files)
-    let config = config_repo.load_config().unwrap();
-    let steering_files = steering_repo.load_steering_files(&config.steering).unwrap();
+    let steering_config = config_repo.load_steering_config().unwrap();
+    let steering_files = steering_repo.load_steering_files(&steering_config).unwrap();
     let steerings = Steerings(steering_files);
 
     // Get spec path
@@ -105,7 +105,7 @@ fn test_system_prompt_with_empty_steering() {
     let spec_path = spec_repo.get_spec_path(spec_name).unwrap();
 
     // Create system prompt
-    let system_prompt = SystemPrompt::new(spec_name, &spec_path, &steerings);
+    let system_prompt = SystemPrompt::new(Some(spec_name.as_str()), Some(&spec_path), &steerings);
     let content = system_prompt.as_str();
 
     // When there are no steering files, the steering vector should be empty
@@ -124,7 +124,7 @@ fn test_system_prompt_with_empty_steering() {
 
 #[test]
 fn test_steering_display_format() {
-    use hail_mary::domain::entities::steering::{Criterion, Steering, SteeringType};
+    use hail_mary::domain::value_objects::steering::{Criterion, Steering, SteeringType};
 
     // Create test steering data
     let steering = Steering {
@@ -158,7 +158,7 @@ fn test_steering_display_format() {
 
 #[test]
 fn test_steerings_display_format_with_individual_tags() {
-    use hail_mary::domain::entities::steering::{Steering, SteeringType, Steerings};
+    use hail_mary::domain::value_objects::steering::{Steering, SteeringType, Steerings};
 
     // Create test steering data
     let product_steering = Steering {

@@ -57,10 +57,12 @@ impl SpecSelectorTui {
                     KeyCode::Enter => {
                         if let Some(selected) = list_state.selected() {
                             if self.has_new_option && selected == 0 {
+                                break Ok(SpecSelectionResult::NoSpec);
+                            } else if self.has_new_option && selected == 1 {
                                 break Ok(SpecSelectionResult::CreateNew);
                             } else {
                                 let index = if self.has_new_option {
-                                    selected - 1
+                                    selected - 2
                                 } else {
                                     selected
                                 };
@@ -113,6 +115,10 @@ impl SpecSelectorTui {
 
         if self.has_new_option {
             items.push(
+                ListItem::new("🚀 Launch without specification")
+                    .style(Style::default().fg(Color::Cyan)),
+            );
+            items.push(
                 ListItem::new("📝 Create new specification")
                     .style(Style::default().fg(Color::Green)),
             );
@@ -140,7 +146,7 @@ impl SpecSelectorTui {
     }
 
     fn move_cursor_up(&self, list_state: &mut ListState) {
-        let total_items = self.specs.len() + if self.has_new_option { 1 } else { 0 };
+        let total_items = self.specs.len() + if self.has_new_option { 2 } else { 0 };
         let i = match list_state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -155,7 +161,7 @@ impl SpecSelectorTui {
     }
 
     fn move_cursor_down(&self, list_state: &mut ListState) {
-        let total_items = self.specs.len() + if self.has_new_option { 1 } else { 0 };
+        let total_items = self.specs.len() + if self.has_new_option { 2 } else { 0 };
         let i = match list_state.selected() {
             Some(i) => {
                 if i >= total_items - 1 {
@@ -174,6 +180,7 @@ impl SpecSelectorTui {
 pub enum SpecSelectionResult {
     Existing(String),
     CreateNew,
+    NoSpec,
     Cancelled,
 }
 
