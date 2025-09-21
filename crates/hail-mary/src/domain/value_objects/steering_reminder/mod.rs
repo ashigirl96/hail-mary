@@ -109,7 +109,12 @@ impl SteeringReminders {
         let template = SteeringReminderOutput::template();
         let formatted = template.replace("{steering_list}", &steering_list);
 
-        write!(&mut output, "{}\nuser input: {}", formatted, user_input).unwrap();
+        write!(
+            &mut output,
+            "{}\n<user-input>{}</user-input>",
+            formatted, user_input
+        )
+        .unwrap();
 
         output
     }
@@ -189,16 +194,16 @@ mod tests {
 
         // Test normal mode
         let text = steering_reminders.format_text(false, "test input");
-        assert!(text.contains("🧠 STEERING ENFORCEMENT PROTOCOL 🧠"));
-        assert!(text.contains("⚠️ VIOLATION = CRITICAL ERROR"));
+        assert!(text.contains("**Checked**"));
+        assert!(text.contains("REQUIRED FIRST"));
         assert!(text.contains("<steering-tech>"));
         assert!(text.contains("<steering-documentation>"));
-        assert!(text.contains("user input: test input"));
+        assert!(text.contains("<user-input>test input</user-input>"));
 
         // Test analyze mode - same template but different content in the list
         let text_analyze = steering_reminders.format_text(true, "test input");
-        assert!(text_analyze.contains("🧠 STEERING ENFORCEMENT PROTOCOL 🧠"));
-        assert!(text_analyze.contains("⚠️ VIOLATION = CRITICAL ERROR"));
+        assert!(text_analyze.contains("**Checked**"));
+        assert!(text_analyze.contains("REQUIRED FIRST"));
         assert!(text_analyze.contains("Remember: <steering-tech>")); // format_reminder output
 
         // Test empty reminders
