@@ -35,9 +35,18 @@ src/
 │   │   ├── steering.rs       # Steering entities
 │   │   └── steering_reminder.rs
 │   ├── value_objects/         # Immutable domain types
-│   │   ├── system_prompt.rs
-│   │   ├── system_prompt_template.md
-│   │   └── steering_analysis_prompt.rs
+│   │   ├── spec.rs           # Spec validation
+│   │   ├── system_prompt/    # System prompt with templates
+│   │   │   ├── mod.rs
+│   │   │   ├── template.md
+│   │   │   └── specification_section_template.md
+│   │   ├── steering_reminder/ # Reminder with template
+│   │   │   ├── mod.rs
+│   │   │   └── template.md
+│   │   ├── steering_analysis/ # Analysis with template
+│   │   │   ├── mod.rs
+│   │   │   └── prompt_template.md
+│   │   └── steering.rs       # Steering value objects
 │   └── errors.rs              # Domain errors
 ├── application/                # Use case layer
 │   ├── use_cases/            # Business operations
