@@ -189,16 +189,16 @@ mod tests {
 
         // Test normal mode
         let text = steering_reminders.format_text(false, "test input");
-        assert!(text.contains("📌 STEERING REMINDER"));
-        assert!(text.contains("⚠️ DIRECTIVE"));
+        assert!(text.contains("🧠 STEERING ENFORCEMENT PROTOCOL 🧠"));
+        assert!(text.contains("⚠️ VIOLATION = CRITICAL ERROR"));
         assert!(text.contains("<steering-tech>"));
         assert!(text.contains("<steering-documentation>"));
         assert!(text.contains("user input: test input"));
 
         // Test analyze mode - same template but different content in the list
         let text_analyze = steering_reminders.format_text(true, "test input");
-        assert!(text_analyze.contains("📌 STEERING REMINDER"));
-        assert!(text_analyze.contains("⚠️ DIRECTIVE"));
+        assert!(text_analyze.contains("🧠 STEERING ENFORCEMENT PROTOCOL 🧠"));
+        assert!(text_analyze.contains("⚠️ VIOLATION = CRITICAL ERROR"));
         assert!(text_analyze.contains("Remember: <steering-tech>")); // format_reminder output
 
         // Test empty reminders
