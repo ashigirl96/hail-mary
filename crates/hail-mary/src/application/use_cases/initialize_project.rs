@@ -2,8 +2,7 @@ use crate::application::errors::ApplicationError;
 use crate::application::repositories::{
     ConfigRepositoryInterface, SpecRepositoryInterface, SteeringRepositoryInterface,
 };
-use crate::domain::entities::project::ProjectConfig;
-use crate::domain::entities::steering::SteeringConfig;
+use crate::domain::value_objects::steering::SteeringConfig;
 
 pub fn initialize_project(
     config_repo: &dyn ConfigRepositoryInterface,
@@ -21,10 +20,6 @@ pub fn initialize_project(
 
     // Ensure allowed_operations exists for all steering types (idempotent)
     config_repo.ensure_allowed_operations()?;
-
-    // Save default config if it doesn't exist
-    let config = ProjectConfig::default_for_new_project();
-    config_repo.save_config(&config)?;
 
     // Create steering files (idempotent)
     let steering_config = SteeringConfig::default_for_new_project();

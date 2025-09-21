@@ -4,7 +4,7 @@ use crate::application::errors::ApplicationError;
 use crate::application::repositories::steering_repository::{
     BackupInfo, SteeringRepositoryInterface,
 };
-use crate::domain::entities::steering::{Steering, SteeringConfig};
+use crate::domain::value_objects::steering::{Steering, SteeringConfig};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::RwLock;

@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use std::collections::HashMap;
 
-use crate::domain::entities::steering_reminder::SteeringReminder;
+use crate::domain::value_objects::steering_reminder::SteeringReminder;
 
 /// Repository interface for Anthropic AI service interactions
 #[async_trait]

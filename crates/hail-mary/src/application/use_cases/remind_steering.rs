@@ -6,7 +6,7 @@ use std::fs;
 use crate::application::repositories::{
     AnthropicRepositoryInterface, ConfigRepositoryInterface, SteeringRepositoryInterface,
 };
-use crate::domain::entities::steering_reminder::SteeringReminder;
+use crate::domain::value_objects::steering_reminder::SteeringReminder;
 
 /// Options for steering remind functionality
 pub struct SteeringRemindOptions {
@@ -118,8 +118,7 @@ mod tests {
     use super::*;
     use crate::application::repositories::AnthropicRepositoryInterface;
     use crate::application::test_helpers::{MockConfigRepository, MockSteeringRepository};
-    use crate::domain::entities::project::{DocumentFormat, ProjectConfig};
-    use crate::domain::entities::steering::{SteeringConfig, SteeringType};
+    use crate::domain::value_objects::steering::{SteeringConfig, SteeringType};
     use async_trait::async_trait;
     use std::path::PathBuf;
 
@@ -142,26 +141,22 @@ mod tests {
     async fn test_remind_steering_light_mode() {
         // Setup mocks
         let config_repo = MockConfigRepository::new();
-        config_repo.set_config(ProjectConfig {
-            instructions: "".to_string(),
-            document_format: DocumentFormat::Markdown,
-            steering: SteeringConfig {
-                types: vec![
-                    SteeringType {
-                        name: "tech".to_string(),
-                        purpose: "Technology stack".to_string(),
-                        criteria: vec![],
-                        allowed_operations: vec![],
-                    },
-                    SteeringType {
-                        name: "product".to_string(),
-                        purpose: "Product overview".to_string(),
-                        criteria: vec![],
-                        allowed_operations: vec![],
-                    },
-                ],
-                backup: Default::default(),
-            },
+        config_repo.set_steering_config(SteeringConfig {
+            types: vec![
+                SteeringType {
+                    name: "tech".to_string(),
+                    purpose: "Technology stack".to_string(),
+                    criteria: vec![],
+                    allowed_operations: vec![],
+                },
+                SteeringType {
+                    name: "product".to_string(),
+                    purpose: "Product overview".to_string(),
+                    criteria: vec![],
+                    allowed_operations: vec![],
+                },
+            ],
+            backup: Default::default(),
         });
 
         let steering_repo = MockSteeringRepository::with_steering_files(vec![
@@ -266,18 +261,14 @@ mod tests {
     #[tokio::test]
     async fn test_empty_input_forces_light_mode() {
         let config_repo = MockConfigRepository::new();
-        config_repo.set_config(ProjectConfig {
-            instructions: "".to_string(),
-            document_format: DocumentFormat::Markdown,
-            steering: SteeringConfig {
-                types: vec![SteeringType {
-                    name: "tech".to_string(),
-                    purpose: "Technology stack".to_string(),
-                    criteria: vec![],
-                    allowed_operations: vec![],
-                }],
-                backup: Default::default(),
-            },
+        config_repo.set_steering_config(SteeringConfig {
+            types: vec![SteeringType {
+                name: "tech".to_string(),
+                purpose: "Technology stack".to_string(),
+                criteria: vec![],
+                allowed_operations: vec![],
+            }],
+            backup: Default::default(),
         });
 
         let steering_repo = MockSteeringRepository::with_steering_files(vec![PathBuf::from(

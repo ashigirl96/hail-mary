@@ -1,5 +1,5 @@
 use crate::application::errors::ApplicationError;
-use crate::domain::entities::steering::{Steering, SteeringConfig};
+use crate::domain::value_objects::steering::{Steering, SteeringConfig};
 use std::path::PathBuf;
 use std::time::SystemTime;
 

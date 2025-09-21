@@ -2,34 +2,33 @@
 
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::ConfigRepositoryInterface;
-use crate::domain::entities::project::{DocumentFormat, ProjectConfig};
-use crate::domain::entities::steering::{SteeringBackupConfig, SteeringConfig};
+use crate::domain::value_objects::steering::{SteeringBackupConfig, SteeringConfig};
 use std::collections::HashMap;
 use std::sync::RwLock;
 
 #[derive(Debug, Default)]
 pub struct MockConfigRepository {
-    config: RwLock<Option<ProjectConfig>>,
+    steering_config: RwLock<Option<SteeringConfig>>,
     operations_to_fail: RwLock<HashMap<String, bool>>,
 }
 
 impl MockConfigRepository {
     pub fn new() -> Self {
         Self {
-            config: RwLock::new(None),
+            steering_config: RwLock::new(None),
             operations_to_fail: RwLock::new(HashMap::new()),
         }
     }
 
-    pub fn with_config(config: ProjectConfig) -> Self {
+    pub fn with_steering_config(config: SteeringConfig) -> Self {
         Self {
-            config: RwLock::new(Some(config)),
+            steering_config: RwLock::new(Some(config)),
             operations_to_fail: RwLock::new(HashMap::new()),
         }
     }
 
-    pub fn set_config(&self, config: ProjectConfig) {
-        *self.config.write().unwrap() = Some(config);
+    pub fn set_steering_config(&self, config: SteeringConfig) {
+        *self.steering_config.write().unwrap() = Some(config);
     }
 
     pub fn set_operation_to_fail(&self, operation: &str) {
@@ -54,36 +53,6 @@ impl MockConfigRepository {
 }
 
 impl ConfigRepositoryInterface for MockConfigRepository {
-    fn load_config(&self) -> Result<ProjectConfig, ApplicationError> {
-        if self.should_fail("load_config") {
-            return Err(ApplicationError::ConfigurationError(
-                "Mock load failure".to_string(),
-            ));
-        }
-
-        Ok(self
-            .config
-            .read()
-            .unwrap()
-            .clone()
-            .unwrap_or_else(|| ProjectConfig {
-                instructions: "Mock instructions".to_string(),
-                document_format: DocumentFormat::Markdown,
-                steering: SteeringConfig::default_for_new_project(),
-            }))
-    }
-
-    fn save_config(&self, config: &ProjectConfig) -> Result<(), ApplicationError> {
-        if self.should_fail("save_config") {
-            return Err(ApplicationError::ConfigurationError(
-                "Mock save failure".to_string(),
-            ));
-        }
-
-        *self.config.write().unwrap() = Some(config.clone());
-        Ok(())
-    }
-
     fn load_steering_config(&self) -> Result<SteeringConfig, ApplicationError> {
         if self.should_fail("load_steering_config") {
             return Err(ApplicationError::ConfigurationError(
@@ -91,8 +60,12 @@ impl ConfigRepositoryInterface for MockConfigRepository {
             ));
         }
 
-        let config = self.load_config()?;
-        Ok(config.steering)
+        Ok(self
+            .steering_config
+            .read()
+            .unwrap()
+            .clone()
+            .unwrap_or_else(SteeringConfig::default_for_new_project))
     }
 
     fn load_steering_backup_config(&self) -> Result<SteeringBackupConfig, ApplicationError> {
@@ -102,8 +75,8 @@ impl ConfigRepositoryInterface for MockConfigRepository {
             ));
         }
 
-        let config = self.load_config()?;
-        Ok(config.steering.backup)
+        let steering_config = self.load_steering_config()?;
+        Ok(steering_config.backup)
     }
 
     fn ensure_steering_config(&self) -> Result<(), ApplicationError> {

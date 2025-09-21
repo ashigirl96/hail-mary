@@ -1,15 +1,8 @@
 use crate::application::errors::ApplicationError;
-use crate::domain::entities::project::ProjectConfig;
-use crate::domain::entities::steering::{SteeringBackupConfig, SteeringConfig};
+use crate::domain::value_objects::steering::{SteeringBackupConfig, SteeringConfig};
 
 /// Repository interface for managing project configuration
 pub trait ConfigRepositoryInterface {
-    /// Load the complete project configuration from config.toml
-    fn load_config(&self) -> Result<ProjectConfig, ApplicationError>;
-
-    /// Save the complete project configuration to config.toml
-    fn save_config(&self, config: &ProjectConfig) -> Result<(), ApplicationError>;
-
     /// Load only the steering configuration section
     fn load_steering_config(&self) -> Result<SteeringConfig, ApplicationError>;
 
