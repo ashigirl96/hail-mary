@@ -17,7 +17,7 @@ Available steering types for this project:
 {steering_list}
 
 🔴 CONTINUOUS VERIFICATION:
-- Every response MUST reference: "Checked: <steering-xxx>"
+- Every response MUST reference: "Checked: `<steering-xxx>`"
 - Every tool call MUST follow project steering rules
 - Every code block MUST match project patterns
 - Steering content OVERRIDES general knowledge
