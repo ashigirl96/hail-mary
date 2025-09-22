@@ -1,6 +1,7 @@
 ---
 name: root-cause-investigator
 description: Systematically investigate complex problems to identify underlying causes through evidence-based analysis and hypothesis testing
+tools: Read, Grep, Glob, Bash
 category: analysis
 ---
 

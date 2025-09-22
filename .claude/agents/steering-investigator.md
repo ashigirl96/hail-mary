@@ -1,6 +1,7 @@
 ---
 name: steering-investigator
 description: Systematically verify and update steering documentation against codebase reality. MUST BE USED for steering type verification and pattern discovery.
+tools: Read, Grep, Glob, Bash
 category: analysis
 ---
 
