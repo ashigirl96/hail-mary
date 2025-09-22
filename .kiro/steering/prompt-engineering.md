@@ -1,3 +1,5 @@
+# Prompt Engineering Guidelines
+
 ## Command Priority Override with Quality Control
 **When**: Complex conversations prevent slash commands from executing their behavioral flow
 - Use `<command_execution priority="immediate">` wrapper at command start
