@@ -26,6 +26,9 @@ impl EmbeddedSlashCommands {
     const INTERACTIVE_INVESTIGATE: &'static str =
         include_str!("../../../../.claude/commands/hm/interactive-investigate.md");
 
+    /// Design command documentation
+    const DESIGN: &'static str = include_str!("../../../../.claude/commands/hm/design.md");
+
     /// Returns all embedded slash command files as (filename, content) pairs
     pub fn get_all() -> Vec<(&'static str, &'static str)> {
         vec![
@@ -34,6 +37,7 @@ impl EmbeddedSlashCommands {
             ("requirements.md", Self::REQUIREMENTS),
             ("investigate.md", Self::INVESTIGATE),
             ("interactive-investigate.md", Self::INTERACTIVE_INVESTIGATE),
+            ("design.md", Self::DESIGN),
         ]
     }
 }
@@ -50,11 +54,26 @@ impl EmbeddedAgents {
     const ROOT_CAUSE_INVESTIGATOR: &'static str =
         include_str!("../../../../.claude/agents/root-cause-investigator.md");
 
+    /// Backend architect agent
+    const BACKEND_ARCHITECT: &'static str =
+        include_str!("../../../../.claude/agents/backend-architect.md");
+
+    /// Frontend architect agent
+    const FRONTEND_ARCHITECT: &'static str =
+        include_str!("../../../../.claude/agents/frontend-architect.md");
+
+    /// System architect agent
+    const SYSTEM_ARCHITECT: &'static str =
+        include_str!("../../../../.claude/agents/system-architect.md");
+
     /// Returns all embedded agent files as (filename, content) pairs
     pub fn get_all() -> Vec<(&'static str, &'static str)> {
         vec![
             ("steering-investigator.md", Self::STEERING_INVESTIGATOR),
             ("root-cause-investigator.md", Self::ROOT_CAUSE_INVESTIGATOR),
+            ("backend-architect.md", Self::BACKEND_ARCHITECT),
+            ("frontend-architect.md", Self::FRONTEND_ARCHITECT),
+            ("system-architect.md", Self::SYSTEM_ARCHITECT),
         ]
     }
 }
@@ -66,7 +85,7 @@ mod tests {
     #[test]
     fn test_embedded_commands_not_empty() {
         let files = EmbeddedSlashCommands::get_all();
-        assert_eq!(files.len(), 5);
+        assert_eq!(files.len(), 6);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");
@@ -86,7 +105,7 @@ mod tests {
     #[test]
     fn test_embedded_agents_not_empty() {
         let files = EmbeddedAgents::get_all();
-        assert_eq!(files.len(), 2);
+        assert_eq!(files.len(), 5);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");
