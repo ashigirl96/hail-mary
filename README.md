@@ -406,6 +406,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Ratatui Community**: For the excellent terminal UI framework
 - **Clap**: For the robust CLI framework foundation
 - **Tokio**: For the async runtime foundation
+- **SuperClaude Framework**: For prompt engineering concepts and command structure patterns ([MIT License](https://github.com/SuperClaude-Org/SuperClaude_Framework/blob/main/LICENSE))
 
 ---
 
