@@ -6,7 +6,7 @@ complexity: advanced
 mcp-servers: []
 personas: [architect, analyzer, backend-architect, frontend-architect, system-architect]
 allowed-tools: Read, Write, MultiEdit, Task
-argument-hint: "[--simple] [--update]"
+argument-hint: "[--simple]"
 ---
 
 # /hm:design - Technical Design Generator
@@ -19,10 +19,9 @@ argument-hint: "[--simple] [--update]"
 
 ## Usage
 ```
-/hm:design [--simple] [--update]
+/hm:design [--simple]
 ```
 - `--simple`: Use simplified design template for small changes
-- `--update`: Update existing design incrementally
 
 ## Key Patterns
 - **Document Selection**: <kiro_requirements> exists → Detailed Template
@@ -32,7 +31,6 @@ argument-hint: "[--simple] [--update]"
 - **Domain Detection**: Backend-heavy → backend-architect, UI-heavy → frontend-architect
 - **Scale Detection**: System-wide → system-architect activation
 - **Investigation Constraint**: Design phase → No file editing by agents
-- **Update Mode**: --update flag → Incremental design refinement
 
 ## Boundaries
 **Will:**
@@ -246,23 +244,3 @@ User: Y
 > ✅ Design saved to <kiro_design>
 ```
 
-### Example 3: Design Update
-```
-/hm:design --update
-
-> 📋 Found existing design.md (Completeness: 70%)
-> Please provide design modifications:
-
-User: "Add caching layer to API endpoints"
-
-> 🏗️ Launching backend-architect for cache design...
-> [Task agent analyzing caching strategies...]
-
-> 📝 Updated design (Completeness: 85%):
-> [Design with new caching section...]
-> Is this design acceptable? [Y/n]:
-
-User: Y
-
-> ✅ Design updated successfully
-```
