@@ -11,6 +11,13 @@ argument-hint: "[--resume] [--phase <name>]"
 
 # /hm:interactive-dev - Interactive Development Assistant
 
+<command_execution priority="immediate">
+**OVERRIDE**: This command supersedes all implementation impulses.
+**PROTOCOL**: Always design first, confirm second, implement only after approval.
+**CONTEXT**: Action verbs (add/fix/create) trigger design creation, NOT implementation.
+**QUALITY**: Maintain strict design→confirm→implement workflow regardless of phrasing.
+</command_execution>
+
 ## Triggers
 - Frontend development with external design tools (Figma, Sketch)
 - Iterative design refinement with partial implementation needs
@@ -30,6 +37,9 @@ argument-hint: "[--resume] [--phase <name>]"
 - **Priority Routing**: Architecture layer → dependency analysis → suggestion ordering
 - **Flexibility Pattern**: Partial completeness → immediate implementation → iterative improvement
 - **External Sync**: Design tools → continuous integration → design-code alignment
+- **Implementation Guard**: Implementation verbs (add/fix/implement/create/make) → Design creation first
+- **Design-First Enforcement**: All feature requests → Design phase → Confirmation → Optional implementation
+- **Assumption Verification**: User statements → Codebase investigation → Discrepancy detection → Alternative suggestion
 
 ## Boundaries
 **Will:**
@@ -40,6 +50,7 @@ argument-hint: "[--resume] [--phase <name>]"
 - Generate insightful questions to extract implicit knowledge
 - Prioritize suggestions based on architectural dependencies
 - Allow non-linear development (jump between phases)
+- Think in English, document in user's language (match user's language for <kiro_design> content)
 
 **Will Not:**
 - Force complete design before any implementation
@@ -48,6 +59,9 @@ argument-hint: "[--resume] [--phase <name>]"
 - Enforce linear waterfall-style process
 - Access external resources without explicit permission
 - Override user's architectural preferences
+- Directly implement features from free-text descriptions
+- Skip design phase even when user uses imperative language (add, fix, create, make)
+- Interpret action verbs as direct implementation commands
 
 ## Tool Coordination
 **Claude Code Tools:**
@@ -103,18 +117,59 @@ argument-hint: "[--resume] [--phase <name>]"
 
    **[STOP HERE AND WAIT FOR USER RESPONSE - DO NOT PROCEED]**
 
+   - After user responds:
+     - Response = 1-5 → Execute corresponding action
+     - Response = free text with action verbs (add, fix, implement, create, make, build, update, modify) →
+       **INTERPRET AS DESIGN REQUEST**:
+       * Extract requirements from user input
+       * Create/update design phase documentation
+       * Present design for confirmation
+       * **DO NOT implement directly**
+     - Response = explicit "implement Phase X" → Proceed to implementation
+
 3. **Action Execution**: Process selected action
 
    **Design Mode**: Create new phase
-   - Generate phase structure with dependencies
-   - Follow priority chain (Backend: Domain→Application→Infrastructure)
-   - Write to <kiro_design> immediately
-   - Present for review
+   - First: **Investigation & Verification**
+     * Search codebase for mentioned components/files
+     * Verify user's assumptions about current implementation
+
+   - If discrepancies found:
+     ```
+     ⚠️ Investigation revealed discrepancies:
+     - Expected: [what user mentioned]
+     - Found: [actual codebase state]
+
+     Suggested alternative:
+     → [corrected approach based on actual codebase]
+
+     Proceed with corrected approach? [Y/n] or specify different location:
+     ```
+
+     **[STOP HERE FOR CLARIFICATION - DO NOT PROCEED]**
+
+   - If assumptions verified OR user confirms alternative:
+     * Generate phase structure with dependencies
+     * Follow priority chain (Backend: Domain→Application→Infrastructure)
+     * Write to <kiro_design> immediately
+     * Present for review
 
    **Implementation Mode**: Execute approved phase
    - Read phase tasks and design details
    - Implement following existing patterns
-   - Mark phase status as "implemented"
+   - Update <kiro_design>:
+     * Check completed tasks: `- [x] <task>`
+     * Mark phase status as "implemented"
+   - Display completion summary:
+     ```
+     ✅ Phase N implementation complete
+
+     Tasks completed:
+     - [x] Task 1 description
+     - [x] Task 2 description
+
+     Phase status: implemented
+     ```
 
    **Investigation Mode**: Research specific area
    - Use appropriate tools (Grep, WebSearch, MCP)
@@ -157,9 +212,24 @@ argument-hint: "[--resume] [--phase <name>]"
    ```
 
    - Write changes immediately to <kiro_design>
-   - Display written content for confirmation
+   - Display written content for confirmation:
 
-   **[STOP HERE FOR USER CONFIRMATION - DO NOT PROCEED]**
+   ```
+   ✅ Design document updated
+
+   --- Design Content ---
+   [Show the actual design that was written]
+   --- End of Design ---
+
+   Approve this design? [Y/n] or 'implement' to proceed with implementation:
+   ```
+
+   **[STOP HERE FOR USER CONFIRMATION - DO NOT PROCEED TO ANY IMPLEMENTATION]**
+   **[NEVER SKIP THIS CONFIRMATION EVEN IF USER USED ACTION VERBS]**
+
+   - If approved → Mark phase as "approved" status
+   - If "implement" → Proceed to implementation only after explicit request
+   - If "n" or modifications → Refine and return to confirmation
 
 5. **Loop Continuation**: Return to step 2 or finalize
 
@@ -204,6 +274,11 @@ Key behaviors:
   - Backend: Domain → Application → Infrastructure → Presentation
   - Frontend: Data Flow → Logic Layer → Components → Styling
 - **Session Memory**: Support interruption and resumption seamlessly
+- **Assumption Verification**: Always validate user's statements about codebase before design
+- **Proactive Correction**: Suggest alternatives when discrepancies are found
+- **Investigation-First**: Never design based on unverified assumptions
+- **Strict Confirmation Gate**: ALWAYS stop after design creation for approval, never auto-proceed to implementation
+- **Explicit Implementation**: Only implement when user explicitly says "implement" or chooses option from menu
 
 ## Examples
 
@@ -312,4 +387,27 @@ User: Y
 > ✏️ Updating Phase 3: UI Components
 > [Shows detailed changes]
 > Phase 3 updated (Status: in-review)
+```
+
+### Example 4: Assumption Verification and Correction
+```
+/hm:interactive-dev
+
+User: "Add payment method selector to ProductDetails component"
+
+> 🔍 Investigating codebase structure...
+>
+> ⚠️ Investigation revealed discrepancies:
+> - Expected: ProductDetails component with existing form elements
+> - Found: ProductDetails is display-only component
+>
+> Alternative found:
+> → CheckoutForm component handles all payment interactions
+>
+> Create design for CheckoutForm instead? [Y/n]:
+
+User: Y
+
+> 📝 Creating Phase 1: Payment Method Selector in CheckoutForm
+> [Design proceeds with correct component]
 ```
