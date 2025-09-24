@@ -35,6 +35,9 @@ pub enum Commands {
         /// Skip the dangerous permissions flag (--dangerously-skip-permissions)
         #[arg(long)]
         no_danger: bool,
+        /// Continue previous Claude conversation (passes --continue flag)
+        #[arg(short = 'c', long = "continue")]
+        continue_conversation: bool,
     },
 
     /// Steering system management
@@ -118,7 +121,17 @@ impl Commands {
 
     pub fn get_code_no_danger(&self) -> Option<bool> {
         match self {
-            Commands::Code { no_danger } => Some(*no_danger),
+            Commands::Code { no_danger, .. } => Some(*no_danger),
+            _ => None,
+        }
+    }
+
+    pub fn get_code_continue(&self) -> Option<bool> {
+        match self {
+            Commands::Code {
+                continue_conversation,
+                ..
+            } => Some(*continue_conversation),
             _ => None,
         }
     }
@@ -153,7 +166,10 @@ mod tests {
         assert!(!new_cmd.is_init());
         assert!(new_cmd.is_new());
 
-        let code_cmd = Commands::Code { no_danger: false };
+        let code_cmd = Commands::Code {
+            no_danger: false,
+            continue_conversation: false,
+        };
         assert!(!code_cmd.is_init());
         assert!(!code_cmd.is_new());
         assert!(code_cmd.is_code());

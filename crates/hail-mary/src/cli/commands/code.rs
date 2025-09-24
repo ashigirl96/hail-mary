@@ -9,11 +9,15 @@ use crate::infrastructure::repositories::{
 
 pub struct CodeCommand {
     no_danger: bool,
+    continue_conversation: bool,
 }
 
 impl CodeCommand {
-    pub fn new(no_danger: bool) -> Self {
-        Self { no_danger }
+    pub fn new(no_danger: bool, continue_conversation: bool) -> Self {
+        Self {
+            no_danger,
+            continue_conversation,
+        }
     }
 
     pub fn execute(&self) -> Result<()> {
@@ -36,7 +40,13 @@ impl CodeCommand {
         initialize_project(&config_repo, &spec_repo, &steering_repo)?;
 
         // Execute single use case
-        match launch_claude_with_spec(&spec_repo, &config_repo, &steering_repo, self.no_danger) {
+        match launch_claude_with_spec(
+            &spec_repo,
+            &config_repo,
+            &steering_repo,
+            self.no_danger,
+            self.continue_conversation,
+        ) {
             Ok(()) => Ok(()),
             Err(crate::application::errors::ApplicationError::ProcessLaunchError(msg)) => {
                 println!("{}", format_error(&msg));
@@ -69,7 +79,7 @@ impl CodeCommand {
 
 impl Default for CodeCommand {
     fn default() -> Self {
-        Self::new(false)
+        Self::new(false, false)
     }
 }
 
@@ -79,15 +89,17 @@ mod tests {
 
     #[test]
     fn test_code_command_new() {
-        let command = CodeCommand::new(false);
+        let command = CodeCommand::new(false, false);
         // Just ensure it can be created without panicking
         assert!(!command.no_danger);
+        assert!(!command.continue_conversation);
     }
 
     #[test]
     fn test_code_command_new_with_no_danger() {
-        let command = CodeCommand::new(true);
+        let command = CodeCommand::new(true, false);
         assert!(command.no_danger);
+        assert!(!command.continue_conversation);
     }
 
     #[test]
@@ -95,6 +107,7 @@ mod tests {
         let command = CodeCommand::default();
         // Just ensure default works
         assert!(!command.no_danger);
+        assert!(!command.continue_conversation);
     }
 
     // Note: execute() method testing is complex due to TUI and process launching

@@ -35,8 +35,11 @@ async fn run() -> Result<()> {
             let command = CompleteCommand::new();
             command.execute()?;
         }
-        Commands::Code { no_danger } => {
-            let command = CodeCommand::new(no_danger);
+        Commands::Code {
+            no_danger,
+            continue_conversation,
+        } => {
+            let command = CodeCommand::new(no_danger, continue_conversation);
             command.execute()?;
         }
         Commands::Steering { command } => match command {

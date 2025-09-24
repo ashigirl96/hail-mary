@@ -8,7 +8,12 @@ impl ClaudeProcessLauncher {
         Self
     }
 
-    pub fn launch(&self, system_prompt: &str, no_danger: bool) -> Result<()> {
+    pub fn launch(
+        &self,
+        system_prompt: &str,
+        no_danger: bool,
+        continue_conversation: bool,
+    ) -> Result<()> {
         // Check if claude command exists
         let claude_exists = Self::check_claude_availability()?;
 
@@ -66,6 +71,11 @@ impl ClaudeProcessLauncher {
                 cmd.arg("--dangerously-skip-permissions");
             }
 
+            // Add --continue flag if specified
+            if continue_conversation {
+                cmd.arg("--continue");
+            }
+
             let error = cmd.exec(); // This never returns if successful
 
             // If we reach here, exec failed
@@ -97,6 +107,11 @@ impl ClaudeProcessLauncher {
             // Conditionally add --dangerously-skip-permissions (add it unless --no-danger is specified)
             if !no_danger {
                 cmd.arg("--dangerously-skip-permissions");
+            }
+
+            // Add --continue flag if specified
+            if continue_conversation {
+                cmd.arg("--continue");
             }
 
             cmd.spawn()

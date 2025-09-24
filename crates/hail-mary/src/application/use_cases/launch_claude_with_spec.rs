@@ -17,6 +17,7 @@ pub fn launch_claude_with_spec(
     config_repo: &dyn ConfigRepositoryInterface,
     steering_repo: &dyn SteeringRepositoryInterface,
     no_danger: bool,
+    continue_conversation: bool,
 ) -> Result<(), ApplicationError> {
     // 1. Get list of specifications
     let specs = spec_repo.list_spec_directories().map_err(|e| {
@@ -65,7 +66,7 @@ pub fn launch_claude_with_spec(
     // 5. Launch Claude with system prompt
     let launcher = ClaudeProcessLauncher::new();
     launcher
-        .launch(system_prompt.as_str(), no_danger)
+        .launch(system_prompt.as_str(), no_danger, continue_conversation)
         .map_err(|e| ApplicationError::ProcessLaunchError(e.to_string()))?;
 
     Ok(())
