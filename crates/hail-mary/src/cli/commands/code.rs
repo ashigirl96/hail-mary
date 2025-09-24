@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::application::use_cases::launch_claude_with_spec;
+use crate::application::use_cases::{initialize_project, launch_claude_with_spec};
 use crate::cli::formatters::format_error;
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use crate::infrastructure::repositories::{
@@ -16,22 +16,24 @@ impl CodeCommand {
         Self { no_danger }
     }
 
-    fn project_not_found_error(&self) -> anyhow::Error {
-        println!(
-            "{}",
-            format_error("Not in a project directory. Run 'hail-mary init' first.")
-        );
-        anyhow::anyhow!("Project not found")
-    }
-
     pub fn execute(&self) -> Result<()> {
-        // Discover project root
-        let path_manager = PathManager::discover().map_err(|_| self.project_not_found_error())?;
+        // Try to discover project root, or use current directory
+        let path_manager = match PathManager::discover() {
+            Ok(pm) => pm,
+            Err(_) => {
+                // If no .kiro directory found, use current directory for initialization
+                let current_dir = std::env::current_dir()?;
+                PathManager::new(current_dir)
+            }
+        };
 
         // Create repositories
         let spec_repo = SpecRepository::new(path_manager.clone());
         let config_repo = ConfigRepository::new(path_manager.clone());
-        let steering_repo = SteeringRepository::new(path_manager);
+        let steering_repo = SteeringRepository::new(path_manager.clone());
+
+        // Initialize project if needed (this is idempotent)
+        initialize_project(&config_repo, &spec_repo, &steering_repo)?;
 
         // Execute single use case
         match launch_claude_with_spec(&spec_repo, &config_repo, &steering_repo, self.no_danger) {
