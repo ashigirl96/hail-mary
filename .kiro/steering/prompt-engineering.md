@@ -623,3 +623,45 @@ Key behaviors:
    - Check if --topic flag exists
    - Handle different cases
 ```
+
+## System Prompt XML Structure
+**When**: Designing system prompts for Claude Code
+- Claude is trained to pay special attention to XML tag structures
+- Use hybrid approach: flat for main flows, nested for details
+- Naming conventions with prefixes (`kiro-*`) for related tags
+- Balance between quick access and logical grouping
+
+```xml
+# ✅ Good - Hybrid structure
+<!-- Flat: Quick access to main flows -->
+<kiro-triggers>
+- requirements: 要件 → <kiro-requirements-flow>
+</kiro-triggers>
+
+<kiro-requirements-flow>
+1. Read existing
+2. Apply template
+3. Show suggestions
+</kiro-requirements-flow>
+
+<!-- Nested: Grouped details -->
+<kiro-requirements-suggestions>
+  <before-update>
+    - "更新しますか？"
+    - Show completeness
+  </before-update>
+  <after-update>
+    - "追加要件？"
+    - "次は調査？"
+  </after-update>
+</kiro-requirements-suggestions>
+
+# ❌ Bad - Deep nesting
+<kiro-spec-behaviors>
+  <recognition>
+    <triggers>
+      <!-- Hard to find quickly -->
+    </triggers>
+  </recognition>
+</kiro-spec-behaviors>
+```
