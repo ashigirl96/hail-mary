@@ -54,17 +54,17 @@ pub enum SteeringCommands {
 
     /// Remind relevant steering sections based on input
     Remind {
-        /// Input text to analyze
-        #[arg(value_name = "INPUT", conflicts_with = "hook")]
+        /// Input text (for hook mode, reads from stdin)
+        #[arg(value_name = "INPUT", conflicts_with_all = ["user_prompt_submit", "post_tool_use"])]
         input: Option<String>,
 
-        /// Hook mode: read from stdin and passthrough
-        #[arg(long)]
-        hook: bool,
+        /// UserPromptSubmit hook mode: read from stdin and format for template
+        #[arg(long, conflicts_with = "post_tool_use")]
+        user_prompt_submit: bool,
 
-        /// Enable AI-powered relevance analysis using Claude Haiku
-        #[arg(long, alias = "haiku")]
-        analyze: bool,
+        /// PostToolUse hook mode: read from stdin and format as JSON
+        #[arg(long, conflicts_with = "user_prompt_submit")]
+        post_tool_use: bool,
     },
 }
 

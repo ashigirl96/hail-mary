@@ -14,6 +14,7 @@ thiserror = { workspace = true }
 
 # JSON/Configuration
 serde = { workspace = true }
+serde_json = { workspace = true }
 
 # TUI
 ratatui = { workspace = true }

@@ -23,7 +23,7 @@ impl ClaudeProcessLauncher {
             ));
         }
 
-        // Create inline settings JSON with UserPromptSubmit hook
+        // Create inline settings JSON with UserPromptSubmit and PostToolUse hooks
         let settings_json = r#"{
   "hooks": {
     "UserPromptSubmit": [
@@ -31,7 +31,18 @@ impl ClaudeProcessLauncher {
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.prompt' | hail-mary steering remind --hook"
+            "command": "jq -r '.prompt' | hail-mary steering remind --user-prompt-submit"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_name + \"|\" + (.tool_input.file_path // .tool_input.path // .tool_input.command // \"\")' | hail-mary steering remind --post-tool-use"
           }
         ]
       }

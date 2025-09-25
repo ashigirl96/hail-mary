@@ -1,6 +1,7 @@
 use std::fmt::Write;
 
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 /// Core domain entity representing a steering reminder
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -72,8 +73,47 @@ impl SteeringReminders {
         Self { reminders }
     }
 
+    /// Format reminders for UserPromptSubmit hook (current template format)
+    pub fn format_user_prompt_submit(&self, user_input: &str) -> String {
+        self.format_text(user_input)
+    }
+
+    /// Format reminders for PostToolUse hook (JSON format)
+    pub fn format_post_tool_use(&self) -> String {
+        // Core steering types to exclude from PostToolUse reminders
+        const CORE_TYPES: &[&str] = &["product", "tech", "structure"];
+
+        // Filter out core types, keep only user-defined custom steering
+        let custom_steering_tags: Vec<String> = self
+            .reminders
+            .iter()
+            .filter(|r| !CORE_TYPES.contains(&r.steering_name.as_str()))
+            .map(|r| format!("<steering-{}>", r.steering_name))
+            .collect();
+
+        let context = if custom_steering_tags.is_empty() {
+            // No custom steering configured, no reminder needed
+            "No custom steering patterns configured.".to_string()
+        } else {
+            format!(
+                "Reminder: Check adherence to steering patterns - {}",
+                custom_steering_tags.join(", ")
+            )
+        };
+
+        // Create JSON output for PostToolUse
+        let output = json!({
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": context
+            }
+        });
+
+        serde_json::to_string(&output).unwrap_or_else(|_| "{}".to_string())
+    }
+
     /// Format reminders as text output
-    pub fn format_text(&self, analyze: bool, user_input: &str) -> String {
+    pub fn format_text(&self, user_input: &str) -> String {
         let mut output = String::new();
 
         if self.reminders.is_empty() {
@@ -86,23 +126,15 @@ impl SteeringReminders {
             return output;
         }
 
-        // Build the steering list
+        // Build the steering list - use simple bullet list
         let mut steering_list = String::new();
-        if analyze {
-            // AI Analysis mode - use detailed format_reminder output
-            for reminder in &self.reminders {
-                writeln!(&mut steering_list, "{}", reminder.format_reminder()).unwrap();
-            }
-        } else {
-            // Light mode - use simple bullet list
-            for reminder in &self.reminders {
-                writeln!(
-                    &mut steering_list,
-                    "- <steering-{}> - {}",
-                    reminder.steering_name, reminder.reasoning
-                )
-                .unwrap();
-            }
+        for reminder in &self.reminders {
+            writeln!(
+                &mut steering_list,
+                "- <steering-{}> - {}",
+                reminder.steering_name, reminder.reasoning
+            )
+            .unwrap();
         }
 
         // Replace placeholder in template
@@ -192,23 +224,115 @@ mod tests {
 
         let steering_reminders = SteeringReminders::new(reminders);
 
-        // Test normal mode
-        let text = steering_reminders.format_text(false, "test input");
+        // Test text formatting
+        let text = steering_reminders.format_text("test input");
         assert!(text.contains("**Checked**"));
         assert!(text.contains("REQUIRED FIRST"));
         assert!(text.contains("<steering-tech>"));
         assert!(text.contains("<steering-documentation>"));
         assert!(text.contains("<user-input>test input</user-input>"));
 
-        // Test analyze mode - same template but different content in the list
-        let text_analyze = steering_reminders.format_text(true, "test input");
-        assert!(text_analyze.contains("**Checked**"));
-        assert!(text_analyze.contains("REQUIRED FIRST"));
-        assert!(text_analyze.contains("Remember: <steering-tech>")); // format_reminder output
-
         // Test empty reminders
         let empty_reminders = SteeringReminders::new(vec![]);
-        let empty_text = empty_reminders.format_text(false, "");
+        let empty_text = empty_reminders.format_text("");
         assert!(empty_text.contains("No relevant steering sections found"));
+    }
+
+    #[test]
+    fn test_format_user_prompt_submit() {
+        let reminders = vec![SteeringReminder::new(
+            "tech".to_string(),
+            vec![],
+            "Technology stack".to_string(),
+            1.0,
+        )];
+
+        let steering_reminders = SteeringReminders::new(reminders);
+        let output = steering_reminders.format_user_prompt_submit("test");
+
+        // Should use the template format
+        assert!(output.contains("**Checked**"));
+        assert!(output.contains("<steering-tech>"));
+        assert!(output.contains("<user-input>test</user-input>"));
+    }
+
+    #[test]
+    fn test_format_post_tool_use() {
+        let reminders = vec![
+            SteeringReminder::new(
+                "tech".to_string(),
+                vec![],
+                "Technology stack".to_string(),
+                1.0,
+            ),
+            SteeringReminder::new(
+                "rust-dev".to_string(),
+                vec![],
+                "Rust development tools".to_string(),
+                1.0,
+            ),
+        ];
+
+        let steering_reminders = SteeringReminders::new(reminders);
+        let json_output = steering_reminders.format_post_tool_use();
+
+        // Parse as JSON to verify structure
+        let parsed: serde_json::Value = serde_json::from_str(&json_output).unwrap();
+
+        assert!(parsed["hookSpecificOutput"]["hookEventName"] == "PostToolUse");
+        let context = parsed["hookSpecificOutput"]["additionalContext"]
+            .as_str()
+            .unwrap();
+        assert!(context.contains("Reminder: Check adherence to steering patterns"));
+        assert!(!context.contains("<steering-tech>")); // Core type should be filtered out
+        assert!(context.contains("<steering-rust-dev>")); // Custom type should be included
+        assert!(!context.contains("Technology stack")); // Should not include reasoning
+        assert!(!context.contains("Rust development tools")); // Should not include reasoning
+    }
+
+    #[test]
+    fn test_format_post_tool_use_filters_core_types() {
+        let reminders = vec![
+            SteeringReminder::new(
+                "product".to_string(),
+                vec![],
+                "Product overview".to_string(),
+                1.0,
+            ),
+            SteeringReminder::new(
+                "tech".to_string(),
+                vec![],
+                "Technology stack".to_string(),
+                1.0,
+            ),
+            SteeringReminder::new(
+                "structure".to_string(),
+                vec![],
+                "Code organization".to_string(),
+                1.0,
+            ),
+            SteeringReminder::new(
+                "prompt-engineering".to_string(),
+                vec![],
+                "Prompt patterns".to_string(),
+                1.0,
+            ),
+        ];
+
+        let steering_reminders = SteeringReminders::new(reminders);
+        let json_output = steering_reminders.format_post_tool_use();
+
+        let parsed: serde_json::Value = serde_json::from_str(&json_output).unwrap();
+        let context = parsed["hookSpecificOutput"]["additionalContext"]
+            .as_str()
+            .unwrap();
+
+        // Core types should be filtered out
+        assert!(!context.contains("<steering-product>"));
+        assert!(!context.contains("<steering-tech>"));
+        assert!(!context.contains("<steering-structure>"));
+
+        // Custom type should be included
+        assert!(context.contains("<steering-prompt-engineering>"));
     }
 }
