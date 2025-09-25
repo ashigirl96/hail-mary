@@ -1,6 +1,7 @@
 use std::io::{self, Read};
 
 use anyhow::Result;
+use serde_json::json;
 
 use crate::application::use_cases::remind_steering::remind_steering;
 use crate::domain::value_objects::steering_reminder::SteeringReminders;
@@ -29,8 +30,28 @@ impl SteeringRemindCommand {
         // Get input text
         let user_input = if is_hook {
             let mut buffer = String::new();
-            io::stdin().read_to_string(&mut buffer)?;
-            buffer
+            match io::stdin().read_to_string(&mut buffer) {
+                Ok(_) => buffer,
+                Err(e) => {
+                    // In hook mode, handle errors gracefully
+                    if self.post_tool_use {
+                        // PostToolUse: output valid empty JSON
+                        let empty_json = json!({
+                            "hookSpecificOutput": {
+                                "hookEventName": "PostToolUse",
+                                "additionalContext": "No custom steering patterns configured."
+                            }
+                        });
+                        println!(
+                            "{}",
+                            serde_json::to_string(&empty_json).unwrap_or_else(|_| "{}".to_string())
+                        );
+                    }
+                    // Log error to stderr for debugging
+                    eprintln!("Failed to read stdin: {}", e);
+                    return Ok(()); // Exit with code 0
+                }
+            }
         } else if let Some(ref input) = self.input {
             input.clone()
         } else {
@@ -39,6 +60,44 @@ impl SteeringRemindCommand {
             ));
         };
 
+        // PostToolUse mode: validate JSON structure
+        if self.post_tool_use {
+            // Try to parse as JSON and validate structure
+            match serde_json::from_str::<serde_json::Value>(&user_input) {
+                Ok(json_value) => {
+                    // Check if tool_name field exists
+                    if json_value.get("tool_name").is_none() {
+                        // Invalid format: output valid empty JSON
+                        let empty_json = json!({
+                            "hookSpecificOutput": {
+                                "hookEventName": "PostToolUse",
+                                "additionalContext": "No custom steering patterns configured."
+                            }
+                        });
+                        println!(
+                            "{}",
+                            serde_json::to_string(&empty_json).unwrap_or_else(|_| "{}".to_string())
+                        );
+                        return Ok(());
+                    }
+                }
+                Err(_) => {
+                    // JSON parse error: output valid empty JSON
+                    let empty_json = json!({
+                        "hookSpecificOutput": {
+                            "hookEventName": "PostToolUse",
+                            "additionalContext": "No custom steering patterns configured."
+                        }
+                    });
+                    println!(
+                        "{}",
+                        serde_json::to_string(&empty_json).unwrap_or_else(|_| "{}".to_string())
+                    );
+                    return Ok(());
+                }
+            }
+        }
+
         // Hook mode: check if .kiro directory exists
         if is_hook {
             let current_dir = std::env::current_dir()?;
@@ -46,7 +105,22 @@ impl SteeringRemindCommand {
 
             if !kiro_dir.exists() {
                 // No .kiro directory, just passthrough
-                print!("{}", user_input);
+                if self.post_tool_use {
+                    // PostToolUse: output valid empty JSON
+                    let empty_json = json!({
+                        "hookSpecificOutput": {
+                            "hookEventName": "PostToolUse",
+                            "additionalContext": "No custom steering patterns configured."
+                        }
+                    });
+                    println!(
+                        "{}",
+                        serde_json::to_string(&empty_json).unwrap_or_else(|_| "{}".to_string())
+                    );
+                } else {
+                    // UserPromptSubmit: passthrough original input
+                    print!("{}", user_input);
+                }
                 return Ok(());
             }
         }
@@ -78,8 +152,24 @@ impl SteeringRemindCommand {
             }
             Err(e) => {
                 if is_hook {
-                    // In hook mode, silently fail and passthrough
-                    print!("{}", user_input);
+                    if self.post_tool_use {
+                        // PostToolUse: return valid empty JSON
+                        let empty_json = json!({
+                            "hookSpecificOutput": {
+                                "hookEventName": "PostToolUse",
+                                "additionalContext": "No custom steering patterns configured."
+                            }
+                        });
+                        println!(
+                            "{}",
+                            serde_json::to_string(&empty_json).unwrap_or_else(|_| "{}".to_string())
+                        );
+                    } else {
+                        // UserPromptSubmit: passthrough original input
+                        print!("{}", user_input);
+                    }
+                    // Log error for debugging
+                    eprintln!("Steering remind error: {}", e);
                     Ok(())
                 } else {
                     Err(anyhow::anyhow!(e))
@@ -98,6 +188,20 @@ mod tests {
         let cmd = SteeringRemindCommand::new(Some("test input".to_string()), false, false);
         assert_eq!(cmd.input, Some("test input".to_string()));
         assert!(!cmd.user_prompt_submit);
+        assert!(!cmd.post_tool_use);
+    }
+
+    #[test]
+    fn test_steering_remind_command_post_tool_use_mode() {
+        let cmd = SteeringRemindCommand::new(None, false, true);
+        assert!(cmd.post_tool_use);
+        assert!(!cmd.user_prompt_submit);
+    }
+
+    #[test]
+    fn test_steering_remind_command_user_prompt_submit_mode() {
+        let cmd = SteeringRemindCommand::new(None, true, false);
+        assert!(cmd.user_prompt_submit);
         assert!(!cmd.post_tool_use);
     }
 }

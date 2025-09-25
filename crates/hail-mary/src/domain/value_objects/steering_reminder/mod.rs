@@ -109,7 +109,14 @@ impl SteeringReminders {
             }
         });
 
-        serde_json::to_string(&output).unwrap_or_else(|_| "{}".to_string())
+        // Ensure we always return valid JSON
+        match serde_json::to_string(&output) {
+            Ok(json_str) => json_str,
+            Err(_) => {
+                // Fallback to hardcoded valid JSON string
+                r#"{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"No custom steering patterns configured."}}"#.to_string()
+            }
+        }
     }
 
     /// Format reminders as text output

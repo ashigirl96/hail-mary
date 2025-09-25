@@ -31,18 +31,18 @@ impl ClaudeProcessLauncher {
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.prompt' | hail-mary steering remind --user-prompt-submit"
+            "command": "hail-mary steering remind --user-prompt-submit"
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Write|Edit|MultiEdit|Read",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_name + \"|\" + (.tool_input.file_path // .tool_input.path // .tool_input.command // \"\")' | hail-mary steering remind --post-tool-use"
+            "command": "hail-mary steering remind --post-tool-use"
           }
         ]
       }
