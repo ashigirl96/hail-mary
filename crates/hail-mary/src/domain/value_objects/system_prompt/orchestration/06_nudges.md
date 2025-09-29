@@ -28,6 +28,7 @@
 - "Design documented. Review implementation plan?"
 
 **State-Based Navigation**:
+
 | Current State | Suggestion |
 |--------------|------------|
 | Empty requirements | "Shall we start with requirements definition?" |

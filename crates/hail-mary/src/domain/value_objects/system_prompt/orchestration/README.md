@@ -223,6 +223,12 @@ Input → patterns → nudges(alert) → [recovery action]
 
 **重要な洞察**: Hubは**必須ステップではない** - 選択されたパイプラインが永続化を必要とする時のみ起動される条件付きコンポーネント。
 
+### tasks.md更新クイックリファレンス
+
+**更新タイミング** (`04_workflows.md`): BEFORE Protocol (pending→in-progress)、AFTER Protocol (in-progress→complete)、Document-Specific Post-Actions
+**更新内容** (`02_hub.md`): State Tracking Table、Required Investigations Checklist、Timeline with links
+**アクセス権限** (`01_principles.md`): Command Pipeline (完全R/W)、Suggestion Pipeline (アクセスなし)、Diagnostic Pipeline (読取専用)、Recovery Pipeline (最小限)
+
 ### 05_gates.md - 戦略固有の検証
 
 **目的**: パイプライン戦略によって変化する検証ルール。
