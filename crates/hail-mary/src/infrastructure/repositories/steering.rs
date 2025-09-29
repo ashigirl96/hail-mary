@@ -169,10 +169,9 @@ impl SteeringRepositoryInterface for SteeringRepository {
                     ApplicationError::FileSystemError(format!("Failed to get metadata: {}", e))
                 })?;
 
-                let created_at = metadata
-                    .created()
-                    .or_else(|_| metadata.modified())
-                    .unwrap_or(SystemTime::UNIX_EPOCH);
+                // Use modified time as it's more reliable across platforms
+                // This is just for the BackupInfo struct, actual sorting will be by name
+                let created_at = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
 
                 backups.push(BackupInfo {
                     name: entry.file_name().to_string_lossy().to_string(),
@@ -182,8 +181,10 @@ impl SteeringRepositoryInterface for SteeringRepository {
             }
         }
 
-        // Sort by creation time (oldest first)
-        backups.sort_by_key(|b| b.created_at);
+        // Sort by backup name (which contains timestamp) for consistent ordering
+        // This ensures tests work reliably across different filesystems
+        // Format is typically: YYYY-MM-DD-HH-MM
+        backups.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(backups)
     }
 
