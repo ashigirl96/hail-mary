@@ -32,8 +32,7 @@ impl SpecRepository {
         feature_dir: &std::path::Path,
         name: &str,
     ) -> Result<(), ApplicationError> {
-        // Create only essential template files
-        // Note: requirements.md, tasks.md, and spec.json are created on-demand via slash commands
+        // Create essential template files including tasks.md for orchestration
 
         let design_content = format!(
             r#"# Design
@@ -59,7 +58,29 @@ impl SpecRepository {
             name
         );
 
-        // Write only essential template files
+        // Create tasks.md with initial State Tracking and Timeline
+        let tasks_content = format!(
+            r#"# Tasks
+
+## Required Investigations
+*Topics will be defined after requirements completion*
+
+## State Tracking
+
+| Document | Status | Coverage | Next Action |
+|----------|--------|----------|-------------|
+| requirements.md | pending | - | Define requirements |
+| investigation.md | pending | - | Start investigation after requirements |
+| design.md | pending | - | Awaiting 100% coverage |
+
+## Timeline
+
+- [x] Feature spec created → {}
+"#,
+            name
+        );
+
+        // Write all template files including tasks.md
         fs::write(feature_dir.join("design.md"), design_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write design.md: {}", e))
         })?;
@@ -70,6 +91,10 @@ impl SpecRepository {
 
         fs::write(feature_dir.join("investigation.md"), investigation_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write investigation.md: {}", e))
+        })?;
+
+        fs::write(feature_dir.join("tasks.md"), tasks_content).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to write tasks.md: {}", e))
         })?;
 
         Ok(())
