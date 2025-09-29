@@ -170,12 +170,13 @@ Slash commands can trigger extended thinking by including [extended thinking key
 
 Command files support frontmatter, useful for specifying metadata about the command:
 
-| Frontmatter     | Purpose                                                                                                                                                                               | Default                             |
-| :-------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------- |
-| `allowed-tools` | List of tools the command can use                                                                                                                                                     | Inherits from the conversation      |
-| `argument-hint` | The arguments expected for the slash command. Example: `argument-hint: add [tagId] \| remove [tagId] \| list`. This hint is shown to the user when auto-completing the slash command. | None                                |
-| `description`   | Brief description of the command                                                                                                                                                      | Uses the first line from the prompt |
-| `model`         | Specific model string (see [Models overview](/en/docs/about-claude/models/overview))                                                                                                  | Inherits from the conversation      |
+| Frontmatter                | Purpose                                                                                                                                                                               | Default                             |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------- |
+| `allowed-tools`            | List of tools the command can use                                                                                                                                                     | Inherits from the conversation      |
+| `argument-hint`            | The arguments expected for the slash command. Example: `argument-hint: add [tagId] \| remove [tagId] \| list`. This hint is shown to the user when auto-completing the slash command. | None                                |
+| `description`              | Brief description of the command                                                                                                                                                      | Uses the first line from the prompt |
+| `model`                    | Specific model string (see [Models overview](/en/docs/about-claude/models/overview))                                                                                                  | Inherits from the conversation      |
+| `disable-model-invocation` | Whether to prevent `SlashCommand` tool from calling this command                                                                                                                      | false                               |
 
 For example:
 
@@ -262,6 +263,66 @@ When configuring [permissions for MCP tools](/en/docs/claude-code/iam#tool-speci
 * ❌ **Incorrect**: `mcp__github__*` (wildcards not supported)
 
 To approve all tools from an MCP server, use just the server name: `mcp__servername`. To approve specific tools only, list each tool individually.
+
+## `SlashCommand` tool
+
+The `SlashCommand` tool allows Claude to execute [custom slash commands](/en/docs/claude-code/slash-commands#custom-slash-commands) programmatically
+during a conversation. This gives Claude the ability to invoke custom commands
+on your behalf when appropriate.
+
+To encourage Claude to trigger `SlashCommand` tool, your instructions (prompts,
+CLAUDE.md, etc.) generally need to reference the command by name with its slash.
+
+Example:
+
+```
+> Run /write-unit-test when you are about to start writing tests.
+```
+
+This tool puts each available custom slash command's metadata into context up to the
+character budget limit. You can use `/context` to monitor token usage and follow
+the operations below to manage `SlashCommand` tool context.
+
+Currently, `SlashCommand` tool does not support built-in commands like `/compact`.
+
+### Disable `SlashCommand` tool
+
+To prevent Claude from executing any slash commands via the tool:
+
+```bash
+/permissions
+# Add to deny rules: SlashCommand
+```
+
+This will also remove SlashCommand tool (and the slash command descriptions) from context.
+
+### Disable specific commands only
+
+To prevent a specific slash command from becoming available, add
+`disable-model-invocation: true` to the slash command's frontmatter.
+
+This will also remove the command's metadata from context.
+
+### `SlashCommand` permission rules
+
+The permission rules support:
+
+* **Exact match**: `SlashCommand:/commit` (allows only `/commit` with no arguments)
+* **Prefix match**: `SlashCommand:/review-pr:*` (allows `/review-pr` with any arguments)
+
+### Character budget limit
+
+The `SlashCommand` tool includes a character budget to limit the size of command
+descriptions shown to Claude. This prevents token overflow when many commands
+are available.
+
+The budget includes each custom slash command's name, args, and description.
+
+* **Default limit**: 15,000 characters
+* **Custom limit**: Set via `SLASH_COMMAND_TOOL_CHAR_BUDGET` environment variable
+
+When the character budget is exceeded, Claude will see only a subset of the
+available commands. In `/context`, a warning will show with "M of N commands".
 
 ## See also
 
