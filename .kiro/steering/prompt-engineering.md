@@ -665,3 +665,58 @@ Key behaviors:
   </recognition>
 </kiro-spec-behaviors>
 ```
+
+## XML-based Orchestration Framework
+**When**: Solving Lost in the Middle problem for system prompts
+- Split monolithic system prompts into flat XML tag sections
+- Slash commands reference only needed tags, not entire prompt
+- Separation of concerns: triggers in commands, rules in system prompt
+- Enables pinpoint reference to specific behaviors
+
+### System Prompt Structure
+```xml
+<kiro-spec-driven>
+  <!-- Common orchestration elements -->
+  <kiro-philosophy>Core reactive patterns</kiro-philosophy>
+  <kiro-tasks-hub>Tasks.md central control</kiro-tasks-hub>
+  <kiro-orchestration>Operation sequences</kiro-orchestration>
+  <kiro-nudging>Post-action prompts</kiro-nudging>
+
+  <!-- Action-specific elements -->
+  <kiro-requirements>Requirements templates</kiro-requirements>
+  <kiro-investigation>Investigation behaviors</kiro-investigation>
+  <kiro-design>Design validation</kiro-design>
+
+  <kiro-spec-files>Current spec paths</kiro-spec-files>
+</kiro-spec-driven>
+```
+
+### Slash Command Reference Pattern
+```markdown
+# ✅ Good - Minimal command with tag references
+---
+name: investigate
+description: "Technical investigation (investigate/research/調査)"
+---
+
+# /hm:investigate
+
+Execute investigation following Kiro methodology.
+
+Refer to system prompt sections:
+- <kiro-philosophy> for reactive orchestration
+- <kiro-tasks-hub> for critical update timing
+- <kiro-orchestration> for operation sequence
+- <kiro-investigation> for investigation behaviors
+- <kiro-nudging> for post-investigation prompts
+
+All execution details defined in these sections.
+
+# ❌ Bad - Duplicating rules in command
+## /hm:investigate
+
+1. Check requirements completion
+2. Update tasks.md before starting
+3. Track confidence percentages
+[100+ lines of detailed rules]
+```

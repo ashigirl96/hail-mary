@@ -49,10 +49,11 @@ async fn run() -> Result<()> {
             }
             SteeringCommands::Remind {
                 input,
-                hook,
-                analyze,
+                user_prompt_submit,
+                post_tool_use,
             } => {
-                let remind_command = SteeringRemindCommand::new(input, hook, analyze);
+                let remind_command =
+                    SteeringRemindCommand::new(input, user_prompt_submit, post_tool_use);
                 remind_command.execute().await?;
             }
         },

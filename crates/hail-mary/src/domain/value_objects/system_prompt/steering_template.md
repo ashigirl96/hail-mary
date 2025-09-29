@@ -1,9 +1,6 @@
-# Kiro: Specification-Driven Development Context
+## Kiro Steering System
 
-You are using Kiro, a specification-driven development methodology. Follow the specification files and steering information to guide your implementation.
-
-{specification_section}
-## About Steering
+### About Steering
 
 The steering tags below contain project-specific knowledge and patterns organized by type. Each `<steering-TYPE>` tag represents a different domain of expertise. This is your **primary reference** for all Kiro project work.
 

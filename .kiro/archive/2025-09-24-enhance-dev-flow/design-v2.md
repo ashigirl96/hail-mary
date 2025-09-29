@@ -4,6 +4,37 @@
 
 Kiroシステムプロンプトを**リアクティブで文脈認識可能な**システムへと進化させる。slash commandの明示的な実行から、自然な会話フローでの暗黙的な理解と提案へ。
 
+## Kiro Principles - WHAT, RESEARCH, HOW
+
+````xml
+<kiro-principles>
+# Separation of Concerns
+
+Requirements = WHAT (何を作るか)
+- User Stories: ユーザーが何を求めているか
+- Acceptance Criteria: 完成の定義
+- Problem Statement: 解決すべき課題
+- NO Technical Details: 技術的な詳細は記載しない
+
+Investigation = RESEARCH (何を調べるか)
+- Technical Feasibility: 技術的に実現可能か
+- Existing Implementation: 既存の実装を調査
+- Available Options: 選択肢の洗い出し
+- Impact Analysis: 影響範囲の分析
+
+Design = HOW (どう作るか)
+- Architecture Decisions: アーキテクチャの決定
+- Implementation Approach: 実装方針
+- File Changes: 変更するファイル
+- Technical Details: 技術的な詳細
+
+# Document Independence
+- Each document should be self-contained
+- No circular dependencies between documents
+- Clear progression: WHAT → RESEARCH → HOW
+</kiro-principles>
+````
+
 ## Design Principles
 
 ### 1. Flat-First Architecture
@@ -32,17 +63,17 @@ Suggestion（次の提案）
 ## XML Tag Structure
 
 ### Recognition Layer - 話題の認識
-```xml
+````xml
 <kiro-recognition>
 - requirements keywords: 要件, 仕様, PRD, requirement, バグレポート
 - investigation keywords: 調査, 解析, 検証, investigate, リサーチ
 - design keywords: 設計, アーキテクチャ, design, 実装方針
 - implementation keywords: 実装, コード, 開発, build
 </kiro-recognition>
-```
+````
 
 ### Pattern Layer - 文脈判断と行動決定
-```xml
+````xml
 <!-- Requirements Patterns -->
 <kiro-pattern-requirements-new>
 Recognition: requirements + Context: no existing file
@@ -55,7 +86,7 @@ Recognition: requirements + Context: existing file
 </kiro-pattern-requirements-update>
 
 <kiro-pattern-requirements-incomplete>
-Recognition: requirements + Context: completeness < 50%
+Recognition: requirements + Context: status = draft
 → Action: "詳細を追加しますか？調査が必要な項目があります"
 </kiro-pattern-requirements-incomplete>
 
@@ -90,14 +121,14 @@ Recognition: any change + Impact detected
 Recognition: any update + Conflict detected
 → Action: "矛盾を検出: {document1} vs {document2}"
 </kiro-pattern-consistency-check>
-```
+````
 
 ### Flow Layer - 処理フロー
-```xml
+````xml
 <kiro-requirements-flow>
 1. Check <kiro-state-requirements>
 2. Apply <kiro-requirements-template> if new
-3. Show preview with completeness score
+3. Show preview of document
 4. Execute <kiro-suggestions-requirements> → before-update
 5. Update <kiro_requirements>
 6. Execute <kiro-suggestions-requirements> → after-update
@@ -126,21 +157,21 @@ Recognition: any update + Conflict detected
 7. Update <kiro_design>
 8. Execute <kiro-suggestions-design> → after-update
 </kiro-design-flow>
-```
+````
 
 ### State Layer - 状態追跡
-```xml
+````xml
 <kiro-state-requirements>
-status: none|incomplete|complete|outdated
-completeness: 0-100
+status: none|draft|complete
 last-modified: ISO8601
 blocks: [list of blocked items]
 enables: [investigation, design]
 </kiro-state-requirements>
 
 <kiro-state-investigation>
-status: none|stale|fresh|in-progress
-confidence: 0-100
+status: none|in-progress|complete
+confidence: 0-100  <!-- 調査の信頼度 -->
+coverage: 0-100    <!-- 調査の網羅度 -->
 last-modified: ISO8601
 findings: [key discoveries]
 impacts: [affected documents]
@@ -148,7 +179,7 @@ impacts: [affected documents]
 
 <kiro-state-design>
 status: none|draft|ready|implemented
-completeness: 0-100
+completeness: 0-100  <!-- 設計の詳細度 -->
 based-on-investigation: ISO8601
 conflicts: [list of conflicts]
 target-files: [count]
@@ -159,21 +190,20 @@ primary: [most logical next step based on current state]
 alternatives: [other valid options]
 blocked-by: [prerequisites not met]
 </kiro-state-next-action>
-```
+````
 
 ### Suggestion Layer - 対話的提案
-```xml
+````xml
 <kiro-suggestions-requirements>
   <before-update>
     - "この内容で要件を更新しますか？ [Y/n]"
-    - Show: "完成度: {completeness}%"
-    - If < 70%: "調査が必要: {missing sections}"
+    - Show summary of sections
   </before-update>
 
   <after-update>
-    - If completeness < 70%: "要件を追加しますか？"
-    - If has [TBD]: "調査を開始しますか？" → <kiro-investigation-flow>
-    - If completeness >= 70%: "設計を作成できます" → <kiro-design-flow>
+    - "要件を追加しますか？"
+    - "調査を開始しますか？" → <kiro-investigation-flow>
+    - "設計を作成できます" → <kiro-design-flow>
   </after-update>
 </kiro-suggestions-requirements>
 
@@ -185,6 +215,7 @@ blocked-by: [prerequisites not met]
   </before-update>
 
   <after-update>
+    - Show: "調査網羅度: {coverage}%, 信頼度: {confidence}%"
     - If impacts design: "設計の更新が必要です" → <kiro-design-flow>
     - If impacts requirements: "要件に反映しますか？" → <kiro-requirements-flow>
     - "追加調査が必要ですか？"
@@ -194,8 +225,8 @@ blocked-by: [prerequisites not met]
 <kiro-suggestions-design>
   <before-update>
     - "この設計で進めますか？ [Y/n]"
-    - Show: "影響ファイル: {count}個"
-    - Show: "完成度: {completeness}%"
+    - Show: "設計詳細度: {completeness}%"
+    - List affected files: "影響ファイル: {count}個"
   </before-update>
 
   <after-update>
@@ -204,10 +235,10 @@ blocked-by: [prerequisites not met]
     - "設計を調整しますか？"
   </after-update>
 </kiro-suggestions-design>
-```
+````
 
 ### Impact Detection Layer - 影響分析
-```xml
+````xml
 <kiro-impact-detection>
 Check after any document update:
 1. Scan for keywords indicating structural changes
@@ -223,10 +254,10 @@ requirements: "スコープ変更", "新機能", "要件追加"
 investigation: "API変更", "DB構造", "既存実装", "制約発見"
 design: "アーキテクチャ変更", "ファイル構造", "依存関係"
 </kiro-impact-keywords>
-```
+````
 
 ### Example Layer - 具体的な会話例
-```xml
+````xml
 <kiro-example-fresh-start>
 User: ユーザー認証を作りたい
 Claude: [Recognition: implementation desire + no requirements]
@@ -239,7 +270,8 @@ Claude: [Recognition: implementation desire + no requirements]
 <kiro-example-investigation-discovery>
 User: 調査したらRedisが既に使われていた
 Claude: [Pattern: investigation-impact detected]
-        Redis実装の発見を記録しました（信頼度: 90%）
+        Redis実装の発見を記録しました
+        （信頼度: 90%, 網羅度: 70%）
 
         この発見は設計に影響します：
         - セッション管理にRedis活用可能
@@ -258,33 +290,24 @@ Claude: [Pattern: consistency-check triggered]
         [2] 設計を要件に戻す
         [3] 両方を調整する
 </kiro-example-design-conflict>
-```
+````
 
 ### Template Layer - ドキュメントテンプレート
-```xml
+````xml
 <kiro-requirements-template>
 # Requirements - [Feature Name]
 
-## Metadata
-- Completeness: [0-100%]
-- Last Updated: [ISO8601]
-- Status: [draft|review|approved]
-
 ## Overview
-[Problem statement and solution approach]
+[Problem statement - what problem are we solving?]
 
 ## User Stories
 - As a [role], I want [feature] so that [benefit]
+- As a [role], I want [feature] so that [benefit]
 
 ## Acceptance Criteria
-- Given [context], When [action], Then [outcome]
-
-## Technical Requirements
-[TBD - will be populated by investigation]
-
-## Dependencies
-- Investigation: [required|optional]
-- External: [list of external dependencies]
+- [ ] Given [context], When [action], Then [outcome]
+- [ ] Given [context], When [action], Then [outcome]
+- [ ] [Specific measurable criteria]
 </kiro-requirements-template>
 
 <kiro-investigation-template>
@@ -292,26 +315,28 @@ Claude: [Pattern: consistency-check triggered]
 
 ## Metadata
 - Confidence: [0-100%]
-- Sources: [codebase|documentation|web]
-- Last Updated: [ISO8601]
+- Coverage: [0-100%]
+
+## Research Questions
+[What specific questions are we trying to answer?]
 
 ## Findings
-### Key Discoveries
-[What was found]
+### Existing Implementation
+[What already exists in the codebase]
 
-### Technical Constraints
-[Limitations identified]
+### Technical Analysis
+[Technical findings and discoveries]
 
-### Opportunities
-[Possible improvements or optimizations]
+### Available Options
+[Different approaches that could work]
 
 ## Impact Analysis
-- Requirements: [sections affected]
-- Design: [components affected]
-- Implementation: [estimated effort]
+- Design Impact: [How this affects design decisions]
+- Implementation Impact: [Effort and complexity]
+- Risk Assessment: [Potential risks]
 
 ## Recommendations
-[Actionable next steps based on findings]
+[Based on research, what approach is recommended]
 </kiro-investigation-template>
 
 <kiro-design-template>
@@ -319,106 +344,123 @@ Claude: [Pattern: consistency-check triggered]
 
 ## Metadata
 - Completeness: [0-100%]
-- Based on Investigation: [timestamp]
-- Requirements Version: [timestamp]
+- Based on: investigation-[topic]
 
-## Architecture Overview
-[High-level approach]
+## Overview
+[High-level technical approach based on investigation]
 
-## Component Design
-### [Component Name]
-- Purpose: [why this component]
-- Interface: [how it connects]
-- Implementation: [key details]
+## Architecture Decisions
+### Decision: [Name]
+- Context: [Why this decision is needed]
+- Options Considered: [List of alternatives]
+- Decision: [What was chosen]
+- Rationale: [Why this option]
+
+## Implementation Approach
+### Phase 1: [Name]
+- Changes: [What will be implemented]
+- Files: [Specific files affected]
+
+### Phase 2: [Name]
+- Changes: [What will be implemented]
+- Files: [Specific files affected]
 
 ## File Changes
 ### Modified Files
-- `path/to/file`: [what changes]
-
-### New Files
-- `path/to/new`: [purpose]
-
-## Migration Strategy
-[If applicable, how to migrate existing code]
-
-## Risk Assessment
-- Technical: [risks and mitigations]
-- Timeline: [schedule risks]
-</kiro-design-template>
+```
+path/to/file.rs
+  - Add: [specific addition]
+  - Modify: [specific change]
+  - Remove: [what to remove]
 ```
 
+### New Files
+```
+path/to/new.rs
+  - Purpose: [why this file]
+  - Contents: [what it contains]
+```
+
+## Technical Details
+[Specific implementation details, algorithms, data structures]
+</kiro-design-template>
+````
+
 ### Rules Layer - 制約とガイドライン
-```xml
+````xml
 <kiro-rules>
   <requirements>
     <will>
-      - Always show completeness score
-      - Max 70% without investigation
+      - Focus on WHAT not HOW
+      - Capture user stories and acceptance criteria
+      - Define scope clearly (in/out)
       - Interactive refinement until satisfaction
-      - Track dependencies explicitly
     </will>
     <will-not>
-      - Generate technical details without evidence
+      - Include technical implementation details
+      - Specify architecture or design decisions
       - Skip user confirmation
-      - Allow completion beyond 70% without investigation
+      - Mix HOW into WHAT
     </will-not>
   </requirements>
 
   <investigation>
     <will>
-      - Score confidence for all findings
-      - Track sources explicitly
-      - Analyze impact automatically
-      - Suggest follow-up investigations
+      - Answer specific research questions
+      - Find existing implementations
+      - Analyze technical feasibility
+      - Provide evidence-based recommendations
     </will>
     <will-not>
       - Make assumptions without evidence
-      - Ignore cross-document impacts
-      - Overwrite without preserving history
+      - Jump to solutions without research
+      - Ignore existing code patterns
+      - Skip impact analysis
     </will-not>
   </investigation>
 
   <design>
     <will>
-      - Require fresh investigation (< 3 days)
-      - List all affected files
-      - Link to investigation evidence
-      - Provide implementation guidance
+      - Focus on HOW to implement
+      - Base decisions on investigation findings
+      - List specific file changes
+      - Provide clear implementation phases
     </will>
     <will-not>
       - Design without investigation
-      - Ignore requirement constraints
-      - Skip risk assessment
+      - Redefine WHAT (that's requirements' job)
+      - Skip technical details
+      - Ignore investigation recommendations
     </will-not>
   </design>
 </kiro-rules>
-```
+````
 
 ### Prerequisites Layer - 前提条件
-```xml
+````xml
 <kiro-prerequisites-investigation>
 - Can start fresh anytime
 - If updating: check for outdated sections
-- If requirements exist: align with requirements scope
+- If requirements exist: align with requirements content
 </kiro-prerequisites-investigation>
 
 <kiro-prerequisites-design>
 - MUST have investigation (status: fresh)
 - Investigation age < 3 days
-- Requirements completeness > 50%
+- Requirements status: draft or complete
 - If missing: "先に調査が必要です。実行しますか？"
 </kiro-prerequisites-design>
 
 <kiro-prerequisites-implementation>
 - MUST have design (status: ready|implemented)
-- Design completeness > 70%
+- Design status: ready or implemented
 - No unresolved conflicts
 - If missing: "設計を先に完成させてください"
 </kiro-prerequisites-implementation>
-```
+````
 
 ### Dependencies Layer - 相互依存関係
-```xml
+````xml
 <kiro-dependencies>
 # Enablement Chain
 - requirements → enables → investigation, design
@@ -440,12 +482,12 @@ Claude: [Pattern: consistency-check triggered]
 - Significant investigation finding → suggest design update
 - Design conflict with requirements → force reconciliation
 </kiro-dependencies>
-```
+````
 
 ## Reactive Behavior Patterns
 
 ### Pattern 1: Natural Flow
-```
+````
 User: "認証機能を作りたい"
   ↓
 Recognition: Implementation desire
@@ -455,10 +497,10 @@ Pattern: No requirements exists
 Action: Suggest requirements first
   ↓
 Flow: Create requirements → Investigation → Design → Implementation
-```
+````
 
 ### Pattern 2: Impact Cascade
-```
+````
 User: "調査で新しいAPIを発見した"
   ↓
 Recognition: Investigation finding
@@ -468,10 +510,10 @@ Pattern: API change detected
 Impact: Design affected
   ↓
 Suggestion: Update design to use new API
-```
+````
 
 ### Pattern 3: Conflict Resolution
-```
+````
 User: "設計を更新した"
   ↓
 State Check: Design conflicts with requirements
@@ -481,7 +523,7 @@ Pattern: Consistency violation
 Action: Present reconciliation options
   ↓
 Resolution: User chooses approach
-```
+````
 
 ## Key Innovations
 
