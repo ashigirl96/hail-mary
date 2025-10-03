@@ -3,7 +3,7 @@
 ## Architecture
 
 ### Language and Edition
-- **Rust 1.89.0**: Primary implementation language
+- **Rust 1.90.0**: Primary implementation language
 - **Edition 2024**: Main hail-mary crate
 - **Edition 2021**: anthropic-client crate
 
@@ -28,13 +28,14 @@
 ### Core Framework
 - **Rust CLI Application**: Native binary with no server component
 - **Clap v4.5**: Command-line argument parsing with derive macros
-- **Tokio v1**: Async runtime (anthropic-client only)
+- **Tokio v1**: Async runtime (both hail-mary and anthropic-client)
 
 ### Key Libraries
 - **serde v1**: Serialization/deserialization with derive
 - **toml v0.9**: Configuration file parsing
 - **chrono v0.4**: Date/time handling
 - **regex v1**: Pattern matching
+- **async-trait v0.1**: Async trait support
 
 ### TUI Components
 - **ratatui v0.29**: Terminal UI framework
@@ -59,8 +60,6 @@
 
 ### Development Dependencies
 - **tempfile v3**: Test isolation with temporary directories
-- **pretty_assertions v1**: Readable test output (unused but available)
-- **rstest v0.23**: Parameterized testing (unused but available)
 
 ## Common Commands
 
@@ -73,10 +72,9 @@ just dev               # Watch mode (check + test + run)
 
 ### Testing
 ```bash
-just test              # Run all tests
+just test              # Run all tests (includes fmt + lint + test)
 just test-verbose      # Tests with output
 just test-watch        # Watch mode for tests
-just ci                # Full CI pipeline (fmt + lint + test)
 ```
 
 ### Code Quality
@@ -84,7 +82,6 @@ just ci                # Full CI pipeline (fmt + lint + test)
 just fmt               # Format code
 just lint              # Comprehensive clippy checks
 just lint-basic        # Basic clippy checks
-just fix               # Format before testing
 ```
 
 ### Application Usage
@@ -131,7 +128,6 @@ chezmoi git -- push
 
 ### Test Organization
 - **Unit Tests**: Embedded in source files with `#[cfg(test)]`
-- **Integration Tests**: `tests/` directory
 - **Test Helpers**: `application/test_helpers/` with mocks
 
 ### Test Patterns
@@ -142,8 +138,7 @@ chezmoi git -- push
 ### Testing Commands
 ```bash
 # Recommended workflow
-just fix                # Format first
-just ci                 # Complete validation
+just test               # Run complete validation (fmt + lint + test)
 
 # Direct testing (when needed)
 cargo test                                    # All tests
@@ -185,7 +180,7 @@ reqwest = { version = "0.12", features = ["rustls-tls-native-roots", "json", "co
 tokio = { version = "1", features = ["full", "test-util"] }
 
 # Utilities
-dirs = "5.0"
+dirs = "6.0"
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -200,9 +195,9 @@ serde_json = "1"
 - **Comments**: Avoid unless necessary for complex logic
 
 ### Workflow Guidelines
-1. **Before Starting**: Run `just ci` to ensure clean state
+1. **Before Starting**: Run `just test` to ensure clean state
 2. **During Development**: Use `just dev` for watch mode
-3. **Before Commit**: Run `just fix` then `just ci`
+3. **Before Commit**: Run `just test` for complete validation
 4. **Testing**: Always test with `just test` not direct cargo
 
 ### Error Handling

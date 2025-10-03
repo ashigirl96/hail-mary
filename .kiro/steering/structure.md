@@ -5,13 +5,23 @@
 ```
 hail-mary/                        # Project root
 ├── Cargo.toml                   # Workspace configuration
+├── Cargo.lock                   # Dependency lock file (gitignored)
 ├── justfile                     # Task automation with just command runner
 ├── rust-toolchain.toml         # Rust toolchain configuration
+├── LICENSE                      # Project license
+├── README.md                    # Project documentation
+├── .gitignore                   # Git ignore patterns
 ├── .env                         # Environment configuration
 ├── .node-version               # Node.js version specification
+├── .github/                     # GitHub configuration
+│   └── workflows/              # CI/CD workflows
+│       └── ci.yml             # Continuous integration pipeline
 ├── crates/                      # Multi-crate workspace
 │   ├── hail-mary/              # Main CLI application
 │   └── anthropic-client/        # OAuth client library
+│       ├── src/               # Source code
+│       │   └── lib.rs         # OAuth implementation
+│       └── examples/          # Usage examples
 ├── .kiro/                       # Kiro specification system
 │   ├── config.toml             # Steering configuration
 │   ├── specs/                  # Active specifications
@@ -36,10 +46,27 @@ src/
 │   ├── entities/              # Core domain objects (currently minimal structure)
 │   ├── value_objects/         # Immutable domain types
 │   │   ├── spec.rs           # Spec validation
-│   │   ├── system_prompt/    # System prompt with templates
+│   │   ├── system_prompt/    # System prompt with pattern router templates
 │   │   │   ├── mod.rs
-│   │   │   ├── template.md
-│   │   │   └── specification_section_template.md
+│   │   │   ├── base_template.md
+│   │   │   ├── steering_template.md
+│   │   │   ├── pattern_router/        # Pattern-based routing framework
+│   │   │   │   ├── index.md          # Template with variable placeholders
+│   │   │   │   ├── 00_philosophy.md  # System philosophy
+│   │   │   │   ├── 01_principles.md  # Universal principles
+│   │   │   │   ├── 02_hub.md        # Tasks.md hub management
+│   │   │   │   ├── 03_patterns.md   # Pattern recognition and routing
+│   │   │   │   ├── 04_workflows.md  # Multi-strategy pipelines
+│   │   │   │   ├── 05_gates.md      # Validation gates
+│   │   │   │   ├── 06_nudges.md     # Suggestion templates
+│   │   │   │   ├── 07_requirements.md  # Requirements template
+│   │   │   │   ├── 08_investigation.md # Investigation template
+│   │   │   │   ├── 09_design.md     # Design template
+│   │   │   │   ├── 10_spec_files.md # Dynamic path provider
+│   │   │   │   └── README.md        # Framework documentation
+│   │   │   └── legacy-orchestration/  # Archived orchestration system
+│   │   │       ├── index.md
+│   │   │       └── README.md
 │   │   ├── steering_reminder/ # Reminder with template
 │   │   │   ├── mod.rs
 │   │   │   └── template.md
@@ -89,7 +116,7 @@ src/
     └── embedded_resources.rs # Template resources
 ```
 
-**Note**: Integration tests are located in `crates/hail-mary/tests/` rather than root `tests/` directory.
+**Note**: Integration tests are located in `crates/hail-mary/tests/` (not in a root `tests/` directory).
 ```
 
 ### Kiro System Structure (`.kiro/`)
@@ -126,7 +153,10 @@ src/
 │       ├── steering.md
 │       ├── steering-remember.md
 │       ├── requirements.md
-│       └── investigate.md
+│       ├── investigate.md
+│       ├── interactive-investigate.md
+│       ├── interactive-dev.md
+│       └── design.md
 └── settings.local.json       # Local configuration
 ```
 
@@ -231,3 +261,10 @@ use self::helpers::*;
 - Embedded resources for distribution
 - Structured templates for specifications
 - Version-controlled steering files
+
+### Pattern Router Framework
+- **Reactive Pattern-Based Routing**: No default flows, all inputs classified and routed
+- **Four Independent Pipelines**: Command (heavy), Suggestion (lightweight), Diagnostic (read-only), Recovery (emergency)
+- **Conditional Component Access**: Components activated based on pipeline strategy
+- **Efficiency Optimization**: ~80% reduction for lightweight operations by bypassing heavy validation
+- **Legacy System Preservation**: Previous orchestration archived in `legacy-orchestration/`
