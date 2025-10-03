@@ -6,10 +6,10 @@ allowed-tools: Read, Write, MultiEdit, Task
 
 # /hm:design
 
-Create technical design documentation with reactive pattern-based orchestration.
+Create technical design documentation with reactive pattern-based routing.
 
 Refer to system prompt sections:
-- <kiro-philosophy> for reactive orchestration pattern
+- <kiro-philosophy> for reactive pattern routing
 - <kiro-principles> for universal operational rules
 - <kiro-hub> for tasks.md central control mechanism
 - <kiro-patterns> for pattern recognition and mapping
