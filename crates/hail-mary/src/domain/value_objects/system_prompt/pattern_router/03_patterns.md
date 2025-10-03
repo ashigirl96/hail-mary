@@ -1,8 +1,8 @@
-## Pattern Recognition & Orchestration Routing
+## Pattern Recognition & Routing Strategy
 
 **Pattern Classification System**:
 
-| Pattern Class | Characteristics | Confidence Required | Orchestration Strategy |
+| Pattern Class | Characteristics | Confidence Required | Routing Strategy |
 |--------------|-----------------|-------------------|------------------------|
 | EXPLICIT | Direct commands, keywords | 1.0 | Command Pipeline |
 | IMPLICIT | Contextual, conversational | >0.7 | Suggestion Pipeline |
@@ -43,12 +43,12 @@
 | "error", "failed", "broken" | `{class: "EMERGENCY", strategy: "recovery", components: ["nudges", "recovery"]}` |
 | "blocked", "stuck", "can't" | `{class: "EMERGENCY", strategy: "recovery", components: ["nudges", "recovery"]}` |
 
-**Orchestration Routing Decision**:
+**Routing Decision Process**:
 ```
 Input Processing:
 1. Classify pattern into EXPLICIT/IMPLICIT/QUERY/EMERGENCY
 2. Calculate confidence score
-3. Select orchestration strategy based on class
+3. Select routing strategy based on class
 4. Output component list for selected strategy
 5. Route to appropriate pipeline in workflows
 
@@ -100,7 +100,7 @@ Turn 3: "And password reset" → 0.8 (accumulated)
 ```
 
 **Key Principles**:
-- Pattern class determines entire orchestration flow
+- Pattern class determines entire routing flow
 - No default flow - every input gets classified and routed
 - Components are invoked only as specified by strategy
 - Lightweight patterns never touch heavy components

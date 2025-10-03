@@ -1,8 +1,9 @@
-# マルチ戦略パターンベースオーケストレーションフレームワーク
+# Pattern Router Framework
+# パターンルーターフレームワーク
 
 ## 核心哲学
 
-このオーケストレーションフレームワークは**真のReactive Pattern-Based Orchestration**を実装しています。パターン分類がオーケストレーション戦略全体を決定し、**デフォルトフローは存在しません** - あらゆる入力は分類され、その分類がどのパイプラインをどのコンポーネントで実行するかを選択します。
+このPattern Router Frameworkは**真のReactive Pattern-Based Routing**を実装しています。パターン分類がルーティング戦略全体を決定し、**デフォルトフローは存在しません** - あらゆる入力は分類され、その分類がどのパイプラインをどのコンポーネントで実行するかを選択します。
 
 ### 核心原則：パターンこそが戦略
 
@@ -14,7 +15,7 @@ Input → [分岐を含む単一フロー]
 Input → Pattern Classification → Strategy Selection → Pipeline Execution
 ```
 
-パターン認識は単にアクションをトリガーするだけでなく、異なるインタラクションタイプに最適化された**オーケストレーション戦略全体を選択**します。
+パターン認識は単にアクションをトリガーするだけでなく、異なるインタラクションタイプに最適化された**ルーティング戦略全体を選択**します。
 
 ## コアアーキテクチャ
 
@@ -53,13 +54,13 @@ Input → Pattern Classification → Strategy Selection → Pipeline Execution
 ### 概要
 
 ```
-orchestration/
+pattern_router/
 ├── index.md              # 変数プレースホルダーを含むテンプレート
 ├── 00_philosophy.md      # 基盤層: システム存在理由
 ├── 01_principles.md      # 基盤層: 普遍的運用ルール
 ├── 02_hub.md            # 条件付きコンポーネント: tasks.md状態管理
 ├── 03_patterns.md       # ルーター: パターン分類と戦略選択
-├── 04_workflows.md      # パイプラインコンテナ: 複数のオーケストレーション戦略
+├── 04_workflows.md      # パイプラインコンテナ: 複数のルーティング戦略
 ├── 05_gates.md          # 戦略固有: パイプライン別検証ルール
 ├── 06_nudges.md         # 戦略固有: パイプライン別提案テンプレート
 ├── 07_requirements.md   # ドキュメント構造: 要件テンプレート
@@ -76,7 +77,7 @@ orchestration/
 - `01_principles.md` - 全パイプライン共通の「どのように」を定義
 
 **ルーティング＆戦略層**:
-- `03_patterns.md` - **ルーター**: 入力を分類しオーケストレーション戦略を出力
+- `03_patterns.md` - **ルーター**: 入力を分類しルーティング戦略を出力
 - `04_workflows.md` - **パイプラインコンテナ**: 4つの異なる実行戦略を定義
 
 **条件付きコンポーネント** (パイプラインに基づいて起動):
@@ -97,7 +98,7 @@ orchestration/
 **核心概念**:
 - **NO Linear Workflow**: 開発は非線形、どこからでも開始可能
 - **Pattern Recognition over Process**: プロセスよりパターン認識を重視
-- **Orchestration without Control**: 制約せずに調整
+- **Routing without Control**: 制約せずにルーティング
 - **Single Source of Truth**: 単一の権威ある状態、複数のビュー
 - **Evidence-Based Progress**: すべての決定が根拠に遡れる
 - **Autonomy with Safety**: 一貫性のための検証、ガイダンスのための推奨
@@ -114,14 +115,14 @@ orchestration/
 - **Link Everything**: すべての参照に`document#section`形式を使用
 - **Evidence Chain**: Requirements → Investigation → Design の追跡可能性
 - **Status Discipline**: `pending | in-progress | complete`のみ使用
-- **Pattern-Based Orchestration**: 分類が戦略を決定
+- **Pattern-Based Routing**: 分類が戦略を決定
 - **Efficiency Through Strategy Selection**: 適切なタスクに適切なパイプライン
 
 **参照元**: 全コンポーネントが運用ガイドラインとして参照
 
-### 03_patterns.md - パターン認識とオーケストレーションルーター
+### 03_patterns.md - パターン認識とルーティング
 
-**目的**: 入力を分類し、完全なオーケストレーション戦略を出力。
+**目的**: 入力を分類し、完全なルーティング戦略を出力。
 
 **核心責務**: パターン分類 → 戦略選択 → コンポーネントリスト出力
 
@@ -157,7 +158,7 @@ Output: {
 
 **主要機能**: IMPLICITパターンの信頼度累積（メモリ内、閾値到達まで永続化なし）。
 
-### 04_workflows.md - マルチ戦略オーケストレーションコンテナ
+### 04_workflows.md - マルチ戦略ルーティングコンテナ
 
 **目的**: 単一フローではなく、4つの異なるパイプライン実行戦略を定義。
 
@@ -273,7 +274,7 @@ Input → patterns → nudges(alert) → [recovery action]
 
 ### 07-09_*.md - ドキュメント構造定義
 
-**目的**: 純粋なテンプレート定義、オーケストレーションロジックなし。
+**目的**: 純粋なテンプレート定義、ルーティングロジックなし。
 
 - `07_requirements.md`: PRDとBug Reportテンプレート
 - `08_investigation.md`: Append-Onlyプロトコル、トピック構造、エビデンス形式
@@ -454,7 +455,7 @@ Input → patterns → [components...] → nudges
 
 ### 1. パターンが戦略を決定
 
-すべての入力は分類される必要があります。分類出力は、どのコンポーネントを起動するかを含む完全なオーケストレーション戦略を指定します。
+すべての入力は分類される必要があります。分類出力は、どのコンポーネントを起動するかを含む完全なルーティング戦略を指定します。
 
 ### 2. デフォルトフローなし
 
@@ -504,12 +505,12 @@ Input → patterns → [components...] → nudges
 全ファイルは`include_str!`マクロでコンパイル時に埋め込まれます：
 
 ```rust
-const ORCHESTRATION_PATTERNS: &str = include_str!("orchestration/03_patterns.md");
+const PATTERN_ROUTER_PATTERNS: &str = include_str!("pattern_router/03_patterns.md");
 // ... 全ファイルインクルード
 
 // 実行時:
-let content = ORCHESTRATION_INDEX
-    .replace("{patterns}", ORCHESTRATION_PATTERNS)
+let content = PATTERN_ROUTER_INDEX
+    .replace("{patterns}", PATTERN_ROUTER_PATTERNS)
     // ... 全変数を置換
 ```
 
@@ -530,4 +531,4 @@ let content = ORCHESTRATION_INDEX
 - ✅ 適切なパイプライン選択による効率性
 - ✅ デフォルトフローなし - すべてがパターン駆動
 - ✅ コンポーネント分離の維持
-- ✅ 真のreactive pattern-based orchestrationを達成
+- ✅ 真のreactive pattern-based routingを達成

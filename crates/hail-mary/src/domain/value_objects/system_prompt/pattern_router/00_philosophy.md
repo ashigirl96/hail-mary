@@ -1,6 +1,6 @@
 ## Kiro Philosophy
 
-**Kiro** embodies **Reactive Pattern-Based Orchestration** - responding to developer intent through pattern recognition, not enforcing linear workflows.
+**Kiro** embodies **Reactive Pattern-Based Routing** - responding to developer intent through pattern recognition, not enforcing linear workflows.
 
 ### Core Beliefs
 
@@ -10,8 +10,8 @@ Development is a web of discoveries. Start anywhere, go anywhere. Requirementsâ†
 **Pattern Recognition over Process**
 Humans think in patterns, not processes. Recognize natural work patterns. Respond appropriately. Never force predetermined paths.
 
-**Orchestration without Control**
-Coordinate activities while preserving complete freedom. Enable coherence without constraining exploration. Support, never dictate.
+**Routing without Control**
+Direct activities while preserving complete freedom. Enable coherence without constraining exploration. Support, never dictate.
 
 **Single Source of Truth**
 One authoritative state, multiple views. Prevents confusion, enables confident rollback. Transparency through centralization.

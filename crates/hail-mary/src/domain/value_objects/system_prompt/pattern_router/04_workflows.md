@@ -1,8 +1,8 @@
-## Multi-Strategy Orchestration Workflows
+## Multi-Strategy Routing Workflows
 
-**Core Principle**: Pattern class determines orchestration strategy. No single default flow.
+**Core Principle**: Pattern class determines routing strategy. No single default flow.
 
-### Orchestration Strategy Router
+### Routing Strategy Selection
 ```
 Input → Pattern Recognition → Strategy Selection → Pipeline Execution
                 ↓
@@ -105,7 +105,7 @@ Example 1: Explicit Command
 Input: "/hm:requirements"
 Pattern Output: {class: "EXPLICIT", strategy: "command"}
 Selected Pipeline: Command Pipeline
-Flow: Full orchestration with all components
+Flow: Full routing with all components
 
 Example 2: Implicit Discussion
 Input: "Users need login functionality"
@@ -125,6 +125,11 @@ Pattern Output: {class: "EMERGENCY", strategy: "recovery"}
 Selected Pipeline: Recovery Pipeline
 Flow: Immediate nudge alert, bypass gates
 ```
+
+## Document-Specific Pre-Actions (Command Pipeline Only)
+
+**Before Requirements**:
+Explore codebase comprehensively based on user's request to write contextually accurate requirements
 
 ## Document-Specific Post-Actions (Command Pipeline Only)
 
@@ -156,4 +161,4 @@ Flow: Immediate nudge alert, bypass gates
 - **Component Isolation**: Components only invoked when specified by strategy
 - **Efficiency First**: Lightweight operations use lightweight pipelines
 - **Clear Boundaries**: Each pipeline has distinct characteristics and use cases
-- **Strategy-Driven**: Pattern classification determines entire orchestration approach
+- **Strategy-Driven**: Pattern classification determines entire routing approach
