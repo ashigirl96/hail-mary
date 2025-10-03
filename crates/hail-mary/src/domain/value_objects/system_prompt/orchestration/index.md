@@ -40,6 +40,8 @@
 {design}
 </kiro-design>
 
+<kiro-spec-files>
 {spec_files}
+</kiro-spec-files>
 
 </kiro-spec-driven>

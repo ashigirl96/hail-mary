@@ -132,20 +132,23 @@ Flow: Immediate nudge alert, bypass gates
 1. Extract investigation topics from requirements
 2. Create Required Investigations checklist in tasks.md
 3. Update State Tracking: requirements.md = complete
-4. Suggest: "Technical investigation needed. Start with [first-topic]?"
+4. Add to Timeline: `[x] Requirements defined → requirements.md#overview`
+5. Trigger nudge event: `requirements-complete`
 
 **After Investigation Topic Complete**:
 1. Mark topic [x] in Required Investigations
 2. Calculate coverage percentage (X/Y)
 3. Update State Tracking: investigation.md = X/Y (N%)
-4. If 100%: Set design.md readiness flag
-5. Suggest: "Topic complete. Coverage: X/Y. Investigate [next-topic]?"
+4. Add to Timeline: `[x] [topic-name] investigated → investigation.md#[topic-name]`
+5. If 100%: Set design.md readiness flag
+6. Trigger nudge event: `investigation-progress` (with coverage data)
 
 **After Design Complete**:
 1. Extract implementation tasks to Timeline
 2. Mark design.md = complete in State Tracking
-3. Create implementation checklist if needed
-4. Suggest: "Design complete. Extract implementation tasks?"
+3. Add to Timeline: `[x] Design completed → design.md#overview`
+4. Create implementation checklist if needed
+5. Trigger nudge event: `design-complete`
 
 ## Key Principles
 
