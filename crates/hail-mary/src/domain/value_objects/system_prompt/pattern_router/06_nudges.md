@@ -44,22 +44,22 @@
 **Requirements Context Detected**:
 - "Would you like to add this feature to requirements.md? 📝"
 - "I can document these requirements for you. Shall I proceed?"
-- "These sound like new requirements. Add to requirements.md? [Y/n]:"
+- "These sound like new requirements. Add to requirements.md?"
 
 **Investigation Context Detected**:
 - "Should I record these findings in investigation.md#[topic-name]? 🔍"
 - "This research looks valuable. Document in investigation.md?"
-- "I'll add this to the investigation notes. Proceed? [Y/n]:"
+- "I'll add this to the investigation notes. Proceed?"
 
 **Design Context Detected**:
 - "Would you like to document this design decision? 🏗️"
 - "This architecture decision should be recorded. Add to design.md?"
-- "I can capture this design choice in design.md. Continue? [Y/n]:"
+- "I can capture this design choice in design.md. Continue?"
 
 **Confidence-Based Phrasing**:
 - **Low (0.5-0.7)**: "This might be worth documenting..."
 - **Medium (0.7-0.85)**: "I recommend adding this to [document].md"
-- **High (0.85+)**: "Let's add this to [document].md! [Y/n]:"
+- **High (0.85+)**: "Let's add this to [document].md!"
 
 **Multi-Entity Detection**:
 ```
@@ -68,7 +68,7 @@ Detected from conversation:
   - Technology: JWT tokens
   - Requirement: Password policies
 
-Document in requirements.md? [Y/n]:
+Document in requirements.md?
 ```
 
 ## Diagnostic Pipeline Templates (Query Responses)
@@ -104,7 +104,7 @@ Project Status:
 - "Manual fix required: [instructions]"
 
 **Resolution Confirmation**:
-- "Issue resolved. Resume normal workflow? [Y/n]:"
+- "Issue resolved. Resume normal workflow?"
 - "Recovery complete. Return to [previous-task]?"
 - "Problem bypassed. Continue with caution."
 

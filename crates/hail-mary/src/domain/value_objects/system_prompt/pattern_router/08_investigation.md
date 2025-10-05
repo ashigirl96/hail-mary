@@ -45,4 +45,4 @@
 ```
 
 **Interactive Confirmation**:
-Show findings and ask: "Append to investigation.md? (Y to save / or ask questions)"
+Show findings and ask: "Append to investigation.md?"

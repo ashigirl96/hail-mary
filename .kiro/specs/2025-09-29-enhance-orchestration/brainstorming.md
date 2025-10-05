@@ -125,49 +125,26 @@ parent-specification/
 - [ ] v1.1: 02-payment (2025-03-01)
 ```
 
-#### 親requirements.md - 統合要件と索引
+#### 親requirements.md（分解後）
 ```markdown
-## Overview
-統合認証・決済システムの構築
+# Requirements
 
-## Child Specifications
-- [01-auth](./01-auth/requirements.md): OAuth2.0/SAML認証
-- [02-payment](./02-payment/requirements.md): Stripe統合
-- [03-ui](./03-ui/requirements.md): 認証UI
+[元の全要件内容 - そのまま保持]
 
-## Cross-Cutting Concerns
-- セキュリティ要件（全子specに適用）
-- パフォーマンス目標
+## Decomposed Specifications
+**Status**: Active (2025-10-05)
+**Rationale**: [分解理由の簡潔な説明]
+
+- [01-auth](./01-auth/requirements.md): Stories #1-5
+- [02-cart](./02-cart/requirements.md): Stories #6-13
+- [03-payment](./03-payment/requirements.md): Stories #14-20
 ```
 
-#### 親investigation.md - 分解根拠
-```markdown
-## Decomposition Rationale
-**分解の必要性を認識**: 2025-09-29
-**根拠**:
-- 異なるチームが担当（Backend, Payment, Frontend）
-- リリースタイミングが異なる
-- 技術的に独立したコンポーネント
+#### 親investigation.md（分解後）
+元の内容をそのまま保持。特別なセクション追加なし。
 
-## Boundary Analysis
-- 01-auth ←→ 02-payment: JWT tokenで連携
-- 01-auth ←→ 03-ui: REST APIで連携
-```
-
-#### 親design.md - アーキテクチャ統合
-```markdown
-## System Architecture
-[全体アーキテクチャ図]
-
-## Integration Points
-- API Gateway設計
-- 共通エラーハンドリング
-- データフロー
-
-## Child Design Integration
-- [01-auth/design.md]: 認証サービス詳細
-- [02-payment/design.md]: 決済サービス詳細
-```
+#### 親design.md（分解後）
+元の内容をそのまま保持。特別なセクション追加なし。
 
 ### 実装上の工夫
 
@@ -313,32 +290,53 @@ fn select_orchestration_file(name: &str, scope: SpecScope) -> &'static str {
 - Check: Sibling spec `../01-auth/tasks.md` status
 - Action: ⚠️ WARNING if blocked
 
-**Global Prerequisite Check**:
-- Check: Global `../requirements.md` decomposition status
-- Action: ❌ BLOCK if incomplete
+**Global Context Check**:
+- Check: Global `../tasks.md` for coordination status
+- Action: Read-only validation
 ```
 
 #### 10_spec_files_scoped.md - Extended File References
 ```xml
+<!-- Global Context（子が参照可能） -->
 <global-tasks-file>{global_tasks_path}</global-tasks-file>
-<global-requirements-file>{global_requirements_path}</global-requirements-file>
+
+<!-- Local Scope Files -->
 <tasks-file>{tasks_path}</tasks-file>
 <requirements-file>{requirements_path}</requirements-file>
-<!-- 他のファイル参照 -->
+<design-file>{design_path}</design-file>
+<investigation-file>{investigation_path}</investigation-file>
 ```
 
 ### ワークフローの変更点
 
-#### 分解判断ポイント
-Requirements → Investigation 完了後に新しい選択肢：
-- 「設計しますか？」（従来通り）
-- **「仕様を分解しますか？」**（新規）
+#### 分解判断ポイント（改訂版 2025-10-05）
+
+**重要な変更**: 複数の段階で分解機会を提供し、プロジェクトの実情に応じて最適なタイミングで分解可能に。
+
+分解機会の多様性：
+1. **Requirements完了時**
+   - 規模が明確（User Stories数で判断）
+   - チーム構成が既知の場合に有効
+   - 早期並行作業が可能
+
+2. **Investigation途中/完了時**
+   - 技術的複雑さが判明
+   - Evidence-basedな分割
+   - より的確な境界設定
+
+3. **Design作成中/完了時**
+   - アーキテクチャ的な分離が明確化
+   - マイクロサービス化の必要性が判明
+   - 実装規模が想定を超えた場合の再分割
 
 #### 分解時の動作
 1. 現在のspecディレクトリ内に子specディレクトリを作成
-2. 各子specに最小限のファイル（tasks.md, requirements.md）を作成
-3. 親のinvestigation.mdに分解根拠を記録
-4. ユーザーに再起動を促す：「hail-maryを再起動し、子specを選択して作業を続けてください」
+2. 各子specにrequirements.mdのみを作成（親から分割）
+3. 各子specにtasks.mdを初期化
+4. 親requirements.mdに「Decomposed Specifications」セクション追加
+5. ユーザーに再起動を促す：「hail-maryを再起動し、子specを選択して作業を続けてください」
+
+**重要**: investigation.md、design.mdは分解時に作成しない。各子specで新規作成される。
 
 ### 言語設計：LLMへの適切な指示表現
 
@@ -384,8 +382,125 @@ Global context is your stage, not your manager."
 4. **スケーラビリティ**: 大規模プロジェクトでも各スコープは管理可能なサイズ
 5. **並行開発**: 複数チームが独立したスコープで作業可能
 
+## 会話的インタラクション設計（2025-10-05追加）
+
+### 会話的な分解アプローチ
+
+Kiroの哲学に基づき、ユーザーとの自然な会話を通じて分解を決定。
+
+#### 会話パターン例
+```markdown
+"要件がまとまりましたね。認証、決済、UIなど
+独立した機能が見えてきました。どう進めましょうか？"
+
+→ ユーザーの自由な応答例：
+  - "backend/frontendで分けたい"
+  - "まずは調査してみよう"
+  - "チームで分担したい"
+  - "一人でやるから大丈夫"
+```
+
+Pattern Routerがユーザーの自然な応答から意図を理解し、適切にルーティング。
+
+### 分解軸の適応的決定
+
+#### ユーザーとの対話による分解軸選択
+```markdown
+"分解パターンの例：
+- 技術層: backend/, frontend/, infra/
+- 機能: auth/, payment/, shipping/
+- チーム: team-a/, team-b/
+- フェーズ: mvp/, v1.1/, future/
+
+どのように分解しますか？"
+
+→ ハイブリッド分解も可能：
+  "基本はbackend/frontendだけど、決済は独立させたい"
+  → 01-backend/, 02-frontend/, 03-payment/
+```
+
+### Nudgeパターンの簡素化
+
+複雑度による3段階から**2パターンのみ**に簡素化：
+
+```markdown
+Simple（小〜中規模）:
+"要件完了。調査フェーズへ進みますか？"
+
+Medium（中〜大規模）:
+"要件完了。分解も可能です。どう進めますか？"
+
+※ Complex廃止 - 強制的な分解推奨は不要
+```
+
+## 親Requirements.mdの新しい扱い（2025-10-05追加）
+
+### Append-Only戦略
+
+分解時に親requirements.mdを**書き換えない**。
+
+```markdown
+# 分解前
+全詳細要件（2000行）
+
+# 分解後
+全詳細要件（2000行）← そのまま残る
+
+## Decomposed Specifications  ← 追加のみ
+**Status**: Active (2025-10-05)
+**Rationale**: 3つのチームで並行開発するため
+
+- [01-auth](./01-auth/requirements.md): Stories #1-5
+  - Owner: Backend Team
+- [02-cart](./02-cart/requirements.md): Stories #6-13
+  - Owner: Frontend Team
+```
+
+#### 利点
+- 全体像の完全な保持
+- 元要件と子要件のトレーサビリティ
+- ロールバック可能性
+- Git差分の明確性
+
+## 子Specの独立性強化（2025-10-05追加）
+
+### 子Specのアクセス制限
+
+```yaml
+子Specが参照可能:
+  - ../tasks.md         # Global Context のみ
+  - ../01-auth/tasks.md # 兄弟の状態（依存確認）
+
+子Specが参照不可:
+  - ../requirements.md  ❌
+  - ../investigation.md ❌
+  - ../design.md       ❌
+```
+
+### 子Requirements.mdの自己完結性
+
+```markdown
+## 01-auth/requirements.md
+# Requirements - Authentication Service
+
+## Overview
+認証サービスの完全仕様（親への参照不要）
+
+## User Stories
+- As a user, I want email login
+- As a user, I want OAuth
+（認証関連のみ、完全版）
+
+## Note
+グローバル制約: レスポンス < 200ms
+（親から複製、参照ではない）
+```
+
+子は**完全に独立した仕様書**として機能し、親のドキュメントへの依存なし。
+
 ---
 
 *このドキュメントは、2025-09-29のブレインストーミングセッションで作成され、*
 *Scoped Orchestration Architectureの詳細設計を含むよう拡張されました。*
+*2025-10-05: 会話的インタラクション設計、分解タイミングの最適化、子Specの独立性強化を追加。*
 *Kiroフレームワークの次期バージョンに向けた実装仕様です。*

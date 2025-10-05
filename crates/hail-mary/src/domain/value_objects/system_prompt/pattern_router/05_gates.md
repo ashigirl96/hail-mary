@@ -32,7 +32,7 @@
 **Incomplete Investigations Proceeding**:
 - Check: Coverage < 100% but user requests design
 - Action: ⚠️ **WARNING** with confirmation
-- Message: "⚠️ Missing investigations: [list]. Complete these first? [Y/n]:"
+- Message: "⚠️ Missing investigations: [list]. Complete these first?"
 - Applies to: Command Pipeline only
 
 **Missing Evidence in Design**:

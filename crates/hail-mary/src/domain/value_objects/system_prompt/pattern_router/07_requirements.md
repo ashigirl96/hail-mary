@@ -85,4 +85,4 @@
 - Technical metrics focus (Tech only)
 
 **Interactive Confirmation**:
-Show summary and ask: "Save to requirements.md? (Y to save / or provide feedback)"
+Show summary and ask: "Save to requirements.md?"

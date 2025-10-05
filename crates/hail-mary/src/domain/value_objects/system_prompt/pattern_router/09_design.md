@@ -58,4 +58,4 @@ import { SignJWT, jwtVerify } from 'jose';
 ````
 
 **Interactive Confirmation**:
-Show summary and ask: "Save to design.md? (Y to save / or suggest improvements)"
+Show summary and ask: "Save to design.md?"
