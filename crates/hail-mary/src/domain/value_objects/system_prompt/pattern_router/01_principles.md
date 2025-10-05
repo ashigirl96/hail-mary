@@ -5,6 +5,12 @@
 - All updates performed through Claude routing
 - Ensures consistency and integrity
 
+**File Operation Protocol**:
+- ALWAYS Read before Write/MultiEdit to Kiro documents
+- Understand existing structure and content first
+- Never write blindly without context
+- Applies to: <requirements-file>, <investigation-file>, <design-file>, <tasks-file>
+
 **Conditional Hub Access**:
 - Command Pipeline: ALWAYS consult <tasks-file> before operations
 - Suggestion Pipeline: NEVER access hub (ephemeral state only)
