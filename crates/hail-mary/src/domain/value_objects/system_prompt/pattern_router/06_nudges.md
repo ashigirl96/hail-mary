@@ -11,23 +11,28 @@
 
 ## Command Pipeline Templates (State-Based)
 
-**After Requirements Complete**:
+### Event: requirements-complete (After)
 - "Technical investigation needed next. Investigation topics defined: [list]"
 - "Requirements confirmed. Start investigating [first-topic]?"
 - "Ready to begin technical research. Investigate [topic]?"
 
-**During Investigation Progress**:
+### Event: investigation-progress (During)
 - "Topic complete. Coverage: X/Y (N%). Continue with [next-topic]?"
 - "Investigation X/Y done. Remaining: [list]. Which next?"
 - If high coverage: "Almost done! Only [remaining] topic(s) left"
 - If 100%: "All investigations complete! Ready for design?"
 
-**After Design Complete**:
-- "Design complete. Extract implementation tasks?"
-- "Ready to begin implementation. Start with [first-task]?"
-- "Design documented. Review implementation plan?"
+### Event: design-complete (After)
+- "Design documented! Implementation tasks identified: [XX, YY, ZZ]"
+- "Suggested implementation order: [XX → YY → ZZ]. Shall I add these to Timeline checklist?"
+- "Or would you prefer a different order? Let me know and I'll update accordingly."
 
-**State-Based Navigation**:
+### Event: implementation-ready (After Timeline update)
+- "Implementation checklist created in Timeline. Ready to begin?"
+- "Tasks queued: [list with order]. Which would you like to start with?"
+- "Checklist ready. Shall we start with [first-task]?"
+
+### State-Based Navigation:
 
 | Current State | Suggestion |
 |--------------|------------|

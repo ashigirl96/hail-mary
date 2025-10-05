@@ -149,11 +149,16 @@ Explore codebase comprehensively based on user's request to write contextually a
 6. Trigger nudge event: `investigation-progress` (with coverage data)
 
 **After Design Complete**:
-1. Extract implementation tasks to Timeline
-2. Mark design.md = complete in State Tracking
-3. Add to Timeline: `[x] Design completed → design.md#overview`
-4. Create implementation checklist if needed
+1. Mark design.md = complete in State Tracking
+2. Add to Timeline: `[x] Design completed → design.md#overview`
+3. Extract implementation tasks from design.md (do NOT write to Timeline yet)
+4. Present tasks with suggested implementation order to user
 5. Trigger nudge event: `design-complete`
+
+**After User Confirms Implementation Order**:
+1. Write implementation checklist to Timeline with confirmed order
+2. Update State Tracking if needed
+3. Trigger nudge event: `implementation-ready`
 
 ## Key Principles
 
