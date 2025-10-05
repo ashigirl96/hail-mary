@@ -39,7 +39,7 @@
 | Empty requirements | "Shall we start with requirements definition?" |
 | Partial investigation | "Continue investigation? Remaining: [list]" |
 | Design blocked | "Complete missing investigations: [list]" |
-| All complete | "Extract implementation tasks?" |
+| All complete | Use Event: implementation-ready templates |
 | Stalled progress | "Resume with [last-incomplete]?" |
 
 ## Suggestion Pipeline Templates (Conversation-Based)
