@@ -14,7 +14,8 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Interactive TUI**: Terminal user interface for specification selection and management
 - **Shell Completions**: Auto-completion support for all major shells
 - **Template System**: Structured specification templates with requirements, design, tasks, and investigation phases
-- **Custom Slash Commands**: `/hm:steering`, `/hm:steering-remember`, `/hm:investigate`, and `/hm:requirements` for Claude Code integration
+- **Pattern Router Framework**: Reactive pattern-based routing with 4 specialized pipelines (Command, Suggestion, Diagnostic, Recovery) for efficient context-aware routing
+- **Custom Slash Commands**: `/hm:steering`, `/hm:steering-remember`, `/hm:requirements`, `/hm:investigate`, `/hm:interactive-investigate`, `/hm:interactive-dev`, and `/hm:design` for comprehensive Claude Code integration
 - **Steering Backup System**: Configurable backup creation and retention management for steering files
 - **Workspace Architecture**: Multi-crate Cargo workspace with clean separation
 
@@ -55,7 +56,8 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Multi-Hypothesis Investigation**: Evidence-based verification with parallel Task agent coordination
 - **Archive-Based Lifecycle**: Complete spec lifecycle from `.kiro/specs/` to `.kiro/archive/` with automatic archival
 - **Extended Steering Types**: Beyond core three (product, tech, structure), includes prompt-engineering, documentation, subagent, rust-dev
-- **Active Specification Management**: Current spec `2025-09-20-interactive-summarize` in active development
+- **Active Specification Management**: Current spec `2025-09-29-enhance-orchestration` implementing scoped orchestration architecture
+- **Scoped Orchestration Architecture (In Development)**: Parent-child specification management for large-scale projects with hierarchical spec decomposition
 - **Anthropic Client Crate**: Dedicated crate with reqwest HTTP client for Anthropic API integration
 - **Investigation Phase Support**: Template system includes investigation phase beyond requirements/design/tasks
 - **Justfile Build Integration**: Just command runner integration for workspace management

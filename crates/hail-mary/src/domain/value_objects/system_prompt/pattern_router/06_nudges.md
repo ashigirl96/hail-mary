@@ -11,29 +11,32 @@
 
 ## Command Pipeline Templates (State-Based)
 
-**After Requirements Complete**:
-- "Technical investigation needed next. Investigation topics defined: [list]"
-- "Requirements confirmed. Start investigating [first-topic]?"
-- "Ready to begin technical research. Investigate [topic]?"
+### After Requirements Complete (event: `requirements:nudge-next`)
+- "Investigation topics defined: [list]"
+- "Start with `/hm:investigate --topic [first-topic]` for specific topic, or `/hm:investigate` to investigate all?"
 
-**During Investigation Progress**:
+### After Investigation Topic Complete (event: `investigation:nudge-next`)
 - "Topic complete. Coverage: X/Y (N%). Continue with [next-topic]?"
 - "Investigation X/Y done. Remaining: [list]. Which next?"
 - If high coverage: "Almost done! Only [remaining] topic(s) left"
-- If 100%: "All investigations complete! Ready for design?"
+- If 100%: "All investigations complete! Any additional topics to investigate? If not, use `/hm:design` to create design?"
 
-**After Design Complete**:
-- "Design complete. Extract implementation tasks?"
-- "Ready to begin implementation. Start with [first-task]?"
-- "Design documented. Review implementation plan?"
+### After Design Complete (event: `design:nudge-next`)
+- "Does this design approach work for you?"
+- "Implementation order: [file1] → [file2] → [file3]. Add with `/hm:timeline`, or would you like to adjust?"
 
-**State-Based Navigation**:
+### After Timeline Update (event: `timeline:nudge-next`)
+- "Implementation plan added to Timeline! [N] phases, [M] total tasks."
+- "Ready to start?"
+
+### State-Based Navigation:
+
 | Current State | Suggestion |
 |--------------|------------|
 | Empty requirements | "Shall we start with requirements definition?" |
 | Partial investigation | "Continue investigation? Remaining: [list]" |
 | Design blocked | "Complete missing investigations: [list]" |
-| All complete | "Extract implementation tasks?" |
+| Design complete | Use Event: `design:nudge-next` templates |
 | Stalled progress | "Resume with [last-incomplete]?" |
 
 ## Suggestion Pipeline Templates (Conversation-Based)
@@ -43,22 +46,22 @@
 **Requirements Context Detected**:
 - "Would you like to add this feature to requirements.md? 📝"
 - "I can document these requirements for you. Shall I proceed?"
-- "These sound like new requirements. Add to requirements.md? [Y/n]:"
+- "These sound like new requirements. Add to requirements.md?"
 
 **Investigation Context Detected**:
 - "Should I record these findings in investigation.md#[topic-name]? 🔍"
 - "This research looks valuable. Document in investigation.md?"
-- "I'll add this to the investigation notes. Proceed? [Y/n]:"
+- "I'll add this to the investigation notes. Proceed?"
 
 **Design Context Detected**:
 - "Would you like to document this design decision? 🏗️"
 - "This architecture decision should be recorded. Add to design.md?"
-- "I can capture this design choice in design.md. Continue? [Y/n]:"
+- "I can capture this design choice in design.md. Continue?"
 
 **Confidence-Based Phrasing**:
 - **Low (0.5-0.7)**: "This might be worth documenting..."
 - **Medium (0.7-0.85)**: "I recommend adding this to [document].md"
-- **High (0.85+)**: "Let's add this to [document].md! [Y/n]:"
+- **High (0.85+)**: "Let's add this to [document].md!"
 
 **Multi-Entity Detection**:
 ```
@@ -67,7 +70,7 @@ Detected from conversation:
   - Technology: JWT tokens
   - Requirement: Password policies
 
-Document in requirements.md? [Y/n]:
+Document in requirements.md?
 ```
 
 ## Diagnostic Pipeline Templates (Query Responses)
@@ -103,7 +106,7 @@ Project Status:
 - "Manual fix required: [instructions]"
 
 **Resolution Confirmation**:
-- "Issue resolved. Resume normal workflow? [Y/n]:"
+- "Issue resolved. Resume normal workflow?"
 - "Recovery complete. Return to [previous-task]?"
 - "Problem bypassed. Continue with caution."
 

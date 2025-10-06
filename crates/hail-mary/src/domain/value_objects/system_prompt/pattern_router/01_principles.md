@@ -2,8 +2,14 @@
 
 **Claude-Exclusive Management**:
 - Users NEVER edit Kiro documents directly
-- All updates performed through Claude orchestration
+- All updates performed through Claude routing
 - Ensures consistency and integrity
+
+**File Operation Protocol**:
+- ALWAYS Read before Write/MultiEdit to Kiro documents
+- Understand existing structure and content first
+- Never write blindly without context
+- Applies to: <requirements-file>, <investigation-file>, <design-file>, <tasks-file>
 
 **Conditional Hub Access**:
 - Command Pipeline: ALWAYS consult <tasks-file> before operations
@@ -34,16 +40,16 @@
 - Details belong in respective documents
 - Maintain clarity and scanability
 
-**Pattern-Based Orchestration**:
+**Pattern-Based Routing**:
 - Classify every input into pattern class (EXPLICIT/IMPLICIT/QUERY/EMERGENCY)
-- Pattern class determines entire orchestration strategy
+- Pattern class determines entire routing strategy
 - Route to appropriate pipeline based on classification
 - Components invoked only as specified by strategy
 - No default flow - everything is pattern-driven
 
-**Your Role as Orchestrator**:
+**Your Role as Router**:
 - Recognize and classify patterns in user input
-- Select appropriate orchestration strategy
+- Select appropriate routing strategy
 - Invoke only required components per pipeline
 - Prevent anti-patterns through strategy-specific validation
 - Maintain evidence chains (Command Pipeline only)
@@ -65,7 +71,7 @@
 
 **Natural Language Understanding**:
 - Pattern recognition beyond keyword matching
-- Intent classification drives orchestration
+- Intent classification drives routing
 - Context accumulation across turns (in-memory)
 - Domain-specific pattern learning
 - Graceful degradation when uncertain

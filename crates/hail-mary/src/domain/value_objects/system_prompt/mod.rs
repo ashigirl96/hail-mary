@@ -4,19 +4,19 @@ use std::path::Path;
 const BASE_TEMPLATE: &str = include_str!("base_template.md");
 const STEERING_TEMPLATE: &str = include_str!("steering_template.md");
 
-// Orchestration templates
-const ORCHESTRATION_INDEX: &str = include_str!("orchestration/index.md");
-const ORCHESTRATION_PHILOSOPHY: &str = include_str!("orchestration/00_philosophy.md");
-const ORCHESTRATION_PRINCIPLES: &str = include_str!("orchestration/01_principles.md");
-const ORCHESTRATION_HUB: &str = include_str!("orchestration/02_hub.md");
-const ORCHESTRATION_PATTERNS: &str = include_str!("orchestration/03_patterns.md");
-const ORCHESTRATION_WORKFLOWS: &str = include_str!("orchestration/04_workflows.md");
-const ORCHESTRATION_GATES: &str = include_str!("orchestration/05_gates.md");
-const ORCHESTRATION_NUDGES: &str = include_str!("orchestration/06_nudges.md");
-const ORCHESTRATION_REQUIREMENTS: &str = include_str!("orchestration/07_requirements.md");
-const ORCHESTRATION_INVESTIGATION: &str = include_str!("orchestration/08_investigation.md");
-const ORCHESTRATION_DESIGN: &str = include_str!("orchestration/09_design.md");
-const ORCHESTRATION_SPEC_FILES: &str = include_str!("orchestration/10_spec_files.md");
+// Pattern Router templates
+const PATTERN_ROUTER_INDEX: &str = include_str!("pattern_router/index.md");
+const PATTERN_ROUTER_PHILOSOPHY: &str = include_str!("pattern_router/00_philosophy.md");
+const PATTERN_ROUTER_PRINCIPLES: &str = include_str!("pattern_router/01_principles.md");
+const PATTERN_ROUTER_HUB: &str = include_str!("pattern_router/02_hub.md");
+const PATTERN_ROUTER_PATTERNS: &str = include_str!("pattern_router/03_patterns.md");
+const PATTERN_ROUTER_WORKFLOWS: &str = include_str!("pattern_router/04_workflows.md");
+const PATTERN_ROUTER_GATES: &str = include_str!("pattern_router/05_gates.md");
+const PATTERN_ROUTER_NUDGES: &str = include_str!("pattern_router/06_nudges.md");
+const PATTERN_ROUTER_REQUIREMENTS: &str = include_str!("pattern_router/07_requirements.md");
+const PATTERN_ROUTER_INVESTIGATION: &str = include_str!("pattern_router/08_investigation.md");
+const PATTERN_ROUTER_DESIGN: &str = include_str!("pattern_router/09_design.md");
+const PATTERN_ROUTER_SPEC_FILES: &str = include_str!("pattern_router/10_spec_files.md");
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SystemPrompt {
@@ -47,7 +47,7 @@ impl SystemPrompt {
             let memo_path = format!("{}/memo.md", path_str);
 
             // Build spec_files section
-            let spec_files_section = ORCHESTRATION_SPEC_FILES
+            let spec_files_section = PATTERN_ROUTER_SPEC_FILES
                 .replace("{spec_name}", name)
                 .replace("{spec_path}", &path_str)
                 .replace("{requirements_path}", &requirements_path)
@@ -56,18 +56,18 @@ impl SystemPrompt {
                 .replace("{investigation_path}", &investigation_path)
                 .replace("{memo_path}", &memo_path);
 
-            // Build the orchestration template by replacing all placeholders
-            let specification_section = ORCHESTRATION_INDEX
-                .replace("{philosophy}", ORCHESTRATION_PHILOSOPHY)
-                .replace("{principles}", ORCHESTRATION_PRINCIPLES)
-                .replace("{hub}", ORCHESTRATION_HUB)
-                .replace("{patterns}", ORCHESTRATION_PATTERNS)
-                .replace("{workflows}", ORCHESTRATION_WORKFLOWS)
-                .replace("{gates}", ORCHESTRATION_GATES)
-                .replace("{nudges}", ORCHESTRATION_NUDGES)
-                .replace("{requirements}", ORCHESTRATION_REQUIREMENTS)
-                .replace("{investigation}", ORCHESTRATION_INVESTIGATION)
-                .replace("{design}", ORCHESTRATION_DESIGN)
+            // Build the pattern router template by replacing all placeholders
+            let specification_section = PATTERN_ROUTER_INDEX
+                .replace("{philosophy}", PATTERN_ROUTER_PHILOSOPHY)
+                .replace("{principles}", PATTERN_ROUTER_PRINCIPLES)
+                .replace("{hub}", PATTERN_ROUTER_HUB)
+                .replace("{patterns}", PATTERN_ROUTER_PATTERNS)
+                .replace("{workflows}", PATTERN_ROUTER_WORKFLOWS)
+                .replace("{gates}", PATTERN_ROUTER_GATES)
+                .replace("{nudges}", PATTERN_ROUTER_NUDGES)
+                .replace("{requirements}", PATTERN_ROUTER_REQUIREMENTS)
+                .replace("{investigation}", PATTERN_ROUTER_INVESTIGATION)
+                .replace("{design}", PATTERN_ROUTER_DESIGN)
                 .replace("{spec_files}", &spec_files_section);
 
             content.push_str(&specification_section);
@@ -195,7 +195,7 @@ mod tests {
         // Should contain base template
         assert!(content.contains("Kiro: Specification-Driven Development Context"));
 
-        // Should contain orchestration sections
+        // Should contain pattern router sections
         assert!(content.contains("<kiro-spec-driven>"));
         assert!(content.contains("<kiro-philosophy>"));
         assert!(content.contains("## Kiro Philosophy"));

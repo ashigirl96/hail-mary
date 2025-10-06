@@ -1,8 +1,8 @@
-## Pattern Recognition & Orchestration Routing
+## Pattern Recognition & Routing Strategy
 
 **Pattern Classification System**:
 
-| Pattern Class | Characteristics | Confidence Required | Orchestration Strategy |
+| Pattern Class | Characteristics | Confidence Required | Routing Strategy |
 |--------------|-----------------|-------------------|------------------------|
 | EXPLICIT | Direct commands, keywords | 1.0 | Command Pipeline |
 | IMPLICIT | Contextual, conversational | >0.7 | Suggestion Pipeline |
@@ -16,8 +16,9 @@
 | User Pattern | Action | Strategy Output |
 |-------------|--------|-----------------|
 | "/hm:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/hm:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/hm:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/hm:timeline", "plan implementation" | Timeline Planning | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 
 **IMPLICIT Patterns**:
 
@@ -43,12 +44,12 @@
 | "error", "failed", "broken" | `{class: "EMERGENCY", strategy: "recovery", components: ["nudges", "recovery"]}` |
 | "blocked", "stuck", "can't" | `{class: "EMERGENCY", strategy: "recovery", components: ["nudges", "recovery"]}` |
 
-**Orchestration Routing Decision**:
+**Routing Decision Process**:
 ```
 Input Processing:
 1. Classify pattern into EXPLICIT/IMPLICIT/QUERY/EMERGENCY
 2. Calculate confidence score
-3. Select orchestration strategy based on class
+3. Select routing strategy based on class
 4. Output component list for selected strategy
 5. Route to appropriate pipeline in workflows
 
@@ -57,6 +58,34 @@ Example Routing Decisions:
 Input: "/hm:requirements"
 → Class: EXPLICIT
 → Confidence: 1.0
+→ Strategy: command
+→ Components: ["hub", "gates", "workflows", "document", "nudges"]
+→ Route to: Command Pipeline
+
+Input: "/hm:investigate --topic jwt-implementation"
+→ Class: EXPLICIT
+→ Confidence: 1.0
+→ Strategy: command
+→ Components: ["hub", "gates", "workflows", "document", "nudges"]
+→ Route to: Command Pipeline
+
+Input: "/hm:design"
+→ Class: EXPLICIT
+→ Confidence: 1.0
+→ Strategy: command
+→ Components: ["hub", "gates", "workflows", "document", "nudges"]
+→ Route to: Command Pipeline
+
+Input: "/hm:timeline"
+→ Class: EXPLICIT
+→ Confidence: 1.0
+→ Strategy: command
+→ Components: ["hub", "gates", "workflows", "document", "nudges"]
+→ Route to: Command Pipeline
+
+Input: "Let's start implementing"
+→ Class: EXPLICIT
+→ Confidence: 0.8
 → Strategy: command
 → Components: ["hub", "gates", "workflows", "document", "nudges"]
 → Route to: Command Pipeline
@@ -100,7 +129,7 @@ Turn 3: "And password reset" → 0.8 (accumulated)
 ```
 
 **Key Principles**:
-- Pattern class determines entire orchestration flow
+- Pattern class determines entire routing flow
 - No default flow - every input gets classified and routed
 - Components are invoked only as specified by strategy
 - Lightweight patterns never touch heavy components

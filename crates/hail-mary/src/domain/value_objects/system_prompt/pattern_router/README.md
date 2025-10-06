@@ -1,8 +1,11 @@
-# マルチ戦略パターンベースオーケストレーションフレームワーク
+# Pattern Router Framework
+# パターンルーターフレームワーク
+
+> **Note**: このドキュメントは**開発者向けガイドライン**です。System Promptに含まれるのは`00-10_*.md`ファイルであり、このREADME.mdは含まれません。フレームワークの理解と拡張のための参照資料として使用してください。
 
 ## 核心哲学
 
-このオーケストレーションフレームワークは**真のReactive Pattern-Based Orchestration**を実装しています。パターン分類がオーケストレーション戦略全体を決定し、**デフォルトフローは存在しません** - あらゆる入力は分類され、その分類がどのパイプラインをどのコンポーネントで実行するかを選択します。
+このPattern Router Frameworkは**真のReactive Pattern-Based Routing**を実装しています。パターン分類がルーティング戦略全体を決定し、**デフォルトフローは存在しません** - あらゆる入力は分類され、その分類がどのパイプラインをどのコンポーネントで実行するかを選択します。
 
 ### 核心原則：パターンこそが戦略
 
@@ -14,7 +17,23 @@ Input → [分岐を含む単一フロー]
 Input → Pattern Classification → Strategy Selection → Pipeline Execution
 ```
 
-パターン認識は単にアクションをトリガーするだけでなく、異なるインタラクションタイプに最適化された**オーケストレーション戦略全体を選択**します。
+パターン認識は単にアクションをトリガーするだけでなく、異なるインタラクションタイプに最適化された**ルーティング戦略全体を選択**します。
+
+### NO Linear Workflow - 会話的インタラクション
+
+このフレームワークは**機械的な選択を排除**します。`[Y/n]`や`[1/2/3]`のような番号選択は、まさに我々が否定する「Linear Workflow」の現れです。
+
+**排除するパターン**:
+- `[Y/n]` - 二者択一の強制
+- `[1] Option A [2] Option B` - 番号による選択
+- `Select: a/b/c` - 制限された選択肢
+
+**推奨するパターン**:
+- オープンエンドな質問: "どのように進めましょうか？"
+- 文脈的な提案: "〇〇も可能ですが、どう思いますか？"
+- 自然な会話: ユーザーの自由な応答からパターン認識で意図を理解
+
+これにより、開発は**会話の流れの中で自然に方向が決まる**、真にReactiveなインタラクションとなります。
 
 ## コアアーキテクチャ
 
@@ -53,13 +72,13 @@ Input → Pattern Classification → Strategy Selection → Pipeline Execution
 ### 概要
 
 ```
-orchestration/
+pattern_router/
 ├── index.md              # 変数プレースホルダーを含むテンプレート
 ├── 00_philosophy.md      # 基盤層: システム存在理由
 ├── 01_principles.md      # 基盤層: 普遍的運用ルール
 ├── 02_hub.md            # 条件付きコンポーネント: tasks.md状態管理
 ├── 03_patterns.md       # ルーター: パターン分類と戦略選択
-├── 04_workflows.md      # パイプラインコンテナ: 複数のオーケストレーション戦略
+├── 04_workflows.md      # パイプラインコンテナ: 複数のルーティング戦略
 ├── 05_gates.md          # 戦略固有: パイプライン別検証ルール
 ├── 06_nudges.md         # 戦略固有: パイプライン別提案テンプレート
 ├── 07_requirements.md   # ドキュメント構造: 要件テンプレート
@@ -76,7 +95,7 @@ orchestration/
 - `01_principles.md` - 全パイプライン共通の「どのように」を定義
 
 **ルーティング＆戦略層**:
-- `03_patterns.md` - **ルーター**: 入力を分類しオーケストレーション戦略を出力
+- `03_patterns.md` - **ルーター**: 入力を分類しルーティング戦略を出力
 - `04_workflows.md` - **パイプラインコンテナ**: 4つの異なる実行戦略を定義
 
 **条件付きコンポーネント** (パイプラインに基づいて起動):
@@ -97,7 +116,7 @@ orchestration/
 **核心概念**:
 - **NO Linear Workflow**: 開発は非線形、どこからでも開始可能
 - **Pattern Recognition over Process**: プロセスよりパターン認識を重視
-- **Orchestration without Control**: 制約せずに調整
+- **Routing without Control**: 制約せずにルーティング
 - **Single Source of Truth**: 単一の権威ある状態、複数のビュー
 - **Evidence-Based Progress**: すべての決定が根拠に遡れる
 - **Autonomy with Safety**: 一貫性のための検証、ガイダンスのための推奨
@@ -114,14 +133,14 @@ orchestration/
 - **Link Everything**: すべての参照に`document#section`形式を使用
 - **Evidence Chain**: Requirements → Investigation → Design の追跡可能性
 - **Status Discipline**: `pending | in-progress | complete`のみ使用
-- **Pattern-Based Orchestration**: 分類が戦略を決定
+- **Pattern-Based Routing**: 分類が戦略を決定
 - **Efficiency Through Strategy Selection**: 適切なタスクに適切なパイプライン
 
 **参照元**: 全コンポーネントが運用ガイドラインとして参照
 
-### 03_patterns.md - パターン認識とオーケストレーションルーター
+### 03_patterns.md - パターン認識とルーティング
 
-**目的**: 入力を分類し、完全なオーケストレーション戦略を出力。
+**目的**: 入力を分類し、完全なルーティング戦略を出力。
 
 **核心責務**: パターン分類 → 戦略選択 → コンポーネントリスト出力
 
@@ -157,7 +176,7 @@ Output: {
 
 **主要機能**: IMPLICITパターンの信頼度累積（メモリ内、閾値到達まで永続化なし）。
 
-### 04_workflows.md - マルチ戦略オーケストレーションコンテナ
+### 04_workflows.md - マルチ戦略ルーティングコンテナ
 
 **目的**: 単一フローではなく、4つの異なるパイプライン実行戦略を定義。
 
@@ -223,6 +242,12 @@ Input → patterns → nudges(alert) → [recovery action]
 
 **重要な洞察**: Hubは**必須ステップではない** - 選択されたパイプラインが永続化を必要とする時のみ起動される条件付きコンポーネント。
 
+### tasks.md更新クイックリファレンス
+
+**更新タイミング** (`04_workflows.md`): BEFORE Protocol (pending→in-progress)、AFTER Protocol (in-progress→complete)、Document-Specific Post-Actions
+**更新内容** (`02_hub.md`): State Tracking Table、Required Investigations Checklist、Timeline with links
+**アクセス権限** (`01_principles.md`): Command Pipeline (完全R/W)、Suggestion Pipeline (アクセスなし)、Diagnostic Pipeline (読取専用)、Recovery Pipeline (最小限)
+
 ### 05_gates.md - 戦略固有の検証
 
 **目的**: パイプライン戦略によって変化する検証ルール。
@@ -267,7 +292,7 @@ Input → patterns → nudges(alert) → [recovery action]
 
 ### 07-09_*.md - ドキュメント構造定義
 
-**目的**: 純粋なテンプレート定義、オーケストレーションロジックなし。
+**目的**: 純粋なテンプレート定義、ルーティングロジックなし。
 
 - `07_requirements.md`: PRDとBug Reportテンプレート
 - `08_investigation.md`: Append-Onlyプロトコル、トピック構造、エビデンス形式
@@ -448,7 +473,7 @@ Input → patterns → [components...] → nudges
 
 ### 1. パターンが戦略を決定
 
-すべての入力は分類される必要があります。分類出力は、どのコンポーネントを起動するかを含む完全なオーケストレーション戦略を指定します。
+すべての入力は分類される必要があります。分類出力は、どのコンポーネントを起動するかを含む完全なルーティング戦略を指定します。
 
 ### 2. デフォルトフローなし
 
@@ -466,9 +491,124 @@ Input → patterns → [components...] → nudges
 
 各パイプラインは明確な特性、コンポーネントアクセス、ユースケースを持ちます。
 
+### 6. 説明的であって強制的ではない
+
+**重要**: Workflow記述はプロトコルやMUSTではなく、「こうなる」という説明として記述する。
+
+- ❌ **避けるべき**: MUST, MANDATORY, PROTOCOL, SHALL, ALWAYS
+- ✅ **推奨**: "User may...", "When user signals...", "Discuss interactively"
+- **理由**: NO Linear Workflow哲学に反する。開発は対話的で、adaptive。
+
+**例**:
+```markdown
+❌ Bad: "MUST extract tasks and present to user"
+✅ Good: "When user signals readiness, suggest implementation order"
+```
+
+### 7. イベントは状態ではなく文脈
+
+**重要**: "After X Complete"というイベントは、Xの作成直後ではなく、対話が落ち着いた文脈で発火する。
+
+- Design完了 ≠ design.md書込直後
+- Design完了 = ユーザーとの設計対話が一段落し、実装に進むサインが出た時
+- **理由**: /hm:design実行後も「なぜこの設計？」「このファイルはこう実装して」など対話が続く
+
+### 8. Nudgingはシンプルに
+
+**重要**: Nudgingテンプレートは「きっかけ」を提供するだけ。詳細はTimeline追加時に決める。
+
+- ❌ **避けるべき**: 長いphase詳細、すべてのタスクリスト
+- ✅ **推奨**: ファイル順序の提案、一般的なフロー（backend → API → frontend）
+- **理由**: 詳細を最初から提示すると、Linear Workflowを暗示する
+
+**例**:
+```markdown
+❌ Bad:
+**Phase 1**: (10行の詳細タスク)
+**Phase 2**: (10行の詳細タスク)
+
+✅ Good:
+Ready to implement? Files: backend → API → frontend
+Shall we plan the order?
+```
+
+### 9. Gatesはガイダンスであってブロックではない
+
+**重要**: 検証ゲートは、requirements必須のdesignを除き、警告レベルに留める。
+
+- ❌ **BLOCK**: 開発を強制的に止める（NO Linear Workflowに反する）
+- ✅ **WARNING**: ガイダンスと代替手段を提示
+- **例**: Timeline planningでdesign.md不在 → "Create design first, or describe what to implement?"
+
+### 10. フレームワークを信じる
+
+**重要**: 過度な制御や詳細な会話例は不要。Pattern-Based Routingを信じる。
+
+- 長い会話例は避ける（Linear Workflowを暗示）
+- Claudeの自然言語理解能力を信じる
+- テンプレートとガイダンスで十分
+
+## イベント命名システム（Lost in the Middle対策）
+
+**導入理由**: System promptが長大化すると、XMLタグレベルの参照では粒度が粗すぎて、特定のBefore/Afterセクションが見落とされる（Lost in the Middle問題）。
+
+**解決策**: 各workflow/nudgeセクションに一意なイベント名を付与し、slash commandから直接参照可能にする。
+
+### 命名規則
+
+```
+Workflow events: {target}:{role}
+- requirements:pre-action   (Before Requirements)
+- requirements:post-action  (After Requirements Complete)
+- investigation:post-action (After Investigation Topic Complete)
+- design:post-action        (After Design Complete)
+- timeline:action           (Timeline操作そのもの)
+
+Nudge events: {target}:nudge-next
+- requirements:nudge-next
+- investigation:nudge-next
+- design:nudge-next
+- timeline:nudge-next
+```
+
+**特徴**:
+- 短い（15-25文字）
+- 明確（targetが先頭、roleで区別）
+- 一貫性（統一パターン）
+- 検索可能（イベント名でピンポイント検索）
+
+### Slash Commandでの参照例
+
+```markdown
+Refer to system prompt sections:
+- <kiro-workflows> Before documentation: `requirements:pre-action`, After complete: `requirements:post-action`
+- <kiro-nudges> Next action suggestion: `requirements:nudge-next`
+```
+
+これにより、Claudeはイベント名でsystem prompt内を検索し、確実に該当セクションを実行できる。
+
+### System Promptでの記述例
+
+**04_workflows.md**:
+```markdown
+**After Design Complete** (event: `design:post-action`):
+1. Mark complete
+2. Present summary
+3. Trigger nudge event: `design:nudge-next`
+```
+
+**06_nudges.md**:
+```markdown
+### After Design Complete (event: `design:nudge-next`)
+- "Does this design work?"
+- "Use `/hm:timeline` to add implementation plan?"
+```
+
+---
+
 ## スラッシュコマンド統合
 
-スラッシュコマンドは必要に応じて特定のタグを参照します：
+スラッシュコマンドは必要に応じて特定のタグとイベントを参照します：
 
 ### `/hm:requirements` (明示的コマンド)
 ```yaml
@@ -493,17 +633,52 @@ Input → patterns → [components...] → nudges
 # 注: Hub, gates, workflowsはアクセスされない
 ```
 
+### `/hm:timeline` (特別なケース)
+
+**なぜslash command側にBehavioral Flowを記述するか**:
+
+他のコマンド（requirements/investigate/design）は：
+- Document作成が主操作
+- Before/After actionsが副作用として発生
+- 04_workflows.mdに「Document-Specific Post-Actions」として記述
+
+`/hm:timeline`は性質が異なる：
+- ❌ Document作成ではなく、**Meta操作**（tasks.md#Timeline更新）
+- ❌ Before/Afterではなく、**直接的なAction**
+- ❌ "After Timeline Complete"は不自然（Timeline追加後に何？）
+- ✅ シンプルで明確な操作フロー
+
+したがって：
+- 04_workflows.mdの「Post-Actions」には合わない
+- Slash command側（.claude/commands/hm/timeline.md）にBehavioral Flowを記述
+- System promptは参照のみ（<kiro-hub>, <kiro-nudges>）
+
+```yaml
+記述場所:
+- .claude/commands/hm/timeline.md  # Behavioral Flow（7ステップ）
+- kiro-hub                        # Timeline format, State Tracking structure
+- kiro-nudges                     # timeline-planned event template
+- kiro-gates                      # Timeline Planning without Design warning
+- kiro-patterns                   # /hm:timeline pattern recognition
+```
+
+**利点**:
+- Document作成 vs Meta操作の区別が明確
+- System prompt肥大化を避ける
+- Lost in the Middle対策（slash command側なら確実に参照）
+- 04_workflows.mdはDocument操作のみに集中
+
 ## 実装メカニズム
 
 全ファイルは`include_str!`マクロでコンパイル時に埋め込まれます：
 
 ```rust
-const ORCHESTRATION_PATTERNS: &str = include_str!("orchestration/03_patterns.md");
+const PATTERN_ROUTER_PATTERNS: &str = include_str!("pattern_router/03_patterns.md");
 // ... 全ファイルインクルード
 
 // 実行時:
-let content = ORCHESTRATION_INDEX
-    .replace("{patterns}", ORCHESTRATION_PATTERNS)
+let content = PATTERN_ROUTER_INDEX
+    .replace("{patterns}", PATTERN_ROUTER_PATTERNS)
     // ... 全変数を置換
 ```
 
@@ -524,4 +699,4 @@ let content = ORCHESTRATION_INDEX
 - ✅ 適切なパイプライン選択による効率性
 - ✅ デフォルトフローなし - すべてがパターン駆動
 - ✅ コンポーネント分離の維持
-- ✅ 真のreactive pattern-based orchestrationを達成
+- ✅ 真のreactive pattern-based routingを達成

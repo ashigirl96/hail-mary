@@ -88,8 +88,6 @@ impl ClaudeProcessLauncher {
             // Add arguments
             cmd.arg("--append-system-prompt")
                 .arg(system_prompt)
-                .arg("--model")
-                .arg("opus")
                 .arg("--permission-mode")
                 .arg("plan")
                 .arg("--settings")
@@ -126,8 +124,6 @@ impl ClaudeProcessLauncher {
             // Add arguments
             cmd.arg("--append-system-prompt")
                 .arg(system_prompt)
-                .arg("--model")
-                .arg("opus")
                 .arg("--permission-mode")
                 .arg("plan")
                 .arg("--settings")

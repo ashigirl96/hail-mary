@@ -7,16 +7,16 @@ argument-hint: "[--topic <name>]"
 
 # /hm:investigate
 
-Conduct technical research and append findings with reactive pattern-based orchestration.
+Conduct technical research and append findings with reactive pattern-based routing.
 
 Refer to system prompt sections:
-- <kiro-philosophy> for reactive orchestration pattern
+- <kiro-philosophy> for reactive pattern routing
 - <kiro-principles> for universal operational rules
 - <kiro-hub> for tasks.md central control mechanism
 - <kiro-patterns> for pattern recognition and mapping
-- <kiro-workflows> for operation sequences and timing
+- <kiro-workflows> After topic complete: `investigation:post-action`
 - <kiro-gates> for validation gates
-- <kiro-nudges> for post-investigation suggestions
+- <kiro-nudges> Next action suggestion: `investigation:nudge-next`
 - <kiro-investigation> for investigation document structure
 
 All execution details, rules, and behaviors are defined in these system prompt sections.

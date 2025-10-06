@@ -12,7 +12,6 @@
 **Topic Structure**:
 ```markdown
 ## [topic-name]
-**Status**: Complete ✓
 
 [Investigation content with evidence]
 ```
@@ -45,4 +44,4 @@
 ```
 
 **Interactive Confirmation**:
-Show findings and ask: "Append to investigation.md? (Y to save / or ask questions)"
+Show findings and ask: "Append to investigation.md?"

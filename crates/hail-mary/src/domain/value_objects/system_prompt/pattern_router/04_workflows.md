@@ -1,8 +1,8 @@
-## Multi-Strategy Orchestration Workflows
+## Multi-Strategy Routing Workflows
 
-**Core Principle**: Pattern class determines orchestration strategy. No single default flow.
+**Core Principle**: Pattern class determines routing strategy. No single default flow.
 
-### Orchestration Strategy Router
+### Routing Strategy Selection
 ```
 Input → Pattern Recognition → Strategy Selection → Pipeline Execution
                 ↓
@@ -105,7 +105,7 @@ Example 1: Explicit Command
 Input: "/hm:requirements"
 Pattern Output: {class: "EXPLICIT", strategy: "command"}
 Selected Pipeline: Command Pipeline
-Flow: Full orchestration with all components
+Flow: Full routing with all components
 
 Example 2: Implicit Discussion
 Input: "Users need login functionality"
@@ -126,26 +126,33 @@ Selected Pipeline: Recovery Pipeline
 Flow: Immediate nudge alert, bypass gates
 ```
 
+## Document-Specific Pre-Actions (Command Pipeline Only)
+
+**Before Requirements** (event: `requirements:pre-action`):
+Explore codebase comprehensively based on user's request to write contextually accurate requirements
+
 ## Document-Specific Post-Actions (Command Pipeline Only)
 
-**After Requirements Complete**:
+**After Requirements Complete** (event: `requirements:post-action`):
 1. Extract investigation topics from requirements
 2. Create Required Investigations checklist in tasks.md
 3. Update State Tracking: requirements.md = complete
-4. Suggest: "Technical investigation needed. Start with [first-topic]?"
+4. Add to Timeline: `[x] Requirements defined → requirements.md#overview`
+5. Trigger nudge event: `requirements:nudge-next`
 
-**After Investigation Topic Complete**:
+**After Investigation Topic Complete** (event: `investigation:post-action`):
 1. Mark topic [x] in Required Investigations
 2. Calculate coverage percentage (X/Y)
 3. Update State Tracking: investigation.md = X/Y (N%)
-4. If 100%: Set design.md readiness flag
-5. Suggest: "Topic complete. Coverage: X/Y. Investigate [next-topic]?"
+4. Add to Timeline: `[x] [topic-name] investigated → investigation.md#[topic-name]`
+5. If 100%: Set design.md readiness flag
+6. Trigger nudge event: `investigation:nudge-next` (with coverage data)
 
-**After Design Complete**:
-1. Extract implementation tasks to Timeline
-2. Mark design.md = complete in State Tracking
-3. Create implementation checklist if needed
-4. Suggest: "Design complete. Extract implementation tasks?"
+**After Design Complete** (event: `design:post-action`):
+1. Mark design.md = complete in State Tracking
+2. Add to Timeline: `[x] Design completed → design.md#overview`
+3. Present design summary to user: approach, key decisions, and implementation file order
+4. Trigger nudge event: `design:nudge-next`
 
 ## Key Principles
 
@@ -153,4 +160,4 @@ Flow: Immediate nudge alert, bypass gates
 - **Component Isolation**: Components only invoked when specified by strategy
 - **Efficiency First**: Lightweight operations use lightweight pipelines
 - **Clear Boundaries**: Each pipeline has distinct characteristics and use cases
-- **Strategy-Driven**: Pattern classification determines entire orchestration approach
+- **Strategy-Driven**: Pattern classification determines entire routing approach
