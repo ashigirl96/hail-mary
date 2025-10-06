@@ -14,9 +14,9 @@ Refer to system prompt sections:
 - <kiro-principles> for universal operational rules
 - <kiro-hub> for tasks.md central control mechanism
 - <kiro-patterns> for pattern recognition and mapping
-- <kiro-workflows> for operation sequences and timing
+- <kiro-workflows> Before documentation: `requirements:pre-action`, After complete: `requirements:post-action`
 - <kiro-gates> for validation gates (if any)
-- <kiro-nudges> for post-requirements suggestions
+- <kiro-nudges> Next action suggestion: `requirements:nudge-next`
 - <kiro-requirements> for requirements document structure and template selection
 
 All execution details, rules, and behaviors are defined in these system prompt sections.

@@ -14,9 +14,9 @@ Refer to system prompt sections:
 - <kiro-principles> for universal operational rules
 - <kiro-hub> for tasks.md central control mechanism
 - <kiro-patterns> for pattern recognition and mapping
-- <kiro-workflows> for operation sequences and timing
+- <kiro-workflows> After topic complete: `investigation:post-action`
 - <kiro-gates> for validation gates
-- <kiro-nudges> for post-investigation suggestions
+- <kiro-nudges> Next action suggestion: `investigation:nudge-next`
 - <kiro-investigation> for investigation document structure
 
 All execution details, rules, and behaviors are defined in these system prompt sections.
