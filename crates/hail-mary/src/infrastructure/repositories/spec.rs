@@ -34,15 +34,17 @@ impl SpecRepository {
     ) -> Result<(), ApplicationError> {
         // Create essential template files including tasks.md for orchestration
 
-        let design_content = format!(
-            r#"# Design
-
-## Overview
-[High-level architecture for {}]
-
-"#,
-            name
-        );
+        // TODO: Commenting out design.md and investigation.md generation for now
+        // until we determine the final approach
+        // let design_content = format!(
+        //     r#"# Design
+        //
+        // ## Overview
+        // [High-level architecture for {}]
+        //
+        // "#,
+        //     name
+        // );
 
         let memo_content = format!(
             r#"# Memo: {}
@@ -51,12 +53,12 @@ impl SpecRepository {
             name
         );
 
-        let investigation_content = format!(
-            r#"# Investigation: {}
-
-"#,
-            name
-        );
+        // let investigation_content = format!(
+        //     r#"# Investigation: {}
+        //
+        // "#,
+        //     name
+        // );
 
         // Create tasks.md with initial State Tracking and Timeline
         let tasks_content = format!(
@@ -81,17 +83,18 @@ impl SpecRepository {
         );
 
         // Write all template files including tasks.md
-        fs::write(feature_dir.join("design.md"), design_content).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to write design.md: {}", e))
-        })?;
+        // TODO: Commented out design.md and investigation.md creation
+        // fs::write(feature_dir.join("design.md"), design_content).map_err(|e| {
+        //     ApplicationError::FileSystemError(format!("Failed to write design.md: {}", e))
+        // })?;
 
         fs::write(feature_dir.join("memo.md"), memo_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write memo.md: {}", e))
         })?;
 
-        fs::write(feature_dir.join("investigation.md"), investigation_content).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to write investigation.md: {}", e))
-        })?;
+        // fs::write(feature_dir.join("investigation.md"), investigation_content).map_err(|e| {
+        //     ApplicationError::FileSystemError(format!("Failed to write investigation.md: {}", e))
+        // })?;
 
         fs::write(feature_dir.join("tasks.md"), tasks_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write tasks.md: {}", e))

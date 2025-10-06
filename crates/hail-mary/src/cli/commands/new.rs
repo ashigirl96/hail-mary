@@ -98,13 +98,17 @@ mod tests {
         let feature_dir = format!(".kiro/specs/{}-user-authentication", date);
         assert!(Path::new(&feature_dir).exists());
         // Essential files should be created
-        assert!(Path::new(&format!("{}/design.md", feature_dir)).exists());
-        assert!(Path::new(&format!("{}/investigation.md", feature_dir)).exists());
+        // TODO: design.md and investigation.md are temporarily disabled
+        // assert!(Path::new(&format!("{}/design.md", feature_dir)).exists());
+        // assert!(Path::new(&format!("{}/investigation.md", feature_dir)).exists());
         assert!(Path::new(&format!("{}/memo.md", feature_dir)).exists());
         assert!(Path::new(&format!("{}/tasks.md", feature_dir)).exists()); // tasks.md is now created
         // These files should NOT be created automatically
         assert!(!Path::new(&format!("{}/requirements.md", feature_dir)).exists());
         assert!(!Path::new(&format!("{}/spec.json", feature_dir)).exists());
+        // Verify design.md and investigation.md are NOT created (temporarily disabled)
+        assert!(!Path::new(&format!("{}/design.md", feature_dir)).exists());
+        assert!(!Path::new(&format!("{}/investigation.md", feature_dir)).exists());
     }
 
     #[test]
