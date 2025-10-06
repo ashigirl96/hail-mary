@@ -101,3 +101,42 @@ These files track the current feature's lifecycle:
 
 ということを考えたんだけど、どうだろう？(YOU MUST NOT HOLD BACK. GIVE IT YOUR ALL. you think in english, but return
 final output in japanese --ultrathink)
+
+----
+
+My Feedbacks:
+
+`### Event: design-complete (After)` が気になるかも。
+なぜなら、`/hm:design` が完了した時点で完璧なdesign.mdができているとは限らない。
+そこから、「なぜそういう設計にしたのか」や「このファイルはこういう実装にしてほしい」などのinteractiveなやり取りが発生するので、必ずしも、「実装の順番」だけではない
+
+`**After Design Complete** (MANDATORY PROTOCOL):` も上記と同じ理由で気になる。
+あと、Conversation Flow Exampleにnudgingの内容が入ってきてるのもおかしいかな？
+Lost in the Middleは気になるが、
+`.claude/commands/hm/design.md (Enhancement)` も合わせて一緒に考え直してほしいんだけど、
+可能な限り、system promptに実態があって、slash commandはそのsystem promptを呼び出すだけにしたいので、あなたが記述したような明示的なBehaviorが記載されているのは気になる
+どちらかというと、workflow/nudgingのsectionを参照するように明示するだけで良いと思う（No Linearでadaptiveな会話をしたいから、MUSTとかの表現はなるべく避けたいというのもある）
+
+あと、会話の例も長い
+
+```markdown
+**Phase 1: [Name]** (design.md#section-ref)
+- [ ] [Task 1 with details]
+- [ ] [Task 2 with details]
+- [ ] [Validation step]
+
+**Phase 2: [Name]** (design.md#section-ref)
+- [ ] [Task 1]
+- [ ] [Task 2]
+...
+```
+
+と長すぎるな。ユーザーに示したいのは、どのファイルを順番に実装していくかっていうことだけで良い気がしない？残りの細かいやることはtasks.mdのTimelineに記述されていればいいし
+
+`**Note**: /hm:timeline uses same components except "gates" (no validation gates for timeline planning)` も気になるかも。gatesは本当に無視していいと思う？例えば、designができてないのに、 `/hm:timeline` が実行されたらなにを実装するの？って話にならない？
+だから、これは gates.mdも修正対象じゃないかな？
+
+`New Section: Timeline Planning Protocol (Manual Invocation):` も気になる。
+Timeline Planning だけ他の操作と違って、特別視しすぎてない？あおｔ，これもFlowが画一的過ぎている気がする。
+
+`crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/02_hub.md` は悪くない気がする
