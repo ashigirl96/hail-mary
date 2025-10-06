@@ -128,37 +128,31 @@ Flow: Immediate nudge alert, bypass gates
 
 ## Document-Specific Pre-Actions (Command Pipeline Only)
 
-**Before Requirements**:
+**Before Requirements** (event: `requirements:pre-action`):
 Explore codebase comprehensively based on user's request to write contextually accurate requirements
 
 ## Document-Specific Post-Actions (Command Pipeline Only)
 
-**After Requirements Complete**:
+**After Requirements Complete** (event: `requirements:post-action`):
 1. Extract investigation topics from requirements
 2. Create Required Investigations checklist in tasks.md
 3. Update State Tracking: requirements.md = complete
 4. Add to Timeline: `[x] Requirements defined → requirements.md#overview`
-5. Trigger nudge event: `requirements-complete`
+5. Trigger nudge event: `requirements:nudge-next`
 
-**After Investigation Topic Complete**:
+**After Investigation Topic Complete** (event: `investigation:post-action`):
 1. Mark topic [x] in Required Investigations
 2. Calculate coverage percentage (X/Y)
 3. Update State Tracking: investigation.md = X/Y (N%)
 4. Add to Timeline: `[x] [topic-name] investigated → investigation.md#[topic-name]`
 5. If 100%: Set design.md readiness flag
-6. Trigger nudge event: `investigation-progress` (with coverage data)
+6. Trigger nudge event: `investigation:nudge-next` (with coverage data)
 
-**After Design Complete**:
+**After Design Complete** (event: `design:post-action`):
 1. Mark design.md = complete in State Tracking
 2. Add to Timeline: `[x] Design completed → design.md#overview`
-3. Extract implementation tasks from design.md (do NOT write to Timeline yet)
-4. Present tasks with suggested implementation order to user
-5. Trigger nudge event: `design-complete`
-
-**After User Confirms Implementation Order**:
-1. Write implementation checklist to Timeline with confirmed order
-2. Update State Tracking if needed
-3. Trigger nudge event: `implementation-ready`
+3. Present design summary to user: approach, key decisions, and implementation file order
+4. Trigger nudge event: `design:nudge-next`
 
 ## Key Principles
 

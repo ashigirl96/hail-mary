@@ -1,6 +1,8 @@
 # Pattern Router Framework
 # パターンルーターフレームワーク
 
+> **Note**: このドキュメントは**開発者向けガイドライン**です。System Promptに含まれるのは`00-10_*.md`ファイルであり、このREADME.mdは含まれません。フレームワークの理解と拡張のための参照資料として使用してください。
+
 ## 核心哲学
 
 このPattern Router Frameworkは**真のReactive Pattern-Based Routing**を実装しています。パターン分類がルーティング戦略全体を決定し、**デフォルトフローは存在しません** - あらゆる入力は分類され、その分類がどのパイプラインをどのコンポーネントで実行するかを選択します。
@@ -489,9 +491,124 @@ Input → patterns → [components...] → nudges
 
 各パイプラインは明確な特性、コンポーネントアクセス、ユースケースを持ちます。
 
+### 6. 説明的であって強制的ではない
+
+**重要**: Workflow記述はプロトコルやMUSTではなく、「こうなる」という説明として記述する。
+
+- ❌ **避けるべき**: MUST, MANDATORY, PROTOCOL, SHALL, ALWAYS
+- ✅ **推奨**: "User may...", "When user signals...", "Discuss interactively"
+- **理由**: NO Linear Workflow哲学に反する。開発は対話的で、adaptive。
+
+**例**:
+```markdown
+❌ Bad: "MUST extract tasks and present to user"
+✅ Good: "When user signals readiness, suggest implementation order"
+```
+
+### 7. イベントは状態ではなく文脈
+
+**重要**: "After X Complete"というイベントは、Xの作成直後ではなく、対話が落ち着いた文脈で発火する。
+
+- Design完了 ≠ design.md書込直後
+- Design完了 = ユーザーとの設計対話が一段落し、実装に進むサインが出た時
+- **理由**: /hm:design実行後も「なぜこの設計？」「このファイルはこう実装して」など対話が続く
+
+### 8. Nudgingはシンプルに
+
+**重要**: Nudgingテンプレートは「きっかけ」を提供するだけ。詳細はTimeline追加時に決める。
+
+- ❌ **避けるべき**: 長いphase詳細、すべてのタスクリスト
+- ✅ **推奨**: ファイル順序の提案、一般的なフロー（backend → API → frontend）
+- **理由**: 詳細を最初から提示すると、Linear Workflowを暗示する
+
+**例**:
+```markdown
+❌ Bad:
+**Phase 1**: (10行の詳細タスク)
+**Phase 2**: (10行の詳細タスク)
+
+✅ Good:
+Ready to implement? Files: backend → API → frontend
+Shall we plan the order?
+```
+
+### 9. Gatesはガイダンスであってブロックではない
+
+**重要**: 検証ゲートは、requirements必須のdesignを除き、警告レベルに留める。
+
+- ❌ **BLOCK**: 開発を強制的に止める（NO Linear Workflowに反する）
+- ✅ **WARNING**: ガイダンスと代替手段を提示
+- **例**: Timeline planningでdesign.md不在 → "Create design first, or describe what to implement?"
+
+### 10. フレームワークを信じる
+
+**重要**: 過度な制御や詳細な会話例は不要。Pattern-Based Routingを信じる。
+
+- 長い会話例は避ける（Linear Workflowを暗示）
+- Claudeの自然言語理解能力を信じる
+- テンプレートとガイダンスで十分
+
+## イベント命名システム（Lost in the Middle対策）
+
+**導入理由**: System promptが長大化すると、XMLタグレベルの参照では粒度が粗すぎて、特定のBefore/Afterセクションが見落とされる（Lost in the Middle問題）。
+
+**解決策**: 各workflow/nudgeセクションに一意なイベント名を付与し、slash commandから直接参照可能にする。
+
+### 命名規則
+
+```
+Workflow events: {target}:{role}
+- requirements:pre-action   (Before Requirements)
+- requirements:post-action  (After Requirements Complete)
+- investigation:post-action (After Investigation Topic Complete)
+- design:post-action        (After Design Complete)
+- timeline:action           (Timeline操作そのもの)
+
+Nudge events: {target}:nudge-next
+- requirements:nudge-next
+- investigation:nudge-next
+- design:nudge-next
+- timeline:nudge-next
+```
+
+**特徴**:
+- 短い（15-25文字）
+- 明確（targetが先頭、roleで区別）
+- 一貫性（統一パターン）
+- 検索可能（イベント名でピンポイント検索）
+
+### Slash Commandでの参照例
+
+```markdown
+Refer to system prompt sections:
+- <kiro-workflows> Before documentation: `requirements:pre-action`, After complete: `requirements:post-action`
+- <kiro-nudges> Next action suggestion: `requirements:nudge-next`
+```
+
+これにより、Claudeはイベント名でsystem prompt内を検索し、確実に該当セクションを実行できる。
+
+### System Promptでの記述例
+
+**04_workflows.md**:
+```markdown
+**After Design Complete** (event: `design:post-action`):
+1. Mark complete
+2. Present summary
+3. Trigger nudge event: `design:nudge-next`
+```
+
+**06_nudges.md**:
+```markdown
+### After Design Complete (event: `design:nudge-next`)
+- "Does this design work?"
+- "Use `/hm:timeline` to add implementation plan?"
+```
+
+---
+
 ## スラッシュコマンド統合
 
-スラッシュコマンドは必要に応じて特定のタグを参照します：
+スラッシュコマンドは必要に応じて特定のタグとイベントを参照します：
 
 ### `/hm:requirements` (明示的コマンド)
 ```yaml
@@ -515,6 +632,41 @@ Input → patterns → [components...] → nudges
 - kiro-nudges       # 提案生成
 # 注: Hub, gates, workflowsはアクセスされない
 ```
+
+### `/hm:timeline` (特別なケース)
+
+**なぜslash command側にBehavioral Flowを記述するか**:
+
+他のコマンド（requirements/investigate/design）は：
+- Document作成が主操作
+- Before/After actionsが副作用として発生
+- 04_workflows.mdに「Document-Specific Post-Actions」として記述
+
+`/hm:timeline`は性質が異なる：
+- ❌ Document作成ではなく、**Meta操作**（tasks.md#Timeline更新）
+- ❌ Before/Afterではなく、**直接的なAction**
+- ❌ "After Timeline Complete"は不自然（Timeline追加後に何？）
+- ✅ シンプルで明確な操作フロー
+
+したがって：
+- 04_workflows.mdの「Post-Actions」には合わない
+- Slash command側（.claude/commands/hm/timeline.md）にBehavioral Flowを記述
+- System promptは参照のみ（<kiro-hub>, <kiro-nudges>）
+
+```yaml
+記述場所:
+- .claude/commands/hm/timeline.md  # Behavioral Flow（7ステップ）
+- kiro-hub                        # Timeline format, State Tracking structure
+- kiro-nudges                     # timeline-planned event template
+- kiro-gates                      # Timeline Planning without Design warning
+- kiro-patterns                   # /hm:timeline pattern recognition
+```
+
+**利点**:
+- Document作成 vs Meta操作の区別が明確
+- System prompt肥大化を避ける
+- Lost in the Middle対策（slash command側なら確実に参照）
+- 04_workflows.mdはDocument操作のみに集中
 
 ## 実装メカニズム
 

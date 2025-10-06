@@ -18,6 +18,7 @@
 | "/hm:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 | "/hm:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 | "/hm:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/hm:timeline", "plan implementation" | Timeline Planning | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 
 **IMPLICIT Patterns**:
 
@@ -71,6 +72,20 @@ Input: "/hm:investigate --topic jwt-implementation"
 Input: "/hm:design"
 → Class: EXPLICIT
 → Confidence: 1.0
+→ Strategy: command
+→ Components: ["hub", "gates", "workflows", "document", "nudges"]
+→ Route to: Command Pipeline
+
+Input: "/hm:timeline"
+→ Class: EXPLICIT
+→ Confidence: 1.0
+→ Strategy: command
+→ Components: ["hub", "gates", "workflows", "document", "nudges"]
+→ Route to: Command Pipeline
+
+Input: "Let's start implementing"
+→ Class: EXPLICIT
+→ Confidence: 0.8
 → Strategy: command
 → Components: ["hub", "gates", "workflows", "document", "nudges"]
 → Route to: Command Pipeline

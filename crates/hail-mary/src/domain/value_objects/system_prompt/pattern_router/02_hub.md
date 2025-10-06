@@ -14,10 +14,22 @@
 ## State Tracking
 | Document | Status | Coverage | Next Action |
 |----------|--------|----------|-------------|
-| requirements.md | complete | - | Define investigation topics |
-| investigation.md | in-progress | 3/5 (60%) | Complete remaining topics |
-| design.md | pending | - | Awaiting 100% coverage |
+| requirements.md | complete | - | - |
+| investigation.md | complete | 5/5 (100%) | - |
+| design.md | complete | - | - |
+| tasks.md#Timeline | in-progress | phase1: 2/3 (67%) | Implement refresh endpoint |
 ```
+
+**Note**: State Tracking table columns:
+- **Document**: Document name or section being tracked
+  - requirements.md/investigation.md/design.md = Source documents
+  - tasks.md#Timeline = Chronological action log and plan
+- **Status**: pending (not started) → in-progress (active) → complete (all done)
+- **Coverage**: Format varies by document type
+  - Investigation: "3/5 (60%)" = topics completed
+  - Implementation: "phase1: 2/3 (67%)" = tasks in current phase
+  - Others: "-" (not applicable)
+- **Next Action**: Next action in document's sequence (or "-" if complete)
 
 **Required Investigations Checklist**:
 ```markdown
@@ -33,10 +45,24 @@
 ```markdown
 ## Timeline
 - [x] Requirements defined → requirements.md#overview
-- [x] JWT implementation investigated → investigation.md#jwt-implementation
-- [ ] Design authentication flow
-  - blocked by: investigations incomplete (2/4)
+- [x] All investigations complete → investigation.md
+- [x] Design completed → design.md#overview
+- [x] Implementation plan agreed with user
+- [x] phase1: Core Authentication → design.md#auth-service
+  - [x] Implement JWT service (jose library)
+  - [x] Add unit tests (coverage >80%)
+  - [x] Run bun lint
+- [ ] phase2: API Endpoints → design.md#api-endpoints
+  - [x] Create login endpoint (/api/auth/login)
+  - [ ] Create refresh endpoint (/api/auth/refresh)
+  - [ ] Integration tests with Playwright
+- [ ] phase3: Frontend Integration → design.md#frontend
+  - [ ] Login form component
+  - [ ] Token storage with httpOnly cookies
+  - [ ] Error handling and user feedback
 ```
+
+**Rationale**: Timeline is data, State Tracking is meta-information (no circular reference)
 
 **Access Patterns by Pipeline**:
 

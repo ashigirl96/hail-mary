@@ -41,6 +41,12 @@
 - Message: "⚠️ Design lacks evidence. Adding references from investigation.md..."
 - Applies to: Command Pipeline only
 
+**Timeline Planning without Design**:
+- Check: <design-file> exists and has content
+- Action: ⚠️ **WARNING** with guidance
+- Message: "⚠️ No design found. Create design first with `/hm:design`, or describe what you want to implement?"
+- Applies to: Command Pipeline only
+
 ## Suggestion Gates (Suggestion Pipeline Only)
 
 **Suggestion Confidence Gate**:
@@ -87,6 +93,11 @@ Recovery Pipeline Example:
 Input: "Error: can't create design"
 Gates Applied: Emergency override
 Result: Bypass all gates, immediate assistance
+
+Timeline Planning Example:
+Input: "/hm:timeline"
+Gates Applied: Timeline Planning without Design
+Result: Warning if no design.md, but proceed if user provides details
 ```
 
 ## Key Principles
