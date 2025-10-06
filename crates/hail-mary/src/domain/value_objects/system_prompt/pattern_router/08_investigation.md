@@ -12,7 +12,6 @@
 **Topic Structure**:
 ```markdown
 ## [topic-name]
-**Status**: Complete ✓
 
 [Investigation content with evidence]
 ```
