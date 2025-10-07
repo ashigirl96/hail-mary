@@ -687,6 +687,185 @@ let content = PATTERN_ROUTER_INDEX
 - モジュラー編集
 - 単一バイナリデプロイ
 
+## PBI/SBI Multi-PR Support
+
+### 設計思想
+
+Pattern Router Frameworkは**1 Spec = 1 PR**を基本としながら、大規模プロジェクトでの**複数PR分割**をサポートします。
+
+#### 核心原則
+
+**Template Switching - 複雑性の完璧な分離**:
+```
+通常case (1 PR):
+  → 10_spec_files.md (既存)
+  → Pattern Router本体は不変
+
+PBI/SBI case (複数PR):
+  → 10_spec_files_sbi.md (拡張)
+  → 02_hub.md, 04_workflows.md 変更なし
+```
+
+**なぜ分離が重要か**:
+- 既存ユーザーの挙動変わらず（Backward Compatibility完璧）
+- Pattern Router Framework本体は変更最小限
+- SBI特有ロジックは10_spec_files_sbi.mdに集約
+- 「単純な場合は単純に、複雑な場合だけ複雑に」
+
+### ユースケース
+
+#### 1. Backend/Frontend分離開発
+```
+PBI: User Authentication System
+├─ SBI-1: Backend API (PR #123)
+│   └─ Authentication endpoints, JWT service
+├─ SBI-2: Frontend UI (PR #124)
+│   └─ Login forms, session management
+└─ 依存: SBI-1マージ後にSBI-2開発開始
+```
+
+#### 2. 段階的リリース
+```
+PBI: Payment Integration
+├─ Phase 1: Core processing (PR #101) - Week 1-2
+├─ Phase 2: Refund functionality (PR #102) - Week 3-4
+└─ Phase 3: Subscription billing (PR #103) - Week 5-6
+```
+
+#### 3. 長期プロジェクト
+```
+PBI: Microservices Migration
+├─ SBI-1: Auth service (独立デプロイ)
+├─ SBI-2: User service (独立デプロイ)
+└─ SBI-3: Notification service (独立デプロイ)
+└─ 並行開発可能、段階的リリース
+```
+
+### ディレクトリ構造
+
+```
+.kiro/specs/payment-system/          # PBI
+  ├── requirements.md                 # 全体概要 + SBI列挙
+  ├── sbi-1-backend-api/              # SBI = 1 PR
+  │   ├── requirements.md             # 詳細要件（PRD形式）
+  │   ├── investigation.md
+  │   ├── design.md
+  │   ├── tasks.md
+  │   └── memo.md
+  ├── sbi-2-frontend-ui/
+  └── sbi-3-error-handling/
+```
+
+### コマンド
+
+```bash
+# PBI作成
+/hm:requirements --type pbi
+
+# SBI分解
+/decompose
+
+# SBI追加
+/add-sbi monitoring  # → sbi-4-monitoring
+
+# TUI選択
+$ hail-mary code
+  → payment-system
+    → sbi-1-backend-api  # SBI選択
+    → sbi-2-frontend-ui
+    → 📝 Create new SBI
+```
+
+### システムプロンプト統合
+
+**通常Spec選択時** (`10_spec_files.md`):
+```xml
+<requirements-file>.../project/requirements.md</requirements-file>
+<design-file>.../project/design.md</design-file>
+```
+
+**SBI選択時** (`10_spec_files_sbi.md`):
+```xml
+<!-- SBI Context (Primary) -->
+<requirements-file>.../sbi-1-backend-api/requirements.md</requirements-file>
+<design-file>.../sbi-1-backend-api/design.md</design-file>
+
+<!-- PBI Context (Reference) -->
+<pbi-requirements-file>.../payment-system/requirements.md</pbi-requirements-file>
+```
+
+**Evidence Chain**: SBI design → PBI requirements → 全体像
+
+### NO Linear Workflow との整合性
+
+**境界は明確、内部は自由**:
+- 1 PBI = 複数SBI という**境界**は存在
+- しかしSBI実装**順序は自由**（sbi-2から始めてもOK）
+- SBI内部も自由（requirements → investigation → design の強制なし）
+- 実装中の気づき → Suggestion Pipelineで柔軟に
+
+**これが「Routing without Control」**:
+- Control: PR scope の境界を明確化
+- Without Control: 境界内での探索は完全自由
+
+### 実装詳細
+
+**Template Switching** (`mod.rs:42-51`):
+```rust
+let is_sbi = is_sbi_context(path);
+
+let spec_files_section = if is_sbi {
+    build_sbi_spec_files(name, path)  // 10_spec_files_sbi.md
+} else {
+    build_pbi_spec_files(name, path)  // 10_spec_files.md
+};
+```
+
+**SBI検出** (`mod.rs:84-90`):
+```rust
+fn is_sbi_context(spec_path: &Path) -> bool {
+    if let Some(dir_name) = spec_path.file_name()
+        && let Some(name_str) = dir_name.to_str()
+    {
+        return name_str.starts_with("sbi-");
+    }
+    false
+}
+```
+
+**Repository Methods** (`spec.rs:261-353`):
+- `is_pbi()`: PBI判定（SBI存在チェック）
+- `list_sbis()`: SBI一覧取得
+- `create_sbi()`: TUI "Create new SBI" 用
+
+**TUI Nested Selection** (`spec_selector.rs`):
+- TuiItem enum: Pbi/Sbi/CreateNewSbi/RegularSpec
+- インデント表示: PBI (indent 3), SBI (indent 5)
+- SpecSelectionResult: 7種類の選択結果
+
+### アーキテクチャの美しさ
+
+1. **複雑性の分離**: SBI特有ロジックは10_spec_files_sbi.mdのみ
+2. **Backward Compatibility**: 既存動作完全保持
+3. **最小変更**: 02_hub.md, 04_workflows.md不変
+4. **段階的**: MVPから機能拡張可能
+5. **テスト済み**: 154 tests passing
+
+### Archive戦略
+
+**PBI一括Archive**:
+```
+.kiro/archive/2025-10-15-payment-system/
+  ├── requirements.md (PBI全体像)
+  ├── sbi-1-backend-api/ (PR #123の完全な記録)
+  ├── sbi-2-frontend-ui/ (PR #124の完全な記録)
+  └── sbi-3-error-handling/ (PR #125の完全な記録)
+```
+
+**組織知の蓄積**: 「なぜこう分割したか」の歴史が残る
+
+---
+
 ## 検証チェックリスト
 
 - ✅ パターン認識が全入力を分類
@@ -699,3 +878,4 @@ let content = PATTERN_ROUTER_INDEX
 - ✅ デフォルトフローなし - すべてがパターン駆動
 - ✅ コンポーネント分離の維持
 - ✅ 真のreactive pattern-based routingを達成
+- ✅ **PBI/SBI Multi-PR Support - Template switchingで複雑性分離**
