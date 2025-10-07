@@ -213,7 +213,7 @@ fn build_sbi_spec_files(spec_name: &str, spec_path: &Path) -> String {
      sbi-2-frontend-ui
      sbi-3-mobile-app
      📝 Create new SBI specification     # Edge case: add SBI later
-   2025-09-29-legacy-feature             # Regular Spec (no SBIs)
+   2025-09-29-legacy-feature             # Single Spec (no SBIs)
 ```
 
 ### Implementation

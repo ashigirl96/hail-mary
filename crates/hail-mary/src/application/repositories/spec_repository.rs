@@ -1,10 +1,10 @@
 use crate::application::errors::ApplicationError;
 use std::path::PathBuf;
 
-/// Repository interface for managing feature specifications
+/// Repository interface for managing specifications
 pub trait SpecRepositoryInterface {
-    /// Create a new feature specification with template files
-    fn create_feature(&self, name: &str) -> Result<(), ApplicationError>;
+    /// Create a new specification with template files
+    fn create_spec(&self, name: &str) -> Result<(), ApplicationError>;
 
     /// List all specification directories
     /// Returns a vector of (name, is_archived) tuples

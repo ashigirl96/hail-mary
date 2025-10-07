@@ -31,7 +31,7 @@ pub fn launch_claude_with_spec(
         .map_err(|e| ApplicationError::FileSystemError(format!("TUI error: {}", e)))?;
 
     let (spec_name, spec_path) = match selection_result {
-        SpecSelectionResult::RegularSpec(name) => {
+        SpecSelectionResult::SingleSpec(name) => {
             let path = spec_repo.get_spec_path(&name)?;
             (Some(name), Some(path))
         }
@@ -48,7 +48,7 @@ pub fn launch_claude_with_spec(
             // Prompt for name and create new spec
             let name = prompt_for_spec_name()?;
             SpecValidator::validate_spec_name(&name)?;
-            spec_repo.create_feature(&name)?;
+            spec_repo.create_spec(&name)?;
 
             // Generate the actual directory name with date prefix
             let date = chrono::Utc::now().format("%Y-%m-%d");

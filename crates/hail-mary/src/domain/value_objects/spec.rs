@@ -5,7 +5,7 @@ impl SpecValidator {
     /// Validate spec name format (kebab-case)
     pub fn validate_spec_name(name: &str) -> Result<(), crate::domain::errors::DomainError> {
         if name.is_empty() {
-            return Err(crate::domain::errors::DomainError::InvalidFeatureName(
+            return Err(crate::domain::errors::DomainError::InvalidSpecName(
                 "Name cannot be empty".to_string(),
             ));
         }
@@ -13,7 +13,7 @@ impl SpecValidator {
         // Validate kebab-case format
         let regex = regex::Regex::new(r"^[a-z0-9]+(-[a-z0-9]+)*$").unwrap();
         if !regex.is_match(name) {
-            return Err(crate::domain::errors::DomainError::InvalidFeatureName(
+            return Err(crate::domain::errors::DomainError::InvalidSpecName(
                 name.to_string(),
             ));
         }
@@ -41,37 +41,37 @@ mod tests {
         // Empty name
         assert!(matches!(
             SpecValidator::validate_spec_name(""),
-            Err(DomainError::InvalidFeatureName(_))
+            Err(DomainError::InvalidSpecName(_))
         ));
 
         // Uppercase letters
         assert!(matches!(
             SpecValidator::validate_spec_name("Invalid-Name"),
-            Err(DomainError::InvalidFeatureName(_))
+            Err(DomainError::InvalidSpecName(_))
         ));
 
         // Underscore
         assert!(matches!(
             SpecValidator::validate_spec_name("invalid_name"),
-            Err(DomainError::InvalidFeatureName(_))
+            Err(DomainError::InvalidSpecName(_))
         ));
 
         // Starts with dash
         assert!(matches!(
             SpecValidator::validate_spec_name("-invalid"),
-            Err(DomainError::InvalidFeatureName(_))
+            Err(DomainError::InvalidSpecName(_))
         ));
 
         // Ends with dash
         assert!(matches!(
             SpecValidator::validate_spec_name("invalid-"),
-            Err(DomainError::InvalidFeatureName(_))
+            Err(DomainError::InvalidSpecName(_))
         ));
 
         // Double dash
         assert!(matches!(
             SpecValidator::validate_spec_name("invalid--name"),
-            Err(DomainError::InvalidFeatureName(_))
+            Err(DomainError::InvalidSpecName(_))
         ));
     }
 }

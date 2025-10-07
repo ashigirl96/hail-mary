@@ -1,7 +1,7 @@
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::SpecRepositoryInterface;
 
-pub fn complete_features(
+pub fn complete_specs(
     spec_repo: &dyn SpecRepositoryInterface,
     spec_names: &[String],
 ) -> Result<(), ApplicationError> {
@@ -20,7 +20,7 @@ mod tests {
     use std::fs;
 
     #[test]
-    fn test_complete_features_success() {
+    fn test_complete_specs_success() {
         let test_dir = TestDirectory::new_no_cd();
         let path_manager = PathManager::new(test_dir.path().to_path_buf());
         let spec_repo = ConcreteSpecRepository::new(path_manager.clone());
@@ -32,7 +32,7 @@ mod tests {
         fs::create_dir_all(specs_dir.join("2025-01-02-feature-b")).unwrap();
 
         // Complete one feature
-        let result = complete_features(&spec_repo, &["2025-01-01-feature-a".to_string()]);
+        let result = complete_specs(&spec_repo, &["2025-01-01-feature-a".to_string()]);
         assert!(result.is_ok());
 
         // Verify it was moved to archive
@@ -43,7 +43,7 @@ mod tests {
     }
 
     #[test]
-    fn test_complete_features_multiple() {
+    fn test_complete_specs_multiple() {
         let test_dir = TestDirectory::new_no_cd();
         let path_manager = PathManager::new(test_dir.path().to_path_buf());
         let spec_repo = ConcreteSpecRepository::new(path_manager.clone());
@@ -55,7 +55,7 @@ mod tests {
         fs::create_dir_all(specs_dir.join("2025-01-02-feature-b")).unwrap();
 
         // Complete multiple features
-        let result = complete_features(
+        let result = complete_specs(
             &spec_repo,
             &[
                 "2025-01-01-feature-a".to_string(),
@@ -73,13 +73,13 @@ mod tests {
     }
 
     #[test]
-    fn test_complete_features_spec_not_found() {
+    fn test_complete_specs_spec_not_found() {
         let test_dir = TestDirectory::new_no_cd();
         let path_manager = PathManager::new(test_dir.path().to_path_buf());
         let spec_repo = ConcreteSpecRepository::new(path_manager);
 
         // Try to complete non-existent feature (no need to initialize)
-        let result = complete_features(&spec_repo, &["non-existent".to_string()]);
+        let result = complete_specs(&spec_repo, &["non-existent".to_string()]);
         assert!(result.is_err());
         match result.unwrap_err() {
             ApplicationError::SpecNotFound(name) => assert_eq!(name, "non-existent"),
@@ -88,13 +88,13 @@ mod tests {
     }
 
     #[test]
-    fn test_complete_features_with_mock() {
+    fn test_complete_specs_with_mock() {
         let mock_repo = MockSpecRepository::with_specs(vec![
             "2025-01-01-feature-a".to_string(),
             "2025-01-02-feature-b".to_string(),
         ]);
 
-        let result = complete_features(&mock_repo, &["2025-01-01-feature-a".to_string()]);
+        let result = complete_specs(&mock_repo, &["2025-01-01-feature-a".to_string()]);
         assert!(result.is_ok());
 
         // Verify spec is in archived list
@@ -103,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn test_complete_features_already_archived() {
+    fn test_complete_specs_already_archived() {
         let test_dir = TestDirectory::new_no_cd();
         let path_manager = PathManager::new(test_dir.path().to_path_buf());
         let spec_repo = ConcreteSpecRepository::new(path_manager.clone());
@@ -130,7 +130,7 @@ mod tests {
         .unwrap();
 
         // Complete feature that already exists in archive - should overwrite
-        let result = complete_features(&spec_repo, &["2025-01-01-feature-a".to_string()]);
+        let result = complete_specs(&spec_repo, &["2025-01-01-feature-a".to_string()]);
         assert!(result.is_ok());
 
         // Verify the new spec replaced the old archive

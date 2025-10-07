@@ -839,7 +839,7 @@ fn is_sbi_context(spec_path: &Path) -> bool {
 - `create_sbi()`: TUI "Create new SBI" 用
 
 **TUI Nested Selection** (`spec_selector.rs`):
-- TuiItem enum: Pbi/Sbi/CreateNewSbi/RegularSpec
+- TuiItem enum: Pbi/Sbi/CreateNewSbi/SingleSpec
 - インデント表示: PBI (indent 3), SBI (indent 5)
 - SpecSelectionResult: 7種類の選択結果
 

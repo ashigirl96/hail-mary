@@ -89,7 +89,7 @@ fn is_sbi_context(spec_path: &Path) -> bool {
     false
 }
 
-/// Build spec_files section for PBI or regular spec (non-SBI)
+/// Build spec_files section for PBI or single spec (non-SBI)
 fn build_pbi_spec_files(spec_name: &str, spec_path: &Path) -> String {
     let path_str = spec_path.display().to_string();
 
@@ -267,7 +267,7 @@ mod tests {
         // Should contain steering section
         assert!(content.contains("## About Steering"));
 
-        // Should NOT contain PBI references (regular spec)
+        // Should NOT contain PBI references (single spec)
         assert!(!content.contains("<pbi-requirements-file>"));
     }
 
@@ -304,10 +304,10 @@ mod tests {
         let sbi_path = PathBuf::from(".kiro/specs/payment/sbi-1-backend");
         assert!(is_sbi_context(&sbi_path));
 
-        let regular_path = PathBuf::from(".kiro/specs/payment");
-        assert!(!is_sbi_context(&regular_path));
+        let single_spec_path = PathBuf::from(".kiro/specs/payment");
+        assert!(!is_sbi_context(&single_spec_path));
 
-        let another_regular = PathBuf::from(".kiro/specs/2025-10-07-project");
-        assert!(!is_sbi_context(&another_regular));
+        let another_single_spec = PathBuf::from(".kiro/specs/2025-10-07-project");
+        assert!(!is_sbi_context(&another_single_spec));
     }
 }

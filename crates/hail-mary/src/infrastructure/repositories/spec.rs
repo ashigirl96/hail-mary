@@ -13,8 +13,8 @@ impl SpecRepository {
         Self { path_manager }
     }
 
-    fn validate_feature_name(&self, name: &str) -> Result<(), ApplicationError> {
-        // Validate feature name (kebab-case)
+    fn validate_spec_name(&self, name: &str) -> Result<(), ApplicationError> {
+        // Validate spec name (kebab-case)
         if !name
             .chars()
             .all(|c| c.is_lowercase() || c == '-' || c.is_numeric())
@@ -22,14 +22,14 @@ impl SpecRepository {
             || name.ends_with('-')
             || name.contains("--")
         {
-            return Err(ApplicationError::InvalidFeatureName(name.to_string()));
+            return Err(ApplicationError::InvalidSpecName(name.to_string()));
         }
         Ok(())
     }
 
     fn create_template_files(
         &self,
-        feature_dir: &std::path::Path,
+        spec_dir: &std::path::Path,
         name: &str,
     ) -> Result<(), ApplicationError> {
         // Create essential template files including tasks.md for orchestration
@@ -78,7 +78,7 @@ impl SpecRepository {
 
 ## Timeline
 
-- [x] Feature spec created → {}
+- [x] Spec created → {}
 - [ ] Requirements definition
 - [ ] Investigation topics identification
 - [ ] Design documentation
@@ -89,19 +89,19 @@ impl SpecRepository {
 
         // Write all template files including tasks.md
         // TODO: Commented out design.md and investigation.md creation
-        // fs::write(feature_dir.join("design.md"), design_content).map_err(|e| {
+        // fs::write(spec_dir.join("design.md"), design_content).map_err(|e| {
         //     ApplicationError::FileSystemError(format!("Failed to write design.md: {}", e))
         // })?;
 
-        fs::write(feature_dir.join("memo.md"), memo_content).map_err(|e| {
+        fs::write(spec_dir.join("memo.md"), memo_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write memo.md: {}", e))
         })?;
 
-        // fs::write(feature_dir.join("investigation.md"), investigation_content).map_err(|e| {
+        // fs::write(spec_dir.join("investigation.md"), investigation_content).map_err(|e| {
         //     ApplicationError::FileSystemError(format!("Failed to write investigation.md: {}", e))
         // })?;
 
-        fs::write(feature_dir.join("tasks.md"), tasks_content).map_err(|e| {
+        fs::write(spec_dir.join("tasks.md"), tasks_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write tasks.md: {}", e))
         })?;
 
@@ -110,9 +110,9 @@ impl SpecRepository {
 }
 
 impl SpecRepositoryInterface for SpecRepository {
-    fn create_feature(&self, name: &str) -> Result<(), ApplicationError> {
-        // Validate feature name
-        self.validate_feature_name(name)?;
+    fn create_spec(&self, name: &str) -> Result<(), ApplicationError> {
+        // Validate spec name
+        self.validate_spec_name(name)?;
 
         // Ensure specs directory exists (like ConfigRepository pattern)
         let specs_dir = self.path_manager.specs_dir(true);
@@ -122,21 +122,21 @@ impl SpecRepositoryInterface for SpecRepository {
 
         // Generate directory name with date prefix
         let date = chrono::Utc::now().format("%Y-%m-%d");
-        let feature_name = format!("{}-{}", date, name);
-        let feature_dir = specs_dir.join(&feature_name);
+        let spec_name = format!("{}-{}", date, name);
+        let spec_dir = specs_dir.join(&spec_name);
 
-        // Check if feature already exists
-        if feature_dir.exists() {
-            return Err(ApplicationError::FeatureAlreadyExists(name.to_string()));
+        // Check if spec already exists
+        if spec_dir.exists() {
+            return Err(ApplicationError::SpecAlreadyExists(name.to_string()));
         }
 
-        // Create feature directory
-        fs::create_dir_all(&feature_dir).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to create feature directory: {}", e))
+        // Create spec directory
+        fs::create_dir_all(&spec_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create spec directory: {}", e))
         })?;
 
         // Create template files
-        self.create_template_files(&feature_dir, name)?;
+        self.create_template_files(&spec_dir, name)?;
 
         Ok(())
     }
@@ -299,7 +299,7 @@ impl SpecRepositoryInterface for SpecRepository {
 
     fn create_sbi(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError> {
         // Validate SBI name
-        self.validate_feature_name(sbi_name)?;
+        self.validate_spec_name(sbi_name)?;
 
         let sbi_path = self
             .path_manager
@@ -309,7 +309,7 @@ impl SpecRepositoryInterface for SpecRepository {
 
         // Check if SBI already exists
         if sbi_path.exists() {
-            return Err(ApplicationError::FeatureAlreadyExists(sbi_name.to_string()));
+            return Err(ApplicationError::SpecAlreadyExists(sbi_name.to_string()));
         }
 
         // Create SBI directory

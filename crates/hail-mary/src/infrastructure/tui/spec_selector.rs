@@ -29,7 +29,7 @@ enum TuiItem {
     CreateNewSbi {
         pbi_name: String,
     },
-    RegularSpec {
+    SingleSpec {
         name: String,
     },
 }
@@ -76,12 +76,12 @@ impl SpecSelectorTui {
                         pbi_name: spec_name,
                     });
                 } else {
-                    // Fallback to regular spec
-                    items.push(TuiItem::RegularSpec { name: spec_name });
+                    // Fallback to single spec
+                    items.push(TuiItem::SingleSpec { name: spec_name });
                 }
             } else {
-                // Regular spec (no SBIs)
-                items.push(TuiItem::RegularSpec { name: spec_name });
+                // Single spec (no SBIs)
+                items.push(TuiItem::SingleSpec { name: spec_name });
             }
         }
 
@@ -123,8 +123,8 @@ impl SpecSelectorTui {
                                 TuiItem::CreateNewSbi { pbi_name } => {
                                     SpecSelectionResult::CreateNewSbi(pbi_name.clone())
                                 }
-                                TuiItem::RegularSpec { name } => {
-                                    SpecSelectionResult::RegularSpec(name.clone())
+                                TuiItem::SingleSpec { name } => {
+                                    SpecSelectionResult::SingleSpec(name.clone())
                                 }
                             };
                             break Ok(result);
@@ -188,7 +188,7 @@ impl SpecSelectorTui {
                     "     📝 Create new SBI specification".to_string(),
                     Style::default().fg(Color::Green),
                 ),
-                TuiItem::RegularSpec { name } => (format!("   {}", name), Style::default()),
+                TuiItem::SingleSpec { name } => (format!("   {}", name), Style::default()),
             };
             list_items.push(ListItem::new(text).style(style));
         }
@@ -243,7 +243,7 @@ impl SpecSelectorTui {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SpecSelectionResult {
-    RegularSpec(String),
+    SingleSpec(String),
     Pbi(String),
     Sbi(String, String), // (pbi_name, sbi_name)
     CreateNew,
@@ -268,7 +268,7 @@ mod tests {
         let mock_repo = MockSpecRepository::new();
         let selector = SpecSelectorTui::new(specs, &mock_repo);
 
-        // Should have 2 default items + 2 regular specs
+        // Should have 2 default items + 2 single specs
         assert_eq!(selector.items.len(), 4);
     }
 

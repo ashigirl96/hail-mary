@@ -182,9 +182,9 @@ mod tests {
                 let result = command.execute();
                 assert!(result.is_ok());
 
-                // Verify feature directory was created with date prefix
+                // Verify spec directory was created with date prefix
                 let specs_dir = fs::read_dir(".kiro/specs").unwrap();
-                let feature_dirs: Vec<_> = specs_dir
+                let spec_dirs: Vec<_> = specs_dir
                     .filter_map(|entry| entry.ok())
                     .filter(|entry| {
                         entry
@@ -193,7 +193,7 @@ mod tests {
                             .ends_with("-test-feature")
                     })
                     .collect();
-                assert_eq!(feature_dirs.len(), 1);
+                assert_eq!(spec_dirs.len(), 1);
             }
             _ => panic!("Expected new command"),
         }
