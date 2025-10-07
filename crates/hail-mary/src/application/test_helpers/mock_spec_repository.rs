@@ -56,15 +56,15 @@ impl MockSpecRepository {
 }
 
 impl SpecRepositoryInterface for MockSpecRepository {
-    fn create_feature(&self, name: &str) -> Result<(), ApplicationError> {
-        if self.should_fail("create_feature") {
-            return Err(ApplicationError::FeatureCreationError(format!(
+    fn create_spec(&self, name: &str) -> Result<(), ApplicationError> {
+        if self.should_fail("create_spec") {
+            return Err(ApplicationError::SpecCreationError(format!(
                 "Mock creation failure for {}",
                 name
             )));
         }
 
-        // Validate feature name (kebab-case)
+        // Validate spec name (kebab-case)
         if !name
             .chars()
             .all(|c| c.is_lowercase() || c == '-' || c.is_numeric())
@@ -72,12 +72,12 @@ impl SpecRepositoryInterface for MockSpecRepository {
             || name.ends_with('-')
             || name.contains("--")
         {
-            return Err(ApplicationError::InvalidFeatureName(name.to_string()));
+            return Err(ApplicationError::InvalidSpecName(name.to_string()));
         }
 
         let date = chrono::Utc::now().format("%Y-%m-%d");
-        let feature_name = format!("{}-{}", date, name);
-        self.specs.write().unwrap().insert(feature_name);
+        let spec_name = format!("{}-{}", date, name);
+        self.specs.write().unwrap().insert(spec_name);
         Ok(())
     }
 
@@ -146,5 +146,20 @@ impl SpecRepositoryInterface for MockSpecRepository {
             .cloned()
             .collect();
         Ok(archived)
+    }
+
+    fn is_pbi(&self, _spec_name: &str) -> Result<bool, ApplicationError> {
+        // Mock: always return false for simplicity
+        Ok(false)
+    }
+
+    fn list_sbis(&self, _pbi_name: &str) -> Result<Vec<String>, ApplicationError> {
+        // Mock: return empty vec
+        Ok(Vec::new())
+    }
+
+    fn create_sbi(&self, _pbi_name: &str, _sbi_name: &str) -> Result<(), ApplicationError> {
+        // Mock: do nothing
+        Ok(())
     }
 }

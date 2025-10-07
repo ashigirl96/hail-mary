@@ -9,11 +9,11 @@ pub enum ApplicationError {
     #[error("Project not found")]
     ProjectNotFound,
 
-    #[error("Feature already exists: {0}")]
-    FeatureAlreadyExists(String),
+    #[error("Spec already exists: {0}")]
+    SpecAlreadyExists(String),
 
-    #[error("Invalid feature name: {0}")]
-    InvalidFeatureName(String),
+    #[error("Invalid spec name: {0}")]
+    InvalidSpecName(String),
 
     #[error("Database error: {0}")]
     DatabaseError(String),
@@ -33,8 +33,8 @@ pub enum ApplicationError {
     #[error("File system error: {0}")]
     FileSystemError(String),
 
-    #[error("Feature creation error: {0}")]
-    FeatureCreationError(String),
+    #[error("Spec creation error: {0}")]
+    SpecCreationError(String),
 
     #[error("Spec directory not found: {0}")]
     SpecNotFound(String),
@@ -76,15 +76,15 @@ mod tests {
     }
 
     #[test]
-    fn test_feature_already_exists_error() {
-        let error = ApplicationError::FeatureAlreadyExists("test-feature".to_string());
-        assert_eq!(error.to_string(), "Feature already exists: test-feature");
+    fn test_spec_already_exists_error() {
+        let error = ApplicationError::SpecAlreadyExists("test-feature".to_string());
+        assert_eq!(error.to_string(), "Spec already exists: test-feature");
     }
 
     #[test]
-    fn test_invalid_feature_name_error() {
-        let error = ApplicationError::InvalidFeatureName("Invalid_Name".to_string());
-        assert_eq!(error.to_string(), "Invalid feature name: Invalid_Name");
+    fn test_invalid_spec_name_error() {
+        let error = ApplicationError::InvalidSpecName("Invalid_Name".to_string());
+        assert_eq!(error.to_string(), "Invalid spec name: Invalid_Name");
     }
 
     #[test]
@@ -110,13 +110,13 @@ mod tests {
 
     #[test]
     fn test_domain_error_conversion() {
-        let domain_error = DomainError::InvalidFeatureName("Bad_Name".to_string());
+        let domain_error = DomainError::InvalidSpecName("Bad_Name".to_string());
         let app_error = ApplicationError::from(domain_error);
 
         assert!(
             app_error
                 .to_string()
-                .contains("Invalid feature name: Bad_Name")
+                .contains("Invalid spec name: Bad_Name")
         );
         assert!(matches!(app_error, ApplicationError::DomainError(_)));
     }

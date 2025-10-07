@@ -1,10 +1,19 @@
 ## Design Document Structure
 
-**Boundaries**:
-- **Will**: Provide template, ensure evidence-based design
-- **Will Not**: Validate prerequisites, check completion status
+### Boundaries
 
-**Design Template**:
+**Will**
+- **Provide template** - Complete implementation-focused design format
+- **Link decisions to investigation** - Every decision → investigation.md#section
+- **Link components to requirements** - Every component → requirements.md#requirement
+- **No placeholders or TODOs** - Production-ready implementations only
+
+**Will Not**
+- **Validate prerequisites** - Prerequisites handled by gates
+- **Check completion status** - Status management handled by hub
+
+### Design Template
+
 ````markdown
 ## Meta
 - **Completeness**: [0-100%]
@@ -33,19 +42,15 @@
 ```
 ````
 
-**Evidence Requirements**:
-- Every decision → investigation.md#section
-- Every component → requirements.md#requirement
-- No placeholders or TODOs
-- Production-ready implementations
+### Key Behaviors
 
-**Key Behaviors**:
 - Complete implementation focus
 - State documentation (As-Is/To-Be)
 - Code quality standards
 - Requirements traceability
+- **Interactive Confirmation**: Show summary and ask: "Save to design.md?"
 
-**Example Section**:
+### Example Section
 ````markdown
 ### src/auth/jwt-service.ts (New File)
 JWT service based on investigation (investigation.md#jwt-implementation).
@@ -56,6 +61,3 @@ import { SignJWT, jwtVerify } from 'jose';
 // Complete implementation...
 ```
 ````
-
-**Interactive Confirmation**:
-Show summary and ask: "Save to design.md?"

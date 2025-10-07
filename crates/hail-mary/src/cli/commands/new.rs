@@ -1,4 +1,4 @@
-use crate::application::use_cases::create_feature;
+use crate::application::use_cases::create_spec;
 use crate::cli::formatters::{format_error, format_success};
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use crate::infrastructure::repositories::spec::SpecRepository;
@@ -30,33 +30,33 @@ impl NewCommand {
         let spec_repo = SpecRepository::new(path_manager);
 
         // Execute use case function (validation is done inside)
-        match create_feature(&spec_repo, &self.name) {
-            Ok(feature_path) => {
+        match create_spec(&spec_repo, &self.name) {
+            Ok(spec_path) => {
                 println!(
                     "{}",
                     format_success(&format!(
-                        "Feature '{}' created successfully at: {}",
-                        self.name, feature_path
+                        "Spec '{}' created successfully at: {}",
+                        self.name, spec_path
                     ))
                 );
                 Ok(())
             }
-            Err(crate::application::errors::ApplicationError::InvalidFeatureName(name)) => {
+            Err(crate::application::errors::ApplicationError::InvalidSpecName(name)) => {
                 println!(
                     "{}",
                     format_error(&format!(
-                        "Invalid feature name '{}'. Use kebab-case (lowercase letters, numbers, and hyphens only).",
+                        "Invalid spec name '{}'. Use kebab-case (lowercase letters, numbers, and hyphens only).",
                         name
                     ))
                 );
-                Err(anyhow::anyhow!("Invalid feature name"))
+                Err(anyhow::anyhow!("Invalid spec name"))
             }
-            Err(crate::application::errors::ApplicationError::FeatureAlreadyExists(name)) => {
+            Err(crate::application::errors::ApplicationError::SpecAlreadyExists(name)) => {
                 println!(
                     "{}",
-                    format_error(&format!("Feature '{}' already exists.", name))
+                    format_error(&format!("Spec '{}' already exists.", name))
                 );
-                Err(anyhow::anyhow!("Feature already exists"))
+                Err(anyhow::anyhow!("Spec already exists"))
             }
             Err(e) => {
                 println!("{}", format_error(&e.to_string()));
@@ -95,20 +95,20 @@ mod tests {
 
         // Verify feature directory was created with only essential files
         let date = chrono::Utc::now().format("%Y-%m-%d");
-        let feature_dir = format!(".kiro/specs/{}-user-authentication", date);
-        assert!(Path::new(&feature_dir).exists());
+        let spec_dir = format!(".kiro/specs/{}-user-authentication", date);
+        assert!(Path::new(&spec_dir).exists());
         // Essential files should be created
         // TODO: design.md and investigation.md are temporarily disabled
-        // assert!(Path::new(&format!("{}/design.md", feature_dir)).exists());
-        // assert!(Path::new(&format!("{}/investigation.md", feature_dir)).exists());
-        assert!(Path::new(&format!("{}/memo.md", feature_dir)).exists());
-        assert!(Path::new(&format!("{}/tasks.md", feature_dir)).exists()); // tasks.md is now created
+        // assert!(Path::new(&format!("{}/design.md", spec_dir)).exists());
+        // assert!(Path::new(&format!("{}/investigation.md", spec_dir)).exists());
+        assert!(Path::new(&format!("{}/memo.md", spec_dir)).exists());
+        assert!(Path::new(&format!("{}/tasks.md", spec_dir)).exists()); // tasks.md is now created
         // These files should NOT be created automatically
-        assert!(!Path::new(&format!("{}/requirements.md", feature_dir)).exists());
-        assert!(!Path::new(&format!("{}/spec.json", feature_dir)).exists());
+        assert!(!Path::new(&format!("{}/requirements.md", spec_dir)).exists());
+        assert!(!Path::new(&format!("{}/spec.json", spec_dir)).exists());
         // Verify design.md and investigation.md are NOT created (temporarily disabled)
-        assert!(!Path::new(&format!("{}/design.md", feature_dir)).exists());
-        assert!(!Path::new(&format!("{}/investigation.md", feature_dir)).exists());
+        assert!(!Path::new(&format!("{}/design.md", spec_dir)).exists());
+        assert!(!Path::new(&format!("{}/investigation.md", spec_dir)).exists());
     }
 
     #[test]
@@ -170,9 +170,9 @@ mod tests {
 
             // Verify directory exists
             let date = chrono::Utc::now().format("%Y-%m-%d");
-            let feature_dir = format!(".kiro/specs/{}-{}", date, name);
+            let spec_dir = format!(".kiro/specs/{}-{}", date, name);
             assert!(
-                Path::new(&feature_dir).exists(),
+                Path::new(&spec_dir).exists(),
                 "Feature directory should exist for '{}'",
                 name
             );
@@ -199,7 +199,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_command_feature_path_format() {
+    fn test_new_command_spec_path_format() {
         let _test_dir = TestDirectory::new();
 
         // Initialize project first

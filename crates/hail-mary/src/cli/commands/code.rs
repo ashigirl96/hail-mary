@@ -59,7 +59,7 @@ impl CodeCommand {
                 );
                 Err(anyhow::anyhow!("Spec not found"))
             }
-            Err(crate::application::errors::ApplicationError::InvalidFeatureName(name)) => {
+            Err(crate::application::errors::ApplicationError::InvalidSpecName(name)) => {
                 println!(
                     "{}",
                     format_error(&format!(

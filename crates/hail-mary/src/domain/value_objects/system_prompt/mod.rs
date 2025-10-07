@@ -17,6 +17,7 @@ const PATTERN_ROUTER_REQUIREMENTS: &str = include_str!("pattern_router/07_requir
 const PATTERN_ROUTER_INVESTIGATION: &str = include_str!("pattern_router/08_investigation.md");
 const PATTERN_ROUTER_DESIGN: &str = include_str!("pattern_router/09_design.md");
 const PATTERN_ROUTER_SPEC_FILES: &str = include_str!("pattern_router/10_spec_files.md");
+const PATTERN_ROUTER_SPEC_FILES_SBI: &str = include_str!("pattern_router/10_spec_files_sbi.md");
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SystemPrompt {
@@ -37,24 +38,15 @@ impl SystemPrompt {
 
         // 2. Add specification section if spec is provided
         if let (Some(name), Some(path)) = (spec_name, spec_path) {
-            let path_str = path.display().to_string();
+            // Check if this is an SBI context
+            let is_sbi = is_sbi_context(path);
 
-            // Build spec file paths
-            let requirements_path = format!("{}/requirements.md", path_str);
-            let design_path = format!("{}/design.md", path_str);
-            let tasks_path = format!("{}/tasks.md", path_str);
-            let investigation_path = format!("{}/investigation.md", path_str);
-            let memo_path = format!("{}/memo.md", path_str);
-
-            // Build spec_files section
-            let spec_files_section = PATTERN_ROUTER_SPEC_FILES
-                .replace("{spec_name}", name)
-                .replace("{spec_path}", &path_str)
-                .replace("{requirements_path}", &requirements_path)
-                .replace("{design_path}", &design_path)
-                .replace("{tasks_path}", &tasks_path)
-                .replace("{investigation_path}", &investigation_path)
-                .replace("{memo_path}", &memo_path);
+            // Build spec_files section based on context
+            let spec_files_section = if is_sbi {
+                build_sbi_spec_files(name, path)
+            } else {
+                build_pbi_spec_files(name, path)
+            };
 
             // Build the pattern router template by replacing all placeholders
             let specification_section = PATTERN_ROUTER_INDEX
@@ -84,6 +76,66 @@ impl SystemPrompt {
     pub fn as_str(&self) -> &str {
         &self.content
     }
+}
+
+/// Check if the given path is an SBI context
+fn is_sbi_context(spec_path: &Path) -> bool {
+    // SBI path pattern: .kiro/specs/[pbi-name]/sbi-X-[title]
+    if let Some(dir_name) = spec_path.file_name()
+        && let Some(name_str) = dir_name.to_str()
+    {
+        return name_str.starts_with("sbi-");
+    }
+    false
+}
+
+/// Build spec_files section for PBI or single spec (non-SBI)
+fn build_pbi_spec_files(spec_name: &str, spec_path: &Path) -> String {
+    let path_str = spec_path.display().to_string();
+
+    let requirements_path = format!("{}/requirements.md", path_str);
+    let design_path = format!("{}/design.md", path_str);
+    let tasks_path = format!("{}/tasks.md", path_str);
+    let investigation_path = format!("{}/investigation.md", path_str);
+    let memo_path = format!("{}/memo.md", path_str);
+
+    PATTERN_ROUTER_SPEC_FILES
+        .replace("{spec_name}", spec_name)
+        .replace("{spec_path}", &path_str)
+        .replace("{requirements_path}", &requirements_path)
+        .replace("{design_path}", &design_path)
+        .replace("{tasks_path}", &tasks_path)
+        .replace("{investigation_path}", &investigation_path)
+        .replace("{memo_path}", &memo_path)
+}
+
+/// Build spec_files section for SBI context
+fn build_sbi_spec_files(sbi_name: &str, sbi_path: &Path) -> String {
+    // Extract PBI path
+    let pbi_path = sbi_path.parent().expect("SBI must have parent PBI");
+
+    let pbi_path_str = pbi_path.display().to_string();
+    let sbi_path_str = sbi_path.display().to_string();
+
+    // SBI paths
+    let sbi_requirements_path = format!("{}/requirements.md", sbi_path_str);
+    let sbi_investigation_path = format!("{}/investigation.md", sbi_path_str);
+    let sbi_design_path = format!("{}/design.md", sbi_path_str);
+    let sbi_tasks_path = format!("{}/tasks.md", sbi_path_str);
+    let sbi_memo_path = format!("{}/memo.md", sbi_path_str);
+
+    // PBI paths
+    let pbi_requirements_path = format!("{}/requirements.md", pbi_path_str);
+
+    PATTERN_ROUTER_SPEC_FILES_SBI
+        .replace("{sbi_name}", sbi_name)
+        .replace("{sbi_path}", &sbi_path_str)
+        .replace("{sbi_requirements_path}", &sbi_requirements_path)
+        .replace("{sbi_investigation_path}", &sbi_investigation_path)
+        .replace("{sbi_design_path}", &sbi_design_path)
+        .replace("{sbi_tasks_path}", &sbi_tasks_path)
+        .replace("{sbi_memo_path}", &sbi_memo_path)
+        .replace("{pbi_requirements_path}", &pbi_requirements_path)
 }
 
 #[cfg(test)]
@@ -214,5 +266,48 @@ mod tests {
 
         // Should contain steering section
         assert!(content.contains("## About Steering"));
+
+        // Should NOT contain PBI references (single spec)
+        assert!(!content.contains("<pbi-requirements-file>"));
+    }
+
+    #[test]
+    fn test_system_prompt_with_sbi() {
+        let sbi_name = "sbi-1-backend-api";
+        let sbi_path = PathBuf::from(".kiro/specs/payment-system/sbi-1-backend-api");
+        let steerings = Steerings(vec![]);
+
+        let prompt = SystemPrompt::new(Some(sbi_name), Some(&sbi_path), &steerings);
+        let content = prompt.as_str();
+
+        // Should contain SBI context markers
+        assert!(content.contains("**Current Context**: SBI (Sprint Backlog Item)"));
+        assert!(content.contains("**Current SBI**: sbi-1-backend-api"));
+
+        // Should contain both SBI and PBI file references
+        assert!(content.contains("<requirements-file>"));
+        assert!(content.contains("<pbi-requirements-file>"));
+
+        // Should contain PBI requirements path
+        assert!(content.contains("payment-system/requirements.md"));
+
+        // Should contain SBI paths
+        assert!(content.contains("sbi-1-backend-api/requirements.md"));
+
+        // Should NOT contain PBI investigation/design (removed from template)
+        assert!(!content.contains("<pbi-investigation-file>"));
+        assert!(!content.contains("<pbi-design-file>"));
+    }
+
+    #[test]
+    fn test_is_sbi_context() {
+        let sbi_path = PathBuf::from(".kiro/specs/payment/sbi-1-backend");
+        assert!(is_sbi_context(&sbi_path));
+
+        let single_spec_path = PathBuf::from(".kiro/specs/payment");
+        assert!(!is_sbi_context(&single_spec_path));
+
+        let another_single_spec = PathBuf::from(".kiro/specs/2025-10-07-project");
+        assert!(!is_sbi_context(&another_single_spec));
     }
 }

@@ -1,11 +1,11 @@
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::SpecRepositoryInterface;
 
-pub fn create_feature(
+pub fn create_spec(
     spec_repo: &dyn SpecRepositoryInterface,
     name: &str,
 ) -> Result<String, ApplicationError> {
-    // Validate feature name (must be kebab-case) at use case level for consistency
+    // Validate spec name (must be kebab-case) at use case level for consistency
     if name.is_empty()
         || !name
             .chars()
@@ -14,13 +14,13 @@ pub fn create_feature(
         || name.ends_with('-')
         || name.contains("--")
     {
-        return Err(ApplicationError::InvalidFeatureName(name.to_string()));
+        return Err(ApplicationError::InvalidSpecName(name.to_string()));
     }
 
-    // Create feature through repository
-    spec_repo.create_feature(name)?;
+    // Create spec through repository
+    spec_repo.create_spec(name)?;
 
-    // Return feature path for user feedback
+    // Return spec path for user feedback
     let date = chrono::Utc::now().format("%Y-%m-%d");
     Ok(format!(".kiro/specs/{}-{}", date, name))
 }
@@ -31,20 +31,20 @@ mod tests {
     use crate::application::test_helpers::MockSpecRepository;
 
     #[test]
-    fn test_create_feature_success() {
+    fn test_create_spec_success() {
         let repo = MockSpecRepository::new();
 
-        let result = create_feature(&repo, "user-authentication");
+        let result = create_spec(&repo, "user-authentication");
         assert!(result.is_ok());
 
-        let feature_path = result.unwrap();
-        assert!(feature_path.starts_with(".kiro/specs/"));
-        assert!(feature_path.ends_with("-user-authentication"));
-        assert!(feature_path.contains("2025")); // Should contain current year
+        let spec_path = result.unwrap();
+        assert!(spec_path.starts_with(".kiro/specs/"));
+        assert!(spec_path.ends_with("-user-authentication"));
+        assert!(spec_path.contains("2025")); // Should contain current year
     }
 
     #[test]
-    fn test_create_feature_valid_names() {
+    fn test_create_spec_valid_names() {
         let repo = MockSpecRepository::new();
 
         let valid_names = vec![
@@ -58,12 +58,12 @@ mod tests {
         ];
 
         for name in valid_names {
-            let result = create_feature(&repo, name);
+            let result = create_spec(&repo, name);
             assert!(result.is_ok(), "Feature name '{}' should be valid", name);
 
-            let feature_path = result.unwrap();
+            let spec_path = result.unwrap();
             assert!(
-                feature_path.contains(name),
+                spec_path.contains(name),
                 "Feature path should contain the name: {}",
                 name
             );
@@ -71,7 +71,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_feature_invalid_names() {
+    fn test_create_spec_invalid_names() {
         let repo = MockSpecRepository::new();
 
         let invalid_names = vec![
@@ -91,53 +91,50 @@ mod tests {
         ];
 
         for name in invalid_names {
-            let result = create_feature(&repo, name);
+            let result = create_spec(&repo, name);
             assert!(result.is_err(), "Feature name '{}' should be invalid", name);
 
             match result.unwrap_err() {
-                ApplicationError::InvalidFeatureName(invalid_name) => {
+                ApplicationError::InvalidSpecName(invalid_name) => {
                     assert_eq!(invalid_name, name);
                 }
-                other => panic!(
-                    "Expected InvalidFeatureName for '{}', got {:?}",
-                    name, other
-                ),
+                other => panic!("Expected InvalidSpecName for '{}', got {:?}", name, other),
             }
         }
     }
 
     #[test]
-    fn test_create_feature_repository_failure() {
+    fn test_create_spec_repository_failure() {
         let repo = MockSpecRepository::new();
-        repo.set_operation_to_fail("create_feature");
+        repo.set_operation_to_fail("create_spec");
 
-        let result = create_feature(&repo, "valid-feature");
+        let result = create_spec(&repo, "valid-feature");
         assert!(result.is_err());
 
         match result.unwrap_err() {
-            ApplicationError::FeatureCreationError(msg) => {
+            ApplicationError::SpecCreationError(msg) => {
                 assert!(msg.contains("valid-feature"));
                 assert!(msg.contains("Mock creation failure"));
             }
-            other => panic!("Expected FeatureCreationError, got {:?}", other),
+            other => panic!("Expected SpecCreationError, got {:?}", other),
         }
     }
 
     #[test]
-    fn test_create_feature_path_format() {
+    fn test_create_spec_path_format() {
         let repo = MockSpecRepository::new();
 
-        let result = create_feature(&repo, "test-feature");
+        let result = create_spec(&repo, "test-feature");
         assert!(result.is_ok());
 
-        let feature_path = result.unwrap();
+        let spec_path = result.unwrap();
 
         // Check path structure: .kiro/specs/YYYY-MM-DD-feature-name
-        assert!(feature_path.starts_with(".kiro/specs/"));
-        assert!(feature_path.ends_with("-test-feature"));
+        assert!(spec_path.starts_with(".kiro/specs/"));
+        assert!(spec_path.ends_with("-test-feature"));
 
         // Extract date part
-        let path_parts: Vec<&str> = feature_path.split('/').collect();
+        let path_parts: Vec<&str> = spec_path.split('/').collect();
         assert_eq!(path_parts[0], ".kiro");
         assert_eq!(path_parts[1], "specs");
 
@@ -155,46 +152,46 @@ mod tests {
     }
 
     #[test]
-    fn test_create_feature_validation_edge_cases() {
+    fn test_create_spec_validation_edge_cases() {
         let repo = MockSpecRepository::new();
 
         // Test single character (valid)
-        let result = create_feature(&repo, "a");
+        let result = create_spec(&repo, "a");
         assert!(result.is_ok());
 
         // Test numbers only (valid)
-        let result = create_feature(&repo, "123");
+        let result = create_spec(&repo, "123");
         assert!(result.is_ok());
 
         // Test dash in middle (valid)
-        let result = create_feature(&repo, "a-b");
+        let result = create_spec(&repo, "a-b");
         assert!(result.is_ok());
 
         // Test multiple dashes (valid)
-        let result = create_feature(&repo, "a-b-c-d");
+        let result = create_spec(&repo, "a-b-c-d");
         assert!(result.is_ok());
 
         // Test numbers with dashes (valid)
-        let result = create_feature(&repo, "feature-123-test");
+        let result = create_spec(&repo, "feature-123-test");
         assert!(result.is_ok());
     }
 
     #[test]
-    fn test_create_feature_validation_before_repository_call() {
+    fn test_create_spec_validation_before_repository_call() {
         // This test ensures validation happens before calling repository
         // by using an invalid name with a repo that would fail
         let repo = MockSpecRepository::new();
-        repo.set_operation_to_fail("create_feature");
+        repo.set_operation_to_fail("create_spec");
 
-        let result = create_feature(&repo, "Invalid-Name");
+        let result = create_spec(&repo, "Invalid-Name");
         assert!(result.is_err());
 
         // Should get validation error, not repository error
         match result.unwrap_err() {
-            ApplicationError::InvalidFeatureName(_) => {
+            ApplicationError::InvalidSpecName(_) => {
                 // This is correct - validation happens first
             }
-            ApplicationError::FeatureCreationError(_) => {
+            ApplicationError::SpecCreationError(_) => {
                 panic!("Should not reach repository with invalid name");
             }
             other => panic!("Unexpected error type: {:?}", other),
@@ -202,29 +199,29 @@ mod tests {
     }
 
     #[test]
-    fn test_create_feature_error_propagation() {
+    fn test_create_spec_error_propagation() {
         let repo = MockSpecRepository::new();
-        repo.set_operation_to_fail("create_feature");
+        repo.set_operation_to_fail("create_spec");
 
-        let result = create_feature(&repo, "valid-name");
+        let result = create_spec(&repo, "valid-name");
         assert!(result.is_err());
 
         // Test that repository errors are properly propagated
         match result.unwrap_err() {
-            ApplicationError::FeatureCreationError(msg) => {
+            ApplicationError::SpecCreationError(msg) => {
                 assert!(msg.contains("valid-name"));
             }
-            other => panic!("Expected FeatureCreationError, got {:?}", other),
+            other => panic!("Expected SpecCreationError, got {:?}", other),
         }
     }
 
     #[test]
-    fn test_create_feature_return_value_consistency() {
+    fn test_create_spec_return_value_consistency() {
         let repo = MockSpecRepository::new();
 
         // Test multiple calls with same name should return same path format
-        let result1 = create_feature(&repo, "consistent-test");
-        let result2 = create_feature(&repo, "consistent-test");
+        let result1 = create_spec(&repo, "consistent-test");
+        let result2 = create_spec(&repo, "consistent-test");
 
         assert!(result1.is_ok());
         assert!(result2.is_ok());
@@ -237,7 +234,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_feature_special_characters_validation() {
+    fn test_create_spec_special_characters_validation() {
         let repo = MockSpecRepository::new();
 
         let special_chars = vec![
@@ -272,7 +269,7 @@ mod tests {
         ];
 
         for name in special_chars {
-            let result = create_feature(&repo, name);
+            let result = create_spec(&repo, name);
             assert!(
                 result.is_err(),
                 "Name with special character should be invalid: {}",

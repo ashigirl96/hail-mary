@@ -1,27 +1,27 @@
 ## Investigation Document Structure
 
-**Boundaries**:
-- **Will**: Define structure, append rules, domain styles
-- **Will Not**: Check prerequisites, manage validation
+### Boundaries
 
-**Append-Only Protocol**:
-- Always ADD new sections, never overwrite
-- Same topic → append to existing section
-- New topic → create new section
+**Will**
+- **Define structure** - Topic-based append-only format
+- **Always append, never overwrite** - Same topic appends to existing section, new topic creates section
+- **Use exact topic names** - From tasks.md checklist
+- **Enforce kebab-case** - Topic format must be kebab-case (e.g., "auth-flow")
+- **Provide domain styles** - Technical vs Business/Scientific documentation patterns
 
-**Topic Structure**:
+**Will Not**
+- **Check prerequisites** - Prerequisites handled by gates
+- **Manage validation** - Validation handled by workflows
+
+### Topic Structure
+
 ```markdown
 ## [topic-name]
 
 [Investigation content with evidence]
 ```
 
-**Topic Management**:
-- Use exact names from tasks.md checklist
-- Format: kebab-case (e.g., "auth-flow")
-- Auto-generate from theme if new
-
-**Domain-Specific Documentation**:
+### Domain-Specific Documentation
 
 **Technical Domain**:
 - File paths with line numbers: `src/auth/login.ts:142`
@@ -35,7 +35,8 @@
 - "Why this matters" sections
 - Core concept simplification
 
-**Evidence Chain Format**:
+### Evidence Chain Format
+
 ```markdown
 **Finding**: [What was discovered]
 **Source**: [Where found - file:line or reference]
@@ -43,5 +44,9 @@
 **Impact**: [How this affects design]
 ```
 
-**Interactive Confirmation**:
-Show findings and ask: "Append to investigation.md?"
+### Key Behaviors
+
+- Auto-generate topic from theme if new
+- Append to existing topic when relevant
+- Create new section for distinct topics
+- **Interactive Confirmation**: Show findings and ask: "Append to investigation.md?"

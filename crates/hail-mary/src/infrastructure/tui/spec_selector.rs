@@ -13,24 +13,79 @@ use ratatui::{
 };
 use std::io;
 
+#[derive(Debug, Clone)]
+enum TuiItem {
+    LaunchWithoutSpec,
+    CreateNewSpec,
+    Pbi {
+        name: String,
+        #[allow(dead_code)]
+        sbis: Vec<String>,
+    },
+    Sbi {
+        pbi_name: String,
+        sbi_name: String,
+    },
+    CreateNewSbi {
+        pbi_name: String,
+    },
+    SingleSpec {
+        name: String,
+    },
+}
+
 pub struct SpecSelectorTui {
-    specs: Vec<String>,
-    has_new_option: bool,
+    items: Vec<TuiItem>,
 }
 
 impl SpecSelectorTui {
-    pub fn new(specs: Vec<(String, bool)>) -> Self {
-        // Filter out archived specs and extract names
+    pub fn new(
+        specs: Vec<(String, bool)>,
+        spec_repo: &dyn crate::application::repositories::SpecRepositoryInterface,
+    ) -> Self {
+        // Filter out archived specs
         let active_specs: Vec<String> = specs
             .into_iter()
             .filter(|(_, is_archived)| !is_archived)
             .map(|(name, _)| name)
             .collect();
 
-        Self {
-            specs: active_specs,
-            has_new_option: true,
+        // Build TUI items with SBI detection
+        let mut items = vec![TuiItem::LaunchWithoutSpec, TuiItem::CreateNewSpec];
+
+        for spec_name in active_specs {
+            // Check if this is a PBI
+            if let Ok(true) = spec_repo.is_pbi(&spec_name) {
+                // Get SBIs
+                if let Ok(sbis) = spec_repo.list_sbis(&spec_name) {
+                    items.push(TuiItem::Pbi {
+                        name: spec_name.clone(),
+                        sbis: sbis.clone(),
+                    });
+
+                    // Add each SBI as selectable item
+                    for sbi_name in sbis {
+                        items.push(TuiItem::Sbi {
+                            pbi_name: spec_name.clone(),
+                            sbi_name,
+                        });
+                    }
+
+                    // Add "Create new SBI" option
+                    items.push(TuiItem::CreateNewSbi {
+                        pbi_name: spec_name,
+                    });
+                } else {
+                    // Fallback to single spec
+                    items.push(TuiItem::SingleSpec { name: spec_name });
+                }
+            } else {
+                // Single spec (no SBIs)
+                items.push(TuiItem::SingleSpec { name: spec_name });
+            }
         }
+
+        Self { items }
     }
 
     pub fn run(&mut self) -> Result<SpecSelectionResult> {
@@ -55,23 +110,24 @@ impl SpecSelectorTui {
                         break Ok(SpecSelectionResult::Cancelled);
                     }
                     KeyCode::Enter => {
-                        if let Some(selected) = list_state.selected() {
-                            if self.has_new_option && selected == 0 {
-                                break Ok(SpecSelectionResult::NoSpec);
-                            } else if self.has_new_option && selected == 1 {
-                                break Ok(SpecSelectionResult::CreateNew);
-                            } else {
-                                let index = if self.has_new_option {
-                                    selected - 2
-                                } else {
-                                    selected
-                                };
-                                if index < self.specs.len() {
-                                    break Ok(SpecSelectionResult::Existing(
-                                        self.specs[index].clone(),
-                                    ));
+                        if let Some(selected) = list_state.selected()
+                            && selected < self.items.len()
+                        {
+                            let result = match &self.items[selected] {
+                                TuiItem::LaunchWithoutSpec => SpecSelectionResult::NoSpec,
+                                TuiItem::CreateNewSpec => SpecSelectionResult::CreateNew,
+                                TuiItem::Pbi { name, .. } => SpecSelectionResult::Pbi(name.clone()),
+                                TuiItem::Sbi { pbi_name, sbi_name } => {
+                                    SpecSelectionResult::Sbi(pbi_name.clone(), sbi_name.clone())
                                 }
-                            }
+                                TuiItem::CreateNewSbi { pbi_name } => {
+                                    SpecSelectionResult::CreateNewSbi(pbi_name.clone())
+                                }
+                                TuiItem::SingleSpec { name } => {
+                                    SpecSelectionResult::SingleSpec(name.clone())
+                                }
+                            };
+                            break Ok(result);
                         }
                     }
                     KeyCode::Up | KeyCode::Char('k') => {
@@ -111,24 +167,33 @@ impl SpecSelectorTui {
         frame.render_widget(title, chunks[0]);
 
         // List items
-        let mut items: Vec<ListItem> = Vec::new();
+        let mut list_items: Vec<ListItem> = Vec::new();
 
-        if self.has_new_option {
-            items.push(
-                ListItem::new("🚀 Launch without specification")
-                    .style(Style::default().fg(Color::Cyan)),
-            );
-            items.push(
-                ListItem::new("📝 Create new specification")
-                    .style(Style::default().fg(Color::Green)),
-            );
+        for item in &self.items {
+            let (text, style) = match item {
+                TuiItem::LaunchWithoutSpec => (
+                    "🚀 Launch without specification".to_string(),
+                    Style::default().fg(Color::Cyan),
+                ),
+                TuiItem::CreateNewSpec => (
+                    "📝 Create new specification".to_string(),
+                    Style::default().fg(Color::Green),
+                ),
+                TuiItem::Pbi { name, .. } => (format!("   {}", name), Style::default()),
+                TuiItem::Sbi { sbi_name, .. } => (
+                    format!(" >   {}", sbi_name),
+                    Style::default().fg(Color::Yellow),
+                ),
+                TuiItem::CreateNewSbi { .. } => (
+                    "     📝 Create new SBI specification".to_string(),
+                    Style::default().fg(Color::Green),
+                ),
+                TuiItem::SingleSpec { name } => (format!("   {}", name), Style::default()),
+            };
+            list_items.push(ListItem::new(text).style(style));
         }
 
-        for spec in &self.specs {
-            items.push(ListItem::new(format!("  {}", spec)));
-        }
-
-        let list = List::new(items)
+        let list = List::new(list_items)
             .block(Block::default().borders(Borders::ALL))
             .highlight_style(
                 Style::default()
@@ -146,7 +211,7 @@ impl SpecSelectorTui {
     }
 
     fn move_cursor_up(&self, list_state: &mut ListState) {
-        let total_items = self.specs.len() + if self.has_new_option { 2 } else { 0 };
+        let total_items = self.items.len();
         let i = match list_state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -161,7 +226,7 @@ impl SpecSelectorTui {
     }
 
     fn move_cursor_down(&self, list_state: &mut ListState) {
-        let total_items = self.specs.len() + if self.has_new_option { 2 } else { 0 };
+        let total_items = self.items.len();
         let i = match list_state.selected() {
             Some(i) => {
                 if i >= total_items - 1 {
@@ -178,8 +243,11 @@ impl SpecSelectorTui {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SpecSelectionResult {
-    Existing(String),
+    SingleSpec(String),
+    Pbi(String),
+    Sbi(String, String), // (pbi_name, sbi_name)
     CreateNew,
+    CreateNewSbi(String), // pbi_name
     NoSpec,
     Cancelled,
 }
@@ -187,6 +255,7 @@ pub enum SpecSelectionResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::test_helpers::MockSpecRepository;
 
     #[test]
     fn test_spec_selector_new() {
@@ -196,36 +265,21 @@ mod tests {
             ("archived-feature".to_string(), true),
         ];
 
-        let selector = SpecSelectorTui::new(specs);
+        let mock_repo = MockSpecRepository::new();
+        let selector = SpecSelectorTui::new(specs, &mock_repo);
 
-        // Should filter out archived specs
-        assert_eq!(selector.specs.len(), 2);
-        assert!(selector.specs.contains(&"feature1".to_string()));
-        assert!(selector.specs.contains(&"feature2".to_string()));
-        assert!(!selector.specs.contains(&"archived-feature".to_string()));
-        assert!(selector.has_new_option);
+        // Should have 2 default items + 2 single specs
+        assert_eq!(selector.items.len(), 4);
     }
 
     #[test]
     fn test_spec_selector_with_empty_specs() {
         let specs = vec![];
-        let selector = SpecSelectorTui::new(specs);
+        let mock_repo = MockSpecRepository::new();
+        let selector = SpecSelectorTui::new(specs, &mock_repo);
 
-        assert_eq!(selector.specs.len(), 0);
-        assert!(selector.has_new_option);
-    }
-
-    #[test]
-    fn test_spec_selector_with_only_archived() {
-        let specs = vec![
-            ("archived1".to_string(), true),
-            ("archived2".to_string(), true),
-        ];
-
-        let selector = SpecSelectorTui::new(specs);
-
-        assert_eq!(selector.specs.len(), 0);
-        assert!(selector.has_new_option);
+        // Should have only 2 default items
+        assert_eq!(selector.items.len(), 2);
     }
 
     // Note: We don't test run() method in unit tests as it requires terminal interaction

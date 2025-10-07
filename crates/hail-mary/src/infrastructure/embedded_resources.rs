@@ -41,6 +41,25 @@ impl EmbeddedSlashCommands {
     }
 }
 
+/// Embedded PBI command markdown files
+pub struct EmbeddedPbiCommands;
+
+impl EmbeddedPbiCommands {
+    /// Decompose PBI command documentation
+    const DECOMPOSE: &'static str = include_str!("../../../../.claude/commands/pbi/decompose.md");
+
+    /// Add SBI command documentation
+    const ADD_SBI: &'static str = include_str!("../../../../.claude/commands/pbi/add-sbi.md");
+
+    /// Returns all embedded PBI command files as (filename, content) pairs
+    pub fn get_all() -> Vec<(&'static str, &'static str)> {
+        vec![
+            ("decompose.md", Self::DECOMPOSE),
+            ("add-sbi.md", Self::ADD_SBI),
+        ]
+    }
+}
+
 /// Embedded agent markdown files
 pub struct EmbeddedAgents;
 
@@ -85,6 +104,26 @@ mod tests {
     fn test_embedded_commands_not_empty() {
         let files = EmbeddedSlashCommands::get_all();
         assert_eq!(files.len(), 6);
+
+        for (name, content) in files {
+            assert!(!name.is_empty(), "File name should not be empty");
+            assert!(
+                !content.is_empty(),
+                "File content for {} should not be empty",
+                name
+            );
+            assert!(
+                name.ends_with(".md"),
+                "File {} should be a markdown file",
+                name
+            );
+        }
+    }
+
+    #[test]
+    fn test_embedded_pbi_commands_not_empty() {
+        let files = EmbeddedPbiCommands::get_all();
+        assert_eq!(files.len(), 2);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");

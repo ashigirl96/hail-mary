@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use crate::application::repositories::SpecRepositoryInterface;
-use crate::application::use_cases::complete_features;
+use crate::application::use_cases::complete_specs;
 use crate::cli::formatters::{format_error, format_success};
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use crate::infrastructure::repositories::spec::SpecRepository;
@@ -66,8 +66,8 @@ impl CompleteCommand {
             return Ok(());
         }
 
-        // Execute complete features
-        match complete_features(&spec_repo, &selected_specs) {
+        // Execute complete specs
+        match complete_specs(&spec_repo, &selected_specs) {
             Ok(()) => {
                 println!(
                     "{}",

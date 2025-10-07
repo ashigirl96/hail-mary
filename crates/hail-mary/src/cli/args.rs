@@ -14,9 +14,9 @@ pub enum Commands {
     /// Initialize a new project
     Init,
 
-    /// Create a new feature specification
+    /// Create a new specification
     New {
-        /// Feature name in kebab-case
+        /// Spec name in kebab-case
         name: String,
     },
 
@@ -27,7 +27,7 @@ pub enum Commands {
         shell: Shell,
     },
 
-    /// Mark feature specifications as complete
+    /// Mark specifications as complete
     Complete,
 
     /// Launch Claude Code with Kiro specification context
