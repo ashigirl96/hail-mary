@@ -210,9 +210,19 @@ impl SteeringRepositoryInterface for SteeringRepository {
         // Create .claude directory structure
         let claude_dir = self.path_manager.project_root().join(".claude");
 
-        // Create .claude/commands/hm directory
+        // Remove existing .claude/commands/hm directory to ensure clean deployment
         let commands_dir = claude_dir.join("commands");
         let hm_dir = commands_dir.join("hm");
+        if hm_dir.exists() {
+            fs::remove_dir_all(&hm_dir).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to remove existing .claude/commands/hm directory: {}",
+                    e
+                ))
+            })?;
+        }
+
+        // Create .claude/commands/hm directory
         fs::create_dir_all(&hm_dir).map_err(|e| {
             ApplicationError::FileSystemError(format!(
                 "Failed to create .claude/commands/hm directory: {}",
