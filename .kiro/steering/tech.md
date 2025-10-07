@@ -61,6 +61,15 @@
 ### Development Dependencies
 - **tempfile v3**: Test isolation with temporary directories
 
+### Toolchain Configuration
+- **rust-toolchain.toml**: Explicit toolchain pinning for team consistency
+- **Components**: rustfmt, clippy, rust-src
+- **Target**: x86_64-apple-darwin
+
+### Embedded Resources
+- **Compile-time Embedding**: Markdown files embedded using `include_str!` macro for distribution
+- **Slash Commands & Agents**: Deployed to `.claude/` during project initialization
+
 ## Common Commands
 
 ### Build and Run
@@ -82,6 +91,17 @@ just test-watch        # Watch mode for tests
 just fmt               # Format code
 just lint              # Comprehensive clippy checks
 just lint-basic        # Basic clippy checks
+just audit             # Security audit
+just check             # Type check without building
+```
+
+### Additional Commands
+```bash
+just clean             # Clean build artifacts
+just install           # Install binary to cargo bin
+just update            # Update dependencies
+just doc               # Generate and open docs
+just setup             # Complete development setup
 ```
 
 ### Application Usage

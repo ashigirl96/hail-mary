@@ -147,16 +147,18 @@ src/
 .claude/
 ├── agents/                    # Specialized agents
 │   ├── steering-investigator.md
-│   └── root-cause-investigator.md
+│   ├── root-cause-investigator.md
+│   ├── backend-architect.md
+│   ├── frontend-architect.md
+│   └── system-architect.md
 ├── commands/                  # Custom commands
 │   └── hm/                   # Hail-mary commands
 │       ├── steering.md
 │       ├── steering-remember.md
 │       ├── requirements.md
 │       ├── investigate.md
-│       ├── interactive-investigate.md
-│       ├── interactive-dev.md
-│       └── design.md
+│       ├── design.md
+│       └── timeline.md
 └── settings.local.json       # Local configuration
 ```
 

@@ -15,7 +15,7 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Shell Completions**: Auto-completion support for all major shells
 - **Template System**: Structured specification templates with requirements, design, tasks, and investigation phases
 - **Pattern Router Framework**: Reactive pattern-based routing with 4 specialized pipelines (Command, Suggestion, Diagnostic, Recovery) for efficient context-aware routing
-- **Custom Slash Commands**: `/hm:steering`, `/hm:steering-remember`, `/hm:requirements`, `/hm:investigate`, `/hm:interactive-investigate`, `/hm:interactive-dev`, and `/hm:design` for comprehensive Claude Code integration
+- **Custom Slash Commands**: `/hm:steering`, `/hm:steering-remember`, `/hm:requirements`, `/hm:investigate`, `/hm:design`, and `/hm:timeline` for comprehensive Claude Code integration
 - **Steering Backup System**: Configurable backup creation and retention management for steering files
 - **Workspace Architecture**: Multi-crate Cargo workspace with clean separation
 
@@ -56,8 +56,8 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Multi-Hypothesis Investigation**: Evidence-based verification with parallel Task agent coordination
 - **Archive-Based Lifecycle**: Complete spec lifecycle from `.kiro/specs/` to `.kiro/archive/` with automatic archival
 - **Extended Steering Types**: Beyond core three (product, tech, structure), includes prompt-engineering, documentation, subagent, rust-dev
-- **Active Specification Management**: Current spec `2025-09-29-enhance-orchestration` implementing scoped orchestration architecture
-- **Scoped Orchestration Architecture (In Development)**: Parent-child specification management for large-scale projects with hierarchical spec decomposition
+- **Event Naming System**: Structured event references (`{target}:{role}`) for precise system prompt navigation, mitigating "Lost in the Middle" attention issues
+- **Scoped Orchestration Architecture (Designed, Not Implemented)**: Documented design for parent-child specification management exists in archived spec `2025-09-29-enhance-orchestration`, but feature is not yet implemented in codebase
 - **Anthropic Client Crate**: Dedicated crate with reqwest HTTP client for Anthropic API integration
 - **Investigation Phase Support**: Template system includes investigation phase beyond requirements/design/tasks
 - **Justfile Build Integration**: Just command runner integration for workspace management
