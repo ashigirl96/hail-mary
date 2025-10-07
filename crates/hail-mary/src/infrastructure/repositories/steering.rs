@@ -205,18 +205,31 @@ impl SteeringRepositoryInterface for SteeringRepository {
     }
 
     fn deploy_slash_commands(&self) -> Result<(), ApplicationError> {
-        use crate::infrastructure::embedded_resources::{EmbeddedAgents, EmbeddedSlashCommands};
+        use crate::infrastructure::embedded_resources::{
+            EmbeddedAgents, EmbeddedPbiCommands, EmbeddedSlashCommands,
+        };
 
         // Create .claude directory structure
         let claude_dir = self.path_manager.project_root().join(".claude");
+        let commands_dir = claude_dir.join("commands");
 
         // Remove existing .claude/commands/hm directory to ensure clean deployment
-        let commands_dir = claude_dir.join("commands");
         let hm_dir = commands_dir.join("hm");
         if hm_dir.exists() {
             fs::remove_dir_all(&hm_dir).map_err(|e| {
                 ApplicationError::FileSystemError(format!(
                     "Failed to remove existing .claude/commands/hm directory: {}",
+                    e
+                ))
+            })?;
+        }
+
+        // Remove existing .claude/commands/pbi directory to ensure clean deployment
+        let pbi_dir = commands_dir.join("pbi");
+        if pbi_dir.exists() {
+            fs::remove_dir_all(&pbi_dir).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to remove existing .claude/commands/pbi directory: {}",
                     e
                 ))
             })?;
@@ -230,6 +243,14 @@ impl SteeringRepositoryInterface for SteeringRepository {
             ))
         })?;
 
+        // Create .claude/commands/pbi directory
+        fs::create_dir_all(&pbi_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!(
+                "Failed to create .claude/commands/pbi directory: {}",
+                e
+            ))
+        })?;
+
         // Create .claude/agents directory
         let agents_dir = claude_dir.join("agents");
         fs::create_dir_all(&agents_dir).map_err(|e| {
@@ -239,12 +260,23 @@ impl SteeringRepositoryInterface for SteeringRepository {
             ))
         })?;
 
-        // Deploy embedded commands (always overwrite for consistency)
+        // Deploy embedded hm commands (always overwrite for consistency)
         for (name, content) in EmbeddedSlashCommands::get_all() {
             let file_path = hm_dir.join(name);
             fs::write(&file_path, content).map_err(|e| {
                 ApplicationError::FileSystemError(format!(
                     "Failed to write slash command {}: {}",
+                    name, e
+                ))
+            })?;
+        }
+
+        // Deploy embedded pbi commands (always overwrite for consistency)
+        for (name, content) in EmbeddedPbiCommands::get_all() {
+            let file_path = pbi_dir.join(name);
+            fs::write(&file_path, content).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to write PBI command {}: {}",
                     name, e
                 ))
             })?;
