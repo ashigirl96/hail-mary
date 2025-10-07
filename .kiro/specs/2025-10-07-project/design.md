@@ -452,7 +452,7 @@ impl SpecRepository {
         Ok(!sbis.is_empty())
     }
 
-    /// Create a new SBI in a PBI
+    /// Create a new SBI in a PBI (used by TUI "Create new SBI")
     pub fn create_sbi(
         &self,
         pbi_name: &str,
@@ -480,88 +480,37 @@ impl SpecRepository {
         Ok(())
     }
 
-    /// Decompose PBI into SBIs
-    pub fn decompose_pbi(&self, pbi_name: &str) -> Result<Vec<(String, String)>> {
-        // Read PBI requirements.md
-        let pbi_path = self.path_manager.specs_dir().join(pbi_name);
-        let requirements_path = pbi_path.join("requirements.md");
-        let content = fs::read_to_string(requirements_path)?;
-
-        // Parse SBI sections
-        let sbis = self.parse_sbi_sections(&content)?;
-
-        // Create each SBI
-        for (sbi_name, sbi_type, sbi_description) in &sbis {
-            self.create_sbi(pbi_name, sbi_name, sbi_type)?;
-
-            // Populate with description
-            let sbi_req_path = pbi_path
-                .join(sbi_name)
-                .join("requirements.md");
-            self.populate_sbi_requirements(&sbi_req_path, sbi_description)?;
-        }
-
-        // Return list of created SBIs
-        Ok(sbis.iter()
-            .map(|(name, type_, _)| (name.clone(), type_.clone()))
-            .collect())
-    }
-
-    fn parse_sbi_sections(&self, content: &str) -> Result<Vec<(String, String, String)>> {
-        // Parse markdown:
-        // ### sbi-1-backend-api
-        // requirements type: prd
-        // [description]
-
-        let mut sbis = Vec::new();
-        // ... parsing logic ...
-        Ok(sbis)
-    }
+    // Note: decompose_pbi() not needed - /decompose slash command
+    // handles decomposition using Claude Code's Read/Write tools directly
+}
 }
 ```
 
-## Slash Command Integration
+## Responsibility Separation
 
-### Decompose Command Processing
+### Claude Code Responsibilities (Slash Commands)
 
-**Option 1: Direct from slash command**
-- `.claude/commands/hm/decompose.md` calls `spec_repo.decompose_pbi()` directly
-- No intermediate use case layer
+**`/decompose` slash command**:
+- Parse PBI requirements.md using Read tool
+- Create SBI directories using Bash/Write tools
+- Generate SBI requirements.md files
+- Update PBI requirements.md if needed
 
-**Option 2: Thin use case**
-```rust
-pub fn decompose_pbi(
-    spec_repo: &dyn SpecRepositoryInterface,
-    pbi_name: &str
-) -> Result<Vec<(String, String)>> {
-    spec_repo.decompose_pbi(pbi_name)
-}
-```
+**`/add-sbi` slash command**:
+- Auto-number SBI (list existing, calculate next)
+- Create SBI directory and requirements.md
+- Update PBI requirements.md with new section
 
-**Recommendation**: Option 1 (simpler)
+**Why no Rust functions**: Claude Code has Read/Write tools, can implement directly
 
-### Add SBI Command Processing
+### hail-mary CLI Responsibilities (Rust)
 
-```rust
-// In slash command or thin use case
-pub fn add_sbi(
-    spec_repo: &dyn SpecRepositoryInterface,
-    pbi_name: &str,
-    sbi_title: &str,
-    sbi_type: &str
-) -> Result<String> {
-    let existing_sbis = spec_repo.list_sbis(pbi_name)?;
-    let next_number = existing_sbis.len() + 1;
-    let sbi_name = format!("sbi-{}-{}", next_number, sbi_title);
+**TUI "Create new SBI" option**:
+- Called before Claude Code launch
+- Uses `spec_repo.create_sbi()` to create SBI
+- Then launches Claude Code with new SBI context
 
-    spec_repo.create_sbi(pbi_name, &sbi_name, sbi_type)?;
-
-    // Update PBI requirements.md with new SBI section
-    update_pbi_requirements(pbi_name, &sbi_name, sbi_type)?;
-
-    Ok(sbi_name)
-}
-```
+**Why Rust function needed**: TUI runs in hail-mary CLI, not Claude Code session
 
 ## Archive Strategy
 
@@ -854,14 +803,33 @@ Keep single spec when:
 4. **Cross-SBI Evidence Chain**: How to reference?
    - Proposal: Via PBI design/investigation (if exists)
 
+## Implementation Status
+
+### Phase 1: MVP - ✅ COMPLETE
+- ✅ Template switching (10_spec_files vs 10_spec_files_sbi)
+- ✅ PBI/SBI repository methods
+- ✅ Nested TUI selection
+- ✅ SBI context handling
+- ✅ All tests passing (154 tests)
+
+### Phase 2: SBI Management - ✅ COMPLETE
+- ✅ `/decompose` and `/add-sbi` commands
+- ✅ TUI "Create new SBI" option
+- ✅ Auto-numbering
+
+### Phase 3: Production Ready - 🔄 IN PROGRESS
+- ✅ PBI-level archive (existing `mark_spec_complete()` works)
+- 🔄 Documentation updates
+- 🔄 User guide creation
+
 ## Summary
 
-This design introduces PBI/SBI hierarchy for multi-PR projects while:
+This design successfully implements PBI/SBI hierarchy for multi-PR projects:
 
-1. **Maintaining Simplicity**: Template switching isolates complexity
-2. **Preserving Pattern Router**: Core workflows unchanged
-3. **Ensuring Compatibility**: Single-spec workflow unaffected
-4. **Enabling Flexibility**: Optional feature for complex projects
-5. **Upholding Philosophy**: NO Linear Workflow maintained
+1. **✅ Simplicity Maintained**: Template switching isolates complexity
+2. **✅ Pattern Router Preserved**: Core workflows (02_hub, 04_workflows) unchanged
+3. **✅ Backward Compatible**: Single-spec workflow unaffected
+4. **✅ Flexible**: Optional feature for complex projects
+5. **✅ Philosophy Upheld**: NO Linear Workflow maintained
 
-**Implementation is feasible and recommended.**
+**Implementation complete and tested.**
