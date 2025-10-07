@@ -21,4 +21,5 @@ Refer to system prompt sections:
 - <kiro-philosophy> for reactive pattern routing
 - <kiro-principles> for universal operational rules
 - <kiro-hub> for Timeline format and State Tracking
+- <kiro-gates> for validation gates
 - <kiro-nudges> Next action suggestion: `timeline:nudge-next`
