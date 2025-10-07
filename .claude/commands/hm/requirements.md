@@ -1,7 +1,7 @@
 ---
 name: requirements
 description: "Create/update requirements and user stories - triggered by: requirements, PRD, features, bug, 要件, バグ"
-allowed-tools: Read, Write, MultiEdit, mcp__github__get_issue
+allowed-tools: Read, Write, MultiEdit, Grep, Glob
 argument-hint: "[--type prd|bug|tech] [--issue <github-url>]"
 ---
 
