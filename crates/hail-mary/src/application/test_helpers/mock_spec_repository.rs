@@ -147,4 +147,24 @@ impl SpecRepositoryInterface for MockSpecRepository {
             .collect();
         Ok(archived)
     }
+
+    fn is_pbi(&self, _spec_name: &str) -> Result<bool, ApplicationError> {
+        // Mock: always return false for simplicity
+        Ok(false)
+    }
+
+    fn list_sbis(&self, _pbi_name: &str) -> Result<Vec<String>, ApplicationError> {
+        // Mock: return empty vec
+        Ok(Vec::new())
+    }
+
+    fn create_sbi(
+        &self,
+        _pbi_name: &str,
+        _sbi_name: &str,
+        _sbi_type: &str,
+    ) -> Result<(), ApplicationError> {
+        // Mock: do nothing
+        Ok(())
+    }
 }

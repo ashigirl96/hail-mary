@@ -257,4 +257,97 @@ impl SpecRepositoryInterface for SpecRepository {
         specs.sort_by(|a, b| b.cmp(a));
         Ok(specs)
     }
+
+    fn is_pbi(&self, spec_name: &str) -> Result<bool, ApplicationError> {
+        let sbis = self.list_sbis(spec_name)?;
+        Ok(!sbis.is_empty())
+    }
+
+    fn list_sbis(&self, pbi_name: &str) -> Result<Vec<String>, ApplicationError> {
+        let pbi_path = self.path_manager.specs_dir(true).join(pbi_name);
+
+        if !pbi_path.exists() {
+            return Ok(Vec::new());
+        }
+
+        let mut sbis = Vec::new();
+
+        let entries = fs::read_dir(&pbi_path).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to read PBI directory: {}", e))
+        })?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| {
+                ApplicationError::FileSystemError(format!("Failed to read directory entry: {}", e))
+            })?;
+
+            let file_type = entry.file_type().map_err(|e| {
+                ApplicationError::FileSystemError(format!("Failed to get file type: {}", e))
+            })?;
+
+            if file_type.is_dir() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with("sbi-") {
+                    sbis.push(name);
+                }
+            }
+        }
+
+        sbis.sort();
+        Ok(sbis)
+    }
+
+    fn create_sbi(
+        &self,
+        pbi_name: &str,
+        sbi_name: &str,
+        sbi_type: &str,
+    ) -> Result<(), ApplicationError> {
+        // Validate SBI name
+        self.validate_feature_name(sbi_name)?;
+
+        let sbi_path = self
+            .path_manager
+            .specs_dir(true)
+            .join(pbi_name)
+            .join(sbi_name);
+
+        // Check if SBI already exists
+        if sbi_path.exists() {
+            return Err(ApplicationError::FeatureAlreadyExists(sbi_name.to_string()));
+        }
+
+        // Create SBI directory
+        fs::create_dir_all(&sbi_path).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to create SBI directory: {}", e))
+        })?;
+
+        // For now, write a simple placeholder
+        // TODO: Extract actual templates from 07_requirements.md based on type
+        let requirements_content = match sbi_type {
+            "prd" | "bug" | "tech" => format!(
+                r#"# Requirements
+
+## Overview
+[SBI description for {}]
+
+## Type
+{}"#,
+                sbi_name, sbi_type
+            ),
+            _ => {
+                return Err(ApplicationError::FileSystemError(format!(
+                    "Invalid SBI type: {}",
+                    sbi_type
+                )));
+            }
+        };
+
+        let requirements_path = sbi_path.join("requirements.md");
+        fs::write(requirements_path, requirements_content).map_err(|e| {
+            ApplicationError::FileSystemError(format!("Failed to write requirements.md: {}", e))
+        })?;
+
+        Ok(())
+    }
 }
