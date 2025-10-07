@@ -26,10 +26,5 @@ pub trait SpecRepositoryInterface {
     fn list_sbis(&self, pbi_name: &str) -> Result<Vec<String>, ApplicationError>;
 
     /// Create a new SBI in a PBI (used by TUI "Create new SBI")
-    fn create_sbi(
-        &self,
-        pbi_name: &str,
-        sbi_name: &str,
-        sbi_type: &str,
-    ) -> Result<(), ApplicationError>;
+    fn create_sbi(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError>;
 }

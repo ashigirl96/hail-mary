@@ -158,12 +158,7 @@ impl SpecRepositoryInterface for MockSpecRepository {
         Ok(Vec::new())
     }
 
-    fn create_sbi(
-        &self,
-        _pbi_name: &str,
-        _sbi_name: &str,
-        _sbi_type: &str,
-    ) -> Result<(), ApplicationError> {
+    fn create_sbi(&self, _pbi_name: &str, _sbi_name: &str) -> Result<(), ApplicationError> {
         // Mock: do nothing
         Ok(())
     }

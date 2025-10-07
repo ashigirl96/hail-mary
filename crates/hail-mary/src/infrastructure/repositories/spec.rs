@@ -297,12 +297,7 @@ impl SpecRepositoryInterface for SpecRepository {
         Ok(sbis)
     }
 
-    fn create_sbi(
-        &self,
-        pbi_name: &str,
-        sbi_name: &str,
-        sbi_type: &str,
-    ) -> Result<(), ApplicationError> {
+    fn create_sbi(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError> {
         // Validate SBI name
         self.validate_feature_name(sbi_name)?;
 
@@ -322,31 +317,9 @@ impl SpecRepositoryInterface for SpecRepository {
             ApplicationError::FileSystemError(format!("Failed to create SBI directory: {}", e))
         })?;
 
-        // For now, write a simple placeholder
-        // TODO: Extract actual templates from 07_requirements.md based on type
-        let requirements_content = match sbi_type {
-            "prd" | "bug" | "tech" => format!(
-                r#"# Requirements
-
-## Overview
-[SBI description for {}]
-
-## Type
-{}"#,
-                sbi_name, sbi_type
-            ),
-            _ => {
-                return Err(ApplicationError::FileSystemError(format!(
-                    "Invalid SBI type: {}",
-                    sbi_type
-                )));
-            }
-        };
-
-        let requirements_path = sbi_path.join("requirements.md");
-        fs::write(requirements_path, requirements_content).map_err(|e| {
-            ApplicationError::FileSystemError(format!("Failed to write requirements.md: {}", e))
-        })?;
+        // Reuse create_template_files to generate tasks.md and memo.md
+        // Note: requirements.md is NOT generated here - created by /decompose or /add-sbi slash commands
+        self.create_template_files(&sbi_path, sbi_name)?;
 
         Ok(())
     }

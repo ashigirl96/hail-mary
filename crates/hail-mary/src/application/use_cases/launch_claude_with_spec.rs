@@ -57,17 +57,16 @@ pub fn launch_claude_with_spec(
             (Some(full_name), Some(path))
         }
         SpecSelectionResult::CreateNewSbi(pbi_name) => {
-            // Prompt for SBI name and type
+            // Prompt for SBI name
             let sbi_title = prompt_for_sbi_name()?;
-            let sbi_type = prompt_for_sbi_type()?;
 
             // Auto-number SBI
             let existing_sbis = spec_repo.list_sbis(&pbi_name)?;
             let next_number = existing_sbis.len() + 1;
             let sbi_name = format!("sbi-{}-{}", next_number, sbi_title);
 
-            // Create SBI
-            spec_repo.create_sbi(&pbi_name, &sbi_name, &sbi_type)?;
+            // Create SBI (generates tasks.md and memo.md only)
+            spec_repo.create_sbi(&pbi_name, &sbi_name)?;
 
             // Get SBI path
             let pbi_path = spec_repo.get_spec_path(&pbi_name)?;
@@ -129,31 +128,6 @@ fn prompt_for_sbi_name() -> Result<String, ApplicationError> {
         .map_err(|e| ApplicationError::FileSystemError(format!("Failed to read input: {}", e)))?;
 
     Ok(name.trim().to_string())
-}
-
-fn prompt_for_sbi_type() -> Result<String, ApplicationError> {
-    println!("Select SBI type:");
-    println!("1. PRD (Product feature)");
-    println!("2. Bug (Bug fix)");
-    println!("3. Tech (Technical improvement)");
-    print!("→ ");
-    io::stdout()
-        .flush()
-        .map_err(|e| ApplicationError::FileSystemError(format!("Failed to flush stdout: {}", e)))?;
-
-    let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .map_err(|e| ApplicationError::FileSystemError(format!("Failed to read input: {}", e)))?;
-
-    let sbi_type = match input.trim() {
-        "1" => "prd",
-        "2" => "bug",
-        "3" => "tech",
-        _ => "prd", // Default to PRD
-    };
-
-    Ok(sbi_type.to_string())
 }
 
 #[cfg(test)]
