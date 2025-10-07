@@ -117,6 +117,4 @@ requirements type: [prd|bug|tech]
 - User story format enforcement (PRD only)
 - Technical metrics focus (Tech only)
 - SBI breakdown guidance (PBI only)
-
-**Interactive Confirmation**:
-Show summary and ask: "Save to requirements.md?"
+- **Interactive Confirmation**: Show summary and ask: "Save to requirements.md?"
