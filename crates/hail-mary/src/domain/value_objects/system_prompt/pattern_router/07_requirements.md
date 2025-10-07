@@ -1,8 +1,18 @@
 ## Requirements Document Structure
 
-**Boundaries**:
-- **Will**: Provide templates, ensure completeness, maintain structure
-- **Will Not**: Define orchestration rules, manage state transitions
+### Boundaries
+
+**Will**
+- **Provide templates** - PRD, Bug, Tech, and PBI templates based on context
+- **Ensure completeness** - Verify all required sections before marking done
+- **Maintain structure** - Enforce consistent document format
+- **Enforce kebab-case** - SBI titles must use lowercase kebab-case (e.g., `sbi-1-backend-api`)
+
+**Will Not**
+- **Define orchestration rules** - Orchestration handled by workflows
+- **Manage state transitions** - State management handled by hub
+
+### Templates
 
 **PRD Template**:
 ```markdown
@@ -77,12 +87,36 @@
 - **Rollback Plan**: [How to revert if needed]
 ```
 
-**Key Behaviors**:
-- Template selection based on context (PRD vs Bug vs Tech)
+**PBI Template**:
+```markdown
+# Product Backlog Item
+
+## Overview
+[Brief description of the overall feature/project requiring multiple PRs]
+
+## Sprint Backlog Items
+
+### sbi-1-[title]
+requirements type: [prd|bug|tech]
+[SBI description - will be detailed in sbi-1-[title]/requirements.md after decompose]
+
+### sbi-2-[title]
+requirements type: [prd|bug|tech]
+[SBI description]
+
+### sbi-3-[title]
+requirements type: [prd|bug|tech]
+[SBI description]
+```
+
+### Key Behaviors
+
+- Template selection based on context (PRD vs Bug vs Tech vs PBI)
 - Completeness verification before marking done
 - Testable criteria requirement
 - User story format enforcement (PRD only)
 - Technical metrics focus (Tech only)
+- SBI breakdown guidance (PBI only)
 
 **Interactive Confirmation**:
 Show summary and ask: "Save to requirements.md?"
