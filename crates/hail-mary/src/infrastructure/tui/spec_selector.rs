@@ -181,7 +181,7 @@ impl SpecSelectorTui {
                 ),
                 TuiItem::Pbi { name, .. } => (format!("   {}", name), Style::default()),
                 TuiItem::Sbi { sbi_name, .. } => (
-                    format!(" >   {}", sbi_name),
+                    format!("     {}", sbi_name),
                     Style::default().fg(Color::Yellow),
                 ),
                 TuiItem::CreateNewSbi { .. } => (
