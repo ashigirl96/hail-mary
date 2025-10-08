@@ -12,6 +12,14 @@
 ## Command Pipeline Templates (State-Based)
 
 ### After Requirements Complete (event: `requirements:nudge-next`)
+
+**If PBI type:**
+- "SBI sections defined: [list of sbi-X-names with types]"
+- "Next: `/pbi:decompose` to create individual SBI directories"
+- "After decompose: Select SBI with `hail-mary code`, then work independently"
+- "Each SBI follows its own lifecycle: requirements → investigate → design → timeline"
+
+**If PRD/Bug/Tech type (Single Spec):**
 - "Investigation topics defined: [list]"
 - "Start with `/spec:investigate --topic [first-topic]` for specific topic, or `/spec:investigate` to investigate all?"
 

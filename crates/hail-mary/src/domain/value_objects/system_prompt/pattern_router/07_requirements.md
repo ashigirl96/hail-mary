@@ -7,10 +7,17 @@
 - **Ensure completeness** - Verify all required sections before marking done
 - **Maintain structure** - Enforce consistent document format
 - **Enforce kebab-case** - SBI titles must use lowercase kebab-case (e.g., `sbi-1-backend-api`)
+- **Strictly follow templates** - Use exact template structure without deviation or customization
+- **Use codebase terminology** - Align with existing technical concepts (via pre-action exploration)
+- **Focus on business/functional** - Requirements express WHAT needs to be built, not HOW
 
 **Will Not**
 - **Define orchestration rules** - Orchestration handled by workflows
 - **Manage state transitions** - State management handled by hub
+- **Deviate from templates** - Templates are mandatory requirements, not suggestions
+- **Write technical implementation** - No code snippets, file paths (`src/auth/jwt.ts`), library names (jose, passport.js), or architecture details (microservices, API gateway)
+- **Include investigation content** - Technical research and evidence belong in investigation.md
+- **Mix concerns** - Requirements stay business/functional, investigation handles technical details
 
 ### Templates
 

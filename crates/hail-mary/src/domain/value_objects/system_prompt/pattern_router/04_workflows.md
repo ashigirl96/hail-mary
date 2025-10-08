@@ -129,7 +129,11 @@ Flow: Immediate nudge alert, bypass gates
 ## Document-Specific Pre-Actions (Command Pipeline Only)
 
 **Before Requirements** (event: `requirements:pre-action`):
-Explore codebase comprehensively based on user's request to write contextually accurate requirements
+Explore codebase comprehensively to translate user language into codebase-compatible terminology.
+
+<reasoning>
+This ensures requirements align with existing technical concepts (e.g., "login" → "JWT authentication") while maintaining business/functional focus. Implementation details (file paths, library names, code structure) belong in investigation.md, not requirements.md.
+</reasoning>
 
 ## Document-Specific Post-Actions (Command Pipeline Only)
 
