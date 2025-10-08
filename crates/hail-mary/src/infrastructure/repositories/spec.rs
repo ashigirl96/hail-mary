@@ -323,4 +323,27 @@ impl SpecRepositoryInterface for SpecRepository {
 
         Ok(())
     }
+
+    fn ensure_sbi_files(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError> {
+        let sbi_path = self
+            .path_manager
+            .specs_dir(true)
+            .join(pbi_name)
+            .join(sbi_name);
+
+        // Check if SBI directory exists
+        if !sbi_path.exists() {
+            return Err(ApplicationError::SpecNotFound(sbi_name.to_string()));
+        }
+
+        let tasks_path = sbi_path.join("tasks.md");
+        let memo_path = sbi_path.join("memo.md");
+
+        // Only generate missing files
+        if !tasks_path.exists() || !memo_path.exists() {
+            self.create_template_files(&sbi_path, sbi_name)?;
+        }
+
+        Ok(())
+    }
 }

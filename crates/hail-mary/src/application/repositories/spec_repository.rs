@@ -27,4 +27,7 @@ pub trait SpecRepositoryInterface {
 
     /// Create a new SBI in a PBI (used by TUI "Create new SBI")
     fn create_sbi(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError>;
+
+    /// Ensure SBI has tasks.md and memo.md files (used when selecting existing SBI)
+    fn ensure_sbi_files(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError>;
 }

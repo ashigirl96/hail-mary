@@ -162,4 +162,9 @@ impl SpecRepositoryInterface for MockSpecRepository {
         // Mock: do nothing
         Ok(())
     }
+
+    fn ensure_sbi_files(&self, _pbi_name: &str, _sbi_name: &str) -> Result<(), ApplicationError> {
+        // Mock: do nothing
+        Ok(())
+    }
 }

@@ -40,6 +40,9 @@ pub fn launch_claude_with_spec(
             (Some(name), Some(path))
         }
         SpecSelectionResult::Sbi(pbi_name, sbi_name) => {
+            // Ensure SBI has tasks.md and memo.md (generate if missing)
+            spec_repo.ensure_sbi_files(&pbi_name, &sbi_name)?;
+
             let pbi_path = spec_repo.get_spec_path(&pbi_name)?;
             let sbi_path = pbi_path.join(&sbi_name);
             (Some(sbi_name), Some(sbi_path))
