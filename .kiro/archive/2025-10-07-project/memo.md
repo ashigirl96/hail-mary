@@ -1,24 +1,27 @@
 # Memo: project
 
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/00_philosophy.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/01_principles.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/02_hub.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/03_patterns.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/04_workflows.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/05_gates.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/06_nudges.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/07_requirements.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/08_investigation.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/09_design.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/10_spec_files.md
-crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/index.md
-crates/hail-mary/src/domain/value_objects/system_prompt/mod.rs
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/00_philosophy.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/01_principles.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/02_hub.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/03_patterns.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/04_workflows.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/05_gates.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/06_nudges.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/07_requirements.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/08_investigation.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/09_design.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/10_spec_files.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/index.md
+@crates/hail-mary/src/domain/value_objects/system_prompt/mod.rs
 を全て読んだ上で、 Pattern Router Framework(@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/README.md) がなにか理解してから、
 @crates/hail-mary/src/cli/commands/code.rs, @crates/hail-mary/src/application/use_cases/launch_claude_with_spec.rs を使うと、Pattern Router Frameworkをsystem promptとして埋め込んで、
 @.claude/commands/spec/design.md
 @.claude/commands/spec/requirements.md
 @.claude/commands/spec/investigate.md
 @.claude/commands/spec/timeline.md
+@.claude/commands/spec/status.md
+@.claude/commands/pbi/add-sbi.md
+@.claude/commands/pbi/decompose.md
 などを使って、spec drivenな開発ができるところまで理解しなさい
 
 現在、Pattern Router Frameworkは期待通りの挙動をしている。
@@ -177,3 +180,13 @@ My Feedback:
 5. `**Update PBI tasks.md**` も要らない。これをチェックしたりするためのpromptはないから
 6. `application/use_cases/decompose_pbi.rs` は要らないかも
 7. `hail-mary archive --sbi sbi-1-backend-api  # Advanced`も一旦要らないかも
+
+
+---
+
+現状いくつかの課題を抱えています
+現状の `/spec:requirements` は `/hm:investigate` をnudgingしますが、 `/spec:requirements --type pbi`が実行された後は、残りは各SBIで調査・設計を促したいので `/pbi:decompose` をnudgingするようにしたい
+`/spec:requirements` をした時、workflowで `requirements:pre-action` が実行され、codebaseの調査を行うが、それはあくまでも、ユーザーの言葉からcodebaseに親和性のある言葉に変換されてほしいからで、requirements.mdに技術的なcodeを書いてほしいわけではないんだよね 。@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/07_requirements.md にそれぞれのtypeのtemplateを載せているが、templateに従わない場合もあるので、BoundariesのWillとWill Notに、必ず従うように記載してほしい
+SBIにも同様に、技術的な話を書いてほしいので、`/spec:decompose` のBoundariesに Will Notとして、技術的な話を書くことはできないことを明記してほしい
+
+私の言っている課題について、現状のPattern Router Frameworkの挙動に対して正しいかどうか評価してください。
