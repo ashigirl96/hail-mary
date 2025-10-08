@@ -137,7 +137,7 @@ When user requests design:
 
 ### Achieved Goals
 ✅ **Single Responsibility**: Templates → Documents → Timeline
-✅ **Natural Language**: "要件を作成" instead of `/hm:requirements`
+✅ **Natural Language**: "要件を作成" instead of `/spec:requirements`
 ✅ **Flexible Nudging**: Context-aware suggestions
 ✅ **Token Efficient**: 70% reduction vs slash commands
 ✅ **Clean Architecture**: Modular template composition

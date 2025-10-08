@@ -5,7 +5,7 @@ allowed-tools: Read, Write, MultiEdit, Grep, Glob
 argument-hint: "[--topic <name>]"
 ---
 
-# /hm:investigate
+# /spec:investigate
 
 Conduct technical research and append findings with reactive pattern-based routing.
 

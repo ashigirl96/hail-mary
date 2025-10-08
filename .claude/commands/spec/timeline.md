@@ -4,7 +4,7 @@ description: "Plan implementation timeline"
 allowed-tools: Read, Write, MultiEdit
 ---
 
-# /hm:timeline
+# /spec:timeline
 
 Plan implementation order from design and add to Timeline.
 

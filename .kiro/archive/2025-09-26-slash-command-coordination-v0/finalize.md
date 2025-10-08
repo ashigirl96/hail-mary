@@ -10,21 +10,21 @@
 </kiro-orchestrator-recognition>
 
 <kiro-orchestrator-routing>
-  requirements context → SlashCommand(/hm:requirements)
-  investigation context → SlashCommand(/hm:investigate)
-  design context → SlashCommand(/hm:design)
+  requirements context → SlashCommand(/spec:requirements)
+  investigation context → SlashCommand(/spec:investigate)
+  design context → SlashCommand(/spec:design)
 </kiro-orchestrator-routing>
 
 <kiro-orchestrator-auto-tracking>
-  After /hm:requirements execution:
+  After /spec:requirements execution:
     → Append to Timeline: "[x] Requirements updated → requirements.md#section"
     → Update State Tracking: requirements.md status
 
-  After /hm:investigate execution:
+  After /spec:investigate execution:
     → Append to Timeline: "[x] Investigation: [topic] → investigation.md#section"
     → Update State Tracking: investigation.md confidence level
 
-  After /hm:design execution:
+  After /spec:design execution:
     → Append to Timeline: "[x] Design updated → design.md"
     → Extract and add implementation tasks from design
     → Update State Tracking: design.md status
@@ -61,7 +61,7 @@
 </kiro-tasks-template>
 ```
 
-## /hm:requirements
+## /spec:requirements
 
 ````markdown
 ---
@@ -72,7 +72,7 @@ allowed-tools: Read, Write, MultiEdit
 argument-hint: "[--type prd|bug] [--issue <github-url>]"
 ---
 
-# /hm:requirements
+# /spec:requirements
 
 ## Triggers
 - Starting new feature development
@@ -82,7 +82,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 
 ## Usage
 ```
-/hm:requirements [--type prd|bug] [--issue <github-url>]
+/spec:requirements [--type prd|bug] [--issue <github-url>]
 ```
 - `--type`: Document type (defaults to prd)
 - `--issue`: Optional GitHub issue URL
@@ -137,7 +137,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 
 ## Examples
 ```
-/hm:requirements --type prd
+/spec:requirements --type prd
 
 > 📋 Starting PRD creation...
 > What new feature would you like to develop?
@@ -155,7 +155,7 @@ User: Y
 ```
 ````
 
-## /hm:investigate
+## /spec:investigate
 
 ````markdown
 ---
@@ -166,7 +166,7 @@ allowed-tools: Read, Write, MultiEdit, Grep, Glob, WebSearch, Task
 argument-hint: "[--topic <name>] [--parallel]"
 ---
 
-# /hm:investigate
+# /spec:investigate
 
 ## Triggers
 - Technical research needed
@@ -176,7 +176,7 @@ argument-hint: "[--topic <name>] [--parallel]"
 
 ## Usage
 ```
-/hm:investigate [--topic <name>] [--parallel]
+/spec:investigate [--topic <name>] [--parallel]
 ```
 - `--topic <name>`: Resume existing topic
 - `--parallel`: Enable multi-agent investigation
@@ -247,7 +247,7 @@ argument-hint: "[--topic <name>] [--parallel]"
 
 ## Examples
 ```
-/hm:investigate --topic auth-methods
+/spec:investigate --topic auth-methods
 
 > 📋 Found existing investigation for 'auth-methods'
 > What would you like to investigate?
@@ -264,7 +264,7 @@ User: Y
 ```
 ````
 
-## /hm:design
+## /spec:design
 
 ````markdown
 ---
@@ -275,7 +275,7 @@ allowed-tools: Read, Write, MultiEdit, Task
 argument-hint: "[--simple]"
 ---
 
-# /hm:design
+# /spec:design
 
 ## Triggers
 - Requirements need technical design
@@ -285,7 +285,7 @@ argument-hint: "[--simple]"
 
 ## Usage
 ```
-/hm:design [--simple]
+/spec:design [--simple]
 ```
 - `--simple`: Use simplified template
 
@@ -358,7 +358,7 @@ argument-hint: "[--simple]"
 
 ## Examples
 ```
-/hm:design
+/spec:design
 
 > 📋 Found requirements.md
 > Create design from requirements? [Y/n]:

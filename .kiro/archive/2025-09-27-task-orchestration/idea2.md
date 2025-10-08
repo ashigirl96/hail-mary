@@ -180,7 +180,7 @@
 
 3. **スラッシュコマンドとの相性**
    - 必要なタグのみピンポイント参照
-   - 例：`/hm:investigate` → `<kiro-investigation>` と `<kiro-orchestration-patterns>` のみ参照
+   - 例：`/spec:investigate` → `<kiro-investigation>` と `<kiro-orchestration-patterns>` のみ参照
 
 4. **拡張性**
    - 新機能追加時は新タグを追加

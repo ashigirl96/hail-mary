@@ -307,7 +307,7 @@ session_context:  # Claude Codeのメモリ内で管理
 
 #### 役割の明確化
 ```yaml
-/hm:investigate:
+/spec:investigate:
   特徴: 自動保存、複数トピック、フラグベース
   用途: 計画的な調査、バッチ処理
 
@@ -363,7 +363,7 @@ append_strategy:
 
 ### Kiroエコシステムでの位置づけ
 ```yaml
-/hm:investigate:
+/spec:investigate:
   責任: 計画的・体系的な技術調査
   特徴: 自動保存、並列調査
 
@@ -371,10 +371,10 @@ append_strategy:
   責任: 探索的・対話的な技術調査
   特徴: 選択的保存、逐次深化
 
-/hm:requirements:
+/spec:requirements:
   連携: 調査結果を要件に反映
 
-/hm:design:
+/spec:design:
   連携: 調査結果を設計に活用
 ```
 

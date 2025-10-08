@@ -7,9 +7,9 @@
 
 ## Recognition Patterns
 When user mentions:
-- "要件", "requirements", "PRD", "仕様" → SlashCommand(/hm:requirements)
-- "調査", "investigate", "research", "検証" → SlashCommand(/hm:investigate)
-- "設計", "design", "architecture", "実装" → SlashCommand(/hm:design)
+- "要件", "requirements", "PRD", "仕様" → SlashCommand(/spec:requirements)
+- "調査", "investigate", "research", "検証" → SlashCommand(/spec:investigate)
+- "設計", "design", "architecture", "実装" → SlashCommand(/spec:design)
 
 ## Automatic Task Management
 After any /hm:* command execution:
@@ -47,7 +47,7 @@ When initializing new spec, create tasks.md:
 - [ ] Begin implementation
 ```
 
-## /hm:requirements
+## /spec:requirements
 
 ````markdown
 ---
@@ -69,7 +69,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 
 ## Usage
 ```
-/hm:requirements [--type prd|bug] [--issue <github-url>]
+/spec:requirements [--type prd|bug] [--issue <github-url>]
 ```
 - `--type`: Document type (prd or bug report, defaults to prd)
 - `--issue`: GitHub issue URL to import requirements from
@@ -146,7 +146,7 @@ Key behaviors:
 
 ## Examples
 ```
-/hm:requirements --type prd
+/spec:requirements --type prd
 
 > どのような機能を開発しますか？
 [WAIT FOR USER INPUT]
@@ -164,7 +164,7 @@ User: Y
 ```
 ````
 
-## /hm:investigate
+## /spec:investigate
 
 ````markdown
 ---
@@ -186,7 +186,7 @@ argument-hint: "[--topic <name>] [--parallel]"
 
 ## Usage
 ```
-/hm:investigate [--topic <name>] [--parallel]
+/spec:investigate [--topic <name>] [--parallel]
 ```
 - `--topic <name>`: Continue research on existing topic
 - `--parallel`: Launch parallel investigation agents
@@ -266,7 +266,7 @@ Key behaviors:
 
 ## Examples
 ```
-/hm:investigate --topic authentication
+/spec:investigate --topic authentication
 
 > 既存の 'authentication' 調査を継続します。
 > 何を調査しますか？
@@ -286,7 +286,7 @@ User: Y
 ```
 ````
 
-## /hm:design
+## /spec:design
 
 ````markdown
 ---
@@ -308,7 +308,7 @@ argument-hint: "[--simple]"
 
 ## Usage
 ```
-/hm:design [--simple]
+/spec:design [--simple]
 ```
 - `--simple`: Use simplified design template without architect agents
 
@@ -397,7 +397,7 @@ Key behaviors:
 
 ## Examples
 ```
-/hm:design
+/spec:design
 
 > 要件と調査結果から設計を生成します。
 > 🏗️ アーキテクト分析を開始...

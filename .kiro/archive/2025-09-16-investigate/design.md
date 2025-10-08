@@ -1,8 +1,8 @@
-# Design Document - `/hm:investigate` Slash Command
+# Design Document - `/spec:investigate` Slash Command
 
 ## 概要
 
-`/hm:investigate` コマンドは、プロジェクトの技術的側面を体系的に調査し、構造化された調査結果を生成するslash commandです。steering、codebase、Context7、webから自動優先度で情報を収集し、インタラクティブな対話を通じて調査を深化させます。
+`/spec:investigate` コマンドは、プロジェクトの技術的側面を体系的に調査し、構造化された調査結果を生成するslash commandです。steering、codebase、Context7、webから自動優先度で情報を収集し、インタラクティブな対話を通じて調査を深化させます。
 
 ## Slash Command 仕様書 (investigate.md)
 
@@ -18,7 +18,7 @@ allowed-tools: Read, Write, MultiEdit, Grep, Glob, Task, WebSearch, mcp__context
 argument-hint: "[--topic [name]] [--for requirements|design]"
 ---
 
-# /hm:investigate - Technical Investigation Tool
+# /spec:investigate - Technical Investigation Tool
 
 ## Triggers
 - Technical research needed for requirements or design documents
@@ -28,7 +28,7 @@ argument-hint: "[--topic [name]] [--for requirements|design]"
 
 ## Usage
 ```
-/hm:investigate [--topic <name>] [--for requirements|design]
+/spec:investigate [--topic <name>] [--for requirements|design]
 ```
 - `--topic <name>`: Resume/update existing topic by name
 - `--for`: Link investigation to <kiro_requirements_path> or <kiro_design_path>
@@ -211,7 +211,7 @@ Key behaviors:
 
 ### Example 1: New Topic Investigation
 ```
-/hm:investigate
+/spec:investigate
 
 > 🔍 What would you like to investigate?
 > [Provide specific technical question or area]
@@ -246,7 +246,7 @@ User: done
 
 ### Example 2: Resume Existing Topic
 ```
-/hm:investigate --topic "JWT Authentication" --for requirements
+/spec:investigate --topic "JWT Authentication" --for requirements
 
 > 📝 Resuming existing topic "JWT Authentication" from investigation.md
 > Previous confidence: High (92%)
@@ -271,7 +271,7 @@ User: done
 ### Example 3: Multiple Separate Investigations
 ```
 # First investigation
-/hm:investigate
+/spec:investigate
 
 > 🔍 What would you like to investigate?
 
@@ -288,7 +288,7 @@ User: done
 > • Overall confidence: High (85%)
 
 # Second investigation (new command)
-/hm:investigate
+/spec:investigate
 
 > 🔍 What would you like to investigate?
 
@@ -310,7 +310,7 @@ User: done
 > • Overall confidence: Medium (75%)
 
 # Third investigation (resuming first topic)
-/hm:investigate --topic "API Rate Limiting"
+/spec:investigate --topic "API Rate Limiting"
 
 > 📝 Resuming existing topic "API Rate Limiting" from investigation.md
 > Previous confidence: High (85%)
@@ -325,7 +325,7 @@ User: done
 
 #### シンプルなトピック管理インターフェース
 ```bash
-/hm:investigate [--topic <name>] [--for requirements|design]
+/spec:investigate [--topic <name>] [--for requirements|design]
 ```
 - **フラグなし**: 新規調査を開始
 - **`--topic <name>`フラグ**: 既存トピックを再開・更新
@@ -411,16 +411,16 @@ steering (100%) > codebase (90%) > Context7 (80%) > web (70%)
 
 #### 役割分担の明確化
 ```yaml
-/hm:requirements:
+/spec:requirements:
   責任: ユーザー要件の収集と構造化
   生成: requirements.md (0-70% completeness)
 
-/hm:investigate:
+/spec:investigate:
   責任: 技術的調査と分析
   生成: <kiro_investigation_path>
   更新: <kiro_requirements_path> or <kiro_design_path> (--for flag)
 
-/hm:design:
+/spec:design:
   責任: アーキテクチャと実装設計
   参照: investigation.md
 ```
@@ -454,24 +454,24 @@ confidence_factors:
   consistency:      # 複数ソース間の一貫性
 ```
 
-この設計により、`/hm:investigate`は技術調査の中核ツールとして機能し、他のKiroコマンドと連携しながら、プロジェクトの技術的理解を体系的に深化させます。
+この設計により、`/spec:investigate`は技術調査の中核ツールとして機能し、他のKiroコマンドと連携しながら、プロジェクトの技術的理解を体系的に深化させます。
 
 ## 追加設計: 段階的ワークフロー
 
 ### 三段階ワークフロー
 ```bash
 # Stage 1: 要件収集
-/hm:requirements --type prd
+/spec:requirements --type prd
 # → ユーザーとの対話で要件定義
 # → 完成度: 0-70%
 
 # Stage 2: 技術調査
-/hm:investigate --topic --for requirements
+/spec:investigate --topic --for requirements
 # → 技術的な実現可能性調査
 # → <kiro_requirements_path>の[TBD]セクション更新
 
 # Stage 3: 設計
-/hm:design --based-on requirements,investigation
+/spec:design --based-on requirements,investigation
 # → アーキテクチャと実装設計
 # → 調査結果を参照した技術設計
 ```
@@ -486,4 +486,4 @@ format_selection:
   debugging_session: Root Cause Analysis
 ```
 
-この設計により、`/hm:investigate`は柔軟かつ強力な調査ツールとして、Kiroワークフローの中核を担います。
+この設計により、`/spec:investigate`は柔軟かつ強力な調査ツールとして、Kiroワークフローの中核を担います。

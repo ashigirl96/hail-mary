@@ -39,7 +39,7 @@ crates/hail-mary/src/domain/value_objects/system_prompt/mod.rs
     tasks.md
     memo.md
 ```
-が生成され、`/hm:requirements --type prd` をすると
+が生成され、`/spec:requirements --type prd` をすると
 
 ```
 .kiro/
@@ -49,7 +49,7 @@ crates/hail-mary/src/domain/value_objects/system_prompt/mod.rs
     memo.md
 ```
 
-とrequirements.mdが生成され、 さらに`/hm:investigate` をすると
+とrequirements.mdが生成され、 さらに`/spec:investigate` をすると
 
 ```
 .kiro/
@@ -75,7 +75,7 @@ crates/hail-mary/src/domain/value_objects/system_prompt/mod.rs
     memo.md
 ```
 
-そして、userとclaude codeが議論していってある程度固まったり、github issue自体に全容が把握できるような仕様が書いてあって、`/hm:requirements --type pbi` をしたら、
+そして、userとclaude codeが議論していってある程度固まったり、github issue自体に全容が把握できるような仕様が書いてあって、`/spec:requirements --type pbi` をしたら、
 ```
 .kiro/
   specs/[feature-name]/

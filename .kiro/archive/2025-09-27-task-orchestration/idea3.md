@@ -302,7 +302,7 @@ After investigation complete:
 
 ### 4. スラッシュコマンドとの親和性
 - 必要なタグのみをピンポイント参照
-- 例: `/hm:investigate` → `<kiro-patterns>`, `<kiro-protocol>`, `<kiro-investigation>` のみ
+- 例: `/spec:investigate` → `<kiro-patterns>`, `<kiro-protocol>`, `<kiro-investigation>` のみ
 
 ### 5. 拡張性
 - 新機能追加時は適切な層に新タグを追加

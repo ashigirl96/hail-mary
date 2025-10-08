@@ -14,7 +14,7 @@ v3: @.kiro/specs/2025-09-24-enhance-dev-flow/design-v3.md (nudge)
 
 つまり、slash commandを使わないで、system promptだけで、claude codeにOrchestrator的な役割と、それぞれの行動の細かなbehavioral flowまでを決めさせることを考えていた
 
-しかし、 @reference/slash-commands.md で新たに `SlashCommand` tool が使えるようになって、明示的に人間がslash commandを呼ばなくても 例えば `run design`というだけで、claude codeが自動で `SlashCommand(/hm:design)` を呼び出してくれるようになった。
+しかし、 @reference/slash-commands.md で新たに `SlashCommand` tool が使えるようになって、明示的に人間がslash commandを呼ばなくても 例えば `run design`というだけで、claude codeが自動で `SlashCommand(/spec:design)` を呼び出してくれるようになった。
 これは、つまり、機械的に呼び出すところから、自然言語で呼び出せるようになったことを意味している
 
 ここで、考えたのは、system promptのorchestrator的な責務と、slash commandのを分離することにある。
@@ -57,8 +57,8 @@ v3: @.kiro/specs/2025-09-24-enhance-dev-flow/design-v3.md (nudge)
 
 なので、私と話し合いながら、どのような責務分担が良いかをbrainstormingしてほしい
 
-あと、templateを使う事でわかってきた課題として、一回 `/hm:requirements` `/hm:design` でPRDや設計書を作成した後に、追加で仕様を増やそうとすると、全体を考慮して追加というより、
-先にできたテンプレートのドキュメントに対して、追加情報的な感じで appendされてしまうという、`/hm:requirements` `/hm:design` 側のtemplateの限界も感じている(`/hm:investigate` は逐次調査した結果を追加していくだけなので現状のまｍで良いんだけどね)
+あと、templateを使う事でわかってきた課題として、一回 `/spec:requirements` `/spec:design` でPRDや設計書を作成した後に、追加で仕様を増やそうとすると、全体を考慮して追加というより、
+先にできたテンプレートのドキュメントに対して、追加情報的な感じで appendされてしまうという、`/spec:requirements` `/spec:design` 側のtemplateの限界も感じている(`/spec:investigate` は逐次調査した結果を追加していくだけなので現状のまｍで良いんだけどね)
 他にも、designしたものが evidenceとして、 investigation.mdのどこに対応しているかを明示的に紐づけることもできていない
 
 
@@ -73,9 +73,9 @@ versioningはやっぱりいいんかね？何が追加されたかは把握し�
 sync slash commandの提案もあるかなと思った
 - requirements←design
 - investigation→design
-ですよね？だから、自動でsyncが発火したら、「requirementsをXXXに更新して」って言ったら、`/hm:requirements`が呼ばれてから、`/hm:sync` が実行されて、designも更新される感じを想像した
+ですよね？だから、自動でsyncが発火したら、「requirementsをXXXに更新して」って言ったら、`/spec:requirements`が呼ばれてから、`/hm:sync` が実行されて、designも更新される感じを想像した
 ただ、やっぱり、designを更新するかどうかは、userが決めたいので、優先的にsuggestionを出す方がいいよね。
-イメージとしては、「requirementsをXXXに更新して」って言ったら、`/hm:requirements`が呼ばれてドキュメントが更新されたあと、「designも更新する必要があるので、先に調査しましょうか」的な
+イメージとしては、「requirementsをXXXに更新して」って言ったら、`/spec:requirements`が呼ばれてドキュメントが更新されたあと、「designも更新する必要があるので、先に調査しましょうか」的な
 
 Templateとsync slash commandとかの話を考えてて、
 新たにtasks.mdというものを提案したいなという気持ちが出てきた。
@@ -108,8 +108,8 @@ state trackingもさ、tasks.mdの冒頭とかに書いていれば、それぞ�
 
 <kiro-awareness>
   <!-- 話題認識と自然なルーティングのみ -->
-  「要件を更新」→ SlashCommand(/hm:requirements)
-  「調査結果」→ SlashCommand(/hm:investigate)
+  「要件を更新」→ SlashCommand(/spec:requirements)
+  「調査結果」→ SlashCommand(/spec:investigate)
 
   <!-- tasks.mdから状態を読んでsuggestion -->
 After any update → Check tasks.md → Suggest next action
@@ -117,17 +117,17 @@ After any update → Check tasks.md → Suggest next action
 
 Slash Commands（単一責任）
 
-/hm:requirements:
+/spec:requirements:
 - Create/Update requirements.md
 - Add entry to tasks.md
 - NO orchestration
 
-/hm:investigate:
+/spec:investigate:
 - Add research to investigation.md
 - Add entry to tasks.md
 - NO next step suggestion
 
-/hm:design:
+/spec:design:
 - Create/Update design.md
 - Link to investigation evidence
 - Add entry to tasks.md
@@ -172,15 +172,15 @@ Slash Commands（単一責任）
                                                             
 🔧 Slash Command Simplification
                                                             
-/hm:requirements:
+/spec:requirements:
   責務: requirements.md更新 + tasks.mdに記録
   削除: Orchestration, next step提案
                                                             
-/hm:investigate:
+/spec:investigate:
   責務: investigation.md追記 + tasks.mdに記録
   削除: Impact analysis
                                                             
-/hm:design:
+/spec:design:
   責務: design.md更新 + tasks.mdに記録
   削除: What's next判断
                                                             

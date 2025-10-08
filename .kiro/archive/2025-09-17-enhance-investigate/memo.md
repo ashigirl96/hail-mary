@@ -4,7 +4,7 @@
 
 ### Example 1: New Topic Investigation
 ```
-/hm:investigate
+/spec:investigate
 
 > 🔍 What would you like to investigate?
 > [Provide specific technical question or area]
@@ -39,7 +39,7 @@ User: done
 
 ### Example 2: Resume Existing Topic
 ```
-/hm:investigate --topic "JWT Authentication" --for requirements
+/spec:investigate --topic "JWT Authentication" --for requirements
 
 > 📝 Resuming existing topic "JWT Authentication" from investigation.md
 > Previous confidence: High (92%)
@@ -64,7 +64,7 @@ User: done
 ### Example 3: Multiple Separate Investigations
 ```
 # First investigation
-/hm:investigate
+/spec:investigate
 
 > 🔍 What would you like to investigate?
 
@@ -81,7 +81,7 @@ User: done
 > • Overall confidence: High (85%)
 
 # Second investigation (new command)
-/hm:investigate
+/spec:investigate
 
 > 🔍 What would you like to investigate?
 
@@ -103,7 +103,7 @@ User: done
 > • Overall confidence: Medium (75%)
 
 # Third investigation (resuming first topic)
-/hm:investigate --topic "API Rate Limiting"
+/spec:investigate --topic "API Rate Limiting"
 
 > 📝 Resuming existing topic "API Rate Limiting" from investigation.md
 > Previous confidence: High (85%)
@@ -113,7 +113,7 @@ User: done
 
 ### Example 4: Investigation Guided by Steering
 ````
-/hm:investigate
+/spec:investigate
 
 > 🔍 What would you like to investigate?
 

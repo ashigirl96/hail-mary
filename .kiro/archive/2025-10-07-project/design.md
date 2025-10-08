@@ -266,7 +266,7 @@ impl SpecSelectorTui {
 
 ## Slash Commands
 
-### 1. /hm:requirements --type pbi
+### 1. /spec:requirements --type pbi
 
 #### Update 07_requirements.md - Add PBI Template
 
@@ -549,7 +549,7 @@ hail-mary archive payment-system  # Archives entire PBI
 ✅ Create 10_spec_files_sbi.md
 ✅ Implement template switching in SystemPrompt
 ✅ Add PBI template to 07_requirements.md
-✅ Implement /hm:requirements --type pbi
+✅ Implement /spec:requirements --type pbi
 ✅ Implement /hm:decompose command
 ✅ Update TUI for nested SBI selection
 ✅ Test with real project
@@ -722,7 +722,7 @@ Keep single spec when:
 1. Create PBI
    $ hail-mary code
    → Select project
-   /hm:requirements --type pbi
+   /spec:requirements --type pbi
 
 2. Define SBIs in requirements.md adaptively
 
@@ -732,8 +732,8 @@ Keep single spec when:
 4. Work on each SBI
    $ hail-mary code
    → Select project → Select sbi-1-backend
-   /hm:investigate
-   /hm:design
+   /spec:investigate
+   /spec:design
    /hm:timeline
 
 5. Create PRs (1 per SBI)

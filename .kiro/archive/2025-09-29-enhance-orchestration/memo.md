@@ -107,7 +107,7 @@ final output in japanese --ultrathink)
 My Feedbacks:
 
 `### Event: design-complete (After)` が気になるかも。
-なぜなら、`/hm:design` が完了した時点で完璧なdesign.mdができているとは限らない。
+なぜなら、`/spec:design` が完了した時点で完璧なdesign.mdができているとは限らない。
 そこから、「なぜそういう設計にしたのか」や「このファイルはこういう実装にしてほしい」などのinteractiveなやり取りが発生するので、必ずしも、「実装の順番」だけではない
 
 `**After Design Complete** (MANDATORY PROTOCOL):` も上記と同じ理由で気になる。

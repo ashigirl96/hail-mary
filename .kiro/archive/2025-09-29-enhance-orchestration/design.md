@@ -247,9 +247,9 @@ Claude: Implementation plan added to Timeline! 4 phases, 8 tasks total.
 ````markdown
 | User Pattern | Action | Strategy Output |
 |-------------|--------|-----------------|
-| "/hm:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/hm:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/hm:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 | "/hm:timeline", "plan implementation", "organize tasks" | Timeline Planning | `{class: "EXPLICIT", strategy: "command", components: ["hub", "workflows", "document", "nudges"]}` |
 ```
 
@@ -335,7 +335,7 @@ All execution details, rules, and behaviors are defined in these system prompt s
 **Enhancement**: Post-Completion Behaviorセクションを追加
 
 ````markdown
-# /hm:design
+# /spec:design
 
 Create technical design documentation with reactive pattern-based routing.
 
@@ -447,7 +447,7 @@ All execution details, rules, and behaviors are defined in these system prompt s
 **ADR-004: Why conversation examples in 04_workflows.md?**
 - Decision: Embed multi-turn conversation examples in workflows
 - Rationale:
-  - /hm:design references <kiro-workflows>
+  - /spec:design references <kiro-workflows>
   - Examples in referenced sections are more likely to be executed
   - Concrete examples provide execution blueprint
 - Alternative considered: Examples in 06_nudges.md

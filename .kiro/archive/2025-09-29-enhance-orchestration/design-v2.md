@@ -26,7 +26,7 @@
 - ❌ "After Design Complete (MANDATORY PROTOCOL)"
 - ❌ 長い会話例（Linear Workflowを暗示）
 - ❌ Timeline Planning Protocolという特別視
-- ❌ /hm:design.mdの詳細なBehavior説明
+- ❌ /spec:design.mdの詳細なBehavior説明
 
 **新しいアプローチ**:
 - ✅ 説明的であって強制的でない（"User may...", "When user signals..."）
@@ -118,7 +118,7 @@ Shall we plan the implementation order?
 **Timeline Planning without Design**:
 - Check: design.md exists and has content
 - Action: ⚠️ WARNING with guidance (not BLOCK)
-- Message: "No design.md found. Create design first with `/hm:design`, or describe what you want to implement?"
+- Message: "No design.md found. Create design first with `/spec:design`, or describe what you want to implement?"
 - Applies to: `/hm:timeline` execution
 
 **Rationale**: ガイダンスであってブロックではない。代替手段を提示（口頭で説明してもOK）。
@@ -144,9 +144,9 @@ Shall we plan the implementation order?
 ````markdown
 | User Pattern | Action | Strategy Output |
 |-------------|--------|-----------------|
-| "/hm:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/hm:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/hm:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 | "/hm:timeline", "plan implementation" | Timeline Planning | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 ````
 
@@ -377,7 +377,7 @@ All execution details, rules, and behaviors are defined in these system prompt s
 | Nudging | 長いphase詳細 | ファイル順序のみ |
 | Gates | BLOCKまたは無視 | WARNING with guidance |
 | 会話例 | 多ターン詳細 | なし（信頼） |
-| /hm:design.md | 詳細なBehavior | タグ参照のみ |
+| /spec:design.md | 詳細なBehavior | タグ参照のみ |
 | 哲学 | Lost in the Middle解決重視 | NO Linear Workflow準拠 |
 
 ---

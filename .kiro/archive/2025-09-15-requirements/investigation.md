@@ -80,7 +80,7 @@ The `create_template_files()` method unconditionally creates all specification f
    - Keep assertions for design.md, investigation.md, memo.md
 
 3. **Slash Command Considerations**:
-   - `/hm:requirements`: Must create requirements.md if it doesn't exist
+   - `/spec:requirements`: Must create requirements.md if it doesn't exist
    - `/hm:tasks`: Must create tasks.md if it doesn't exist
    - Slash commands already use Write tool which creates files as needed
 

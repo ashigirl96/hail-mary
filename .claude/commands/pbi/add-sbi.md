@@ -5,15 +5,15 @@ allowed-tools: Read, Write, Edit
 argument-hint: "<sbi-name>"
 ---
 
-# /add-sbi
+# /pbi:add-sbi
 
 Add a new Sprint Backlog Item to the current Product Backlog Item.
 
 ## Usage
 
 ```
-/add-sbi monitoring        # Creates sbi-4-monitoring (auto-numbered)
-/add-sbi error-handling    # Creates sbi-5-error-handling
+/pbi:add-sbi monitoring        # Creates sbi-4-monitoring (auto-numbered)
+/pbi:add-sbi error-handling    # Creates sbi-5-error-handling
 ```
 
 ## Boundaries
@@ -38,8 +38,8 @@ Add a new Sprint Backlog Item to the current Product Backlog Item.
 1. **Validate Arguments**
    ```
    If $ARGUMENTS is empty:
-     "Usage: /add-sbi <sbi-name>
-      Example: /add-sbi monitoring"
+     "Usage: /pbi:add-sbi <sbi-name>
+      Example: /pbi:add-sbi monitoring"
      Exit
 
    If $ARGUMENTS not kebab-case:
@@ -57,7 +57,7 @@ Add a new Sprint Backlog Item to the current Product Backlog Item.
      ```
      "Error: Not in PBI context
       This command requires a PBI specification.
-      Use /hm:requirements --type pbi first to create a PBI."
+      Use /spec:requirements --type pbi first to create a PBI."
      Exit
      ```
 
@@ -98,7 +98,7 @@ Add a new Sprint Backlog Item to the current Product Backlog Item.
    Next steps:
    1. Edit description in PBI requirements.md (section ### sbi-4-monitoring)
    2. Select SBI to work: $ hail-mary code → [pbi-name] → sbi-4-monitoring
-   3. Start with /hm:investigate or /hm:design
+   3. Start with /spec:investigate or /spec:design
    ```
 
 ## Key Patterns

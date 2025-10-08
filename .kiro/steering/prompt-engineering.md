@@ -205,7 +205,7 @@ mcp-servers: [github]
 
 ## Usage
 ```
-/hm:requirements [--type prd|bug] [--issue <github-url>]
+/spec:requirements [--type prd|bug] [--issue <github-url>]
 ```
 - `--type`: Document type (prd or bug)
 - `--issue`: Optional GitHub issue URL
@@ -699,7 +699,7 @@ name: investigate
 description: "Technical investigation (investigate/research/調査)"
 ---
 
-# /hm:investigate
+# /spec:investigate
 
 Execute investigation following Kiro methodology.
 
@@ -713,7 +713,7 @@ Refer to system prompt sections:
 All execution details defined in these sections.
 
 # ❌ Bad - Duplicating rules in command
-## /hm:investigate
+## /spec:investigate
 
 1. Check requirements completion
 2. Update tasks.md before starting

@@ -4,7 +4,7 @@ description: "Technical design from requirements - triggered by: design, archite
 allowed-tools: Read, Write, MultiEdit, Task
 ---
 
-# /hm:design
+# /spec:design
 
 Create technical design documentation with reactive pattern-based routing.
 

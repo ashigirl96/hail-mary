@@ -1,8 +1,8 @@
-# Design Document - `/hm:design` Slash Command
+# Design Document - `/spec:design` Slash Command
 
 ## 概要
 
-`/hm:design` コマンドは、要件定義書(<kiro_requirements>)から構造化された技術設計書を生成するslash commandです。専門的なアーキテクトエージェントを活用し、バックエンド、フロントエンド、システムレベルの包括的な設計を行います。
+`/spec:design` コマンドは、要件定義書(<kiro_requirements>)から構造化された技術設計書を生成するslash commandです。専門的なアーキテクトエージェントを活用し、バックエンド、フロントエンド、システムレベルの包括的な設計を行います。
 
 ## Slash Command 仕様書 (design.md)
 
@@ -18,7 +18,7 @@ allowed-tools: Read, Write, MultiEdit, Task
 argument-hint: "[--simple] [--update]"
 ---
 
-# /hm:design - Technical Design Generator
+# /spec:design - Technical Design Generator
 
 ## Triggers
 - Requirements document needs technical design specification
@@ -28,7 +28,7 @@ argument-hint: "[--simple] [--update]"
 
 ## Usage
 ```
-/hm:design [--simple] [--update]
+/spec:design [--simple] [--update]
 ```
 - `--simple`: Use simplified design template for small changes
 - `--update`: Update existing design incrementally
@@ -197,7 +197,7 @@ argument-hint: "[--simple] [--update]"
    - Write final design to <kiro_design>
    - Display: "✅ Design document saved (Completeness: XX%)"
    - Suggest next actions:
-     - If needs investigation: "Run `/hm:investigate --for design` for technical details"
+     - If needs investigation: "Run `/spec:investigate --for design` for technical details"
      - If ready: "Proceed with implementation"
 
 Key behaviors:
@@ -214,7 +214,7 @@ Key behaviors:
 
 ### Example 1: Full-Stack Design with Architects
 ```
-/hm:design
+/spec:design
 
 > 📋 Found requirements.md (Completeness: 70%)
 > Create design document from requirements? [Y/n]:
@@ -239,7 +239,7 @@ User: Y
 
 ### Example 2: Simple Design without Agents
 ```
-/hm:design --simple
+/spec:design --simple
 
 > 📋 Using simple template for lightweight design...
 > Please provide requirements for design:
@@ -257,7 +257,7 @@ User: Y
 
 ### Example 3: Design Update
 ```
-/hm:design --update
+/spec:design --update
 
 > 📋 Found existing design.md (Completeness: 70%)
 > Please provide design modifications:
@@ -281,7 +281,7 @@ User: Y
 ## 設計の解説
 
 ### 1. **セクション構造の設計思想**
-`/hm:requirements`と同様の実行フロー志向の構造：
+`/spec:requirements`と同様の実行フロー志向の構造：
 - **Triggers → Usage**: コマンドの起動条件と使い方
 - **Key Patterns**: 入力を処理戦略に変換するルール
 - **Boundaries**: 実行可能な操作の明確な境界

@@ -9,7 +9,7 @@ Boundaries
 Will:
 - userがreviewするため、Design sectionには必ず修正するファイルとその修正内容についてすべて記述する
 - 調査するときは、general-purpose agentを使って、comprehensiveな調査を行う
-- `/hm:investigate`コマンドの責務は、ユーザーの調査不足による不安を解消するためであって、このコマンドで行う調査は、designを作成するために必要な調査に限定する
+- `/spec:investigate`コマンドの責務は、ユーザーの調査不足による不安を解消するためであって、このコマンドで行う調査は、designを作成するために必要な調査に限定する
 - Think in English, but document in Japanese
 
 Will Not:
@@ -34,7 +34,7 @@ Behavioral Flow
    - ユーザーがdesignコマンドとしての責務が終わっているので終わるか等の場合 → 終了する
 
 Key Behaviors
-- designについて聞かれたり、修正を依頼された時に行った調査は @.claude/commands/hm/investigate.md のBehavioral Flowに従って調査を行う。(`/hm:investigate --for design`が実行される)
+- designについて聞かれたり、修正を依頼された時に行った調査は @.claude/commands/hm/investigate.md のBehavioral Flowに従って調査を行う。(`/spec:investigate --for design`が実行される)
 
 Document Template
 

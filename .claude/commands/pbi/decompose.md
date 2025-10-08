@@ -4,7 +4,7 @@ description: "Decompose PBI into separate SBI specifications"
 allowed-tools: Read, Write, Glob, Bash, MultiEdit
 ---
 
-# /decompose
+# /pbi:decompose
 
 Decompose Product Backlog Item into Sprint Backlog Items.
 
@@ -54,7 +54,7 @@ Decompose Product Backlog Item into Sprint Backlog Items.
    ✅ SBIs created! Select specific SBI to work on:
    $ hail-mary code → [pbi-name] → sbi-1-backend-api
 
-   Each SBI will generate tasks.md/memo.md when you start working with /hm:investigate or /hm:design.
+   Each SBI will generate tasks.md/memo.md when you start working with /spec:investigate or /spec:design.
    ```
 
 ## Key Patterns

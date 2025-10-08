@@ -1,8 +1,8 @@
-# Design Document - `/hm:requirements` Slash Command
+# Design Document - `/spec:requirements` Slash Command
 
 ## 概要
 
-`/hm:requirements` コマンドは、ユーザーの要望やGitHub issueから構造化された要件ドキュメントを生成するslash commandです。このドキュメントは後続の調査、設計、タスク分解フェーズの基盤となります。
+`/spec:requirements` コマンドは、ユーザーの要望やGitHub issueから構造化された要件ドキュメントを生成するslash commandです。このドキュメントは後続の調査、設計、タスク分解フェーズの基盤となります。
 
 ## Slash Command 仕様書 (requirements.md)
 
@@ -18,7 +18,7 @@ allowed-tools: Read, Write, MultiEdit, mcp__github__get_issue
 argument-hint: "[--type prd|bug] [--issue <github-url>]"
 ---
 
-# /hm:requirements - Requirements Document Generator
+# /spec:requirements - Requirements Document Generator
 
 ## Triggers
 - Starting new feature development requiring structured documentation
@@ -28,7 +28,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 
 ## Usage
 ```
-/hm:requirements [--type prd|bug] [--issue <github-url>]
+/spec:requirements [--type prd|bug] [--issue <github-url>]
 ```
 - `--type`: Document type (prd for new features, bug for issue tracking)
 - `--issue`: Optional GitHub issue URL for auto-population
@@ -52,7 +52,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 - Include references to source documents and materials used
 
 **Will Not:**
-- Exceed 70% completeness (requires `/hm:investigate` for technical discovery)
+- Exceed 70% completeness (requires `/spec:investigate` for technical discovery)
 - Attempt to fill technical sections without codebase investigation
 - Perform investigation, design, or task decomposition
 - Modify files other than <kiro_requirements_path>
@@ -83,7 +83,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 - **Source**: [user-input|github-issue: URL]
 - **References**:
   - [List of consulted documents]
-  - [Will be populated by /hm:investigate]
+  - [Will be populated by /spec:investigate]
 
 ## 1. Overview
 - Problem statement
@@ -101,7 +101,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 - Edge cases and error conditions
 
 ## 5. Technical Requirements
-[TBD - populated by /hm:investigate]
+[TBD - populated by /spec:investigate]
 - Architecture decisions
 - Dependencies
 - Integration points
@@ -128,7 +128,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 - **Source**: [user-input|github-issue: URL]
 - **References**:
   - [Error logs/screenshots]
-  - [Will be populated by /hm:investigate]
+  - [Will be populated by /spec:investigate]
 
 ## 1. Problem
 - **What's broken**: [user description]
@@ -141,7 +141,7 @@ argument-hint: "[--type prd|bug] [--issue <github-url>]"
 - **Success criteria**: [how to verify fix]
 
 ## 3. Technical Details
-[TBD - populated by /hm:investigate]
+[TBD - populated by /spec:investigate]
 - Root cause
 - Affected files
 - Fix approach
@@ -201,7 +201,7 @@ Key behaviors:
 
 ### Example 1: PRD Creation
 ```
-/hm:requirements --type prd
+/spec:requirements --type prd
 
 > 📋 Starting PRD creation...
 > What new feature or capability would you like to develop?
@@ -225,7 +225,7 @@ User: Y
 
 ### Example 2: Bug Documentation from GitHub Issue
 ```
-/hm:requirements --type bug --issue https://github.com/org/repo/issues/123
+/spec:requirements --type bug --issue https://github.com/org/repo/issues/123
 
 > 🔍 Fetching GitHub issue #123...
 > 📋 Analyzing issue content...
@@ -242,7 +242,7 @@ User: n
 
 ### Example 3: Iterative Refinement
 ```
-/hm:requirements --type prd
+/spec:requirements --type prd
 
 [Initial gathering...]
 
@@ -309,7 +309,7 @@ PRDとBugで異なる重み付け：
 
 ## 追加設計: Investigation統合
 
-### Investigation Command (`/hm:investigate`)
+### Investigation Command (`/spec:investigate`)
 
 **Purpose**: Deep technical analysis of codebase to populate TBD sections
 
@@ -323,12 +323,12 @@ PRDとBugで異なる重み付け：
 
 **Integration Flow**:
 ```yaml
-/hm:requirements:
+/spec:requirements:
   creates: user_requirements
   marks: [TBD] sections
   achievable_completeness: 0-70%
 
-/hm:investigate:
+/spec:investigate:
   finds: [TBD] markers
   populates: technical_details
   updates: completeness_score
@@ -338,13 +338,13 @@ PRDとBugで異なる重み付け：
 ### Two-Stage Workflow
 ```bash
 # Stage 1: User-driven requirements
-/hm:requirements --type prd
+/spec:requirements --type prd
 # → Interactive refinement with user
 # → Captures business context and acceptance criteria
 # → Achieves completeness: 0-70%
 
 # Stage 2: Technical discovery
-/hm:investigate --enhance requirements.md
+/spec:investigate --enhance requirements.md
 # → Analyzes codebase for technical context
 # → Populates [TBD] sections automatically
 # → Completes document: 70-100%

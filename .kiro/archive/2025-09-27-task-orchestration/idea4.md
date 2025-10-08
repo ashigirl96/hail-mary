@@ -142,9 +142,9 @@ Each tag answers exactly ONE question:
 
 ### 3. Slash Command Optimization
 Commands can reference only needed tags:
-- `/hm:requirements` → patterns, workflows, nudges, requirements
-- `/hm:investigate` → patterns, workflows, gates, investigation
-- `/hm:design` → patterns, workflows, gates, design
+- `/spec:requirements` → patterns, workflows, nudges, requirements
+- `/spec:investigate` → patterns, workflows, gates, investigation
+- `/spec:design` → patterns, workflows, gates, design
 
 ### 4. Maintainability
 - Clear where to add new features

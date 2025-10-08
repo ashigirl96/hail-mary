@@ -2,7 +2,7 @@
 
 
 新しいslash commandの作成をしたい
-名前は `/hm:requirements`
+名前は `/spec:requirements`
 
 このslash commandの目的は、２つある
 - prd: 要望からPRDの生成
@@ -10,7 +10,7 @@
 この生成されたドキュメントを元に、この後、調査や、設計、タスク分解をしていく。
 なので、このドキュメントの責務は、要望の整理と、要望を実現するために必要な条件の整理
 
-コマンドには、`/hm:requirements --type prd` と `/hm:requirements --type bug` の２つのサブコマンドがある
+コマンドには、`/spec:requirements --type prd` と `/spec:requirements --type bug` の２つのサブコマンドがある
 オプショナルで `--issue [github issueのURL]` もつけられる
 
 > typeが`prd`のとき
@@ -97,7 +97,7 @@ slash command we made: @.claude/commands/hm/steering-remember.md
 - **Source**: [user-input|github-issue: URL]
 - **References**: 
   - [List of consulted documents]
-  - [Will be populated by /hm:investigate]
+  - [Will be populated by /spec:investigate]
 
 ## 1. Overview
 - Problem statement
@@ -115,7 +115,7 @@ slash command we made: @.claude/commands/hm/steering-remember.md
 - Edge cases and error conditions
 
 ## 5. Technical Requirements
-[Will be populated by /hm:investigate]
+[Will be populated by /spec:investigate]
 
 
 # Requirements - [Bug Title]
@@ -125,12 +125,12 @@ slash command we made: @.claude/commands/hm/steering-remember.md
 - **Source**: [user-input|github-issue: URL]
 - **References**: 
   - [List of consulted documents]
-  - [Will be populated by /hm:investigate]
+  - [Will be populated by /spec:investigate]
 
 ## 1. Overview
 - Bug summary
 - Severity: [Critical/High/Medium/Low]
-- Affected components: [TO BE DETERMINED - requires `/hm:investigate`]
+- Affected components: [TO BE DETERMINED - requires `/spec:investigate`]
 
 ## 2. Current State (As-Is)
 - **Steps to Reproduce**:
@@ -138,7 +138,7 @@ slash command we made: @.claude/commands/hm/steering-remember.md
 - **Actual Behavior**: What happens
 - **Error Messages**: Logs, stack traces
 - **Root Cause**: [TO BE INVESTIGATED - requires codebase analysis]
-- **Code Location**: [TO BE IDENTIFIED via `/hm:investigate`]
+- **Code Location**: [TO BE IDENTIFIED via `/spec:investigate`]
 
 ## 3. Expected State (To-Be)
 - **Expected Behavior**: What should happen

@@ -18,9 +18,9 @@
 </kiro-orchestrator-nudging>
 
 <kiro-orchestrator-routing>
-User: "要件をまとめたい" → SlashCommand(/hm:requirements)
-User: "設計を更新" → SlashCommand(/hm:design --update)
-User: "調査結果を追加" → SlashCommand(/hm:investigate --topic)
+User: "要件をまとめたい" → SlashCommand(/spec:requirements)
+User: "設計を更新" → SlashCommand(/spec:design --update)
+User: "調査結果を追加" → SlashCommand(/spec:investigate --topic)
 User: "進捗を確認" → SlashCommand(/hm:tasks --status)
 </kiro-orchestrator-routing>
 
@@ -47,7 +47,7 @@ On any command:
 
 <kiro-nudging-rules>
 IF user_says("要件") AND !exists(requirements.md):
-  → "要件から始めましょう" → SlashCommand(/hm:requirements)
+  → "要件から始めましょう" → SlashCommand(/spec:requirements)
 
 IF user_says("設計") AND investigation.status != "complete":
   → "先に調査を完了させると良いですよ (Confidence: {level}%)"
@@ -60,9 +60,9 @@ IF task.blocked:
 </kiro-nudging-rules>
 
 <kiro-command-mapping>
-"要件をまとめて" → /hm:requirements
-"調査して" → /hm:investigate
-"設計を更新" → /hm:design --update
+"要件をまとめて" → /spec:requirements
+"調査して" → /spec:investigate
+"設計を更新" → /spec:design --update
 "進捗を見せて" → Read tasks.md (System Prompt実行)
 "状態を確認" → Read tasks.md#state-tracking (System Prompt実行)
 </kiro-command-mapping>
@@ -87,7 +87,7 @@ IF task.blocked:
 </kiro-tasks-template>
 ```
 
-## /hm:requirements
+## /spec:requirements
 
 ````markdown
 ---
@@ -107,7 +107,7 @@ argument-hint: "[--update]"
 
 ## Usage
 ```
-/hm:requirements [--update]
+/spec:requirements [--update]
 ```
 - `--update`: Update existing requirements
 
@@ -147,7 +147,7 @@ Key behaviors:
 
 ### Example 1: New Requirements
 ```
-/hm:requirements
+/spec:requirements
 
 > What would you like to develop?
 
@@ -158,7 +158,7 @@ User: Authentication system with OAuth
 
 ### Example 2: Update Requirements
 ```
-/hm:requirements --update
+/spec:requirements --update
 
 > Found existing requirements. What would you like to add?
 
@@ -168,7 +168,7 @@ User: Add password reset feature
 ```
 ````
 
-## /hm:investigate
+## /spec:investigate
 
 ````markdown
 ---
@@ -188,7 +188,7 @@ argument-hint: "[--topic <name>]"
 
 ## Usage
 ```
-/hm:investigate [--topic <name>]
+/spec:investigate [--topic <name>]
 ```
 - `--topic <name>`: Continue existing investigation topic
 
@@ -231,7 +231,7 @@ Key behaviors:
 
 ### Example 1: New Investigation
 ```
-/hm:investigate
+/spec:investigate
 
 > What would you like to investigate?
 
@@ -243,7 +243,7 @@ User: Redis caching strategies
 
 ### Example 2: Continue Topic
 ```
-/hm:investigate --topic redis-caching
+/spec:investigate --topic redis-caching
 
 > Continuing investigation of redis-caching
 > What aspect would you like to explore?
@@ -255,7 +255,7 @@ User: Cluster configuration
 ```
 `````
 
-## /hm:design
+## /spec:design
 
 ````markdown
 ---
@@ -275,7 +275,7 @@ argument-hint: "[--update]"
 
 ## Usage
 ```
-/hm:design [--update]
+/spec:design [--update]
 ```
 - `--update`: Update existing design
 
@@ -317,7 +317,7 @@ Key behaviors:
 
 ### Example 1: New Design
 ```
-/hm:design
+/spec:design
 
 > Creating design from requirements and investigation
 
@@ -328,7 +328,7 @@ Design saved to design.md
 
 ### Example 2: Update Design
 ```
-/hm:design --update
+/spec:design --update
 
 > Found existing design. Updating based on latest findings.
 

@@ -191,7 +191,7 @@ description: "Kiro specification-driven investigation"
 allowed-tools: Read, Write, MultiEdit, Grep, Glob
 ---
 
-# /hm:investigate
+# /spec:investigate
 
 Follow <kiro-spec-driven> in system prompt for investigation phase.
 Focus on investigation nudging behaviors and confidence tracking.
@@ -205,7 +205,7 @@ description: "Technical design from requirements"
 allowed-tools: Read, Write, MultiEdit, Task
 ---
 
-# /hm:design
+# /spec:design
 
 Follow <kiro-spec-driven> in system prompt for design phase.
 Check investigation confidence >70% before proceeding.
@@ -219,7 +219,7 @@ description: "Structured requirement documents"
 allowed-tools: Read, Write, MultiEdit
 ---
 
-# /hm:requirements
+# /spec:requirements
 
 Follow <kiro-spec-driven> in system prompt for requirements phase.
 Use appropriate template (PRD/Bug) based on context.

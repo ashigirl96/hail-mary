@@ -56,10 +56,10 @@ principlesに、orchestrationに全体ルール(静的なもの？)、patterns�
 
 
 
-- `/hm:requirements` をいきなり開始したら、どうなる？
+- `/spec:requirements` をいきなり開始したら、どうなる？
 - tasks.mdに既にrequirementsがcompleteになっている状態で、続けて、仕様を追加したい場合は？
 - designをいきなり開始したら、どうなる？ 
-- requirementsやdesignに関係ない話題で `/hm:investigate` を開始したら、どうなる？
+- requirementsやdesignに関係ない話題で `/spec:investigate` を開始したら、どうなる？
 - investigationをいきなり開始したら、どうなる？
 - claude codeとuserが対話してる中で、requirementsに関する議論なので、requirementsを更新する？とsuggestionをclaude codeが出すか
 - claude codeとuserが対話してる中で、調査結果に関する議論なので、investigationを更新する？とsuggestionをclaude codeが出すか

@@ -5,7 +5,7 @@ allowed-tools: Read, Write, MultiEdit, Grep, Glob
 argument-hint: "[--type prd|bug|tech|pbi] [--issue <github-url>]"
 ---
 
-# /hm:requirements
+# /spec:requirements
 
 Create or update requirements documentation with reactive pattern-based routing.
 

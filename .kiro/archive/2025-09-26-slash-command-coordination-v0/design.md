@@ -81,9 +81,9 @@ tasks.md:  # NEW!
 
 <kiro-orchestrator-routing>
   <!-- SlashCommand toolへの委譲 -->
-  requirements context → SlashCommand(/hm:requirements)
-  investigation context → SlashCommand(/hm:investigate)
-  design context → SlashCommand(/hm:design)
+  requirements context → SlashCommand(/spec:requirements)
+  investigation context → SlashCommand(/spec:investigate)
+  design context → SlashCommand(/spec:design)
   <!-- tasks.mdは各コマンドの副作用として自動更新される -->
 </kiro-orchestrator-routing>
 
@@ -103,7 +103,7 @@ tasks.md:  # NEW!
 
 ### 3. Slash Commands詳細設計
 
-#### 3.1 /hm:requirements（単一責任化）
+#### 3.1 /spec:requirements（単一責任化）
 
 ````markdown
 ---
@@ -133,7 +133,7 @@ Generate/Update requirements.md ONLY
 - Ask "what's next?"
 ````
 
-#### 3.2 /hm:investigate（累積的記録）
+#### 3.2 /spec:investigate（累積的記録）
 
 ````markdown
 ---
@@ -171,7 +171,7 @@ Append findings to investigation.md ONLY
 - Maintain confidence scores
 ````
 
-#### 3.3 /hm:design（Evidence Linking強化）
+#### 3.3 /spec:design（Evidence Linking強化）
 
 ````markdown
 ---
@@ -211,15 +211,15 @@ Generate/Update design.md with evidence links
 ```xml
 <kiro-orchestrator-auto-tracking>
   <!-- 各コマンド実行後に自動的にtasks.mdを更新 -->
-  After /hm:requirements execution:
+  After /spec:requirements execution:
     → Append to Timeline: "[x] Requirements updated → requirements.md#section"
     → Update State Tracking: requirements.md status
 
-  After /hm:investigate execution:
+  After /spec:investigate execution:
     → Append to Timeline: "[x] Investigation: [topic] → investigation.md#section"
     → Update State Tracking: investigation.md confidence level
 
-  After /hm:design execution:
+  After /spec:design execution:
     → Append to Timeline: "[x] Design updated → design.md"
     → Extract and add implementation tasks from design
     → Update State Tracking: design.md status
@@ -311,12 +311,12 @@ When creating design.md:
 ```mermaid
 graph TD
     A["User: 要件にキャッシュ機能追加"] -->|"Natural language"| B["System Prompt: Recognition"]
-    B -->|"SlashCommand tool"| C["/hm:requirements実行"]
+    B -->|"SlashCommand tool"| C["/spec:requirements実行"]
     C --> D["requirements.md更新"]
     D --> E["tasks.md自動更新"]
     E --> F["System Prompt: Check tasks.md"]
     F --> G["Suggest: 調査が必要な項目があります"]
-    G -->|"User: Yes"| H["/hm:investigate実行"]
+    G -->|"User: Yes"| H["/spec:investigate実行"]
     H --> I["investigation.md更新"]
     I --> J["tasks.md自動更新"]
     J --> K["Suggest: 設計の更新が必要です"]

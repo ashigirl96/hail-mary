@@ -85,16 +85,16 @@
 </kiro-orchestrator-tasks-management>
 
 <kiro-orchestrator-routing>
-User: "要件をまとめたい" → SlashCommand(/hm:requirements)
-User: "設計を更新" → SlashCommand(/hm:design --update)
-User: "調査結果を追加" → SlashCommand(/hm:investigate --topic)
+User: "要件をまとめたい" → SlashCommand(/spec:requirements)
+User: "設計を更新" → SlashCommand(/spec:design --update)
+User: "調査結果を追加" → SlashCommand(/spec:investigate --topic)
 User: "進捗を確認" → SlashCommand(/hm:tasks --status)
 </kiro-orchestrator-routing>
 ```
 
 #### 2. Slash Commands (Simplified Pure Executors)
 
-##### /hm:requirements - Requirements Document Manager
+##### /spec:requirements - Requirements Document Manager
 
 ````yaml
 ---
@@ -141,7 +141,7 @@ Template:
 ```
 ````
 
-##### /hm:investigate - Investigation Accumulator
+##### /spec:investigate - Investigation Accumulator
 
 ````yaml
 ---
@@ -187,7 +187,7 @@ Template:
 ```
 ````
 
-##### /hm:design - Design Document Manager
+##### /spec:design - Design Document Manager
 
 ````yaml
 ---
@@ -248,9 +248,9 @@ Template:
   - ユーザーの直接操作不要
 
 更新タイミング:
-  - /hm:requirements実行 → Timeline自動追加
-  - /hm:investigate実行 → Timeline自動追加 + State更新
-  - /hm:design実行 → Timeline自動追加 + State更新
+  - /spec:requirements実行 → Timeline自動追加
+  - /spec:investigate実行 → Timeline自動追加 + State更新
+  - /spec:design実行 → Timeline自動追加 + State更新
 
 閲覧方法:
   - "進捗を見せて" → System PromptがRead tasks.md実行
@@ -400,7 +400,7 @@ On any command:
 
 <kiro-nudging-rules>
 IF user_says("要件") AND !exists(requirements.md):
-  → "要件から始めましょう" → SlashCommand(/hm:requirements)
+  → "要件から始めましょう" → SlashCommand(/spec:requirements)
 
 IF user_says("設計") AND investigation.status != "complete":
   → "先に調査を完了させると良いですよ (Confidence: {level}%)"
@@ -413,9 +413,9 @@ IF task.blocked:
 </kiro-nudging-rules>
 
 <kiro-command-mapping>
-"要件をまとめて" → /hm:requirements
-"調査して" → /hm:investigate
-"設計を更新" → /hm:design --update
+"要件をまとめて" → /spec:requirements
+"調査して" → /spec:investigate
+"設計を更新" → /spec:design --update
 "進捗を見せて" → Read tasks.md (System Prompt実行)
 "状態を確認" → Read tasks.md#state-tracking (System Prompt実行)
 </kiro-command-mapping>
@@ -429,9 +429,9 @@ User: "セキュリティ要件を追加したい"
 System: [Recognition: requirements + security]
         [Check: tasks.md → requirements.md is complete]
         [Nudge]: "要件を更新しますね"
-        [Execute]: SlashCommand(/hm:requirements)
+        [Execute]: SlashCommand(/spec:requirements)
 
-/hm:requirements:
+/spec:requirements:
   1. Update requirements.md with security section
   2. Add to tasks.md:
      - Timeline: "14:00: Security requirements added"
@@ -444,7 +444,7 @@ System: [Check: tasks.md → new impact detected]
 
 User: "はい、調査して"
 
-System: [Execute]: SlashCommand(/hm:investigate --topic security)
+System: [Execute]: SlashCommand(/spec:investigate --topic security)
 ```
 
 ## Key Benefits
