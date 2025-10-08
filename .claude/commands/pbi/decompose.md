@@ -13,14 +13,19 @@ Decompose Product Backlog Item into Sprint Backlog Items.
 ### Will
 - **Parse PBI requirements.md** - Extract all `### sbi-X-[title]` sections with types
 - **Validate SBI names** - Enforce lowercase kebab-case format
+- **Validate SBI content** - Ensure sections contain business/functional requirements only
 - **Create SBI directories** - One directory per SBI with requirements.md only
-- **Apply correct templates** - Use PRD/Bug/Tech templates based on type
+- **Apply correct templates** - Use PRD/Bug/Tech templates based on `requirements type:` field
+- **Transfer business requirements** - Move functional/user-focused content from PBI sections
 
 ### Will Not
 - **Proceed without PBI requirements.md** - Must have PBI requirements first
 - **Create tasks.md/memo.md** - SBI files created when developer starts working
 - **Create PBI tasks.md** - Pattern Router doesn't manage PBI-level tasks.md
 - **Overwrite existing SBIs** - Error if SBI directory already exists
+- **Transfer technical implementation** - No code, file paths, library names, or architecture details
+- **Include investigation findings** - Technical details belong in each SBI's investigation.md
+- **Proceed with invalid content** - Warn if PBI sections contain technical implementation details
 
 ## Behavioral Flow
 
