@@ -1,0 +1,2 @@
+# Memo: rename-slash-command
+

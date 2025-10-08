@@ -15,10 +15,10 @@
 
 | User Pattern | Action | Strategy Output |
 |-------------|--------|-----------------|
-| "/hm:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/hm:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/hm:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/hm:timeline", "plan implementation" | Timeline Planning | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
+| "/spec:timeline", "plan implementation" | Timeline Planning | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 
 **IMPLICIT Patterns**:
 
@@ -55,28 +55,28 @@ Input Processing:
 
 Example Routing Decisions:
 
-Input: "/hm:requirements"
+Input: "/spec:requirements"
 → Class: EXPLICIT
 → Confidence: 1.0
 → Strategy: command
 → Components: ["hub", "gates", "workflows", "document", "nudges"]
 → Route to: Command Pipeline
 
-Input: "/hm:investigate --topic jwt-implementation"
+Input: "/spec:investigate --topic jwt-implementation"
 → Class: EXPLICIT
 → Confidence: 1.0
 → Strategy: command
 → Components: ["hub", "gates", "workflows", "document", "nudges"]
 → Route to: Command Pipeline
 
-Input: "/hm:design"
+Input: "/spec:design"
 → Class: EXPLICIT
 → Confidence: 1.0
 → Strategy: command
 → Components: ["hub", "gates", "workflows", "document", "nudges"]
 → Route to: Command Pipeline
 
-Input: "/hm:timeline"
+Input: "/spec:timeline"
 → Class: EXPLICIT
 → Confidence: 1.0
 → Strategy: command

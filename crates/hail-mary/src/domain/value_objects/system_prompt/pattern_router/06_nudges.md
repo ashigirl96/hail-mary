@@ -13,17 +13,17 @@
 
 ### After Requirements Complete (event: `requirements:nudge-next`)
 - "Investigation topics defined: [list]"
-- "Start with `/hm:investigate --topic [first-topic]` for specific topic, or `/hm:investigate` to investigate all?"
+- "Start with `/spec:investigate --topic [first-topic]` for specific topic, or `/spec:investigate` to investigate all?"
 
 ### After Investigation Topic Complete (event: `investigation:nudge-next`)
 - "Topic complete. Coverage: X/Y (N%). Continue with [next-topic]?"
 - "Investigation X/Y done. Remaining: [list]. Which next?"
 - If high coverage: "Almost done! Only [remaining] topic(s) left"
-- If 100%: "All investigations complete! Any additional topics to investigate? If not, use `/hm:design` to create design?"
+- If 100%: "All investigations complete! Any additional topics to investigate? If not, use `/spec:design` to create design?"
 
 ### After Design Complete (event: `design:nudge-next`)
 - "Does this design approach work for you?"
-- "Implementation order: [file1] → [file2] → [file3]. Add with `/hm:timeline`, or would you like to adjust?"
+- "Implementation order: [file1] → [file2] → [file3]. Add with `/spec:timeline`, or would you like to adjust?"
 
 ### After Timeline Update (event: `timeline:nudge-next`)
 - "Implementation plan added to Timeline! [N] phases, [M] total tasks."

@@ -44,7 +44,7 @@
 **Timeline Planning without Design**:
 - Check: <design-file> exists and has content
 - Action: ⚠️ **WARNING** with guidance
-- Message: "⚠️ No design found. Create design first with `/hm:design`, or describe what you want to implement?"
+- Message: "⚠️ No design found. Create design first with `/spec:design`, or describe what you want to implement?"
 - Applies to: Command Pipeline only
 
 ## Suggestion Gates (Suggestion Pipeline Only)
@@ -75,7 +75,7 @@
 
 ```
 Command Pipeline Example:
-Input: "/hm:design"
+Input: "/spec:design"
 Gates Applied: All document validation gates
 Result: May block if requirements/investigation incomplete
 
@@ -95,7 +95,7 @@ Gates Applied: Emergency override
 Result: Bypass all gates, immediate assistance
 
 Timeline Planning Example:
-Input: "/hm:timeline"
+Input: "/spec:timeline"
 Gates Applied: Timeline Planning without Design
 Result: Warning if no design.md, but proceed if user provides details
 ```

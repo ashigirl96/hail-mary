@@ -206,7 +206,7 @@ impl SteeringRepositoryInterface for SteeringRepository {
 
     fn deploy_slash_commands(&self) -> Result<(), ApplicationError> {
         use crate::infrastructure::embedded_resources::{
-            EmbeddedAgents, EmbeddedPbiCommands, EmbeddedSlashCommands,
+            EmbeddedAgents, EmbeddedPbiCommands, EmbeddedSlashCommands, EmbeddedSpecCommands,
         };
 
         // Create .claude directory structure
@@ -235,6 +235,17 @@ impl SteeringRepositoryInterface for SteeringRepository {
             })?;
         }
 
+        // Remove existing .claude/commands/spec directory to ensure clean deployment
+        let spec_dir = commands_dir.join("spec");
+        if spec_dir.exists() {
+            fs::remove_dir_all(&spec_dir).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to remove existing .claude/commands/spec directory: {}",
+                    e
+                ))
+            })?;
+        }
+
         // Create .claude/commands/hm directory
         fs::create_dir_all(&hm_dir).map_err(|e| {
             ApplicationError::FileSystemError(format!(
@@ -247,6 +258,14 @@ impl SteeringRepositoryInterface for SteeringRepository {
         fs::create_dir_all(&pbi_dir).map_err(|e| {
             ApplicationError::FileSystemError(format!(
                 "Failed to create .claude/commands/pbi directory: {}",
+                e
+            ))
+        })?;
+
+        // Create .claude/commands/spec directory
+        fs::create_dir_all(&spec_dir).map_err(|e| {
+            ApplicationError::FileSystemError(format!(
+                "Failed to create .claude/commands/spec directory: {}",
                 e
             ))
         })?;
@@ -277,6 +296,17 @@ impl SteeringRepositoryInterface for SteeringRepository {
             fs::write(&file_path, content).map_err(|e| {
                 ApplicationError::FileSystemError(format!(
                     "Failed to write PBI command {}: {}",
+                    name, e
+                ))
+            })?;
+        }
+
+        // Deploy embedded spec commands (always overwrite for consistency)
+        for (name, content) in EmbeddedSpecCommands::get_all() {
+            let file_path = spec_dir.join(name);
+            fs::write(&file_path, content).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to write spec command {}: {}",
                     name, e
                 ))
             })?;

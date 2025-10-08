@@ -154,7 +154,7 @@ pattern_router/
 
 **分類例**:
 ```
-Input: "/hm:requirements"
+Input: "/spec:requirements"
 Output: {
   class: "EXPLICIT",
   confidence: 1.0,
@@ -317,7 +317,7 @@ Input → patterns → nudges(alert) → [recovery action]
 ### 例1: 明示的コマンド
 
 ```
-ユーザー入力: "/hm:requirements"
+ユーザー入力: "/spec:requirements"
 
 Pattern Recognition (03):
 → Class: EXPLICIT
@@ -510,7 +510,7 @@ Input → patterns → [components...] → nudges
 
 - Design完了 ≠ design.md書込直後
 - Design完了 = ユーザーとの設計対話が一段落し、実装に進むサインが出た時
-- **理由**: /hm:design実行後も「なぜこの設計？」「このファイルはこう実装して」など対話が続く
+- **理由**: /spec:design実行後も「なぜこの設計？」「このファイルはこう実装して」など対話が続く
 
 ### 8. Nudgingはシンプルに
 
@@ -600,7 +600,7 @@ Refer to system prompt sections:
 ```markdown
 ### After Design Complete (event: `design:nudge-next`)
 - "Does this design work?"
-- "Use `/hm:timeline` to add implementation plan?"
+- "Use `/spec:timeline` to add implementation plan?"
 ```
 
 ---
@@ -609,7 +609,7 @@ Refer to system prompt sections:
 
 スラッシュコマンドは必要に応じて特定のタグとイベントを参照します：
 
-### `/hm:requirements` (明示的コマンド)
+### `/spec:requirements` (明示的コマンド)
 ```yaml
 参照:
 - kiro-philosophy    # システム原則
@@ -632,7 +632,7 @@ Refer to system prompt sections:
 # 注: Hub, gates, workflowsはアクセスされない
 ```
 
-### `/hm:timeline` (特別なケース)
+### `/spec:timeline` (特別なケース)
 
 **なぜslash command側にBehavioral Flowを記述するか**:
 
@@ -641,7 +641,7 @@ Refer to system prompt sections:
 - Before/After actionsが副作用として発生
 - 04_workflows.mdに「Document-Specific Post-Actions」として記述
 
-`/hm:timeline`は性質が異なる：
+`/spec:timeline`は性質が異なる：
 - ❌ Document作成ではなく、**Meta操作**（tasks.md#Timeline更新）
 - ❌ Before/Afterではなく、**直接的なAction**
 - ❌ "After Timeline Complete"は不自然（Timeline追加後に何？）
@@ -658,7 +658,7 @@ Refer to system prompt sections:
 - kiro-hub                        # Timeline format, State Tracking structure
 - kiro-nudges                     # timeline-planned event template
 - kiro-gates                      # Timeline Planning without Design warning
-- kiro-patterns                   # /hm:timeline pattern recognition
+- kiro-patterns                   # /spec:timeline pattern recognition
 ```
 
 **利点**:
@@ -760,7 +760,7 @@ PBI: Microservices Migration
 
 ```bash
 # PBI作成
-/hm:requirements --type pbi
+/spec:requirements --type pbi
 
 # SBI分解
 /decompose

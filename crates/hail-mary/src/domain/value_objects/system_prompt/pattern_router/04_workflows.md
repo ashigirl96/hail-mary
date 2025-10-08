@@ -102,7 +102,7 @@ Input → patterns → nudges(alert) → [recovery action]
 
 ```
 Example 1: Explicit Command
-Input: "/hm:requirements"
+Input: "/spec:requirements"
 Pattern Output: {class: "EXPLICIT", strategy: "command"}
 Selected Pipeline: Command Pipeline
 Flow: Full routing with all components

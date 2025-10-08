@@ -187,22 +187,35 @@ mod tests {
         let result = cmd.execute();
         assert!(result.is_ok());
 
-        // Verify slash commands were deployed
+        // Verify hm commands were deployed
         let hm_dir = Path::new(".claude/commands/hm");
         assert!(hm_dir.exists(), ".claude/commands/hm should exist");
 
-        // Check all expected command files
-        let expected_commands = [
-            "steering-remember.md",
-            "steering.md",
+        let expected_hm_commands = ["steering-remember.md", "steering.md"];
+        for file in &expected_hm_commands {
+            let file_path = hm_dir.join(file);
+            assert!(file_path.exists(), "HM command file {} should exist", file);
+
+            // Verify content
+            let content = fs::read_to_string(&file_path).unwrap();
+            assert!(!content.is_empty(), "File {} should have content", file);
+        }
+
+        // Verify spec commands were deployed
+        let spec_dir = Path::new(".claude/commands/spec");
+        assert!(spec_dir.exists(), ".claude/commands/spec should exist");
+
+        let expected_spec_commands = [
             "requirements.md",
             "investigate.md",
+            "design.md",
+            "timeline.md",
         ];
-        for file in &expected_commands {
-            let file_path = hm_dir.join(file);
+        for file in &expected_spec_commands {
+            let file_path = spec_dir.join(file);
             assert!(
                 file_path.exists(),
-                "Slash command file {} should exist",
+                "Spec command file {} should exist",
                 file
             );
 
