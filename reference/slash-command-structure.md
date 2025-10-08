@@ -55,7 +55,7 @@ Call slash command → Key Patterns → Boundaries → Behavioral Flow (with Key
 3. **実行時の論理的フロー**: 入力受付 → 解釈・変換 → 制約確認 → 準備 → 実行
 4. **フィードバックループの明示**: Behavioral Flow内でループポイントを明確に示し、[STOP]マーカーで対話ポイントを明示
 
-### `/hm:requirements`への適用例
+### `/spec:requirements`への適用例
 
 ````markdown
 ---
@@ -71,7 +71,7 @@ category: workflow
 
 ## Usage
 ```
-/hm:requirements [--type prd|bug] [--issue <github-url>]
+/spec:requirements [--type prd|bug] [--issue <github-url>]
 ```
 
 ## Key Patterns
@@ -223,7 +223,7 @@ graph TD
     - Session-based optimization
 ```
 
-### `/hm:requirements`への適用例
+### `/spec:requirements`への適用例
 
 ````markdown
 ---
@@ -242,7 +242,7 @@ personas: [analyst, architect]
 
 ## Usage
 ```
-/hm:requirements [--type prd|bug] [--issue <url>]
+/spec:requirements [--type prd|bug] [--issue <url>]
 ```
 
 ## Key Patterns (戦略決定)

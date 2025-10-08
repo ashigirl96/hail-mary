@@ -649,12 +649,12 @@ Refer to system prompt sections:
 
 したがって：
 - 04_workflows.mdの「Post-Actions」には合わない
-- Slash command側（.claude/commands/hm/timeline.md）にBehavioral Flowを記述
+- Slash command側（.claude/commands/spec/timeline.md）にBehavioral Flowを記述
 - System promptは参照のみ（<kiro-hub>, <kiro-nudges>）
 
 ```yaml
 記述場所:
-- .claude/commands/hm/timeline.md  # Behavioral Flow（7ステップ）
+- .claude/commands/spec/timeline.md  # Behavioral Flow（7ステップ）
 - kiro-hub                        # Timeline format, State Tracking structure
 - kiro-nudges                     # timeline-planned event template
 - kiro-gates                      # Timeline Planning without Design warning
