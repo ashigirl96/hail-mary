@@ -33,6 +33,7 @@
 
 | User Pattern | Strategy Output |
 |-------------|-----------------|
+| "/spec:status" | `{class: "QUERY", strategy: "diagnostic", components: ["hub(read)", "nudges"]}` |
 | "what's next", "continue" | `{class: "QUERY", strategy: "diagnostic", components: ["hub(read)", "nudges"]}` |
 | "status", "progress" | `{class: "QUERY", strategy: "diagnostic", components: ["hub(read)", "nudges"]}` |
 | "show me", "list" | `{class: "QUERY", strategy: "diagnostic", components: ["hub(read)", "nudges"]}` |
@@ -96,6 +97,13 @@ Input: "Users need to log in with email"
 → Strategy: suggestion
 → Components: ["accumulate", "nudges"]
 → Route to: Suggestion Pipeline (no hub access)
+
+Input: "/spec:status"
+→ Class: QUERY
+→ Confidence: 1.0
+→ Strategy: diagnostic
+→ Components: ["hub(read)", "nudges"]
+→ Route to: Diagnostic Pipeline (read-only)
 
 Input: "What's the current status?"
 → Class: QUERY

@@ -13,13 +13,12 @@ crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/09_design
 crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/10_spec_files.md
 crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/index.md
 crates/hail-mary/src/domain/value_objects/system_prompt/mod.rs
-を全て読んだ上で、 Pattern Router Framework(@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/README.md) がなにか理解してください
-
+を全て読んだ上で、 Pattern Router Framework(@crates/hail-mary/src/domain/value_objects/system_prompt/pattern_router/README.md) がなにか理解してから、
 @crates/hail-mary/src/cli/commands/code.rs, @crates/hail-mary/src/application/use_cases/launch_claude_with_spec.rs を使うと、Pattern Router Frameworkをsystem promptとして埋め込んで、
-@.claude/commands/hm/design.md
-@.claude/commands/hm/requirements.md
-@.claude/commands/hm/investigate.md
-@.claude/commands/hm/timeline.md
+@.claude/commands/spec/design.md
+@.claude/commands/spec/requirements.md
+@.claude/commands/spec/investigate.md
+@.claude/commands/spec/timeline.md
 などを使って、spec drivenな開発ができるところまで理解しなさい
 
 現在、Pattern Router Frameworkは期待通りの挙動をしている。

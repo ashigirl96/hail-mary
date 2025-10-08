@@ -41,6 +41,9 @@ impl EmbeddedSpecCommands {
     /// Timeline command documentation
     const TIMELINE: &'static str = include_str!("../../../../.claude/commands/spec/timeline.md");
 
+    /// Status command documentation
+    const STATUS: &'static str = include_str!("../../../../.claude/commands/spec/status.md");
+
     /// Returns all embedded spec command files as (filename, content) pairs
     pub fn get_all() -> Vec<(&'static str, &'static str)> {
         vec![
@@ -48,6 +51,7 @@ impl EmbeddedSpecCommands {
             ("investigate.md", Self::INVESTIGATE),
             ("design.md", Self::DESIGN),
             ("timeline.md", Self::TIMELINE),
+            ("status.md", Self::STATUS),
         ]
     }
 }
@@ -134,7 +138,7 @@ mod tests {
     #[test]
     fn test_embedded_spec_commands_not_empty() {
         let files = EmbeddedSpecCommands::get_all();
-        assert_eq!(files.len(), 4);
+        assert_eq!(files.len(), 5);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");
