@@ -1,7 +1,6 @@
 ---
 name: investigate
 description: "Technical investigation for Kiro specs - triggered by: investigate, research, verify, explore, 調査, 検証"
-allowed-tools: Read, Write, MultiEdit, Grep, Glob
 argument-hint: "[--topic <name>]"
 ---
 

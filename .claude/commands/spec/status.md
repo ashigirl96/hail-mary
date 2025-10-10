@@ -1,8 +1,6 @@
 ---
 name: status
 description: "Show current spec progress - triggered by: status, session resume, progress check"
-category: utility
-complexity: basic
 allowed-tools: Read
 ---
 
