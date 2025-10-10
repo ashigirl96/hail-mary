@@ -27,7 +27,7 @@ Add a new Sprint Backlog Item to the current Product Backlog Item.
 - **Update PBI requirements.md** - Add new SBI section
 
 ### Will Not
-- **Proceed without argument** - Must provide `<sbi-name>`
+- **Proceed without argument** - Must provide <sbi-name>
 - **Work outside PBI** - Error if not in PBI context
 - **Accept invalid names** - Reject non-kebab-case names
 - **Create tasks.md/memo.md** - SBI files created when developer starts working
