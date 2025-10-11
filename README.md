@@ -73,13 +73,7 @@ just build
 # Build specific package
 just build-package hail-mary
 
-# Initialize a new project (idempotent - safe to run multiple times)
-cargo run --package hail-mary -- init
-
-# Create a new feature specification
-cargo run --package hail-mary -- new my-feature
-
-# Launch Claude Code with Kiro context
+# Initialize and work with specs (unified command)
 cargo run --package hail-mary -- code
 ```
 
@@ -107,11 +101,13 @@ The project uses a Cargo workspace structure for better modularity:
 ### Project Initialization
 
 ```bash
-# Initialize new Kiro project with .kiro directory structure
-# This command is idempotent - safe to run multiple times
-# Creates steering system, config, and directory structure
-hail-mary init
+# Initialize and work with Kiro projects (unified command)
+# Automatically initializes project if needed (idempotent)
+# Provides interactive TUI for spec management
+hail-mary code
 ```
+
+The `code` command automatically initializes the project if needed (idempotent).
 
 ### Claude Code Integration
 
@@ -127,11 +123,9 @@ hail-mary code --no-danger
 ### Feature Specification Management
 
 ```bash
-# Create new feature specification
-hail-mary new user-authentication-system
-
-# Create feature with custom name validation
-hail-mary new api-rate-limiting-v2
+# Create new specification (interactive TUI)
+hail-mary code
+# Navigate to "Create New" → Enter spec name
 
 # Mark completed specifications as done (interactive TUI)
 hail-mary complete
@@ -333,11 +327,10 @@ cargo test --test integration_repository_test
 ### Specification Management Workflow
 
 1. **Initialize**: Set up `.kiro` directory and steering system with `hail-mary init`
-2. **Create**: Generate new feature specifications with `hail-mary new <feature-name>`
-3. **Develop**: Work on features in `.kiro/specs/<date-feature-name>/` directories
-4. **Integrate**: Use `hail-mary code` to launch Claude Code with specification context
-5. **Complete**: Use interactive TUI with `hail-mary complete` to mark specs as done
-6. **Archive**: Completed specs are moved to `.kiro/archive/` for reference
+2. **Create & Develop**: Use `hail-mary code` for unified workflow (initialize + create/select spec + launch Claude)
+3. **Work**: Develop features in `.kiro/specs/<date-feature-name>/` directories
+4. **Complete**: Use interactive TUI with `hail-mary complete` to mark specs as done
+5. **Archive**: Completed specs are moved to `.kiro/archive/` for reference
 
 ### Steering System Workflow
 

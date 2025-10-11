@@ -106,11 +106,11 @@ just setup             # Complete development setup
 
 ### Application Usage
 ```bash
-# Project management
-hail-mary init                           # Initialize .kiro directory
-hail-mary new <feature-name>             # Create feature specification
+# Unified workflow
+hail-mary code [--no-danger]             # Initialize + Create/Select spec + Launch Claude
+
+# Spec management
 hail-mary complete                       # Interactive spec completion
-hail-mary code [--no-danger]             # Launch Claude Code
 
 # Steering operations
 hail-mary steering backup                # Backup steering files

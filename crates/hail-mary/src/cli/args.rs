@@ -11,15 +11,6 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Initialize a new project
-    Init,
-
-    /// Create a new specification
-    New {
-        /// Spec name in kebab-case
-        name: String,
-    },
-
     /// Generate shell completion scripts
     #[command(name = "shell-completions")]
     Completion {
@@ -83,14 +74,6 @@ pub enum Shell {
 }
 
 impl Commands {
-    pub fn is_init(&self) -> bool {
-        matches!(self, Commands::Init)
-    }
-
-    pub fn is_new(&self) -> bool {
-        matches!(self, Commands::New { .. })
-    }
-
     pub fn is_completion(&self) -> bool {
         matches!(self, Commands::Completion { .. })
     }
@@ -105,13 +88,6 @@ impl Commands {
 }
 
 impl Commands {
-    pub fn get_new_name(&self) -> Option<&str> {
-        match self {
-            Commands::New { name } => Some(name.as_str()),
-            _ => None,
-        }
-    }
-
     pub fn get_completion_shell(&self) -> Option<&Shell> {
         match self {
             Commands::Completion { shell } => Some(shell),
@@ -142,36 +118,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_cli_parse_init_command() {
-        let cli = Cli::parse_from(["hail-mary", "init"]);
-        assert!(cli.command.is_init());
-    }
-
-    #[test]
-    fn test_cli_parse_new_command() {
-        let cli = Cli::parse_from(["hail-mary", "new", "my-feature"]);
-        assert!(cli.command.is_new());
-        assert_eq!(cli.command.get_new_name(), Some("my-feature"));
-    }
-
-    #[test]
     fn test_commands_is_methods() {
-        let init_cmd = Commands::Init;
-        assert!(init_cmd.is_init());
-        assert!(!init_cmd.is_new());
-
-        let new_cmd = Commands::New {
-            name: "test".to_string(),
-        };
-        assert!(!new_cmd.is_init());
-        assert!(new_cmd.is_new());
-
         let code_cmd = Commands::Code {
             no_danger: false,
             continue_conversation: false,
         };
-        assert!(!code_cmd.is_init());
-        assert!(!code_cmd.is_new());
         assert!(code_cmd.is_code());
     }
 }

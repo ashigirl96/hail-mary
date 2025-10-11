@@ -27,7 +27,7 @@ impl CompleteCommand {
             Err(_) => {
                 println!(
                     "{}",
-                    format_error("Not in a project directory. Run 'hail-mary init' first.")
+                    format_error("Not in a project directory. Run 'hail-mary code' to initialize.")
                 );
                 return Err(anyhow::anyhow!("Project not found"));
             }

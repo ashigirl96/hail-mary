@@ -1,0 +1,23 @@
+# Memo: with-agent
+
+現在、Pattern Router Frameworkは期待通りに動作している。
+特にdesignをするときにinvestigateした結果をevidenceにしているので、安心してdesignに取り組める。
+しかし、課題としてinvestigateに必ずしも網羅性やシステム的な深掘りがないことがある。
+現在のusecaseとしてはrequirementsを生成したタイミングでinvestigateするtopicを設定しているが、それ自体も正しいかわからない。漏れが発生している可能性もあるし、
+investigate自体の結果も先程書いたように複雑で大きなシステムで網羅的に調査できているかは不明である。
+故に、investigateの質を上げることが必要である。
+現在考えているのは、2つある
+- designに必要なinvestigation topicの網羅性
+- topicからinvestigationをより精緻に調査すること
+とりあえず、後者のinvestigationの質を上げることを考える。
+そのために、subagentを使う案が考えられるが、topicごとに単純にsubagentを起動することで果たして網羅的に調査ができるのかが不明である。
+なんなら1つのtopicに対して複数のsubagentを起動することも考えられる。
+木探索のように網羅的に考えることもできる？
+SuperClaude/Agents/deep-research-agent.md のようなsubagentがあればいいのか？
+
+`/spec:investigate` に`--deep` が付いてたらsubagentを使えるようにしようか
+
+そして、明示的にtopicが明示されていなければ、それぞれのtopicについてsubagentを起動してinvestigateさせる。
+subagentは、新しくメンバーに入って詳細の仕組みまで納得しないと実装を開始できないシニアエンジニア。
+`/spec:investigate`をしたら、現在どのpbi requirementsやrequirementsを渡すようにして、特にどのtopicに集中してinvestigateするかを指示する。
+各subagentは、現在のtopicに集中するんだけど、requirementsのどこを集中して調査すべきか判断する
