@@ -8,17 +8,18 @@ argument-hint: "[--type prd|bug|tech|pbi] [--issue <github-url>]"
 
 Create or update requirements documentation with reactive pattern-based routing.
 
-Refer to system prompt sections:
+Follow <kiro-workflows> Command Pipeline:
+- Before documentation: execute event id="requirements:pre-action"
+- After complete: execute event id="requirements:post-action"
+- Next action: execute event id="requirements:nudge-next" from <kiro-nudges>
+
+Additional context:
 - <kiro-philosophy> for reactive pattern routing
 - <kiro-principles> for universal operational rules
 - <kiro-hub> for tasks.md central control mechanism
 - <kiro-patterns> for pattern recognition and mapping
-- <kiro-workflows> Before documentation: `requirements:pre-action`, After complete: `requirements:post-action`
 - <kiro-gates> for validation gates (if any)
-- <kiro-nudges> Next action suggestion: `requirements:nudge-next`
 - <kiro-requirements> for requirements document structure and template selection
-
-All execution details, rules, and behaviors are defined in these system prompt sections.
 
 ## Key Patterns
 

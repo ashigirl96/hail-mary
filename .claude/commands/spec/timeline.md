@@ -15,11 +15,10 @@ Plan implementation order from design and add to Timeline.
 4. Confirm phase structure with user
 5. Add to <tasks-file>#Timeline with phase format
 6. Update State Tracking: tasks.md#Timeline = pending (0%)
-7. Trigger nudge event: `timeline:nudge-next`
+7. Execute event id="timeline:nudge-next" from <kiro-nudges>
 
-Refer to system prompt sections:
+Additional context:
 - <kiro-philosophy> for reactive pattern routing
 - <kiro-principles> for universal operational rules
 - <kiro-hub> for Timeline format and State Tracking
 - <kiro-gates> for validation gates
-- <kiro-nudges> Next action suggestion: `timeline:nudge-next`
