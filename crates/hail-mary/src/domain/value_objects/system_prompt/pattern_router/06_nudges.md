@@ -13,7 +13,6 @@
 
 ### After Requirements Complete
 <event id="requirements:nudge-next">
-
 **If PBI type:**
 - "SBI sections defined: [list of sbi-X-names with types]"
 - "Next: `/pbi:decompose` to create individual SBI directories"
@@ -23,7 +22,6 @@
 **If PRD/Bug/Tech type (Single Spec):**
 - "Investigation topics defined: [list]"
 - "Start with `/spec:investigate --topic [first-topic]` for specific topic, or `/spec:investigate` to investigate all?"
-
 </event>
 
 ### After Investigation Topic Complete

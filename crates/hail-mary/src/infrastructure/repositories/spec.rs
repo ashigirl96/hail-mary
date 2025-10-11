@@ -64,9 +64,6 @@ impl SpecRepository {
         let tasks_content = format!(
             r#"# Tasks
 
-## Required Investigations
-*Topics will be defined after requirements completion*
-
 ## State Tracking
 
 | Document | Status | Coverage | Next Action |

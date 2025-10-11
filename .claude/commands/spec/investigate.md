@@ -8,6 +8,10 @@ argument-hint: "[--topic <name>] [--deep]"
 
 Conduct technical research and append findings with reactive pattern-based routing.
 
+**Depth-Based Routing**:
+- Timeline with (deep-dive) label → Use Task agent for investigation
+- Default (no label) → Direct investigation
+
 Follow <kiro-workflows> Command Pipeline:
 - After topic complete: execute event id="investigation:post-action"
 - Next action: execute event id="investigation:nudge-next" from <kiro-nudges>

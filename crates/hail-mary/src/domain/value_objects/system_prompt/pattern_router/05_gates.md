@@ -24,7 +24,7 @@
 - Applies to: Command Pipeline only
 
 **Investigation without Topics**:
-- Check: Required Investigations checklist exists
+- Check: Timeline contains investigation items
 - Action: ⚠️ **WARNING** with suggestion
 - Message: "⚠️ Define investigation topics in requirements first?"
 - Applies to: Command Pipeline only

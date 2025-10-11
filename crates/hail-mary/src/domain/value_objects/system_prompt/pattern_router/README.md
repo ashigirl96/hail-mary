@@ -217,8 +217,8 @@ Input → patterns → nudges(alert) → [recovery action]
 - 最小限の状態チェック
 
 **ドキュメント固有の後処理** (Command Pipelineのみ):
-- Requirements完了後: 調査トピックをtasks.mdチェックリストに抽出
-- Investigation完了後: カバレッジ計算、トピックチェック
+- Requirements完了後: 調査トピックをdepth assessment (standard/deep-dive) と共にTimelineに追加
+- Investigation完了後: Timelineでトピックをチェック、カバレッジ計算
 - Design完了後: 実装タスクをタイムラインに抽出
 
 ### 02_hub.md - 条件付き状態管理
@@ -236,15 +236,14 @@ Input → patterns → nudges(alert) → [recovery action]
 
 **状態追跡構造**:
 - **State Tracking Table**: ドキュメント状態、カバレッジ、次アクション
-- **Required Investigations Checklist**: トピック完了追跡
-- **Timeline**: ドキュメントリンク付きアクション履歴
+- **Timeline**: Investigation items with depth labels (deep-dive), document links, execution history
 
 **重要な洞察**: Hubは**必須ステップではない** - 選択されたパイプラインが永続化を必要とする時のみ起動される条件付きコンポーネント。
 
 ### tasks.md更新クイックリファレンス
 
 **更新タイミング** (`04_workflows.md`): BEFORE Protocol (pending→in-progress)、AFTER Protocol (in-progress→complete)、Document-Specific Post-Actions
-**更新内容** (`02_hub.md`): State Tracking Table、Required Investigations Checklist、Timeline with links
+**更新内容** (`02_hub.md`): State Tracking Table、Timeline with investigation items (depth labels), document links
 **アクセス権限** (`01_principles.md`): Command Pipeline (完全R/W)、Suggestion Pipeline (アクセスなし)、Diagnostic Pipeline (読取専用)、Recovery Pipeline (最小限)
 
 ### 05_gates.md - 戦略固有の検証
@@ -590,17 +589,22 @@ Refer to system prompt sections:
 
 **04_workflows.md**:
 ```markdown
-**After Design Complete** (event: `design:post-action`):
-1. Mark complete
-2. Present summary
-3. Trigger nudge event: `design:nudge-next`
+**After Design Complete**:
+<event id="design:post-action">
+1. Mark design.md = complete in State Tracking
+2. Add to Timeline: `[x] Design completed → design.md#overview`
+3. Present design summary to user: approach, key decisions, and implementation file order
+4. Trigger nudge event: `design:nudge-next`
+</event>
 ```
 
 **06_nudges.md**:
 ```markdown
-### After Design Complete (event: `design:nudge-next`)
-- "Does this design work?"
-- "Use `/spec:timeline` to add implementation plan?"
+### After Design Complete
+<event id="design:nudge-next">
+- "Does this design approach work for you?"
+- "Implementation order: [file1] → [file2] → [file3]. Add with `/spec:timeline`, or would you like to adjust?"
+</event>
 ```
 
 ---

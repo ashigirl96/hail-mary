@@ -31,22 +31,15 @@
   - Others: "-" (not applicable)
 - **Next Action**: Next action in document's sequence (or "-" if complete)
 
-**Required Investigations Checklist**:
-```markdown
-## Required Investigations
-- [x] jwt-implementation → investigation.md#jwt-implementation
-- [x] database-schema → investigation.md#database-schema
-- [ ] session-management
-- [ ] password-reset-flow
-- [ ] security-best-practices
-```
-
 **Timeline Format**:
 ```markdown
 ## Timeline
 - [x] Requirements defined → requirements.md#overview
-- [x] All investigations complete → investigation.md
-- [x] Design completed → design.md#overview
+- [x] jwt-implementation → investigation.md#jwt-implementation
+- [x] database-schema → investigation.md#database-schema
+- [ ] session-management (deep-dive)
+- [ ] password-reset-flow
+- [ ] Design completed → design.md#overview
 - [x] Implementation plan agreed with user
 - [x] phase1: Core Authentication → design.md#auth-service
   - [x] Implement JWT service (jose library)

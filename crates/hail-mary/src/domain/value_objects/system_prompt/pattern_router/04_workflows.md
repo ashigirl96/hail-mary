@@ -34,14 +34,14 @@ Input → patterns → hub → gates → workflows(BEFORE) → document → work
 
 **BEFORE Protocol** (Command Pipeline only):
 1. Read current <tasks-file> state
-2. Add task with `status: pending`
+2. Add task to Timeline with `status: pending`
 3. Update to `status: in-progress` when starting
 
 **AFTER Protocol** (Command Pipeline only):
-1. Update task to `status: complete`
-2. Record links to affected documents
+1. Mark [x] in Timeline for completed task
+2. Update State Tracking
 3. Execute document-specific post-actions
-4. Generate next action suggestion
+4. Trigger nudge
 
 ### Suggestion Pipeline (IMPLICIT class)
 ```
@@ -130,10 +130,12 @@ Flow: Immediate nudge alert, bypass gates
 
 **Before Requirements**:
 <event id="requirements:pre-action">
-Explore codebase comprehensively to translate user language into codebase-compatible terminology.
+Explore codebase comprehensively to:
+1. Translate user language into codebase-compatible terminology
+2. Assess investigation topic complexity (simple vs complex/critical)
 
 <reasoning>
-This ensures requirements align with existing technical concepts (e.g., "login" → "JWT authentication") while maintaining business/functional focus. Implementation details (file paths, library names, code structure) belong in investigation.md, not requirements.md.
+Translation ensures requirements align with existing technical concepts (e.g., "login" → "JWT authentication") while maintaining business/functional focus. Complexity assessment enables appropriate depth labeling (deep-dive for complex/critical topics) in Timeline. Implementation details belong in investigation.md, not requirements.md.
 </reasoning>
 </event>
 
@@ -141,29 +143,22 @@ This ensures requirements align with existing technical concepts (e.g., "login" 
 
 **After Requirements Complete**:
 <event id="requirements:post-action">
-1. Extract investigation topics from requirements
-2. Create Required Investigations checklist in tasks.md
-3. Update State Tracking: requirements.md = complete
-4. Add to Timeline: `[x] Requirements defined → requirements.md#overview`
-5. Trigger nudge event: `requirements:nudge-next`
+1. Extract investigation topics with depth (label deep-dive if complex/critical)
+2. Add investigation topics to Timeline
+3. Trigger nudge event: `requirements:nudge-next`
 </event>
 
 **After Investigation Topic Complete**:
 <event id="investigation:post-action">
-1. Mark topic [x] in Required Investigations
-2. Calculate coverage percentage (X/Y)
-3. Update State Tracking: investigation.md = X/Y (N%)
-4. Add to Timeline: `[x] [topic-name] investigated → investigation.md#[topic-name]`
-5. If 100%: Set design.md readiness flag
-6. Trigger nudge event: `investigation:nudge-next` (with coverage data)
+1. Update State Tracking with coverage from Timeline: investigation.md = X/Y (N%)
+2. If 100%: Set design.md readiness flag
+3. Trigger nudge event: `investigation:nudge-next` (with coverage data)
 </event>
 
 **After Design Complete**:
 <event id="design:post-action">
-1. Mark design.md = complete in State Tracking
-2. Add to Timeline: `[x] Design completed → design.md#overview`
-3. Present design summary to user: approach, key decisions, and implementation file order
-4. Trigger nudge event: `design:nudge-next`
+1. Present design summary to user: approach, key decisions, and implementation file order
+2. Trigger nudge event: `design:nudge-next`
 </event>
 
 ## Key Principles
