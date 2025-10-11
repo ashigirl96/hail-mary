@@ -268,7 +268,7 @@ mod tests {
         assert!(content.contains("## About Steering"));
 
         // Should NOT contain PBI references (single spec)
-        assert!(!content.contains("<pbi-requirements-file>"));
+        assert!(!content.contains("<pbi-file>"));
     }
 
     #[test]
@@ -286,7 +286,7 @@ mod tests {
 
         // Should contain both SBI and PBI file references
         assert!(content.contains("<requirements-file>"));
-        assert!(content.contains("<pbi-requirements-file>"));
+        assert!(content.contains("<pbi-file>"));
 
         // Should contain PBI requirements path
         assert!(content.contains("payment-system/requirements.md"));

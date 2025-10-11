@@ -14,7 +14,7 @@ Refer to system prompt for data structures:
 
 ## Behavioral Flow
 
-1. **Context Detection**: Check for <pbi-requirements-file> tag in system prompt
+1. **Context Detection**: Check for <pbi-file> tag in system prompt
    - **Present** → PBI/SBI context (use PBI/SBI format)
    - **Absent** → Single Spec context (use Single Spec format)
 

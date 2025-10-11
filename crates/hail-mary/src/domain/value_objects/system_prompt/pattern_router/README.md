@@ -791,7 +791,7 @@ $ hail-mary code
 <design-file>.../sbi-1-backend-api/design.md</design-file>
 
 <!-- PBI Context (Reference) -->
-<pbi-requirements-file>.../payment-system/requirements.md</pbi-requirements-file>
+<pbi-file>.../payment-system/requirements.md</pbi-file>
 ```
 
 **Evidence Chain**: SBI design → PBI requirements → 全体像

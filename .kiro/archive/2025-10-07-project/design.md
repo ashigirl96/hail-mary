@@ -108,7 +108,7 @@ PBI/SBI (Multiple PRs):
 
 ### PBI Context (Reference Only)
 Parent PBI for broader context:
-- <pbi-requirements-file>{pbi_requirements_path}</pbi-requirements-file> - PBI overview and all SBIs
+- <pbi-file>{pbi_requirements_path}</pbi-file> - PBI overview and all SBIs
 
 Optional PBI design (if exists):
 - <pbi-investigation-file>{pbi_investigation_path}</pbi-investigation-file> - Shared research (if exists)
@@ -671,7 +671,7 @@ mod tests {
             Some(Path::new(".kiro/specs/payment/sbi-1-backend")),
             &steerings
         );
-        assert!(sbi_prompt.as_str().contains("<pbi-requirements-file>"));
+        assert!(sbi_prompt.as_str().contains("<pbi-file>"));
 
         // Regular context
         let regular_prompt = SystemPrompt::new(
@@ -679,7 +679,7 @@ mod tests {
             Some(Path::new(".kiro/specs/payment")),
             &steerings
         );
-        assert!(!regular_prompt.as_str().contains("<pbi-requirements-file>"));
+        assert!(!regular_prompt.as_str().contains("<pbi-file>"));
     }
 }
 ```

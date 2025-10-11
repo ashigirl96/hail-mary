@@ -15,6 +15,6 @@ These files track the current SBI's lifecycle:
 ### PBI Context (Reference Only)
 
 Parent PBI for broader context:
-- <pbi-requirements-file>{pbi_requirements_path}</pbi-requirements-file> - PBI overview and all SBIs
+- <pbi-file>{pbi_requirements_path}</pbi-file> - PBI overview and all SBIs
 
 **Note**: Work primarily with SBI files. PBI files provide context only.
