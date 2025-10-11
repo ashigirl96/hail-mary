@@ -5,7 +5,7 @@
 ```
 hail-mary/                        # Project root
 ├── Cargo.toml                   # Workspace configuration
-├── Cargo.lock                   # Dependency lock file (gitignored)
+├── Cargo.lock                   # Dependency lock file (tracked despite .gitignore for binary distribution)
 ├── justfile                     # Task automation with just command runner
 ├── rust-toolchain.toml         # Rust toolchain configuration
 ├── LICENSE                      # Project license
@@ -78,8 +78,7 @@ src/
 ├── application/                # Use case layer
 │   ├── use_cases/            # Business operations
 │   │   ├── initialize_project.rs
-│   │   ├── create_feature.rs
-│   │   ├── complete_features.rs
+│   │   ├── complete_specs.rs
 │   │   ├── backup_steering.rs
 │   │   ├── remind_steering.rs
 │   │   └── launch_claude_with_spec.rs
@@ -91,8 +90,6 @@ src/
 │   └── test_helpers/          # Test utilities
 ├── cli/                        # Presentation layer
 │   ├── commands/             # Command implementations
-│   │   ├── init.rs
-│   │   ├── new.rs
 │   │   ├── code.rs
 │   │   ├── complete.rs
 │   │   ├── completion.rs
@@ -116,7 +113,7 @@ src/
     └── embedded_resources.rs # Template resources
 ```
 
-**Note**: Integration tests are located in `crates/hail-mary/tests/` (not in a root `tests/` directory).
+**Note**: Integration tests are located in `crates/hail-mary/tests/`. Root `tests/` directory exists but is empty and unused.
 ```
 
 ### Kiro System Structure (`.kiro/`)
@@ -152,12 +149,17 @@ src/
 │   ├── frontend-architect.md
 │   └── system-architect.md
 ├── commands/                  # Custom commands
-│   └── hm/                   # Hail-mary commands
-│       ├── steering.md
-│       ├── steering-remember.md
-│       ├── requirements.md
-│       ├── investigate.md
+│   ├── hm/                   # Hail-mary commands
+│   │   ├── steering.md
+│   │   └── steering-remember.md
+│   ├── pbi/                  # Product Backlog Item commands
+│   │   ├── add-sbi.md
+│   │   └── decompose.md
+│   └── spec/                 # Specification commands
 │       ├── design.md
+│       ├── investigate.md
+│       ├── requirements.md
+│       ├── status.md
 │       └── timeline.md
 └── settings.local.json       # Local configuration
 ```

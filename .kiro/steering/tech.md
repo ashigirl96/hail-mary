@@ -45,6 +45,7 @@
 - **reqwest v0.12**: HTTP client with rustls-tls-native-roots
 - **OAuth Support**: Token management and refresh
 - **Authentication**: ~/.local/share/opencode/auth.json
+- **Beta Features**: oauth-2025-04-20, claude-code-20250219, interleaved-thinking-2025-05-14, fine-grained-tool-streaming-2025-05-14
 
 ## Development Environment
 
@@ -62,9 +63,11 @@
 - **tempfile v3**: Test isolation with temporary directories
 
 ### Toolchain Configuration
-- **rust-toolchain.toml**: Explicit toolchain pinning for team consistency
+- **rust-toolchain.toml**: Stable channel tracking with required components (not version-pinned)
+- **Channel**: Stable (tracks latest, not pinned to 1.90.0)
 - **Components**: rustfmt, clippy, rust-src
 - **Target**: x86_64-apple-darwin
+- **Current Version**: 1.90.0 (as of 2025-10-12)
 
 ### Embedded Resources
 - **Compile-time Embedding**: Markdown files embedded using `include_str!` macro for distribution
@@ -135,10 +138,12 @@ chezmoi git -- push
 - **RUST_LOG**: Logging level (debug, info, warn, error)
 - **RUST_BACKTRACE**: Error backtrace display (0, 1, full)
 - **CARGO_MANIFEST_DIR**: Project root for integration tests
+- **STEERING_MODEL**: Override default Claude model for steering operations (default: claude-3-5-haiku-20241022)
 
 ### Build Environment
 - **CARGO_HOME**: Cargo cache directory
 - **RUSTUP_HOME**: Rust toolchain directory
+- **CARGO_TERM_COLOR**: Terminal color output control (used in CI: always)
 
 ## Port Configuration
 

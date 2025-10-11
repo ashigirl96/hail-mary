@@ -15,9 +15,12 @@ Hail-Mary provides intelligent project specification management through the Kiro
 - **Shell Completions**: Auto-completion support for all major shells
 - **Template System**: Structured specification templates with requirements, design, tasks, and investigation phases
 - **Pattern Router Framework**: Reactive pattern-based routing with 4 specialized pipelines (Command, Suggestion, Diagnostic, Recovery) for efficient context-aware routing
-- **Custom Slash Commands**: `/hm:steering`, `/hm:steering-remember`, `/spec:requirements`, `/spec:investigate`, `/spec:design`, and `/hm:timeline` for comprehensive Claude Code integration
+- **Custom Slash Commands**: 9 comprehensive slash commands including `/hm:steering`, `/hm:steering-remember`, `/spec:requirements`, `/spec:investigate`, `/spec:design`, `/spec:timeline`, `/spec:status`, `/pbi:decompose`, and `/pbi:add-sbi` for Claude Code integration
 - **Steering Backup System**: Configurable backup creation and retention management for steering files
 - **Workspace Architecture**: Multi-crate Cargo workspace with clean separation
+  - `hail-mary` crate: CLI application with 4-layer Clean Architecture
+  - `anthropic-client` crate: Standalone API client library with OAuth2 and reqwest HTTP client
+- **PBI/SBI Management**: Product and Sub-Backlog Item workflows with `/pbi:decompose` and `/pbi:add-sbi` commands for managing large features across multiple pull requests
 
 ## Target Use Case
 
