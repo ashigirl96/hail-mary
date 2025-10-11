@@ -99,10 +99,6 @@ impl EmbeddedAgents {
     const SYSTEM_ARCHITECT: &'static str =
         include_str!("../../../../.claude/agents/system-architect.md");
 
-    /// Deep dive analyst agent
-    const DEEP_DIVE_ANALYST: &'static str =
-        include_str!("../../../../.claude/agents/deep-dive-analyst.md");
-
     /// Returns all embedded agent files as (filename, content) pairs
     pub fn get_all() -> Vec<(&'static str, &'static str)> {
         vec![
@@ -111,7 +107,6 @@ impl EmbeddedAgents {
             ("backend-architect.md", Self::BACKEND_ARCHITECT),
             ("frontend-architect.md", Self::FRONTEND_ARCHITECT),
             ("system-architect.md", Self::SYSTEM_ARCHITECT),
-            ("deep-dive-analyst.md", Self::DEEP_DIVE_ANALYST),
         ]
     }
 }
@@ -183,7 +178,7 @@ mod tests {
     #[test]
     fn test_embedded_agents_not_empty() {
         let files = EmbeddedAgents::get_all();
-        assert_eq!(files.len(), 6);
+        assert_eq!(files.len(), 5);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");
