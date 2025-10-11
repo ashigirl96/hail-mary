@@ -147,7 +147,8 @@ src/
 │   ├── root-cause-investigator.md
 │   ├── backend-architect.md
 │   ├── frontend-architect.md
-│   └── system-architect.md
+│   ├── system-architect.md
+│   └── evidence-collector.md
 ├── commands/                  # Custom commands
 │   ├── hm/                   # Hail-mary commands
 │   │   ├── steering.md
