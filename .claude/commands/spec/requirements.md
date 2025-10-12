@@ -1,7 +1,7 @@
 ---
 name: requirements
 description: "Create/update requirements and user stories - triggered by: requirements, PRD, features, bug, 要件, バグ"
-argument-hint: "[--type prd|bug|tech|pbi] [--issue <github-url>]"
+argument-hint: "[--type prd|bug|tech|pbi] [--issue <github-url>] [--review]"
 ---
 
 # /spec:requirements

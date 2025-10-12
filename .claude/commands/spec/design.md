@@ -1,6 +1,7 @@
 ---
 name: design
 description: "Technical design from requirements - triggered by: design, architecture, implementation, 設計, アーキテクチャ"
+argument-hint: "[--review]"
 ---
 
 # /spec:design
