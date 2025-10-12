@@ -5,9 +5,7 @@
 | Pipeline | Template Category | Persistence | Timing |
 |----------|------------------|-------------|--------|
 | Command | State-based progress | Updates tasks.md | After operations |
-| Suggestion | Conversation-based | Ephemeral only | When threshold met |
-| Diagnostic | Status reporting | Read-only | On query |
-| Recovery | Problem resolution | None | Immediate |
+| Review | Conversational | Ephemeral only | During review dialogue |
 
 ## Command Pipeline Templates (State-Based)
 
@@ -54,97 +52,115 @@
 | Design complete | Use Event: `design:nudge-next` templates |
 | Stalled progress | "Resume with [last-incomplete]?" |
 
-## Suggestion Pipeline Templates (Conversation-Based)
+## Review Pipeline Templates (Conversational)
 
-**Proactive Documentation Suggestions**:
+**After Draft Generation:**
 
-**Requirements Context Detected**:
-- "Would you like to add this feature to requirements.md? 📝"
-- "I can document these requirements for you. Shall I proceed?"
-- "These sound like new requirements. Add to requirements.md?"
-
-**Investigation Context Detected**:
-- "Should I record these findings in investigation.md#[topic-name]? 🔍"
-- "This research looks valuable. Document in investigation.md?"
-- "I'll add this to the investigation notes. Proceed?"
-
-**Design Context Detected**:
-- "Would you like to document this design decision? 🏗️"
-- "This architecture decision should be recorded. Add to design.md?"
-- "I can capture this design choice in design.md. Continue?"
-
-**Confidence-Based Phrasing**:
-- **Low (0.5-0.7)**: "This might be worth documenting..."
-- **Medium (0.7-0.85)**: "I recommend adding this to [document].md"
-- **High (0.85+)**: "Let's add this to [document].md!"
-
-**Multi-Entity Detection**:
 ```
-Detected from conversation:
-  - Feature: User authentication
-  - Technology: JWT tokens
-  - Requirement: Password policies
+📋 {Document Type} Draft Ready
 
-Document in requirements.md?
+Here's the direction I'm taking:
+• {Key point 1 from draft}
+• {Key point 2 from draft}
+• {Key point 3 from draft}
+• {Key point 4 from draft}
+
+A few things to consider:
+• {Concern or suggestion 1}
+• {Concern or suggestion 2}
+• {Concern or suggestion 3}
+
+Would you like to proceed, or shall we refine this together?
 ```
 
-## Diagnostic Pipeline Templates (Query Responses)
+**Natural Language Response Parsing:**
 
-**Status Reports**:
-- "Current progress: Requirements ✓, Investigation 60%, Design pending"
-- "Active spec: [spec-name], Status: [state-summary]"
-- "Next recommended action: [suggestion based on gaps]"
+**Save Intent Detection:**
+Keywords: "save", "proceed", "go ahead", "looks good", "continue", "yes", "保存", "続行", "いいね", "はい"
+Action: Handoff to Command Pipeline with approved draft
 
-**Progress Visualization**:
+**Refine Intent Detection:**
+Keywords: "refine", "improve", "think about", "reconsider", "改善", "考える", "見直す", "もう少し"
+Action: Return to review component for dialogue
+
+**Add Intent Detection:**
+Pattern: "add [something]", "include [something]", "can we add", "追加", "含める"
+Action: Parse what to add, incorporate, loop back to review
+
+**Cancel Intent Detection:**
+Keywords: "cancel", "stop", "nevermind", "start over", "キャンセル", "やり直し", "やめる"
+Action: Clean exit without any persistence
+
+**Examples by Document Type:**
+
+**Requirements Review:**
 ```
-Project Status:
-├─ Requirements: ████████ 100%
-├─ Investigation: ████░░░░ 60%
-└─ Design: ░░░░░░░░ 0% (blocked)
+📋 Requirements Draft Ready
+
+Here's the direction I'm taking:
+• User authentication with email and password
+• Password reset via email verification link
+• JWT-based session management
+• Basic role-based access control
+
+A few things to consider:
+• Should we specify password complexity requirements?
+• Email verification flow for new accounts isn't detailed yet
+• Rate limiting for login attempts might be important
+• OAuth integration scope unclear
+
+Would you like to proceed, or shall we refine this together?
 ```
 
-**Gap Analysis**:
-- "Missing: [list of incomplete items]"
-- "Blockers: [list of dependencies]"
-- "Available actions: [list of possible next steps]"
+**Design Review:**
+```
+📋 Design Draft Ready
 
-## Recovery Pipeline Templates (Emergency Response)
+Here's the direction I'm taking:
+• JWT service using jose library (based on investigation)
+• Bcrypt for password hashing (aligns with codebase)
+• Session management with Redis cache
+• RESTful API endpoints for auth operations
 
-**Error Detection**:
-- "⚠️ Issue detected: [problem description]"
-- "❌ Validation failed: [specific failure]"
-- "🚧 Blocked: [blocker description]"
+A few things to consider:
+• Error handling strategy for token expiration not specified
+• Refresh token rotation mechanism could be detailed
+• Database migration for user table missing
+• Integration tests approach undefined
 
-**Recovery Guidance**:
-- "Immediate action: [recovery step]"
-- "Workaround available: [alternative approach]"
-- "Manual fix required: [instructions]"
+Would you like to proceed, or shall we refine this together?
+```
 
-**Resolution Confirmation**:
-- "Issue resolved. Resume normal workflow?"
-- "Recovery complete. Return to [previous-task]?"
-- "Problem bypassed. Continue with caution."
+**Investigation Review:**
+```
+📋 Investigation Draft Ready
+
+Here's the direction I'm taking:
+• JWT implementation patterns researched
+• Bcrypt vs Argon2 comparison completed
+• Session storage strategies evaluated
+• Security best practices documented
+
+A few things to consider:
+• Confidence scores could be more explicit
+• Alternative approaches for token refresh not fully explored
+• Performance benchmarks would strengthen findings
+• OWASP recommendations reference missing
+
+Would you like to proceed, or shall we refine this together?
+```
 
 ## Template Selection Logic
 
 ```
 Pipeline determines template category:
 ├─ Command → Use state-based templates
-├─ Suggestion → Use conversation-based templates
-├─ Diagnostic → Use query response templates
-└─ Recovery → Use emergency templates
-
-Confidence determines phrasing (Suggestion only):
-├─ < 0.5 → No suggestion
-├─ 0.5-0.7 → Tentative phrasing
-├─ 0.7-0.85 → Confident recommendation
-└─ > 0.85 → Strong suggestion with prompt
+└─ Review → Use conversational templates
 ```
 
 ## Key Principles
 
 - **Pipeline-Aligned**: Each pipeline has appropriate template types
 - **Context-Aware**: Templates match the interaction context
-- **Confidence-Scaled**: Suggestion strength matches confidence level
-- **Non-Intrusive**: Lightweight pipelines use lightweight templates
+- **Non-Intrusive**: Review Pipeline uses lightweight conversational templates
 - **Action-Oriented**: All templates guide toward next steps

@@ -434,196 +434,6 @@ argument-hint: add [tagId] \| remove [tagId] \| list
 argument-hint: [hint] [--format rule|guide|knowledge] [--type <name>]
 ```
 
-## Parallel Task Tool Execution
-**When**: Designing commands that require concurrent Task agent execution
-- Use explicit "parallel" keywords 15+ times throughout documentation
-- Include bold instruction: **[send multiple Task tool calls in one response]**
-- Structure independent agent missions with clear boundaries
-- Repeat "independently/concurrent" keywords for reinforcement
-- Visual representation with bullet lists of agents
-
-### Required Section Elements
-```markdown
-# Behavioral Flow
-- Step: "Launch **parallel** Task agents **independently**"
-- Step: "Process tasks **concurrently** across multiple agents"
-
-# Execution Phase  
-**Title**: Include "Parallel" (e.g., "Parallel Execution Phase")
-**Bold Instruction**: **[The implementation will send multiple Task tool calls in one response]**
-**Agent List**: Show numbered/bulleted list of parallel agents
-
-# Independent Agent Structure
-Each parallel task must:
-- Have clear, self-contained scope
-- Operate without dependencies on other agents
-- Define specific deliverables
-- Include "independent" or "concurrent" in description
-
-# Tool Coordination
-- Task: Spawn **parallel** agents for **concurrent** execution
-- "Multiple Task tools sent in single message"
-- "Each agent operates independently with its own context"
-
-# Key Patterns
-- First pattern: "**Parallel Execution**" or "**Concurrent Processing**"
-- Include: "Multiple agents → simultaneous execution → aggregated results"
-```
-
-### ✅ Good - Parallel Execution
-```markdown
-> 🚀 Launching parallel investigation for 3 types...
-> Spawning investigation agents:
-> • [Agent 1] type1 - purpose1
-> • [Agent 2] type2 - purpose2  
-> • [Agent 3] type3 - purpose3
-> [Parallel Task agents processing independently...]
-```
-
-### ❌ Bad - Sequential Execution
-```markdown
-> Starting investigation...
-> Processing type1...
-> Then processing type2...
-> Finally processing type3...
-```
-
-## Task Tool Parameterization
-**When**: Passing arguments to subagents via Task tool
-- Use detailed prompt parameter to pass context dynamically
-- Single subagent can adapt behavior based on received parameters
-- Enables reusable subagents for multiple contexts
-
-```python
-# ✅ Good - Dynamic argument passing
-Task(
-    subagent_type="steering-investigator",
-    description="Verify tech steering type",
-    prompt=f"""
-    Steering Type: {type_name}
-    Purpose: {purpose}
-    Criteria: {criteria_list}
-    File Path: .kiro/steering/{type_name}.md
-
-    Your mission: Investigate against these criteria
-    """
-)
-
-# ❌ Bad - Multiple specialized subagents
-Task(subagent_type="tech-steering-investigator")
-Task(subagent_type="product-steering-investigator")
-```
-
-## Framework Standards vs Execution Reproducibility
-**When**: Designing complex slash commands with detailed behavioral flows
-- Framework compliance favors concise 5-step Behavioral Flow structure
-- Execution reproducibility requires detailed implementation sections with explicit instructions
-- Complex commands prioritize reproducibility over framework adherence
-- Simple commands can follow standard framework structure
-
-```markdown
-# ✅ Good - Complex command prioritizing reproducibility
-## Behavioral Flow
-1-5 overview steps
-
-### Detailed Implementation Phase
-Execute backup command: !`hail-mary steering backup`
-**[The implementation will send multiple Task tool calls...]**
-[Specific code examples and stop markers]
-
-# ✅ Good - Simple command following framework standards
-## Behavioral Flow
-1. Step one overview
-2. Step two overview
-3. Step three overview
-4. Step four overview
-5. Step five overview
-
-Key behaviors:
-- Behavior description
-- Implementation approach
-
-# ❌ Bad - Complex command sacrificing reproducibility for framework compliance
-## Behavioral Flow
-1. Backup: Create timestamped backup
-2. Load: Parse allowed steering types
-3. Investigate: Launch parallel Task agents
-4. Aggregate: Collect results
-5. Update: Apply changes
-```
-
-## Preventing Unnecessary File Exploration
-**When**: Handling file-not-found errors in slash commands
-- Attempt Read once, then proceed if error
-- Never use ls/Bash/Glob to search for missing files
-- Let Write/MultiEdit create directories automatically
-- Make error handling explicit in Behavioral Flow
-
-### Tool Coordination
-```markdown
-# ✅ Good
-**Claude Code Tools:**
-- **Read**: Attempt to read (ignore errors if file doesn't exist)
-- **Write/MultiEdit**: Create or update (Write creates parent directories automatically)
-
-# ❌ Bad
-**Claude Code Tools:**
-- **Read**: Read file to understand context
-- **Bash**: Use ls to find files if needed
-```
-
-### Behavioral Flow
-```markdown
-# ✅ Good
-1. **Initialize**: Parse arguments and setup
-- **Attempt** to Read <file_path> for existing content:
-  - If file exists: Load and analyze
-  - If file not found: Skip silently and proceed to step 2
-  - **DO NOT**: Use ls, Bash, or Glob to search for files
-  - **DO NOT**: Create directories or investigate structure
-
-# ❌ Bad
-1. **Initialize**: Parse arguments and setup
-- Read existing file for context
-- If error, check directory structure
-- Create directories if needed
-```
-
-## Behavioral Flow Flag Conditions
-**When**: Writing conditional logic in Behavioral Flow sections based on command flags
-- Use clear If statements with bold formatting: **If `--flag` provided:**
-- Group related conditions under same If block
-- Separate different flag scenarios with clear visual hierarchy
-- Include "If no flags provided" as catch-all scenario
-
-```markdown
-# ✅ Good
-1. **Initialize & Topic Gathering**: Parse arguments and determine topic
-   - Read existing <kiro_investigation_path>
-
-   - **If `--for requirements` or `--for design` provided:**
-     - Read corresponding document
-     - Analyze for technical gaps
-     - Display suggestions
-     - Ask: "What would you like to investigate?"
-
-   - **If `--topic <name>` provided:**
-     - Search for existing topic section
-     - Load previous investigation
-     - Display follow-up suggestions
-     - Ask: "What would you like to investigate?"
-
-   - **If no flags provided:**
-     - Ask: "What would you like to investigate?"
-     - Sub-prompt: "[Provide technical question]"
-
-# ❌ Bad
-1. **Initialize**: Check flags
-   - Check if --for flag exists
-   - Check if --topic flag exists
-   - Handle different cases
-```
-
 ## System Prompt XML Structure
 **When**: Designing system prompts for Claude Code
 - Claude is trained to pay special attention to XML tag structures
@@ -720,3 +530,62 @@ All execution details defined in these sections.
 3. Track confidence percentages
 [100+ lines of detailed rules]
 ```
+
+## Pattern Router System Prompt Centrism
+**When**: Extending Pattern Router Framework with new features (e.g., Review Pipeline)
+- All logic and templates in system prompt (pattern_router/*.md files)
+- Slash commands reference XML tags only, no embedded logic
+- New features as independent pipelines, not command modifications
+- Reuse existing components (patterns, nudges, workflows) over creating new ones
+- Zero slash command changes when possible
+
+````markdown
+# ✅ Good - Review Pipeline with system prompt centrism
+Files changed:
+- 03_patterns.md: Add EXPLICIT_REVIEW pattern class
+- 04_workflows.md: Add Review Pipeline section
+- 06_nudges.md: Add natural language templates
+- Slash commands: NO CHANGES
+
+Review activation:
+User: /spec:requirements --review
+→ patterns detects --review flag
+→ Routes to Review Pipeline (defined in 04_workflows.md)
+→ Uses nudges templates (defined in 06_nudges.md)
+→ Handoff to Command Pipeline on approval
+
+Result: Feature complete without touching slash commands
+
+# ✅ Good - Before/After Protocol reuse
+Review Pipeline:
+- Generate draft (ephemeral)
+- User approves
+- Handoff to Command Pipeline
+- Command Pipeline executes BEFORE/AFTER protocols
+- No duplicate implementation
+
+# ❌ Bad - Slash command logic duplication
+Files changed:
+- requirements.md: Add review behavioral flow (50+ lines)
+- design.md: Add review behavioral flow (50+ lines)
+- investigate.md: Add review behavioral flow (50+ lines)
+
+Result: DRY violation, maintenance burden
+
+# ❌ Bad - Embedding in Command Pipeline
+Command Pipeline modified:
+patterns → hub → gates → [review logic here] → workflows → document
+
+Problems:
+- Existing Command Pipeline changed
+- No opt-in mechanism
+- Affects all commands
+- Hard to disable
+````
+
+**Key Principles:**
+- **System Prompt = Intelligence**: All logic lives in pattern_router/*.md
+- **Slash Commands = Triggers**: Minimal references to XML tags
+- **Pipelines = Composition**: Combine existing components, avoid modifications
+- **Protocol Reuse = DRY**: Leverage existing workflows, gates, nudges
+- **Zero Command Changes**: Ideal when adding features

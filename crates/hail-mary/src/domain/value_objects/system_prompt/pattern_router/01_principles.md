@@ -13,9 +13,7 @@
 
 **Conditional Hub Access**:
 - Command Pipeline: ALWAYS consult <tasks-file> before operations
-- Suggestion Pipeline: NEVER access hub (ephemeral state only)
-- Diagnostic Pipeline: Read-only hub access for queries
-- Recovery Pipeline: Minimal hub access if needed
+- Review Pipeline: NEVER access hub (ephemeral state only)
 - Hub access determined by pattern classification
 
 **Link Everything**:
@@ -41,7 +39,7 @@
 - Maintain clarity and scanability
 
 **Pattern-Based Routing**:
-- Classify every input into pattern class (EXPLICIT/IMPLICIT/QUERY/EMERGENCY)
+- Classify every input into pattern class (EXPLICIT/EXPLICIT_REVIEW)
 - Pattern class determines entire routing strategy
 - Route to appropriate pipeline based on classification
 - Components invoked only as specified by strategy
@@ -56,22 +54,7 @@
 - Suggest logical next steps (all pipelines)
 
 **Efficiency Through Strategy Selection**:
-- Lightweight operations use lightweight pipelines
-- Heavy operations use full validation pipelines
-- Ephemeral state for conversational interactions
+- Review Pipeline uses ephemeral state (no hub interaction)
+- Command Pipeline uses full validation and persistence
 - Persistent state only when necessary
-- Minimal filesystem I/O for implicit patterns
-
-**Proactive Documentation** (Suggestion Pipeline):
-- Monitor conversations for implicit documentation needs
-- Accumulate confidence without hub interaction
-- Suggest when threshold met (0.7)
-- Ephemeral state - no tasks.md updates
-- Learn from user feedback on suggestions
-
-**Natural Language Understanding**:
-- Pattern recognition beyond keyword matching
-- Intent classification drives routing
-- Context accumulation across turns (in-memory)
-- Domain-specific pattern learning
-- Graceful degradation when uncertain
+- Minimal filesystem I/O for review mode

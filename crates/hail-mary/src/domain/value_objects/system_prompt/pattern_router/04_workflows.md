@@ -43,87 +43,72 @@ Input → patterns → hub → gates → workflows(BEFORE) → document → work
 3. Execute document-specific post-actions
 4. Trigger nudge
 
-### Suggestion Pipeline (IMPLICIT class)
+### Review Pipeline (EXPLICIT_REVIEW class)
 ```
-Input → patterns → [accumulate] → nudges
+Input → patterns → review → nudges → [User Decision] → Command Pipeline
 ```
+
 **Characteristics**:
-- No hub interaction (no tasks.md updates)
-- No validation gates
-- Ephemeral conversation state
-- Direct to suggestion generation
-- Lightweight and non-intrusive
+- Opt-in with --review flag
+- Draft generation without persistence
+- Natural language dialogue
+- Hands off to Command Pipeline for execution
+- Lightweight preview and refinement
 
 **Component Responsibilities**:
-- **patterns**: Detect implicit intent, accumulate confidence
-- **[accumulate]**: Build confidence across messages (in-memory only)
-- **nudges**: Generate proactive suggestions when threshold met
+- **patterns**: Detect EXPLICIT_REVIEW (base command + --review flag)
+- **review**: Execute command logic without writing, generate draft, analyze direction
+- **nudges**: Present draft summary and natural language action options
 
-**Accumulation Protocol**:
-- Track topic continuity across messages
-- Build confidence scores in memory
-- Trigger at 0.7 threshold
-- Reset on topic change or explicit command
-- Never persist to filesystem
+**Review Protocol**:
+1. Generate draft in memory (ephemeral)
+2. Analyze direction and concerns
+3. Present natural language summary
+4. Wait for user response (natural language)
+5. Parse user intent:
+   - Save intent → Handoff to Command Pipeline
+   - Refine intent → Re-enter review component
+   - Add intent → Incorporate additions, loop back
+   - Cancel intent → Clean exit
 
-### Diagnostic Pipeline (QUERY class)
-```
-Input → patterns → hub(read-only) → nudges(report)
-```
-**Characteristics**:
-- Read-only hub access
-- No state modifications
-- No validation gates needed
-- Information retrieval focus
-- Quick response time
+**Handoff to Command Pipeline**:
+When user approves:
+1. Exit Review Pipeline
+2. Enter Command Pipeline with:
+   - Original command (without --review flag)
+   - Approved draft content
+   - Command context preserved
+3. Execute full Command Pipeline:
+   - hub → gates → workflows(BEFORE) → document → workflows(AFTER) → nudges
+4. Document component uses approved draft (skips generation)
+5. All protocols (BEFORE/AFTER) execute normally
 
-**Component Responsibilities**:
-- **patterns**: Identify query intent
-- **hub**: Read current state from tasks.md (no writes)
-- **nudges**: Format and present status information
-
-### Recovery Pipeline (EMERGENCY class)
-```
-Input → patterns → nudges(alert) → [recovery action]
-```
-**Characteristics**:
-- Bypass normal validation
-- Minimal state checking
-- Immediate response priority
-- Focus on problem resolution
-- May skip hub entirely
-
-**Component Responsibilities**:
-- **patterns**: Detect emergency/error conditions
-- **nudges**: Generate immediate alert/guidance
-- **[recovery]**: Execute recovery procedures if needed
+**Key Behaviors**:
+- Stateless until approved: No hub updates during review
+- Clean cancellation: Exit without side effects
+- Protocol reuse: Command Pipeline handles all persistence
+- Natural dialogue: No rigid command syntax
 
 ## Strategy Selection Examples
 
 ```
-Example 1: Explicit Command
+Example 1: Normal Command
 Input: "/spec:requirements"
-Pattern Output: {class: "EXPLICIT", strategy: "command"}
-Selected Pipeline: Command Pipeline
-Flow: Full routing with all components
+Pattern: {class: "EXPLICIT", strategy: "command"}
+Pipeline: Command Pipeline
+Flow: Full execution with generation
 
-Example 2: Implicit Discussion
-Input: "Users need login functionality"
-Pattern Output: {class: "IMPLICIT", confidence: 0.7, strategy: "suggestion"}
-Selected Pipeline: Suggestion Pipeline
-Flow: Direct to nudges, no hub update
+Example 2: Review Mode
+Input: "/spec:requirements --review"
+Pattern: {class: "EXPLICIT_REVIEW", strategy: "review"}
+Pipeline: Review Pipeline → Command Pipeline
+Flow: Draft → Review → Approve → Execute
 
-Example 3: Status Query
-Input: "What's the current progress?"
-Pattern Output: {class: "QUERY", strategy: "diagnostic"}
-Selected Pipeline: Diagnostic Pipeline
-Flow: Read hub state, report through nudges
-
-Example 4: Error Report
-Input: "The design validation is broken"
-Pattern Output: {class: "EMERGENCY", strategy: "recovery"}
-Selected Pipeline: Recovery Pipeline
-Flow: Immediate nudge alert, bypass gates
+Example 3: Design Command
+Input: "/spec:design"
+Pattern: {class: "EXPLICIT", strategy: "command"}
+Pipeline: Command Pipeline
+Flow: Full execution with validation gates
 ```
 
 ## Document-Specific Pre-Actions (Command Pipeline Only)
@@ -165,6 +150,7 @@ Translation ensures requirements align with existing technical concepts (e.g., "
 
 - **No Default Flow**: Every input gets classified and routed to appropriate pipeline
 - **Component Isolation**: Components only invoked when specified by strategy
-- **Efficiency First**: Lightweight operations use lightweight pipelines
+- **Efficiency First**: Review Pipeline is lightweight, Command Pipeline is thorough
 - **Clear Boundaries**: Each pipeline has distinct characteristics and use cases
+- **Protocol Reuse**: Review Pipeline leverages Command Pipeline infrastructure
 - **Strategy-Driven**: Pattern classification determines entire routing approach

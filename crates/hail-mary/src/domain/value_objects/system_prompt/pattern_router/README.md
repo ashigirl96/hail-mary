@@ -36,25 +36,30 @@ Input → Pattern Classification → Strategy Selection → Pipeline Execution
 
 ## コアアーキテクチャ
 
-### 4つの独立したパイプライン
+### 2つの独立したパイプライン
 
-フレームワークはパターン分類に基づいて、入力を4つの専用パイプラインのいずれかにルーティングします：
+フレームワークはパターン分類に基づいて、入力を2つの専用パイプラインのいずれかにルーティングします：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Pattern Recognition                       │
 │              (03_patterns.md - Router/Classifier)           │
-└────────────┬────────────┬────────────┬─────────────────────┘
-             │            │            │            │
-        EXPLICIT      IMPLICIT      QUERY      EMERGENCY
-             │            │            │            │
-             ▼            ▼            ▼            ▼
-      ┌───────────┐ ┌───────────┐ ┌──────────┐ ┌──────────┐
-      │ Command   │ │Suggestion │ │Diagnostic│ │ Recovery │
-      │ Pipeline  │ │ Pipeline  │ │ Pipeline │ │ Pipeline │
-      └───────────┘ └───────────┘ └──────────┘ └──────────┘
-       重量級操作     軽量級操作    読取専用    緊急対応
-       完全I/O       I/Oなし      書込なし    ゲートバイパス
+└────────────────────────┬────────────────────────────────────┘
+                         │                    │
+                    EXPLICIT            EXPLICIT_REVIEW
+                         │                    │
+                         ▼                    ▼
+                  ┌───────────┐        ┌──────────┐
+                  │ Command   │        │ Review   │
+                  │ Pipeline  │        │ Pipeline │
+                  └───────────┘        └──────────┘
+                   重量級操作             軽量級対話
+                   完全I/O               I/Oなし
+                   全検証                 検証スキップ
+                                            │
+                                            │ User Approval
+                                            ↓
+                                     Back to Command
 ```
 
 ### パイプライン特性
@@ -62,9 +67,7 @@ Input → Pattern Classification → Strategy Selection → Pipeline Execution
 | パイプライン | 重量 | Hub アクセス | ゲート | 永続化 | ユースケース |
 |----------|--------|------------|-------|-------------|----------|
 | Command | 重量級 | 完全R/W | 全検証 | tasks.md更新 | 明示的コマンド |
-| Suggestion | 軽量級 | なし | 信頼度のみ | 一時的状態 | 会話的ヒント |
-| Diagnostic | 中量級 | 読取専用 | なし | 変更なし | 状態クエリ |
-| Recovery | 可変 | 最小限 | 緊急オーバーライド | 最小限 | エラー処理 |
+| Review | 軽量級 | なし | なし | エフェメラル | 対話的改善 → Command移行 |
 
 ## ファイル構造と責務
 
@@ -95,11 +98,11 @@ pattern_router/
 
 **ルーティング＆戦略層**:
 - `03_patterns.md` - **ルーター**: 入力を分類しルーティング戦略を出力
-- `04_workflows.md` - **パイプラインコンテナ**: 4つの異なる実行戦略を定義
+- `04_workflows.md` - **パイプラインコンテナ**: 2つの異なる実行戦略を定義
 
 **条件付きコンポーネント** (パイプラインに基づいて起動):
-- `02_hub.md` - 状態管理 (Command: R/W, Diagnostic: 読取, Suggestion: なし)
-- `05_gates.md` - 検証 (パイプライン固有のルールセット)
+- `02_hub.md` - 状態管理 (Command: R/W, Review: なし)
+- `05_gates.md` - 検証 (Command Pipeline固有のルールセット)
 - `06_nudges.md` - 提案生成 (パイプライン固有のテンプレート)
 
 **構造定義** (必要に応じて参照):
@@ -148,9 +151,7 @@ pattern_router/
 | クラス | 特性 | 戦略 | コンポーネント |
 |-------|-----------------|----------|------------|
 | EXPLICIT | コマンド、キーワード | Command Pipeline | `[hub, gates, workflows, document, nudges]` |
-| IMPLICIT | 文脈的、会話的 | Suggestion Pipeline | `[accumulate, nudges]` |
-| QUERY | 状態チェック、質問 | Diagnostic Pipeline | `[hub(read), nudges]` |
-| EMERGENCY | エラー、ブロッカー | Recovery Pipeline | `[nudges, recovery]` |
+| EXPLICIT_REVIEW | EXPLICIT + --review flag | Review Pipeline | `[patterns, review, nudges]` |
 
 **分類例**:
 ```
@@ -163,21 +164,21 @@ Output: {
 }
 → Command Pipelineにルーティング
 
-Input: "Users need login functionality"
+Input: "/spec:requirements --review"
 Output: {
-  class: "IMPLICIT",
-  confidence: 0.7,
-  strategy: "suggestion",
-  components: ["accumulate", "nudges"]
+  class: "EXPLICIT_REVIEW",
+  confidence: 1.0,
+  strategy: "review",
+  components: ["patterns", "review", "nudges"]
 }
-→ Suggestion Pipelineにルーティング (hubアクセスなし)
+→ Review Pipelineにルーティング (hubアクセスなし、承認後Command移行)
 ```
 
-**主要機能**: IMPLICITパターンの信頼度累積（メモリ内、閾値到達まで永続化なし）。
+**主要機能**: --reviewフラグによる対話的品質向上、承認後のCommand Pipeline移行でBefore/After Protocol再利用。
 
 ### 04_workflows.md - マルチ戦略ルーティングコンテナ
 
-**目的**: 単一フローではなく、4つの異なるパイプライン実行戦略を定義。
+**目的**: 単一フローではなく、2つの異なるパイプライン実行戦略を定義。
 
 **パイプライン定義**:
 
@@ -190,31 +191,15 @@ Input → patterns → hub → gates → workflows(BEFORE) → document → work
 - 完全なBEFORE/AFTERプロトコル
 - 監査証跡付き重量級操作
 
-**2. Suggestion Pipeline** (IMPLICIT):
+**2. Review Pipeline** (EXPLICIT_REVIEW):
 ```
-Input → patterns → [accumulate] → nudges
+Input → patterns → review → nudges → [User Decision] → Command Pipeline
 ```
-- hubインタラクションなし (tasks.md更新なし!)
-- 検証ゲートなし
-- 一時的な会話状態
-- 直接提案生成
-- **最も効率的なパス**
-
-**3. Diagnostic Pipeline** (QUERY):
-```
-Input → patterns → hub(read-only) → nudges(report)
-```
-- 読取専用hubアクセス
-- 状態変更なし
-- 情報取得に特化
-
-**4. Recovery Pipeline** (EMERGENCY):
-```
-Input → patterns → nudges(alert) → [recovery action]
-```
-- 通常検証をバイパス
-- 即座の応答
-- 最小限の状態チェック
+- Draft生成（書き込みなし）
+- 自然言語対話
+- ユーザー承認後Command Pipelineに移行
+- エフェメラル状態のみ
+- **対話的品質向上パス**
 
 **ドキュメント固有の後処理** (Command Pipelineのみ):
 - Requirements完了後: 調査トピックをdepth assessment (standard/deep-dive) と共にTimelineに追加
@@ -230,9 +215,7 @@ Input → patterns → nudges(alert) → [recovery action]
 | パイプライン | アクセス | 操作 | 例 |
 |----------|--------|------------|---------|
 | Command | 完全R/W | 全CRUD操作 | 状態読取、タスク追加、ステータス更新 |
-| Suggestion | **なし** | hubインタラクションなし | 一時的会話状態のみ |
-| Diagnostic | 読取専用 | 状態クエリ | 読取とレポート、変更なし |
-| Recovery | 最小限 | 緊急コンテキスト | オプショナルなコンテキスト読取 |
+| Review | **なし** | hubインタラクションなし | Draft生成のみ、承認後Command移行 |
 
 **状態追跡構造**:
 - **State Tracking Table**: ドキュメント状態、カバレッジ、次アクション
@@ -244,7 +227,7 @@ Input → patterns → nudges(alert) → [recovery action]
 
 **更新タイミング** (`04_workflows.md`): BEFORE Protocol (pending→in-progress)、AFTER Protocol (in-progress→complete)、Document-Specific Post-Actions
 **更新内容** (`02_hub.md`): State Tracking Table、Timeline with investigation items (depth labels), document links
-**アクセス権限** (`01_principles.md`): Command Pipeline (完全R/W)、Suggestion Pipeline (アクセスなし)、Diagnostic Pipeline (読取専用)、Recovery Pipeline (最小限)
+**アクセス権限** (`01_principles.md`): Command Pipeline (完全R/W)、Review Pipeline (アクセスなし)
 
 ### 05_gates.md - 戦略固有の検証
 
@@ -255,20 +238,14 @@ Input → patterns → nudges(alert) → [recovery action]
 | パイプライン | 必須ゲート | オプショナルゲート |
 |----------|---------------|----------------|
 | Command | 全ドキュメント検証ゲート | - |
-| Suggestion | 信頼度ゲートのみ | クールダウンゲート |
-| Diagnostic | なし | - |
-| Recovery | なし (緊急オーバーライド) | - |
+| Review | なし | - |
 
 **ドキュメント検証ゲート** (Command Pipelineのみ):
 - Requirements なしの Design → ❌ BLOCK
 - 100%未満のInvestigationでの Design → ❌ BLOCK
 - Topicsなしの Investigation → ⚠️ WARNING
 
-**提案ゲート** (Suggestion Pipelineのみ):
-- 信頼度閾値 (0.7) → ✅ ALLOW または監視継続
-- クールダウンゲート → 繰り返し提案を防止
-
-**重要な洞察**: 軽量級パイプラインは重量級検証をスキップし、効率性を実現。
+**重要な洞察**: Review Pipelineは検証をスキップし、高速なフィードバックを提供。Command Pipelineで厳密な検証を実施。
 
 ### 06_nudges.md - 戦略固有の提案
 
@@ -279,14 +256,7 @@ Input → patterns → nudges(alert) → [recovery action]
 | パイプライン | テンプレートタイプ | 例 |
 |----------|---------------|----------|
 | Command | 状態ベース進捗 | "Investigation 3/5 complete. Continue?" |
-| Suggestion | 会話ベース | "Would you like to add this to requirements.md?" |
-| Diagnostic | 状態レポート | "Current progress: Requirements ✓, Investigation 60%" |
-| Recovery | 問題解決 | "⚠️ Issue detected. Immediate action: [step]" |
-
-**信頼度ベースの表現** (Suggestion Pipeline):
-- 低 (0.5-0.7): "This might be worth documenting..."
-- 中 (0.7-0.85): "I recommend adding this to requirements.md"
-- 高 (0.85+): "Let's add this to requirements.md! [Y/n]:"
+| Review | 会話ベース | "📋 Draft Ready. Here's the direction... Would you like to proceed?" |
 
 ### 07-09_*.md - ドキュメント構造定義
 
@@ -313,7 +283,7 @@ Input → patterns → nudges(alert) → [recovery action]
 
 ## パイプライン実行例
 
-### 例1: 明示的コマンド
+### 例1: 通常の明示的コマンド
 
 ```
 ユーザー入力: "/spec:requirements"
@@ -337,88 +307,55 @@ Pattern Recognition (03):
 結果: tasks.md更新、requirements.md作成、状態永続化
 ```
 
-### 例2: 暗黙的会話
+### 例2: レビューモード付きコマンド
 
 ```
-ユーザー入力: "Users need to log in with email and password"
+ユーザー入力: "/spec:requirements --review"
 
 Pattern Recognition (03):
-→ Class: IMPLICIT
-→ Confidence: 0.7
-→ Strategy: suggestion
-→ Components: [accumulate, nudges]
-
-選択されたパイプライン: Suggestion Pipeline
-
-実行フロー:
-1. Patterns: メモリ内で信頼度を累積 (hubアクセスなし)
-2. Nudges: "Would you like to add this feature to requirements.md? 📝"
-
-結果: tasks.md更新なし、一時的な提案のみ
-```
-
-### 例3: 状態クエリ
-
-```
-ユーザー入力: "What's the current progress?"
-
-Pattern Recognition (03):
-→ Class: QUERY
+→ Class: EXPLICIT_REVIEW
 → Confidence: 1.0
-→ Strategy: diagnostic
-→ Components: [hub(read), nudges]
+→ Strategy: review
+→ Components: [patterns, review, nudges]
 
-選択されたパイプライン: Diagnostic Pipeline
-
-実行フロー:
-1. Hub: tasks.md読取 (読取専用)
-2. Nudges: 状態レポート整形
-   "Current progress: Requirements ✓, Investigation 60%, Design pending"
-
-結果: 読取専用アクセス、状態変更なし
-```
-
-### 例4: 緊急事態
-
-```
-ユーザー入力: "Error: design validation is broken"
-
-Pattern Recognition (03):
-→ Class: EMERGENCY
-→ Confidence: 1.0
-→ Strategy: recovery
-→ Components: [nudges, recovery]
-
-選択されたパイプライン: Recovery Pipeline
+選択されたパイプライン: Review Pipeline
 
 実行フロー:
-1. Nudges: "⚠️ Issue detected: Design validation failure"
-2. Recovery: 通常ゲートをバイパス、即座の支援提供
+1. Patterns: --reviewフラグ検出、base commandコンテキスト保存
+2. Review: requirements draft生成（書き込みなし）
+3. Nudges: "📋 Requirements Draft Ready. Here's the direction..."
 
-結果: 緊急モード、検証バイパス
+ユーザー: "保存して続行"
+
+→ Command Pipelineに移行:
+4. Hub: tasks.md読取、pendingタスク追加
+5. Gates: ブロッカーなしを検証
+6. Workflows(BEFORE): タスクをin-progressに更新
+7. Document: 承認済みdraftを使用して書き込み（生成スキップ）
+8. Workflows(AFTER): 調査トピック抽出、tasks.md更新
+9. Nudges: "Requirements saved. Start investigating?"
+
+結果: Review → Command handoff、BEFORE/AFTER Protocol完全実行
 ```
 
 ## 戦略選択による効率性
 
-### なぜ複数パイプラインが重要か
+### なぜ2つのパイプラインか
 
-**単一フローの問題**: 軽量級操作が重量級検証と永続化を強制される。
+**単一フローの問題**: レビューが必要な時も、不要な時も、同じ重量級フローを実行。
 
-**解決策**: 軽量級操作を軽量級パイプラインにルーティング。
+**解決策**: --reviewフラグで軽量級Review Pipelineにルーティング、承認後にCommand Pipelineで永続化。
 
-| 操作タイプ | 旧アプローチ | 新アプローチ | 効率化 |
-|----------------|--------------|--------------|-----------------|
-| 会話的提案 | 完全フロー + tasks.md更新 | nudgesに直接 | ~80%軽量化 |
-| 状態クエリ | 検証 + R/W | 読取専用 | ~60%軽量化 |
-| 緊急 | 検証待ち | ゲートバイパス | 即座 |
-| 明示的コマンド | 完全検証 | 完全検証 | 変更なし (適切) |
+| 操作タイプ | アプローチ | 効率性 |
+|----------------|--------------|-----------------|
+| 通常実行 | Command Pipeline (完全検証) | 適切な重量 |
+| レビュー付き | Review → Command (2段階) | Draft生成は軽量、永続化は厳密 |
 
 ### 主要効率性機能
 
-1. **Suggestion Pipelineはファイルシステムに触れない**: 会話状態は一時的 (メモリ内のみ)
-2. **Diagnostic Pipelineは読取専用**: クエリに対する状態変更なし
-3. **Recovery Pipelineはゲートをバイパス**: 緊急時は即座の応答
-4. **Command Pipelineは完全検証**: 重量級操作は適切な検証を受ける
+1. **Review Pipelineはファイルシステムに触れない**: Draft生成は一時的（メモリ内のみ）
+2. **Command Pipelineは完全検証**: 永続化時は適切な検証を受ける
+3. **Protocol再利用**: Review承認後、Command PipelineのBEFORE/AFTER Protocol完全実行
 
 ## 拡張ガイド
 
@@ -626,15 +563,6 @@ Refer to system prompt sections:
 - kiro-requirements # テンプレート使用
 ```
 
-### 会話的インタラクション (暗黙的)
-```yaml
-参照:
-- kiro-philosophy    # システム原則
-- kiro-principles    # 運用ルール (注: Conditional Hub Access)
-- kiro-patterns      # Suggestion Pipelineにルーティング
-- kiro-nudges       # 提案生成
-# 注: Hub, gates, workflowsはアクセスされない
-```
 
 ### `/spec:timeline` (特別なケース)
 
@@ -806,7 +734,7 @@ $ hail-mary code
 - 1 PBI = 複数SBI という**境界**は存在
 - しかしSBI実装**順序は自由**（sbi-2から始めてもOK）
 - SBI内部も自由（requirements → investigation → design の強制なし）
-- 実装中の気づき → Suggestion Pipelineで柔軟に
+- 実装中の気づき → --reviewフラグで対話的改善
 
 **これが「Routing without Control」**:
 - Control: PR scope の境界を明確化
@@ -873,13 +801,14 @@ fn is_sbi_context(spec_path: &Path) -> bool {
 ## 検証チェックリスト
 
 - ✅ パターン認識が全入力を分類
-- ✅ 明確な特性を持つ4つの独立したパイプライン
-- ✅ Hubアクセスは条件付き、必須ではない
-- ✅ ゲートはパイプライン固有
-- ✅ Nudgesは戦略に整合
-- ✅ Suggestion Pipelineはtasks.mdに触れない
+- ✅ 明確な特性を持つ2つの独立したパイプライン（Command、Review）
+- ✅ Hubアクセスは条件付き、必須ではない（Command: R/W, Review: なし）
+- ✅ ゲートはCommand Pipeline固有
+- ✅ Nudgesは戦略に整合（State-based vs Conversational）
+- ✅ Review Pipelineはtasks.mdに触れない（ephemeral）
 - ✅ 適切なパイプライン選択による効率性
 - ✅ デフォルトフローなし - すべてがパターン駆動
 - ✅ コンポーネント分離の維持
 - ✅ 真のreactive pattern-based routingを達成
-- ✅ **PBI/SBI Multi-PR Support - Template switchingで複雑性分離**
+- ✅ Before/After Protocol再利用でDRY原則遵守
+- ✅ PBI/SBI Multi-PR Support - Template switchingで複雑性分離

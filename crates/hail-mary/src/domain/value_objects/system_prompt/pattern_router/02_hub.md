@@ -62,16 +62,12 @@
 | Pipeline | Hub Access | Operations | State Updates |
 |----------|------------|------------|---------------|
 | Command | Full R/W | All CRUD operations | Yes - tasks.md |
-| Suggestion | None | No hub interaction | No - ephemeral only |
-| Diagnostic | Read-only | Query state only | No |
-| Recovery | Minimal | Emergency context only | No |
+| Review | None | No hub interaction | No - ephemeral only |
 
 **Component Invocation Rules**:
 - Hub is accessed ONLY when specified in pattern's component list
 - Command Pipeline: Always accesses hub for state persistence
-- Suggestion Pipeline: Never accesses hub (conversation state is ephemeral)
-- Diagnostic Pipeline: Read-only access for status reporting
-- Recovery Pipeline: Optional minimal access for context
+- Review Pipeline: Never accesses hub (conversation state is ephemeral)
 
 **Boundaries**:
 - **Will**: Track state changes, maintain checklists, monitor conversation state, generate suggestions
