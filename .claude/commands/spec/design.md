@@ -6,7 +6,7 @@ argument-hint: "[--review]"
 
 # /spec:design
 
-Create technical design documentation with reactive pattern-based routing.
+Design implementation to fulfill <requirements-file> using <investigation-file> evidence, following reactive pattern-based routing.
 
 Follow <kiro-workflows> Command Pipeline:
 - After design complete: execute event id="design:post-action"
