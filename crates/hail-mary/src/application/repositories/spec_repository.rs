@@ -4,7 +4,7 @@ use std::path::PathBuf;
 /// Repository interface for managing specifications
 pub trait SpecRepositoryInterface {
     /// Create a new specification with template files
-    fn create_spec(&self, name: &str) -> Result<(), ApplicationError>;
+    fn create_spec(&self, name: &str, lang: &str) -> Result<(), ApplicationError>;
 
     /// List all specification directories
     /// Returns a vector of (name, is_archived) tuples
@@ -26,8 +26,18 @@ pub trait SpecRepositoryInterface {
     fn list_sbis(&self, pbi_name: &str) -> Result<Vec<String>, ApplicationError>;
 
     /// Create a new SBI in a PBI (used by TUI "Create new SBI")
-    fn create_sbi(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError>;
+    fn create_sbi(
+        &self,
+        pbi_name: &str,
+        sbi_name: &str,
+        lang: &str,
+    ) -> Result<(), ApplicationError>;
 
     /// Ensure SBI has tasks.md and memo.md files (used when selecting existing SBI)
-    fn ensure_sbi_files(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError>;
+    fn ensure_sbi_files(
+        &self,
+        pbi_name: &str,
+        sbi_name: &str,
+        lang: &str,
+    ) -> Result<(), ApplicationError>;
 }
