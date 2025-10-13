@@ -35,10 +35,10 @@
 ```markdown
 ## Timeline
 - [x] Requirements defined → requirements.md#overview
-- [x] jwt-implementation → investigation.md#jwt-implementation
-- [x] database-schema → investigation.md#database-schema
-- [ ] session-management (deep-dive)
-- [ ] password-reset-flow
+- [x] investigation: jwt-implementation → investigation.md#jwt-implementation
+- [x] investigation: database-schema → investigation.md#database-schema
+- [ ] investigation: session-management (deep-dive)
+- [ ] investigation: password-reset-flow
 - [ ] Design completed → design.md#overview
 - [x] Implementation plan agreed with user
 - [x] phase1: Core Authentication → design.md#auth-service
