@@ -21,6 +21,9 @@ pub fn initialize_project(
     // Ensure allowed_operations exists for all steering types (idempotent)
     config_repo.ensure_allowed_operations()?;
 
+    // Ensure spec configuration exists (idempotent)
+    config_repo.ensure_spec_config()?;
+
     // Create steering files (idempotent)
     let steering_config = SteeringConfig::default_for_new_project();
     steering_repo.create_steering_files(&steering_config)?;

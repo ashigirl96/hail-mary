@@ -19,12 +19,16 @@ pub fn launch_claude_with_spec(
     no_danger: bool,
     continue_conversation: bool,
 ) -> Result<(), ApplicationError> {
-    // 1. Get list of specifications
+    // 1. Load spec configuration
+    let spec_config = config_repo.load_spec_config()?;
+    let lang = &spec_config.lang;
+
+    // 2. Get list of specifications
     let specs = spec_repo.list_spec_directories().map_err(|e| {
         ApplicationError::FileSystemError(format!("Failed to list specifications: {}", e))
     })?;
 
-    // 2. Run TUI for spec selection (includes new spec and SBI options)
+    // 3. Run TUI for spec selection (includes new spec and SBI options)
     let mut tui = SpecSelectorTui::new(specs, spec_repo);
     let selection_result = tui
         .run()
@@ -41,7 +45,7 @@ pub fn launch_claude_with_spec(
         }
         SpecSelectionResult::Sbi(pbi_name, sbi_name) => {
             // Ensure SBI has tasks.md and memo.md (generate if missing)
-            spec_repo.ensure_sbi_files(&pbi_name, &sbi_name)?;
+            spec_repo.ensure_sbi_files(&pbi_name, &sbi_name, lang)?;
 
             let pbi_path = spec_repo.get_spec_path(&pbi_name)?;
             let sbi_path = pbi_path.join(&sbi_name);
@@ -51,7 +55,7 @@ pub fn launch_claude_with_spec(
             // Prompt for name and create new spec
             let name = prompt_for_spec_name()?;
             SpecValidator::validate_spec_name(&name)?;
-            spec_repo.create_spec(&name)?;
+            spec_repo.create_spec(&name, lang)?;
 
             // Generate the actual directory name with date prefix
             let date = chrono::Utc::now().format("%Y-%m-%d");
@@ -69,7 +73,7 @@ pub fn launch_claude_with_spec(
             let sbi_name = format!("sbi-{}-{}", next_number, sbi_title);
 
             // Create SBI (generates tasks.md and memo.md only)
-            spec_repo.create_sbi(&pbi_name, &sbi_name)?;
+            spec_repo.create_sbi(&pbi_name, &sbi_name, lang)?;
 
             // Get SBI path
             let pbi_path = spec_repo.get_spec_path(&pbi_name)?;
@@ -82,12 +86,12 @@ pub fn launch_claude_with_spec(
         }
     };
 
-    // 3. Load project configuration and steering files
+    // 4. Load project configuration and steering files
     let steering_config = config_repo.load_steering_config()?;
     let steering_files = steering_repo.load_steering_files(&steering_config)?;
     let steerings = Steerings(steering_files);
 
-    // 4. Generate system prompt based on spec selection
+    // 5. Generate system prompt based on spec selection
     let system_prompt = if let (Some(name), Some(path)) = (spec_name, spec_path) {
         // With spec: generate full system prompt
         SystemPrompt::new(Some(&name), Some(&path), &steerings)
@@ -96,7 +100,7 @@ pub fn launch_claude_with_spec(
         SystemPrompt::new(None, None, &steerings)
     };
 
-    // 5. Launch Claude with system prompt
+    // 6. Launch Claude with system prompt
     let launcher = ClaudeProcessLauncher::new();
     launcher
         .launch(system_prompt.as_str(), no_danger, continue_conversation)
