@@ -55,11 +55,6 @@ Input → patterns → review → nudges → [User Decision] → Command Pipelin
 - Hands off to Command Pipeline for execution
 - Lightweight preview and refinement
 
-**Component Responsibilities**:
-- **patterns**: Detect EXPLICIT_REVIEW (base command + --review flag)
-- **review**: Execute command logic without writing, generate draft, analyze direction
-- **nudges**: Present draft summary and natural language action options
-
 **Review Protocol**:
 1. Generate draft in memory (ephemeral)
 2. Analyze direction and concerns
@@ -71,17 +66,28 @@ Input → patterns → review → nudges → [User Decision] → Command Pipelin
    - Add intent → Incorporate additions, loop back
    - Cancel intent → Clean exit
 
+**Command-Specific Behaviors**:
+
+**requirements --review**:
+- Context: Execute requirements:pre-action (codebase exploration)
+- Draft: Generate requirements with codebase-compatible terminology
+- Output: Requirements draft + investigation topics identified
+- Focus: Terminology translation, complexity assessment
+
+**design --review**:
+- Context: Read <requirements-file> and <investigation-file>
+- Analysis: Gap analysis (requirements coverage vs investigation evidence)
+- Draft: Feasible design direction + missing investigation topics
+- Output: Coverage assessment + design recommendations
+- Focus: Feasibility assessment, gap identification, risk mitigation
+
 **Handoff to Command Pipeline**:
 When user approves:
 1. Exit Review Pipeline
-2. Enter Command Pipeline with:
-   - Original command (without --review flag)
-   - Approved draft content
-   - Command context preserved
-3. Execute full Command Pipeline:
-   - hub → gates → workflows(BEFORE) → document → workflows(AFTER) → nudges
+2. Enter Command Pipeline with approved draft content
+3. Execute full Command Pipeline: hub → gates → workflows(BEFORE) → document → workflows(AFTER) → nudges
 4. Document component uses approved draft (skips generation)
-5. All protocols (BEFORE/AFTER) execute normally
+5. All protocols execute normally
 
 **Key Behaviors**:
 - Stateless until approved: No hub updates during review

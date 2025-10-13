@@ -93,43 +93,50 @@ Action: Clean exit without any persistence
 
 **Examples by Document Type:**
 
-**Requirements Review:**
-```
+**Requirements Review** (with codebase exploration):
+````
 📋 Requirements Draft Ready
 
-Here's the direction I'm taking:
-• User authentication with email and password
-• Password reset via email verification link
-• JWT-based session management
-• Basic role-based access control
-
-A few things to consider:
-• Should we specify password complexity requirements?
-• Email verification flow for new accounts isn't detailed yet
-• Rate limiting for login attempts might be important
-• OAuth integration scope unclear
-
-Would you like to proceed, or shall we refine this together?
-```
-
-**Design Review:**
-```
-📋 Design Draft Ready
+Codebase exploration completed:
+• Existing auth: JWT with passport.js in src/auth/
+• Database: PostgreSQL with TypeORM
+• API framework: Express.js
 
 Here's the direction I'm taking:
-• JWT service using jose library (based on investigation)
-• Bcrypt for password hashing (aligns with codebase)
-• Session management with Redis cache
-• RESTful API endpoints for auth operations
+• User authentication compatible with existing JWT setup
+• Extend current user model for password reset
+• RESTful endpoints following existing API patterns
 
-A few things to consider:
-• Error handling strategy for token expiration not specified
-• Refresh token rotation mechanism could be detailed
-• Database migration for user table missing
-• Integration tests approach undefined
+Investigation topics identified:
+• password-reset-flow (deep-dive)
+• token-expiration-strategy
+• rate-limiting-implementation
 
-Would you like to proceed, or shall we refine this together?
-```
+Would you like to proceed, or shall we refine?
+````
+
+**Design Review** (with gap analysis):
+````
+📋 Design Feasibility Analysis
+
+Requirements coverage:
+✅ User authentication - investigation.md#jwt-implementation
+✅ Password hashing - investigation.md#security-patterns
+⚠️ Password reset flow - Not investigated yet
+⚠️ Rate limiting - Not investigated yet
+❌ Email delivery - No investigation found
+
+Feasible design direction:
+• JWT service using jose library (evidenced)
+• Bcrypt for password hashing (evidenced)
+
+Missing information (blocking full design):
+• Password reset token generation strategy
+• Email service integration approach
+• Rate limiting middleware selection
+
+Recommendation: Complete missing investigations first, or proceed with partial design?
+````
 
 ## Template Selection Logic
 
