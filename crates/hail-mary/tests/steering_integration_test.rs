@@ -41,7 +41,7 @@ fn test_system_prompt_includes_steering_content() {
     .unwrap();
 
     // Create a test spec directly via repository
-    spec_repo.create_spec("test-feature").unwrap();
+    spec_repo.create_spec("test-feature", "en").unwrap();
 
     // Load config and steering
     let steering_config = config_repo.load_steering_config().unwrap();
@@ -92,7 +92,7 @@ fn test_system_prompt_with_empty_steering() {
     }
 
     // Create a test spec directly via repository
-    spec_repo.create_spec("test-feature").unwrap();
+    spec_repo.create_spec("test-feature", "en").unwrap();
 
     // Load config and steering (now with no steering files)
     let steering_config = config_repo.load_steering_config().unwrap();

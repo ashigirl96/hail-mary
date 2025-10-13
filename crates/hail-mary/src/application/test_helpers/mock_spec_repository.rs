@@ -56,7 +56,7 @@ impl MockSpecRepository {
 }
 
 impl SpecRepositoryInterface for MockSpecRepository {
-    fn create_spec(&self, name: &str) -> Result<(), ApplicationError> {
+    fn create_spec(&self, name: &str, _lang: &str) -> Result<(), ApplicationError> {
         if self.should_fail("create_spec") {
             return Err(ApplicationError::SpecCreationError(format!(
                 "Mock creation failure for {}",
@@ -158,12 +158,22 @@ impl SpecRepositoryInterface for MockSpecRepository {
         Ok(Vec::new())
     }
 
-    fn create_sbi(&self, _pbi_name: &str, _sbi_name: &str) -> Result<(), ApplicationError> {
+    fn create_sbi(
+        &self,
+        _pbi_name: &str,
+        _sbi_name: &str,
+        _lang: &str,
+    ) -> Result<(), ApplicationError> {
         // Mock: do nothing
         Ok(())
     }
 
-    fn ensure_sbi_files(&self, _pbi_name: &str, _sbi_name: &str) -> Result<(), ApplicationError> {
+    fn ensure_sbi_files(
+        &self,
+        _pbi_name: &str,
+        _sbi_name: &str,
+        _lang: &str,
+    ) -> Result<(), ApplicationError> {
         // Mock: do nothing
         Ok(())
     }

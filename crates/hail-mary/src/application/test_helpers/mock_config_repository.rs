@@ -2,7 +2,7 @@
 
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::ConfigRepositoryInterface;
-use crate::domain::value_objects::steering::{SteeringBackupConfig, SteeringConfig};
+use crate::domain::value_objects::steering::{SpecConfig, SteeringBackupConfig, SteeringConfig};
 use std::collections::HashMap;
 use std::sync::RwLock;
 
@@ -105,6 +105,28 @@ impl ConfigRepositoryInterface for MockConfigRepository {
         if self.should_fail("ensure_allowed_operations") {
             return Err(ApplicationError::ConfigurationError(
                 "Mock ensure allowed operations failure".to_string(),
+            ));
+        }
+
+        // For testing purposes, this is a no-op
+        Ok(())
+    }
+
+    fn load_spec_config(&self) -> Result<SpecConfig, ApplicationError> {
+        if self.should_fail("load_spec_config") {
+            return Err(ApplicationError::ConfigurationError(
+                "Mock load spec config failure".to_string(),
+            ));
+        }
+
+        // Return default spec config for testing
+        Ok(SpecConfig::default())
+    }
+
+    fn ensure_spec_config(&self) -> Result<(), ApplicationError> {
+        if self.should_fail("ensure_spec_config") {
+            return Err(ApplicationError::ConfigurationError(
+                "Mock ensure spec config failure".to_string(),
             ));
         }
 
