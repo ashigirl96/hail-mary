@@ -1,7 +1,7 @@
 ---
 name: investigate
 description: "Technical investigation for Kiro specs - triggered by: investigate, research, verify, explore, 調査, 検証"
-argument-hint: "[--topic <name>] [--deep] [--review]"
+argument-hint: "[--topic <name>] [--deep]"
 ---
 
 # /spec:investigate

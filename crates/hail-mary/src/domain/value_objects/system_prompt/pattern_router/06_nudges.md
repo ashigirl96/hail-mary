@@ -131,25 +131,6 @@ A few things to consider:
 Would you like to proceed, or shall we refine this together?
 ```
 
-**Investigation Review:**
-```
-📋 Investigation Draft Ready
-
-Here's the direction I'm taking:
-• JWT implementation patterns researched
-• Bcrypt vs Argon2 comparison completed
-• Session storage strategies evaluated
-• Security best practices documented
-
-A few things to consider:
-• Confidence scores could be more explicit
-• Alternative approaches for token refresh not fully explored
-• Performance benchmarks would strengthen findings
-• OWASP recommendations reference missing
-
-Would you like to proceed, or shall we refine this together?
-```
-
 ## Template Selection Logic
 
 ```

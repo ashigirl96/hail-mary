@@ -24,7 +24,6 @@
 |-------------|--------|-----------------|
 | "/spec:requirements --review" | Review then Create | `{class: "EXPLICIT_REVIEW", strategy: "review", components: ["patterns", "review", "nudges"]}` |
 | "/spec:design --review" | Review then Create | `{class: "EXPLICIT_REVIEW", strategy: "review", components: ["patterns", "review", "nudges"]}` |
-| "/spec:investigate --review --topic X" | Review then Append | `{class: "EXPLICIT_REVIEW", strategy: "review", components: ["patterns", "review", "nudges"]}` |
 
 **Routing Decision Process**:
 ```
