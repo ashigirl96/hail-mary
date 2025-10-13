@@ -8,6 +8,7 @@
 - **Use exact topic names** - From tasks.md checklist
 - **Enforce kebab-case** - Topic format must be kebab-case (e.g., "auth-flow")
 - **Provide domain styles** - Technical vs Business/Scientific documentation patterns
+- **Use spec language** - Write in language specified by **Language** field in tasks.md (directly under # Tasks heading)
 
 **Will Not**
 - **Check prerequisites** - Prerequisites handled by gates

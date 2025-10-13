@@ -10,6 +10,7 @@
 - **Strictly follow templates** - Use exact template structure without deviation or customization
 - **Use codebase terminology** - Align with existing technical concepts (via pre-action exploration)
 - **Focus on business/functional** - Requirements express WHAT needs to be built, not HOW
+- **Use spec language** - Write in language specified by **Language** field in tasks.md (directly under # Tasks heading)
 
 **Will Not**
 - **Define orchestration rules** - Orchestration handled by workflows

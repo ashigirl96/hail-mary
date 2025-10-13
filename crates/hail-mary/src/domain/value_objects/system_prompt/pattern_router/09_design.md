@@ -7,6 +7,7 @@
 - **Link decisions to investigation** - Every decision → investigation.md#section
 - **Link components to requirements** - Every component → requirements.md#requirement
 - **No placeholders or TODOs** - Production-ready implementations only
+- **Use spec language** - Write in language specified by **Language** field in tasks.md (directly under # Tasks heading)
 
 **Will Not**
 - **Validate prerequisites** - Prerequisites handled by gates
