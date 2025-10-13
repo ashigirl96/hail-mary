@@ -82,6 +82,24 @@ fn default_backup_max() -> usize {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SpecConfig {
+    #[serde(default = "default_spec_lang")]
+    pub lang: String,
+}
+
+impl Default for SpecConfig {
+    fn default() -> Self {
+        Self {
+            lang: default_spec_lang(),
+        }
+    }
+}
+
+fn default_spec_lang() -> String {
+    "en".to_string()
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Criterion {
     pub name: String,
     pub description: String,
