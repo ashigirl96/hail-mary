@@ -22,7 +22,7 @@ struct SpecSection {
 }
 
 fn default_spec_lang() -> String {
-    "en".to_string()
+    "ja".to_string()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
