@@ -1,3 +1,6 @@
+[spec]
+lang = "ja"
+
 [steering.backup]
 max = 10
 
@@ -57,7 +60,7 @@ criteria = [
     "Best Practices: Effective command design and implementation",
     "Integration Patterns: Claude Code workflow optimization",
     "Task Tool Usage: Subagent invocation with arguments",
-    "Parameter Passing: Dynamic prompt construction for subagents"
+    "Parameter Passing: Dynamic prompt construction for subagents",
 ]
 name = "prompt-engineering"
 purpose = "Claude Code command patterns and best practices"
