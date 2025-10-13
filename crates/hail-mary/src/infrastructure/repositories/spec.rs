@@ -31,6 +31,7 @@ impl SpecRepository {
         &self,
         spec_dir: &std::path::Path,
         name: &str,
+        lang: &str,
     ) -> Result<(), ApplicationError> {
         // Create essential template files including tasks.md for orchestration
 
@@ -64,6 +65,8 @@ impl SpecRepository {
         let tasks_content = format!(
             r#"# Tasks
 
+**Language**: {}
+
 ## State Tracking
 
 | Document | Status | Coverage | Next Action |
@@ -81,7 +84,7 @@ impl SpecRepository {
 - [ ] Design documentation
 - [ ] Implementation planning
 "#,
-            name
+            lang, name
         );
 
         // Write all template files including tasks.md
@@ -107,7 +110,7 @@ impl SpecRepository {
 }
 
 impl SpecRepositoryInterface for SpecRepository {
-    fn create_spec(&self, name: &str) -> Result<(), ApplicationError> {
+    fn create_spec(&self, name: &str, lang: &str) -> Result<(), ApplicationError> {
         // Validate spec name
         self.validate_spec_name(name)?;
 
@@ -133,7 +136,7 @@ impl SpecRepositoryInterface for SpecRepository {
         })?;
 
         // Create template files
-        self.create_template_files(&spec_dir, name)?;
+        self.create_template_files(&spec_dir, name, lang)?;
 
         Ok(())
     }
@@ -294,7 +297,12 @@ impl SpecRepositoryInterface for SpecRepository {
         Ok(sbis)
     }
 
-    fn create_sbi(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError> {
+    fn create_sbi(
+        &self,
+        pbi_name: &str,
+        sbi_name: &str,
+        lang: &str,
+    ) -> Result<(), ApplicationError> {
         // Validate SBI name
         self.validate_spec_name(sbi_name)?;
 
@@ -316,12 +324,17 @@ impl SpecRepositoryInterface for SpecRepository {
 
         // Reuse create_template_files to generate tasks.md and memo.md
         // Note: requirements.md is NOT generated here - created by /decompose or /add-sbi slash commands
-        self.create_template_files(&sbi_path, sbi_name)?;
+        self.create_template_files(&sbi_path, sbi_name, lang)?;
 
         Ok(())
     }
 
-    fn ensure_sbi_files(&self, pbi_name: &str, sbi_name: &str) -> Result<(), ApplicationError> {
+    fn ensure_sbi_files(
+        &self,
+        pbi_name: &str,
+        sbi_name: &str,
+        lang: &str,
+    ) -> Result<(), ApplicationError> {
         let sbi_path = self
             .path_manager
             .specs_dir(true)
@@ -338,7 +351,7 @@ impl SpecRepositoryInterface for SpecRepository {
 
         // Only generate missing files
         if !tasks_path.exists() || !memo_path.exists() {
-            self.create_template_files(&sbi_path, sbi_name)?;
+            self.create_template_files(&sbi_path, sbi_name, lang)?;
         }
 
         Ok(())

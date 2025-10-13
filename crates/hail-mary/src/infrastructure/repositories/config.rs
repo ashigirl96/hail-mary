@@ -1,7 +1,7 @@
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::ConfigRepositoryInterface;
 use crate::domain::value_objects::steering::{
-    Criterion, SteeringBackupConfig, SteeringConfig, SteeringType,
+    Criterion, SpecConfig, SteeringBackupConfig, SteeringConfig, SteeringType,
 };
 use crate::infrastructure::filesystem::path_manager::PathManager;
 use serde::{Deserialize, Serialize};
@@ -11,6 +11,18 @@ use std::fs;
 struct TomlConfig {
     #[serde(default)]
     steering: Option<SteeringSection>,
+    #[serde(default)]
+    spec: Option<SpecSection>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct SpecSection {
+    #[serde(default = "default_spec_lang")]
+    lang: String,
+}
+
+fn default_spec_lang() -> String {
+    "en".to_string()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -293,6 +305,46 @@ impl ConfigRepositoryInterface for ConfigRepository {
         }
 
         if modified {
+            self.save_toml(&toml_value)?;
+        }
+
+        Ok(())
+    }
+
+    fn load_spec_config(&self) -> Result<SpecConfig, ApplicationError> {
+        let toml_value = self.load_toml()?;
+
+        if let Ok(config) = toml_value.try_into::<TomlConfig>() {
+            Ok(config
+                .spec
+                .as_ref()
+                .map(|s| SpecConfig {
+                    lang: s.lang.clone(),
+                })
+                .unwrap_or_default())
+        } else {
+            Ok(SpecConfig::default())
+        }
+    }
+
+    fn ensure_spec_config(&self) -> Result<(), ApplicationError> {
+        let mut toml_value = self.load_toml()?;
+        let table = toml_value.as_table_mut().ok_or_else(|| {
+            ApplicationError::ConfigurationError("Invalid TOML structure".to_string())
+        })?;
+
+        // Check if spec section exists
+        if !table.contains_key("spec") {
+            // Add default spec section
+            let spec_section = SpecSection {
+                lang: default_spec_lang(),
+            };
+
+            let spec_value = toml::Value::try_from(spec_section).map_err(|e| {
+                ApplicationError::ConfigurationError(format!("Failed to serialize spec: {}", e))
+            })?;
+
+            table.insert("spec".to_string(), spec_value);
             self.save_toml(&toml_value)?;
         }
 
