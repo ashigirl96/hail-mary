@@ -36,6 +36,10 @@
 {investigation}
 </kiro-investigation>
 
+<kiro-brainstorming>
+{brainstorming}
+</kiro-brainstorming>
+
 <kiro-design>
 {design}
 </kiro-design>

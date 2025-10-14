@@ -36,30 +36,30 @@ Input → Pattern Classification → Strategy Selection → Pipeline Execution
 
 ## コアアーキテクチャ
 
-### 2つの独立したパイプライン
+### 3つの独立したパイプライン
 
-フレームワークはパターン分類に基づいて、入力を2つの専用パイプラインのいずれかにルーティングします：
+フレームワークはパターン分類に基づいて、入力を3つの専用パイプラインのいずれかにルーティングします：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Pattern Recognition                       │
 │              (03_patterns.md - Router/Classifier)           │
-└────────────────────────┬────────────────────────────────────┘
-                         │                    │
-                    EXPLICIT            EXPLICIT_REVIEW
-                         │                    │
-                         ▼                    ▼
-                  ┌───────────┐        ┌──────────┐
-                  │ Command   │        │ Review   │
-                  │ Pipeline  │        │ Pipeline │
-                  └───────────┘        └──────────┘
-                   重量級操作             軽量級対話
-                   完全I/O               I/Oなし
-                   全検証                 検証スキップ
-                                            │
-                                            │ User Approval
-                                            ↓
-                                     Back to Command
+└────────────┬───────────────┬──────────────┬─────────────────┘
+             │               │              │
+        EXPLICIT      EXPLICIT_REVIEW   BRAINSTORM
+             │               │              │
+             ▼               ▼              ▼
+       ┌─────────┐     ┌─────────┐   ┌────────────┐
+       │ Command │     │ Review  │   │Brainstorm  │
+       │Pipeline │     │Pipeline │   │ Pipeline   │
+       └─────────┘     └─────────┘   └────────────┘
+        重量級操作        軽量級対話       探索型対話
+        完全I/O          I/Oなし      brainstorming.md
+        全検証           検証スキップ     検証スキップ
+                            │               │
+                            │ Approval      │ Manual
+                            ↓               ↓
+                       Back to Command  No Auto-migration
 ```
 
 ### パイプライン特性
@@ -68,6 +68,7 @@ Input → Pattern Classification → Strategy Selection → Pipeline Execution
 |----------|--------|------------|-------|-------------|----------|
 | Command | 重量級 | 完全R/W | 全検証 | tasks.md更新 | 明示的コマンド |
 | Review | 軽量級 | なし | なし | エフェメラル | 対話的改善 → Command移行 |
+| Brainstorm | 軽量級 | なし | なし | brainstorming.md | 要件探索 → 手動移行 |
 
 ## ファイル構造と責務
 
@@ -86,7 +87,9 @@ pattern_router/
 ├── 07_requirements.md   # ドキュメント構造: 要件テンプレート
 ├── 08_investigation.md  # ドキュメント構造: 調査テンプレート
 ├── 09_design.md         # ドキュメント構造: 設計テンプレート
-├── 10_spec_files.md     # 動的パス: 現在の仕様ファイル参照
+├── 10_brainstorming.md  # ドキュメント構造: brainstormingテンプレート
+├── 11_spec_files.md     # 動的パス: 現在の仕様ファイル参照
+├── 11_spec_files_sbi.md # 動的パス: SBI仕様ファイル参照
 └── README.md            # このファイル
 ```
 
@@ -98,16 +101,16 @@ pattern_router/
 
 **ルーティング＆戦略層**:
 - `03_patterns.md` - **ルーター**: 入力を分類しルーティング戦略を出力
-- `04_workflows.md` - **パイプラインコンテナ**: 2つの異なる実行戦略を定義
+- `04_workflows.md` - **パイプラインコンテナ**: 3つの異なる実行戦略を定義
 
 **条件付きコンポーネント** (パイプラインに基づいて起動):
-- `02_hub.md` - 状態管理 (Command: R/W, Review: なし)
+- `02_hub.md` - 状態管理 (Command: R/W, Review/Brainstorm: なし)
 - `05_gates.md` - 検証 (Command Pipeline固有のルールセット)
 - `06_nudges.md` - 提案生成 (パイプライン固有のテンプレート)
 
 **構造定義** (必要に応じて参照):
-- `07-09_*.md` - ドキュメントテンプレート
-- `10_spec_files.md` - 動的ファイルパス提供
+- `07-10_*.md` - ドキュメントテンプレート
+- `11_spec_files*.md` - 動的ファイルパス提供
 
 ## 詳細ファイル説明
 
@@ -257,29 +260,52 @@ Input → patterns → review → nudges → [User Decision] → Command Pipelin
 |----------|---------------|----------|
 | Command | 状態ベース進捗 | "Investigation 3/5 complete. Continue?" |
 | Review | 会話ベース | "📋 Draft Ready. Here's the direction... Would you like to proceed?" |
+| Brainstorm | 探索的対話 | "What problem does this solve?" → "Save?" → "Next topics?" |
 
-### 07-09_*.md - ドキュメント構造定義
+### 07-10_*.md - ドキュメント構造定義
 
 **目的**: 純粋なテンプレート定義、ルーティングロジックなし。
 
-- `07_requirements.md`: PRDとBug Reportテンプレート
+- `07_requirements.md`: PRD/Bug/Tech/PBIテンプレート
 - `08_investigation.md`: Append-Onlyプロトコル、トピック構造、エビデンス形式
 - `09_design.md`: As-Is/To-Be形式、ファイル別設計セクション
+- `10_brainstorming.md`: Topic-based探索レポート、柔軟なフォーマット
 
 **主要原則**: これらはドキュメントが「何」であるかを定義し、「どのように」「いつ」作成するかは定義しない。
 
-### 10_spec_files.md - 動的パス提供
+### 10_brainstorming.md - Brainstorming構造定義
+
+**目的**: brainstorming.mdのtopic-based構造とboundaries定義。MODE_Brainstorming.md（~/.claude/）の機能をPattern Router Framework内に完全統合。
+
+**主要特徴**:
+- **Append-Only protocol**: investigation.mdと同じパターン
+- **Topic naming**: kebab-case強制（user-authentication, ux-design）
+- **柔軟なformat**: 画一的構造を強制せず、自由記述許容
+- **Comprehensive report**: 課題/解決策/懸念点が理解できるレポート
+
+**Boundaries**:
+- Will: Exploration capture, Discussion summary, Topic naming
+- Will Not: Enforce uniform format, Personal notes（memo.md分離）
+
+**参照元**: Brainstorm Pipeline、/spec:brainstorm command
+
+**MODE_Brainstorming.md統合**: グローバル設定（~/.claude/MODE_Brainstorming.md）の機能を完全移行し、Spec context内で実現。
+
+### 11_spec_files*.md - 動的パス提供
 
 **目的**: 現在の仕様ファイルパスをXMLタグ経由で提供。
 
-**出力**:
+**11_spec_files.md出力**:
 ```xml
 <requirements-file>/path/to/requirements.md</requirements-file>
 <design-file>/path/to/design.md</design-file>
 <tasks-file>/path/to/tasks.md</tasks-file>
 <investigation-file>/path/to/investigation.md</investigation-file>
+<brainstorming-file>/path/to/brainstorming.md</brainstorming-file>
 <memo-file>/path/to/memo.md</memo-file>
 ```
+
+**11_spec_files_sbi.md**: SBI context用（sbi_brainstorming_path含む）
 
 ## パイプライン実行例
 
@@ -338,24 +364,58 @@ Pattern Recognition (03):
 結果: Review → Command handoff、BEFORE/AFTER Protocol完全実行
 ```
 
+### 例3: Brainstorm Mode（探索的要件発見）
+
+```
+ユーザー入力: "/spec:brainstorm --topic ux-design"
+
+Pattern Recognition (03):
+→ Class: BRAINSTORM
+→ Confidence: 1.0
+→ Strategy: brainstorm
+→ Components: [patterns, brainstorm, nudges]
+
+選択されたパイプライン: Brainstorm Pipeline
+
+実行フロー:
+1. Patterns: --topic検出、brainstorming.md読取（セクション検索）
+2. Brainstorm: Socratic Dialogue実行
+   - Nudges: brainstorm:nudge-conversation（探索質問）
+3. 収束検出
+4. Nudges: brainstorm:nudge-save（"保存しますか？"）
+
+ユーザー: "保存"
+
+5. brainstorming.md保存（ux-designセクション Append）
+6. Nudges: brainstorm:nudge-next（"次のトピック: mobile-support？"）
+
+結果: brainstorming.md更新、手動でrequirements移行
+```
+
 ## 戦略選択による効率性
 
-### なぜ2つのパイプラインか
+### なぜ3つのパイプラインか
 
-**単一フローの問題**: レビューが必要な時も、不要な時も、同じ重量級フローを実行。
+**単一フローの問題**:
+- 要件が明確な場合も不明確な場合も同じ重量級フローを実行
+- レビューが必要な時も不要な時も同じフロー
+- 探索段階でも検証を強制
 
-**解決策**: --reviewフラグで軽量級Review Pipelineにルーティング、承認後にCommand Pipelineで永続化。
+**解決策**: パターン分類で最適なパイプラインにルーティング
 
 | 操作タイプ | アプローチ | 効率性 |
 |----------------|--------------|-----------------|
-| 通常実行 | Command Pipeline (完全検証) | 適切な重量 |
-| レビュー付き | Review → Command (2段階) | Draft生成は軽量、永続化は厳密 |
+| 通常実行 | Command Pipeline（完全検証） | 適切な重量 |
+| レビュー付き | Review → Command（2段階） | Draft生成は軽量、永続化は厳密 |
+| 要件探索 | Brainstorm（独立） | 探索は自由、開発は手動移行 |
 
 ### 主要効率性機能
 
 1. **Review Pipelineはファイルシステムに触れない**: Draft生成は一時的（メモリ内のみ）
-2. **Command Pipelineは完全検証**: 永続化時は適切な検証を受ける
-3. **Protocol再利用**: Review承認後、Command PipelineのBEFORE/AFTER Protocol完全実行
+2. **Brainstorm Pipelineは検証スキップ**: 探索段階では制約なし、brainstorming.mdのみ更新
+3. **Command Pipelineは完全検証**: 永続化時は適切な検証を受ける
+4. **Protocol再利用**: Review/Brainstorm承認後、必要に応じてCommand Pipeline起動
+5. **真の"Start anywhere"実現**: 要件不明確でもBrainstorm Pipelineで開始可能
 
 ## 拡張ガイド
 
@@ -747,9 +807,9 @@ $ hail-mary code
 let is_sbi = is_sbi_context(path);
 
 let spec_files_section = if is_sbi {
-    build_sbi_spec_files(name, path)  // 10_spec_files_sbi.md
+    build_sbi_spec_files(name, path)  // 11_spec_files_sbi.md
 } else {
-    build_pbi_spec_files(name, path)  // 10_spec_files.md
+    build_pbi_spec_files(name, path)  // 11_spec_files.md
 };
 ```
 
@@ -801,14 +861,16 @@ fn is_sbi_context(spec_path: &Path) -> bool {
 ## 検証チェックリスト
 
 - ✅ パターン認識が全入力を分類
-- ✅ 明確な特性を持つ2つの独立したパイプライン（Command、Review）
-- ✅ Hubアクセスは条件付き、必須ではない（Command: R/W, Review: なし）
+- ✅ 明確な特性を持つ3つの独立したパイプライン（Command、Review、Brainstorm）
+- ✅ Hubアクセスは条件付き、必須ではない（Command: R/W, Review/Brainstorm: なし）
 - ✅ ゲートはCommand Pipeline固有
-- ✅ Nudgesは戦略に整合（State-based vs Conversational）
+- ✅ Nudgesは戦略に整合（State-based vs Conversational vs Exploratory）
 - ✅ Review Pipelineはtasks.mdに触れない（ephemeral）
+- ✅ Brainstorm Pipelineは検証スキップ（探索自由）
 - ✅ 適切なパイプライン選択による効率性
 - ✅ デフォルトフローなし - すべてがパターン駆動
 - ✅ コンポーネント分離の維持
 - ✅ 真のreactive pattern-based routingを達成
 - ✅ Before/After Protocol再利用でDRY原則遵守
 - ✅ PBI/SBI Multi-PR Support - Template switchingで複雑性分離
+- ✅ MODE_Brainstorming.md統合 - グローバル設定からPattern Router Frameworkへ完全移行

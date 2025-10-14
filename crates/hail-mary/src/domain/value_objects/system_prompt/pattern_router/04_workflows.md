@@ -95,6 +95,33 @@ When user approves:
 - Protocol reuse: Command Pipeline handles all persistence
 - Natural dialogue: No rigid command syntax
 
+### Brainstorm Pipeline (BRAINSTORM class)
+```
+Input → patterns → brainstorm → nudges
+```
+
+**Characteristics**:
+- Exploratory dialogue for requirement discovery
+- <brainstorming-file> R/W (report format)
+- Hub/Gates access: None (exploration stage)
+- No automatic migration to Command Pipeline (user decision)
+- Lightweight (similar to Review Pipeline)
+
+**Key Behaviors**:
+- **Socratic Dialogue**: Ask probing questions to uncover hidden requirements
+- **Non-Presumptive**: Avoid assumptions, let user guide discovery direction
+- **Collaborative Exploration**: Partner in discovery rather than directive consultation
+- Stateless until saved: No persistence before user confirmation
+- Manual migration: User executes `/spec:requirements` to start development
+- Append-only: Same topic appends to existing section
+
+**Expected Outcomes**:
+- Clear requirements from vague initial concepts
+- Comprehensive requirement briefs ready for implementation
+- Reduced project scope creep through upfront exploration
+- Better alignment between user vision and technical implementation
+- Smoother handoff to formal development workflows
+
 ## Strategy Selection Examples
 
 ```
@@ -115,6 +142,12 @@ Input: "/spec:design"
 Pattern: {class: "EXPLICIT", strategy: "command"}
 Pipeline: Command Pipeline
 Flow: Full execution with validation gates
+
+Example 4: Brainstorm Mode
+Input: "/spec:brainstorm --topic ux-design"
+Pattern: {class: "BRAINSTORM", strategy: "brainstorm"}
+Pipeline: Brainstorm Pipeline
+Flow: Exploratory dialogue → brainstorming.md → Manual migration
 ```
 
 ## Document-Specific Pre-Actions (Command Pipeline Only)
