@@ -6,6 +6,7 @@
 |----------|------------------|-------------|--------|
 | Command | State-based progress | Updates tasks.md | After operations |
 | Review | Conversational | Ephemeral only | During review dialogue |
+| Brainstorm | Exploratory dialogue | Updates brainstorming.md | During/After exploration |
 
 ## Command Pipeline Templates (State-Based)
 
@@ -138,12 +139,61 @@ Missing information (blocking full design):
 Recommendation: Complete missing investigations first, or proceed with partial design?
 ````
 
+## Brainstorm Pipeline Templates (Exploratory Dialogue)
+
+### During Conversation
+<event id="brainstorm:nudge-conversation">
+- "What problem does this feature solve for users?"
+- "Who are your target users and their main workflows?"
+- "What's your expected user volume and performance needs?"
+- "Any existing systems to integrate with?"
+- "What similar services could serve as references?"
+- "What specific challenges are users facing?"
+- "Current vs desired user experience?"
+- "Security requirements and compliance needs?"
+- "Timeline and resource constraints?"
+</event>
+
+### Before Save
+<event id="brainstorm:nudge-save">
+```
+📝 Discussion converged
+
+Issues identified:
+• [Extracted issue 1]
+• [Extracted issue 2]
+
+Solutions explored:
+• Option 1: [Approach 1]
+• Option 2: [Approach 2]
+
+Concerns raised:
+• [Concern 1]
+
+Save to brainstorming.md?
+```
+</event>
+
+### After Save
+<event id="brainstorm:nudge-next">
+```
+✅ Saved to brainstorming.md
+
+During our discussion, these topics were identified:
+• [topic-1] (Priority: High)
+• [topic-2] (Priority: Medium)
+
+Continue brainstorming with `/spec:brainstorm --topic [topic-name]` or start development with `/spec:requirements`?
+```
+</event>
+
 ## Template Selection Logic
 
 ```
 Pipeline determines template category:
 ├─ Command → Use state-based templates
-└─ Review → Use conversational templates
+├─ Review → Use conversational templates
+└─ Brainstorm → Use exploratory dialogue templates
 ```
 
 ## Key Principles
