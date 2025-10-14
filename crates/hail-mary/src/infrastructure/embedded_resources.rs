@@ -44,6 +44,10 @@ impl EmbeddedSpecCommands {
     /// Status command documentation
     const STATUS: &'static str = include_str!("../../../../.claude/commands/spec/status.md");
 
+    /// Brainstorm command documentation
+    const BRAINSTORM: &'static str =
+        include_str!("../../../../.claude/commands/spec/brainstorm.md");
+
     /// Returns all embedded spec command files as (filename, content) pairs
     pub fn get_all() -> Vec<(&'static str, &'static str)> {
         vec![
@@ -52,6 +56,7 @@ impl EmbeddedSpecCommands {
             ("design.md", Self::DESIGN),
             ("timeline.md", Self::TIMELINE),
             ("status.md", Self::STATUS),
+            ("brainstorm.md", Self::BRAINSTORM),
         ]
     }
 }
@@ -143,7 +148,7 @@ mod tests {
     #[test]
     fn test_embedded_spec_commands_not_empty() {
         let files = EmbeddedSpecCommands::get_all();
-        assert_eq!(files.len(), 5);
+        assert_eq!(files.len(), 6);
 
         for (name, content) in files {
             assert!(!name.is_empty(), "File name should not be empty");

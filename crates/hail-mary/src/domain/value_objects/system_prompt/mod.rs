@@ -16,8 +16,9 @@ const PATTERN_ROUTER_NUDGES: &str = include_str!("pattern_router/06_nudges.md");
 const PATTERN_ROUTER_REQUIREMENTS: &str = include_str!("pattern_router/07_requirements.md");
 const PATTERN_ROUTER_INVESTIGATION: &str = include_str!("pattern_router/08_investigation.md");
 const PATTERN_ROUTER_DESIGN: &str = include_str!("pattern_router/09_design.md");
-const PATTERN_ROUTER_SPEC_FILES: &str = include_str!("pattern_router/10_spec_files.md");
-const PATTERN_ROUTER_SPEC_FILES_SBI: &str = include_str!("pattern_router/10_spec_files_sbi.md");
+const PATTERN_ROUTER_BRAINSTORMING: &str = include_str!("pattern_router/10_brainstorming.md");
+const PATTERN_ROUTER_SPEC_FILES: &str = include_str!("pattern_router/11_spec_files.md");
+const PATTERN_ROUTER_SPEC_FILES_SBI: &str = include_str!("pattern_router/11_spec_files_sbi.md");
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SystemPrompt {
@@ -59,6 +60,7 @@ impl SystemPrompt {
                 .replace("{nudges}", PATTERN_ROUTER_NUDGES)
                 .replace("{requirements}", PATTERN_ROUTER_REQUIREMENTS)
                 .replace("{investigation}", PATTERN_ROUTER_INVESTIGATION)
+                .replace("{brainstorming}", PATTERN_ROUTER_BRAINSTORMING)
                 .replace("{design}", PATTERN_ROUTER_DESIGN)
                 .replace("{spec_files}", &spec_files_section);
 
@@ -97,6 +99,7 @@ fn build_pbi_spec_files(spec_name: &str, spec_path: &Path) -> String {
     let design_path = format!("{}/design.md", path_str);
     let tasks_path = format!("{}/tasks.md", path_str);
     let investigation_path = format!("{}/investigation.md", path_str);
+    let brainstorming_path = format!("{}/brainstorming.md", path_str);
     let memo_path = format!("{}/memo.md", path_str);
 
     PATTERN_ROUTER_SPEC_FILES
@@ -106,6 +109,7 @@ fn build_pbi_spec_files(spec_name: &str, spec_path: &Path) -> String {
         .replace("{design_path}", &design_path)
         .replace("{tasks_path}", &tasks_path)
         .replace("{investigation_path}", &investigation_path)
+        .replace("{brainstorming_path}", &brainstorming_path)
         .replace("{memo_path}", &memo_path)
 }
 
@@ -122,6 +126,7 @@ fn build_sbi_spec_files(sbi_name: &str, sbi_path: &Path) -> String {
     let sbi_investigation_path = format!("{}/investigation.md", sbi_path_str);
     let sbi_design_path = format!("{}/design.md", sbi_path_str);
     let sbi_tasks_path = format!("{}/tasks.md", sbi_path_str);
+    let sbi_brainstorming_path = format!("{}/brainstorming.md", sbi_path_str);
     let sbi_memo_path = format!("{}/memo.md", sbi_path_str);
 
     // PBI paths
@@ -134,6 +139,7 @@ fn build_sbi_spec_files(sbi_name: &str, sbi_path: &Path) -> String {
         .replace("{sbi_investigation_path}", &sbi_investigation_path)
         .replace("{sbi_design_path}", &sbi_design_path)
         .replace("{sbi_tasks_path}", &sbi_tasks_path)
+        .replace("{sbi_brainstorming_path}", &sbi_brainstorming_path)
         .replace("{sbi_memo_path}", &sbi_memo_path)
         .replace("{pbi_requirements_path}", &pbi_requirements_path)
 }
@@ -297,6 +303,49 @@ mod tests {
         // Should NOT contain PBI investigation/design (removed from template)
         assert!(!content.contains("<pbi-investigation-file>"));
         assert!(!content.contains("<pbi-design-file>"));
+    }
+
+    #[test]
+    fn test_system_prompt_with_brainstorming() {
+        let spec_name = "test-brainstorm";
+        let spec_path = PathBuf::from(".kiro/specs/test-brainstorm");
+        let steerings = Steerings(vec![]);
+
+        let prompt = SystemPrompt::new(Some(spec_name), Some(&spec_path), &steerings);
+        let content = prompt.as_str();
+
+        // Should contain brainstorming-file tag
+        assert!(content.contains("<brainstorming-file>"));
+        assert!(content.contains("test-brainstorm/brainstorming.md"));
+
+        // Should contain BRAINSTORM pattern definition
+        assert!(content.contains("<kiro-patterns>"));
+        assert!(content.contains("BRAINSTORM Patterns"));
+
+        // Should contain Brainstorm Pipeline definition
+        assert!(content.contains("<kiro-workflows>"));
+        assert!(content.contains("Brainstorm Pipeline"));
+
+        // Should contain brainstorming document structure
+        assert!(content.contains("<kiro-brainstorming>"));
+        assert!(content.contains("Brainstorming Document Structure"));
+    }
+
+    #[test]
+    fn test_brainstorm_pipeline_characteristics() {
+        let spec_name = "test-brainstorm";
+        let spec_path = PathBuf::from(".kiro/specs/test-brainstorm");
+        let steerings = Steerings(vec![]);
+
+        let prompt = SystemPrompt::new(Some(spec_name), Some(&spec_path), &steerings);
+        let content = prompt.as_str();
+
+        // Verify Brainstorm Pipeline has no Hub/Gates access
+        assert!(content.contains("Hub/Gates access: None"));
+
+        // Verify two nudge events
+        assert!(content.contains("brainstorm:nudge-save"));
+        assert!(content.contains("brainstorm:nudge-next"));
     }
 
     #[test]
