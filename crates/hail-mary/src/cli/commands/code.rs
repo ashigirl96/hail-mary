@@ -46,6 +46,7 @@ impl CodeCommand {
             &steering_repo,
             self.no_danger,
             self.continue_conversation,
+            path_manager.project_root(),
         ) {
             Ok(()) => Ok(()),
             Err(crate::application::errors::ApplicationError::ProcessLaunchError(msg)) => {

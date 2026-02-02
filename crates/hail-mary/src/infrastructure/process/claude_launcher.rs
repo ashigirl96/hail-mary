@@ -13,6 +13,7 @@ impl ClaudeProcessLauncher {
         system_prompt: &str,
         no_danger: bool,
         continue_conversation: bool,
+        plans_directory: Option<&str>,
     ) -> Result<()> {
         // Check if claude command exists
         let claude_exists = Self::check_claude_availability()?;
@@ -39,21 +40,29 @@ impl ClaudeProcessLauncher {
         // TODO: When OnToolError hook is implemented, consider switching to that
         //       to provide steering specifically on tool failures
 
-        // Create inline settings JSON with UserPromptSubmit hook
-        let settings_json = r#"{
-  "hooks": {
+        // Build inline settings JSON with UserPromptSubmit hook and optional plansDirectory
+        let plans_dir_entry = match plans_directory {
+            Some(dir) => format!(",\n  \"plansDirectory\": \"{}\"", dir),
+            None => String::new(),
+        };
+
+        let settings_json = format!(
+            r#"{{
+  "hooks": {{
     "UserPromptSubmit": [
-      {
+      {{
         "hooks": [
-          {
+          {{
             "type": "command",
             "command": "hail-mary steering remind --user-prompt-submit"
-          }
+          }}
         ]
-      }
+      }}
     ]
-  }
-}"#;
+  }}{}
+}}"#,
+            plans_dir_entry
+        );
 
         // Previously used PostToolUse (disabled due to not running on tool failures):
         // "PostToolUse": [

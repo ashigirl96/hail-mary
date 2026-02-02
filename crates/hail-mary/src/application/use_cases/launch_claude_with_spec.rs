@@ -1,5 +1,6 @@
 use anyhow::Result;
 use std::io::{self, Write};
+use std::path::Path;
 
 use crate::application::errors::ApplicationError;
 use crate::application::repositories::{
@@ -18,6 +19,7 @@ pub fn launch_claude_with_spec(
     steering_repo: &dyn SteeringRepositoryInterface,
     no_danger: bool,
     continue_conversation: bool,
+    project_root: &Path,
 ) -> Result<(), ApplicationError> {
     // 1. Load spec configuration
     let spec_config = config_repo.load_spec_config()?;
@@ -92,18 +94,26 @@ pub fn launch_claude_with_spec(
     let steerings = Steerings(steering_files);
 
     // 5. Generate system prompt based on spec selection
-    let system_prompt = if let (Some(name), Some(path)) = (spec_name, spec_path) {
-        // With spec: generate full system prompt
-        SystemPrompt::new(Some(&name), Some(&path), &steerings)
-    } else {
-        // Without spec: generate system prompt with only steering
-        SystemPrompt::new(None, None, &steerings)
+    let system_prompt = match (&spec_name, &spec_path) {
+        (Some(name), Some(path)) => SystemPrompt::new(Some(name), Some(path), &steerings),
+        _ => SystemPrompt::new(None, None, &steerings),
     };
 
-    // 6. Launch Claude with system prompt
+    // 6. Compute relative spec path for plansDirectory
+    let plans_directory = spec_path
+        .as_ref()
+        .and_then(|p| p.strip_prefix(project_root).ok())
+        .map(|p| p.display().to_string());
+
+    // 7. Launch Claude with system prompt
     let launcher = ClaudeProcessLauncher::new();
     launcher
-        .launch(system_prompt.as_str(), no_danger, continue_conversation)
+        .launch(
+            system_prompt.as_str(),
+            no_danger,
+            continue_conversation,
+            plans_directory.as_deref(),
+        )
         .map_err(|e| ApplicationError::ProcessLaunchError(e.to_string()))?;
 
     Ok(())
