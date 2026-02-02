@@ -14,8 +14,6 @@ const PATTERN_ROUTER_WORKFLOWS: &str = include_str!("pattern_router/04_workflows
 const PATTERN_ROUTER_GATES: &str = include_str!("pattern_router/05_gates.md");
 const PATTERN_ROUTER_NUDGES: &str = include_str!("pattern_router/06_nudges.md");
 const PATTERN_ROUTER_REQUIREMENTS: &str = include_str!("pattern_router/07_requirements.md");
-const PATTERN_ROUTER_INVESTIGATION: &str = include_str!("pattern_router/08_investigation.md");
-const PATTERN_ROUTER_DESIGN: &str = include_str!("pattern_router/09_design.md");
 const PATTERN_ROUTER_BRAINSTORMING: &str = include_str!("pattern_router/10_brainstorming.md");
 const PATTERN_ROUTER_SPEC_FILES: &str = include_str!("pattern_router/11_spec_files.md");
 const PATTERN_ROUTER_SPEC_FILES_SBI: &str = include_str!("pattern_router/11_spec_files_sbi.md");
@@ -59,9 +57,7 @@ impl SystemPrompt {
                 .replace("{gates}", PATTERN_ROUTER_GATES)
                 .replace("{nudges}", PATTERN_ROUTER_NUDGES)
                 .replace("{requirements}", PATTERN_ROUTER_REQUIREMENTS)
-                .replace("{investigation}", PATTERN_ROUTER_INVESTIGATION)
                 .replace("{brainstorming}", PATTERN_ROUTER_BRAINSTORMING)
-                .replace("{design}", PATTERN_ROUTER_DESIGN)
                 .replace("{spec_files}", &spec_files_section);
 
             content.push_str(&specification_section);
@@ -96,9 +92,7 @@ fn build_pbi_spec_files(spec_name: &str, spec_path: &Path) -> String {
     let path_str = spec_path.display().to_string();
 
     let requirements_path = format!("{}/requirements.md", path_str);
-    let design_path = format!("{}/design.md", path_str);
     let tasks_path = format!("{}/tasks.md", path_str);
-    let investigation_path = format!("{}/investigation.md", path_str);
     let brainstorming_path = format!("{}/brainstorming.md", path_str);
     let memo_path = format!("{}/memo.md", path_str);
 
@@ -106,9 +100,7 @@ fn build_pbi_spec_files(spec_name: &str, spec_path: &Path) -> String {
         .replace("{spec_name}", spec_name)
         .replace("{spec_path}", &path_str)
         .replace("{requirements_path}", &requirements_path)
-        .replace("{design_path}", &design_path)
         .replace("{tasks_path}", &tasks_path)
-        .replace("{investigation_path}", &investigation_path)
         .replace("{brainstorming_path}", &brainstorming_path)
         .replace("{memo_path}", &memo_path)
 }
@@ -123,8 +115,6 @@ fn build_sbi_spec_files(sbi_name: &str, sbi_path: &Path) -> String {
 
     // SBI paths
     let sbi_requirements_path = format!("{}/requirements.md", sbi_path_str);
-    let sbi_investigation_path = format!("{}/investigation.md", sbi_path_str);
-    let sbi_design_path = format!("{}/design.md", sbi_path_str);
     let sbi_tasks_path = format!("{}/tasks.md", sbi_path_str);
     let sbi_brainstorming_path = format!("{}/brainstorming.md", sbi_path_str);
     let sbi_memo_path = format!("{}/memo.md", sbi_path_str);
@@ -136,8 +126,6 @@ fn build_sbi_spec_files(sbi_name: &str, sbi_path: &Path) -> String {
         .replace("{sbi_name}", sbi_name)
         .replace("{sbi_path}", &sbi_path_str)
         .replace("{sbi_requirements_path}", &sbi_requirements_path)
-        .replace("{sbi_investigation_path}", &sbi_investigation_path)
-        .replace("{sbi_design_path}", &sbi_design_path)
         .replace("{sbi_tasks_path}", &sbi_tasks_path)
         .replace("{sbi_brainstorming_path}", &sbi_brainstorming_path)
         .replace("{sbi_memo_path}", &sbi_memo_path)
@@ -231,7 +219,6 @@ mod tests {
         // Should not contain spec-related content
         assert!(!content.contains(".kiro/specs/"));
         assert!(!content.contains("<requirements-file>"));
-        assert!(!content.contains("<design-file>"));
         assert!(!content.contains("<kiro-spec-files>"));
 
         // Should still contain base and steering content
@@ -266,9 +253,11 @@ mod tests {
         assert!(content.contains("<kiro-spec-files>"));
         assert!(content.contains("## Specification Files"));
         assert!(content.contains("<requirements-file>"));
-        assert!(content.contains("<investigation-file>"));
-        assert!(content.contains("<design-file>"));
         assert!(content.contains("<tasks-file>"));
+
+        // Should NOT contain removed file references
+        assert!(!content.contains("<investigation-file>"));
+        assert!(!content.contains("<design-file>"));
 
         // Should contain steering section
         assert!(content.contains("## About Steering"));
