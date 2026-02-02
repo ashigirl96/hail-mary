@@ -17,8 +17,7 @@
 - **Manage state transitions** - State management handled by hub
 - **Deviate from templates** - Templates are mandatory requirements, not suggestions
 - **Write technical implementation** - No code snippets, file paths (`src/auth/jwt.ts`), library names (jose, passport.js), or architecture details (microservices, API gateway)
-- **Include investigation content** - Technical research and evidence belong in investigation.md
-- **Mix concerns** - Requirements stay business/functional, investigation handles technical details
+- **Mix concerns** - Requirements stay business/functional, technical details belong in the planning phase
 
 ### Templates
 

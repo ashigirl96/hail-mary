@@ -32,17 +32,9 @@
 {requirements}
 </kiro-requirements>
 
-<kiro-investigation>
-{investigation}
-</kiro-investigation>
-
 <kiro-brainstorming>
 {brainstorming}
 </kiro-brainstorming>
-
-<kiro-design>
-{design}
-</kiro-design>
 
 <kiro-spec-files>
 {spec_files}

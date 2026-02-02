@@ -74,13 +74,6 @@ Input → patterns → review → nudges → [User Decision] → Command Pipelin
 - Output: Requirements draft + investigation topics identified
 - Focus: Terminology translation, complexity assessment
 
-**design --review**:
-- Context: Read <requirements-file> and <investigation-file>
-- Analysis: Gap analysis (requirements coverage vs investigation evidence)
-- Draft: Feasible design direction + missing investigation topics
-- Output: Coverage assessment + design recommendations
-- Focus: Feasibility assessment, gap identification, risk mitigation
-
 **Handoff to Command Pipeline**:
 When user approves:
 1. Exit Review Pipeline
@@ -137,13 +130,7 @@ Pattern: {class: "EXPLICIT_REVIEW", strategy: "review"}
 Pipeline: Review Pipeline → Command Pipeline
 Flow: Draft → Review → Approve → Execute
 
-Example 3: Design Command
-Input: "/spec:design"
-Pattern: {class: "EXPLICIT", strategy: "command"}
-Pipeline: Command Pipeline
-Flow: Full execution with validation gates
-
-Example 4: Brainstorm Mode
+Example 3: Brainstorm Mode
 Input: "/spec:brainstorm --topic ux-design"
 Pattern: {class: "BRAINSTORM", strategy: "brainstorm"}
 Pipeline: Brainstorm Pipeline
@@ -156,10 +143,10 @@ Flow: Exploratory dialogue → brainstorming.md → Manual migration
 <event id="requirements:pre-action">
 Explore codebase comprehensively to:
 1. Translate user language into codebase-compatible terminology
-2. Assess investigation topic complexity (simple vs complex/critical)
+2. Assess topic complexity (simple vs complex/critical)
 
 <reasoning>
-Translation ensures requirements align with existing technical concepts (e.g., "login" → "JWT authentication") while maintaining business/functional focus. Complexity assessment enables appropriate depth labeling (deep-dive for complex/critical topics) in Timeline. Implementation details belong in investigation.md, not requirements.md.
+Translation ensures requirements align with existing technical concepts (e.g., "login" → "JWT authentication") while maintaining business/functional focus. Implementation details belong in the planning phase, not requirements.md.
 </reasoning>
 </event>
 
@@ -167,22 +154,8 @@ Translation ensures requirements align with existing technical concepts (e.g., "
 
 **After Requirements Complete**:
 <event id="requirements:post-action">
-1. Extract investigation topics with depth (label deep-dive if complex/critical)
-2. Add investigation topics to Timeline
-3. Trigger nudge event: `requirements:nudge-next`
-</event>
-
-**After Investigation Topic Complete**:
-<event id="investigation:post-action">
-1. Update State Tracking with coverage from Timeline: investigation.md = X/Y (N%)
-2. If 100%: Set design.md readiness flag
-3. Trigger nudge event: `investigation:nudge-next` (with coverage data)
-</event>
-
-**After Design Complete**:
-<event id="design:post-action">
-1. Present design summary to user: approach, key decisions, and implementation file order
-2. Trigger nudge event: `design:nudge-next`
+1. Update State Tracking and Timeline
+2. Trigger nudge event: `requirements:nudge-next`
 </event>
 
 ## Key Principles

@@ -9,7 +9,7 @@
 - ALWAYS Read before Write/MultiEdit to Kiro documents
 - Understand existing structure and content first
 - Never write blindly without context
-- Applies to: <requirements-file>, <investigation-file>, <design-file>, <tasks-file>
+- Applies to: <requirements-file>, <tasks-file>
 
 **Conditional Hub Access**:
 - Command Pipeline: ALWAYS consult <tasks-file> before operations
@@ -18,9 +18,8 @@
 
 **Link Everything**:
 - Every reference includes document#section format
-- Design links to investigation.md#section, requirements.md#requirement
-- Investigation links to requirements.md#topic
 - Tasks.md links to all affected documents
+- Requirements link to relevant sections
 
 **Evidence Chain**:
 - Every decision traceable to source

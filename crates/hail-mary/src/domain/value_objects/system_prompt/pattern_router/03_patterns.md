@@ -15,8 +15,6 @@
 | User Pattern | Action | Strategy Output |
 |-------------|--------|-----------------|
 | "/spec:requirements", "Create requirements" | Create/Update | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/spec:investigate", "investigate", "research" | Append | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
-| "/spec:design", "design", "architecture" | Create (validated) | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 | "/spec:timeline", "plan implementation" | Timeline Planning | `{class: "EXPLICIT", strategy: "command", components: ["hub", "gates", "workflows", "document", "nudges"]}` |
 
 **EXPLICIT_REVIEW Patterns**:
@@ -24,7 +22,6 @@
 | User Pattern | Action | Strategy Output |
 |-------------|--------|-----------------|
 | "/spec:requirements --review" | Review then Create | `{class: "EXPLICIT_REVIEW", strategy: "review", components: ["patterns", "review", "nudges"]}` |
-| "/spec:design --review" | Review then Create | `{class: "EXPLICIT_REVIEW", strategy: "review", components: ["patterns", "review", "nudges"]}` |
 
 **BRAINSTORM Patterns**:
 
@@ -55,27 +52,6 @@ Input: "/spec:requirements"
 → Route to: Command Pipeline
 
 Input: "/spec:requirements --review"
-→ Class: EXPLICIT_REVIEW
-→ Confidence: 1.0
-→ Strategy: review
-→ Components: ["patterns", "review", "nudges"]
-→ Route to: Review Pipeline
-
-Input: "/spec:investigate --topic jwt-implementation"
-→ Class: EXPLICIT
-→ Confidence: 1.0
-→ Strategy: command
-→ Components: ["hub", "gates", "workflows", "document", "nudges"]
-→ Route to: Command Pipeline
-
-Input: "/spec:design"
-→ Class: EXPLICIT
-→ Confidence: 1.0
-→ Strategy: command
-→ Components: ["hub", "gates", "workflows", "document", "nudges"]}
-→ Route to: Command Pipeline
-
-Input: "/spec:design --review"
 → Class: EXPLICIT_REVIEW
 → Confidence: 1.0
 → Strategy: review

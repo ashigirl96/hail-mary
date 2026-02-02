@@ -19,22 +19,7 @@
 - "Each SBI follows its own lifecycle: requirements → investigate → design → timeline"
 
 **If PRD/Bug/Tech type (Single Spec):**
-- "Investigation topics defined: [list]"
-- "Start with `/spec:investigate --topic [first-topic]` for specific topic, or `/spec:investigate` to investigate all?"
-</event>
-
-### After Investigation Topic Complete
-<event id="investigation:nudge-next">
-- "Topic complete. Coverage: X/Y (N%). Continue with [next-topic]?"
-- "Investigation X/Y done. Remaining: [list]. Which next?"
-- If high coverage: "Almost done! Only [remaining] topic(s) left"
-- If 100%: "All investigations complete! Any additional topics to investigate? If not, use `/spec:design` to create design?"
-</event>
-
-### After Design Complete
-<event id="design:nudge-next">
-- "Does this design approach work for you?"
-- "Implementation order: [file1] → [file2] → [file3]. Add with `/spec:timeline`, or would you like to adjust?"
+- "Requirements complete. Ready to plan implementation with `/spec:timeline`?"
 </event>
 
 ### After Timeline Update
@@ -48,9 +33,7 @@
 | Current State | Suggestion |
 |--------------|------------|
 | Empty requirements | "Shall we start with requirements definition?" |
-| Partial investigation | "Continue investigation? Remaining: [list]" |
-| Design blocked | "Complete missing investigations: [list]" |
-| Design complete | Use Event: `design:nudge-next` templates |
+| Requirements complete | "Ready to plan implementation with `/spec:timeline`?" |
 | Stalled progress | "Resume with [last-incomplete]?" |
 
 ## Review Pipeline Templates (Conversational)
@@ -114,29 +97,6 @@ Investigation topics identified:
 • rate-limiting-implementation
 
 Would you like to proceed, or shall we refine?
-````
-
-**Design Review** (with gap analysis):
-````
-📋 Design Feasibility Analysis
-
-Requirements coverage:
-✅ User authentication - investigation.md#jwt-implementation
-✅ Password hashing - investigation.md#security-patterns
-⚠️ Password reset flow - Not investigated yet
-⚠️ Rate limiting - Not investigated yet
-❌ Email delivery - No investigation found
-
-Feasible design direction:
-• JWT service using jose library (evidenced)
-• Bcrypt for password hashing (evidenced)
-
-Missing information (blocking full design):
-• Password reset token generation strategy
-• Email service integration approach
-• Rate limiting middleware selection
-
-Recommendation: Complete missing investigations first, or proceed with partial design?
 ````
 
 ## Brainstorm Pipeline Templates (Exploratory Dialogue)

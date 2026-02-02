@@ -7,8 +7,6 @@
 
 These files track the current SBI's lifecycle:
 - <requirements-file>{sbi_requirements_path}</requirements-file> - SBI detailed requirements
-- <investigation-file>{sbi_investigation_path}</investigation-file> - SBI research findings
-- <design-file>{sbi_design_path}</design-file> - SBI technical design
 - <tasks-file>{sbi_tasks_path}</tasks-file> - SBI task tracking and timeline
 - <brainstorming-file>{sbi_brainstorming_path}</brainstorming-file> - SBI exploratory dialogue report
 - <memo-file>{sbi_memo_path}</memo-file> - SBI notes (**DO NOT ACCESS**)
