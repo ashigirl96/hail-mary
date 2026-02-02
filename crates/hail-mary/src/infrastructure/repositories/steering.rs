@@ -206,7 +206,7 @@ impl SteeringRepositoryInterface for SteeringRepository {
 
     fn deploy_slash_commands(&self) -> Result<(), ApplicationError> {
         use crate::infrastructure::embedded_resources::{
-            EmbeddedAgents, EmbeddedPbiCommands, EmbeddedSlashCommands, EmbeddedSpecCommands,
+            EmbeddedPbiCommands, EmbeddedSlashCommands, EmbeddedSpecCommands,
         };
 
         // Create .claude directory structure
@@ -270,14 +270,16 @@ impl SteeringRepositoryInterface for SteeringRepository {
             ))
         })?;
 
-        // Create .claude/agents directory
+        // Legacy cleanup: remove .claude/agents/ directory if present
         let agents_dir = claude_dir.join("agents");
-        fs::create_dir_all(&agents_dir).map_err(|e| {
-            ApplicationError::FileSystemError(format!(
-                "Failed to create .claude/agents directory: {}",
-                e
-            ))
-        })?;
+        if agents_dir.exists() {
+            fs::remove_dir_all(&agents_dir).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to remove legacy .claude/agents directory: {}",
+                    e
+                ))
+            })?;
+        }
 
         // Deploy embedded hm commands (always overwrite for consistency)
         for (name, content) in EmbeddedSlashCommands::get_all() {
@@ -309,14 +311,6 @@ impl SteeringRepositoryInterface for SteeringRepository {
                     "Failed to write spec command {}: {}",
                     name, e
                 ))
-            })?;
-        }
-
-        // Deploy embedded agents (always overwrite for consistency)
-        for (name, content) in EmbeddedAgents::get_all() {
-            let file_path = agents_dir.join(name);
-            fs::write(&file_path, content).map_err(|e| {
-                ApplicationError::FileSystemError(format!("Failed to write agent {}: {}", name, e))
             })?;
         }
 

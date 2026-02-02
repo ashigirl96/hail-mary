@@ -45,21 +45,21 @@ argument-hint: [--type <name>]
    ```
    > 🚀 Launching specialized steering investigators for {n} types...
    >
-   > Spawning steering-investigator agents:
+   > Spawning Explore agents:
    > • [Investigator 1] {type1.name} - {type1.purpose}
    > • [Investigator 2] {type2.name} - {type2.purpose}
    > • [Investigator 3] {type3.name} - {type3.purpose}
    > • [Investigator n] {typeN.name} - {typeN.purpose}
    >
-   > [Parallel steering-investigator agents processing independently...]
+   > [Parallel Explore agents processing independently...]
    ```
 
-   **[The implementation will send multiple Task tool calls with subagent_type="steering-investigator"]**
+   **[The implementation will send multiple Task tool calls with subagent_type="Explore"]**
 
-   Each steering-investigator receives type-specific context via prompt:
+   Each Explore agent receives type-specific context via prompt:
    ```python
    Task(
-       subagent_type="steering-investigator",
+       subagent_type="Explore",
        description="Verify {type.name} steering documentation",
        prompt="""
        Steering Type: {type.name}
@@ -153,10 +153,10 @@ Key behaviors:
 ## Tool Coordination
 
 - **@.kiro/config.toml**: Auto-loaded for configuration (no Read tool needed)
-- **Task**: Spawn **parallel** steering-investigator subagents for each steering type
-  - Multiple Task tools with `subagent_type="steering-investigator"` sent in single message
+- **Task**: Spawn **parallel** Explore subagents for each steering type
+  - Multiple Task tools with `subagent_type="Explore"` sent in single message
   - Each investigator receives type-specific context via prompt parameter
-  - Subagents operate independently with specialized verification methodology
+  - Subagents operate independently with read-only codebase exploration
 - **Grep**: Search for patterns matching criteria across codebase (used by subagents)
 - **Glob**: Find files by type and pattern (used by subagents)
 - **Read**: Load ALL steering files before applying updates (batch read operation)
@@ -165,7 +165,7 @@ Key behaviors:
 - **Bash**: Execute `hail-mary steering backup` and check file existence
 
 ## Key Patterns
-- **Specialized Investigation**: Config.toml types → **Parallel steering-investigator subagents** → evidence-based verification → aggregated results
+- **Specialized Investigation**: Config.toml types → **Parallel Explore subagents** → evidence-based verification → aggregated results
 - **Parameterized Subagent**: Single subagent type handles all steering types via prompt parameters
 - **Multi-Hypothesis Verification**: Each investigator maintains 3-7 competing theories during verification
 - **Evidence Chain Documentation**: Subagents document complete evidence trails for all findings

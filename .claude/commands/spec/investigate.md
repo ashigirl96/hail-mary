@@ -9,7 +9,7 @@ argument-hint: "[--topic <name>] [--deep]"
 Conduct technical research and append findings with reactive pattern-based routing.
 
 **Depth-Based Routing**:
-- Timeline with (deep-dive) label → Use evidence-collector agent
+- Timeline with (deep-dive) label → Use Explore agent
 - Default (no label) → Direct investigation
 
 Follow <kiro-workflows> Command Pipeline:
