@@ -33,19 +33,7 @@ impl SpecRepository {
         name: &str,
         lang: &str,
     ) -> Result<(), ApplicationError> {
-        // Create essential template files including tasks.md for orchestration
-
-        // TODO: Commenting out design.md and investigation.md generation for now
-        // until we determine the final approach
-        // let design_content = format!(
-        //     r#"# Design
-        //
-        // ## Overview
-        // [High-level architecture for {}]
-        //
-        // "#,
-        //     name
-        // );
+        // Create essential template files: tasks.md and memo.md
 
         let memo_content = format!(
             r#"# Memo: {}
@@ -53,13 +41,6 @@ impl SpecRepository {
 "#,
             name
         );
-
-        // let investigation_content = format!(
-        //     r#"# Investigation: {}
-        //
-        // "#,
-        //     name
-        // );
 
         // Create tasks.md with initial State Tracking and Timeline
         let tasks_content = format!(
@@ -72,34 +53,20 @@ impl SpecRepository {
 | Document | Status | Coverage | Next Action |
 |----------|--------|----------|-------------|
 | requirements.md | pending | - | Define requirements |
-| investigation.md | pending | - | Start investigation after requirements |
-| design.md | pending | - | Awaiting 100% coverage |
 | tasks.md#Timeline | pending | 0% | Plan implementation order |
 
 ## Timeline
 
 - [x] Spec created → {}
 - [ ] Requirements definition
-- [ ] Investigation topics identification
-- [ ] Design documentation
 - [ ] Implementation planning
 "#,
             lang, name
         );
 
-        // Write all template files including tasks.md
-        // TODO: Commented out design.md and investigation.md creation
-        // fs::write(spec_dir.join("design.md"), design_content).map_err(|e| {
-        //     ApplicationError::FileSystemError(format!("Failed to write design.md: {}", e))
-        // })?;
-
         fs::write(spec_dir.join("memo.md"), memo_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write memo.md: {}", e))
         })?;
-
-        // fs::write(spec_dir.join("investigation.md"), investigation_content).map_err(|e| {
-        //     ApplicationError::FileSystemError(format!("Failed to write investigation.md: {}", e))
-        // })?;
 
         fs::write(spec_dir.join("tasks.md"), tasks_content).map_err(|e| {
             ApplicationError::FileSystemError(format!("Failed to write tasks.md: {}", e))

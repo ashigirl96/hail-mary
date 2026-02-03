@@ -205,9 +205,7 @@ impl SteeringRepositoryInterface for SteeringRepository {
     }
 
     fn deploy_slash_commands(&self) -> Result<(), ApplicationError> {
-        use crate::infrastructure::embedded_resources::{
-            EmbeddedAgents, EmbeddedPbiCommands, EmbeddedSlashCommands, EmbeddedSpecCommands,
-        };
+        use crate::infrastructure::embedded_resources::EmbeddedSlashCommands;
 
         // Create .claude directory structure
         let claude_dir = self.path_manager.project_root().join(".claude");
@@ -224,23 +222,23 @@ impl SteeringRepositoryInterface for SteeringRepository {
             })?;
         }
 
-        // Remove existing .claude/commands/pbi directory to ensure clean deployment
+        // Legacy cleanup: remove .claude/commands/pbi directory if present
         let pbi_dir = commands_dir.join("pbi");
         if pbi_dir.exists() {
             fs::remove_dir_all(&pbi_dir).map_err(|e| {
                 ApplicationError::FileSystemError(format!(
-                    "Failed to remove existing .claude/commands/pbi directory: {}",
+                    "Failed to remove legacy .claude/commands/pbi directory: {}",
                     e
                 ))
             })?;
         }
 
-        // Remove existing .claude/commands/spec directory to ensure clean deployment
+        // Legacy cleanup: remove .claude/commands/spec directory if present
         let spec_dir = commands_dir.join("spec");
         if spec_dir.exists() {
             fs::remove_dir_all(&spec_dir).map_err(|e| {
                 ApplicationError::FileSystemError(format!(
-                    "Failed to remove existing .claude/commands/spec directory: {}",
+                    "Failed to remove legacy .claude/commands/spec directory: {}",
                     e
                 ))
             })?;
@@ -254,30 +252,16 @@ impl SteeringRepositoryInterface for SteeringRepository {
             ))
         })?;
 
-        // Create .claude/commands/pbi directory
-        fs::create_dir_all(&pbi_dir).map_err(|e| {
-            ApplicationError::FileSystemError(format!(
-                "Failed to create .claude/commands/pbi directory: {}",
-                e
-            ))
-        })?;
-
-        // Create .claude/commands/spec directory
-        fs::create_dir_all(&spec_dir).map_err(|e| {
-            ApplicationError::FileSystemError(format!(
-                "Failed to create .claude/commands/spec directory: {}",
-                e
-            ))
-        })?;
-
-        // Create .claude/agents directory
+        // Legacy cleanup: remove .claude/agents/ directory if present
         let agents_dir = claude_dir.join("agents");
-        fs::create_dir_all(&agents_dir).map_err(|e| {
-            ApplicationError::FileSystemError(format!(
-                "Failed to create .claude/agents directory: {}",
-                e
-            ))
-        })?;
+        if agents_dir.exists() {
+            fs::remove_dir_all(&agents_dir).map_err(|e| {
+                ApplicationError::FileSystemError(format!(
+                    "Failed to remove legacy .claude/agents directory: {}",
+                    e
+                ))
+            })?;
+        }
 
         // Deploy embedded hm commands (always overwrite for consistency)
         for (name, content) in EmbeddedSlashCommands::get_all() {
@@ -287,36 +271,6 @@ impl SteeringRepositoryInterface for SteeringRepository {
                     "Failed to write slash command {}: {}",
                     name, e
                 ))
-            })?;
-        }
-
-        // Deploy embedded pbi commands (always overwrite for consistency)
-        for (name, content) in EmbeddedPbiCommands::get_all() {
-            let file_path = pbi_dir.join(name);
-            fs::write(&file_path, content).map_err(|e| {
-                ApplicationError::FileSystemError(format!(
-                    "Failed to write PBI command {}: {}",
-                    name, e
-                ))
-            })?;
-        }
-
-        // Deploy embedded spec commands (always overwrite for consistency)
-        for (name, content) in EmbeddedSpecCommands::get_all() {
-            let file_path = spec_dir.join(name);
-            fs::write(&file_path, content).map_err(|e| {
-                ApplicationError::FileSystemError(format!(
-                    "Failed to write spec command {}: {}",
-                    name, e
-                ))
-            })?;
-        }
-
-        // Deploy embedded agents (always overwrite for consistency)
-        for (name, content) in EmbeddedAgents::get_all() {
-            let file_path = agents_dir.join(name);
-            fs::write(&file_path, content).map_err(|e| {
-                ApplicationError::FileSystemError(format!("Failed to write agent {}: {}", name, e))
             })?;
         }
 

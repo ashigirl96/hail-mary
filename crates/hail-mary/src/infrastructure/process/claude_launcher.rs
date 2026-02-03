@@ -10,9 +10,10 @@ impl ClaudeProcessLauncher {
 
     pub fn launch(
         &self,
-        system_prompt: &str,
+        system_prompt: Option<&str>,
         no_danger: bool,
         continue_conversation: bool,
+        plans_directory: Option<&str>,
     ) -> Result<()> {
         // Check if claude command exists
         let claude_exists = Self::check_claude_availability()?;
@@ -23,50 +24,11 @@ impl ClaudeProcessLauncher {
             ));
         }
 
-        // TODO: PostToolUse hook does not run when tools fail
-        // Issue: PostToolUse only executes after successful tool completion
-        //        When tools fail, no hook is triggered, leaving Claude without steering context
-        //
-        // Related Issues:
-        // - https://github.com/anthropics/claude-code/issues/4809 (exit code 1 blocks execution)
-        // - https://github.com/anthropics/claude-code/issues/4831 (OnToolError feature request)
-        //
-        // Current Solution: Using UserPromptSubmit instead
-        // - Runs on every user prompt, regardless of tool success/failure
-        // - Ensures steering context is always available to Claude
-        // - Supported by steering_remind.rs with --user-prompt-submit flag
-        //
-        // TODO: When OnToolError hook is implemented, consider switching to that
-        //       to provide steering specifically on tool failures
-
-        // Create inline settings JSON with UserPromptSubmit hook
-        let settings_json = r#"{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hail-mary steering remind --user-prompt-submit"
-          }
-        ]
-      }
-    ]
-  }
-}"#;
-
-        // Previously used PostToolUse (disabled due to not running on tool failures):
-        // "PostToolUse": [
-        //   {
-        //     "matcher": "*",
-        //     "hooks": [
-        //       {
-        //         "type": "command",
-        //         "command": "hail-mary steering remind --post-tool-use"
-        //       }
-        //     ]
-        //   }
-        // ]
+        // Build inline settings JSON with optional plansDirectory
+        let settings_json = match plans_directory {
+            Some(dir) => format!(r#"{{"plansDirectory": "{}"}}"#, dir),
+            None => "{}".to_string(),
+        };
 
         // Use exec to replace current process with Claude Code
         // This preserves TTY access while allowing backgrounding via shell job control
@@ -85,10 +47,13 @@ impl ClaudeProcessLauncher {
                 .env("ENABLE_BACKGROUND_TASKS", "1")
                 .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
 
+            // Add system prompt if provided
+            if let Some(prompt) = system_prompt {
+                cmd.arg("--append-system-prompt").arg(prompt);
+            }
+
             // Add arguments
-            cmd.arg("--append-system-prompt")
-                .arg(system_prompt)
-                .arg("--permission-mode")
+            cmd.arg("--permission-mode")
                 .arg("plan")
                 .arg("--settings")
                 .arg(settings_json);
@@ -121,10 +86,13 @@ impl ClaudeProcessLauncher {
                 .env("ENABLE_BACKGROUND_TASKS", "1")
                 .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
 
+            // Add system prompt if provided
+            if let Some(prompt) = system_prompt {
+                cmd.arg("--append-system-prompt").arg(prompt);
+            }
+
             // Add arguments
-            cmd.arg("--append-system-prompt")
-                .arg(system_prompt)
-                .arg("--permission-mode")
+            cmd.arg("--permission-mode")
                 .arg("plan")
                 .arg("--settings")
                 .arg(settings_json);
