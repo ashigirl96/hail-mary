@@ -93,11 +93,11 @@ pub fn launch_claude_with_spec(
         _ => None,
     };
 
-    // 5. Compute relative spec path for plansDirectory
+    // 5. Compute relative spec path for plansDirectory (<spec-path>/plans)
     let plans_directory = spec_path
         .as_ref()
         .and_then(|p| p.strip_prefix(project_root).ok())
-        .map(|p| p.display().to_string());
+        .map(|p| p.join("plans").display().to_string());
 
     // 6. Launch Claude with optional system prompt
     let launcher = ClaudeProcessLauncher::new();

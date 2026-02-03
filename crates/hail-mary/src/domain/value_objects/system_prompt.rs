@@ -8,9 +8,11 @@ const SPEC_FILES_TEMPLATE: &str = r#"# Spec Files
 - <spec-path>{spec_path}</spec-path> - Spec directory
 
 These files track the current feature's lifecycle:
+- <prd-file>{prd_path}</prd-file> - Objective and User Stories
 - <tasks-file>{tasks_path}</tasks-file> - Task tracking and timeline
 - <brainstorming-file>{brainstorming_path}</brainstorming-file> - Exploratory dialogue report
 - <memo-file>{memo_path}</memo-file> - Internal notes (**DO NOT ACCESS**)
+- <plans-dir>{plans_path}</plans-dir> - Implementation plans for user stories
 
 "#;
 
@@ -24,16 +26,20 @@ impl SystemPrompt {
     pub fn new(spec_name: &str, spec_path: &Path) -> Self {
         let path_str = spec_path.display().to_string();
 
+        let prd_path = format!("{}/prd.md", path_str);
         let tasks_path = format!("{}/tasks.md", path_str);
         let brainstorming_path = format!("{}/brainstorming.md", path_str);
         let memo_path = format!("{}/memo.md", path_str);
+        let plans_path = format!("{}/plans", path_str);
 
         let spec_section = SPEC_FILES_TEMPLATE
             .replace("{spec_name}", spec_name)
             .replace("{spec_path}", &path_str)
+            .replace("{prd_path}", &prd_path)
             .replace("{tasks_path}", &tasks_path)
             .replace("{brainstorming_path}", &brainstorming_path)
-            .replace("{memo_path}", &memo_path);
+            .replace("{memo_path}", &memo_path)
+            .replace("{plans_path}", &plans_path);
 
         let content = format!("{}{}", spec_section, BASE_TEMPLATE);
 
@@ -67,11 +73,15 @@ mod tests {
 
         assert!(content.contains("# Spec Files"));
         assert!(content.contains("<spec-name>test-feature</spec-name> - Current spec"));
+        assert!(content.contains("<prd-file>"));
+        assert!(content.contains("prd.md</prd-file>"));
         assert!(content.contains("<tasks-file>"));
         assert!(content.contains("tasks.md</tasks-file>"));
         assert!(content.contains("<brainstorming-file>"));
         assert!(content.contains("<memo-file>"));
         assert!(content.contains("DO NOT ACCESS"));
+        assert!(content.contains("<plans-dir>"));
+        assert!(content.contains("plans</plans-dir>"));
         assert!(content.contains("# Role"));
     }
 

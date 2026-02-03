@@ -1,0 +1,21 @@
+{
+  "name": "hail-mary-plugins",
+  "owner": {
+    "name": "ashigirl96"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for structured development workflows",
+    "version": "1.0.0",
+    "pluginRoot": "./.claude/plugins"
+  },
+  "plugins": [
+    {
+      "name": "prd-plugin",
+      "source": "./prd-plugin",
+      "description": "PRD management skill - objectives, user stories, and implementation plans with dig + decomposition methodology",
+      "version": "1.0.0",
+      "category": "workflow",
+      "tags": ["prd", "planning", "agile", "user-stories", "dig", "decomposition"]
+    }
+  ]
+}
