@@ -10,6 +10,7 @@ impl ClaudeProcessLauncher {
 
     pub fn launch(
         &self,
+        system_prompt: Option<&str>,
         no_danger: bool,
         continue_conversation: bool,
         plans_directory: Option<&str>,
@@ -46,6 +47,11 @@ impl ClaudeProcessLauncher {
                 .env("ENABLE_BACKGROUND_TASKS", "1")
                 .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
 
+            // Add system prompt if provided
+            if let Some(prompt) = system_prompt {
+                cmd.arg("--append-system-prompt").arg(prompt);
+            }
+
             // Add arguments
             cmd.arg("--permission-mode")
                 .arg("plan")
@@ -79,6 +85,11 @@ impl ClaudeProcessLauncher {
                 .env("FORCE_AUTO_BACKGROUND_TASKS", "1")
                 .env("ENABLE_BACKGROUND_TASKS", "1")
                 .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
+
+            // Add system prompt if provided
+            if let Some(prompt) = system_prompt {
+                cmd.arg("--append-system-prompt").arg(prompt);
+            }
 
             // Add arguments
             cmd.arg("--permission-mode")
