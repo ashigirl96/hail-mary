@@ -1,5 +1,5 @@
 {
-  "name": "prd-plugin",
+  "name": "prd",
   "description": "PRD (Product Requirements Document) management skill for feature development lifecycle - objectives, user stories, and implementation plans with dig + decomposition methodology",
   "version": "1.0.0",
   "author": {
