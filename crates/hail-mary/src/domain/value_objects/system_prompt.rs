@@ -4,7 +4,8 @@ const BASE_TEMPLATE: &str = include_str!("system_prompt_template.md");
 
 const SPEC_FILES_TEMPLATE: &str = r#"# Spec Files
 
-**Current**: {spec_name} (`{spec_path}`)
+- <spec-name>{spec_name}</spec-name> - Current spec
+- <spec-path>{spec_path}</spec-path> - Spec directory
 
 These files track the current feature's lifecycle:
 - <tasks-file>{tasks_path}</tasks-file> - Task tracking and timeline
@@ -65,7 +66,7 @@ mod tests {
         let content = prompt.as_str();
 
         assert!(content.contains("# Spec Files"));
-        assert!(content.contains("**Current**: test-feature"));
+        assert!(content.contains("<spec-name>test-feature</spec-name> - Current spec"));
         assert!(content.contains("<tasks-file>"));
         assert!(content.contains("tasks.md</tasks-file>"));
         assert!(content.contains("<brainstorming-file>"));
