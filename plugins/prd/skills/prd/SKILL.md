@@ -1,7 +1,7 @@
 ---
 name: prd
-description: Manage feature development lifecycle - objectives, user stories, and implementation plans. Use when user says "PRDを管理", "objectiveを作成", "user storyを考えて", "プランを作成", "実装したい", or needs to track feature progress.
-argument-hint: "[objective | stories [--add|--edit US-N|--status US-N] | plan [US-N]]"
+description: Manage feature development lifecycle - feature specs, user stories, and implementation plans. Use when user says "PRDを管理", "featureを定義", "user storyを考えて", "プランを作成", "実装したい", or needs to track feature progress.
+argument-hint: "[feature | stories [--add|--edit US-N|--status US-N] | plan [US-N]]"
 model: opus
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task, AskUserQuestion, EnterPlanMode
 ---
@@ -11,10 +11,10 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task, AskUserQuestion, Enter
 ## Workflow Overview
 
 ```
-/prd objective  →  /prd stories  →  /prd plan  →  implement  →  /prd stories --status US-N
-     ↓                  ↓               ↓                              ↓
-  Define WHY      Break down       Create plan              Mark completed or failed
-                  into stories     & implement                     ↓
+/prd feature  →  /prd stories  →  /prd plan  →  implement  →  /prd stories --status US-N
+      ↓                ↓               ↓                              ↓
+  Define WHAT     Break down       Create plan              Mark completed or failed
+  + HOW + WHY     into stories     & implement                     ↓
                                                             If failed: /prd plan (retry)
 ```
 
@@ -23,8 +23,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task, AskUserQuestion, Enter
 | Argument | Action | Reference |
 |----------|--------|-----------|
 | (none) | Show status, suggest next action | — |
-| `objective` | Create/refine prose objective | [objective.md](references/objective.md) |
-| `stories` | Generate stories from objective | [user-stories.md](references/user-stories.md) |
+| `feature` | Create/refine feature spec | [feature-spec.md](references/feature-spec.md) |
+| `stories` | Generate stories from feature spec | [user-stories.md](references/user-stories.md) |
 | `stories --add` | Add new story interactively | [user-stories.md](references/user-stories.md) |
 | `stories --edit US-N` | Edit existing story | [user-stories.md](references/user-stories.md) |
 | `stories --status US-N` | Update status (+ root cause if failed) | [user-stories.md](references/user-stories.md) |
@@ -57,9 +57,19 @@ This ensures plans are concrete, actionable, and executable.
 ```markdown
 # PRD: {spec-name}
 
-## Objective
+## Feature Spec
 
-{prose - no bullets, no tech details, focus on WHY}
+{free-form - what to build, how to implement, decisions made}
+
+### Open Questions
+- [ ] {unclear points remaining}
+
+### Readiness Checklist
+- [ ] WHY: Clear why this feature is needed
+- [ ] WHAT: Clear what to build specifically
+- [ ] HOW: Clear high-level implementation approach
+- [ ] SCOPE: Clear what's in and out of scope
+- [ ] Open Questions is empty
 
 ---
 
@@ -101,9 +111,10 @@ This ensures plans are concrete, actionable, and executable.
 
 | State | Suggestion |
 |-------|------------|
-| No prd.md | "Run `/prd objective` to start" |
-| No objective | "Run `/prd objective` to define what you're building" |
-| Objective only | "Run `/prd stories` to break it down" |
+| No prd.md | "Run `/prd feature` to start" |
+| No feature spec | "Run `/prd feature` to define what you're building" |
+| Feature spec has Open Questions | "Run `/prd feature` to resolve open questions" |
+| Feature spec ready (checklist complete) | "Run `/prd stories` to break it down" |
 | All stories pending | "Run `/prd plan` to start implementing" |
 | Story in_progress | Show which story, suggest continue or mark status |
 | Story failed | "Run `/prd plan` to retry with lessons learned" |
@@ -115,7 +126,8 @@ This ensures plans are concrete, actionable, and executable.
 
 | Error | Response |
 |-------|----------|
-| `/prd stories` without objective | "No objective found. Run `/prd objective` first." |
+| `/prd stories` without feature spec | "No feature spec found. Run `/prd feature` first." |
+| `/prd stories` with incomplete checklist | "Feature spec not ready. Run `/prd feature` to complete checklist." |
 | `/prd plan` without stories | "No stories found. Run `/prd stories` first." |
 | `/prd plan` all completed | "All stories completed. Add new stories or start new feature." |
 | `/prd stories --status US-99` (not found) | "US-99 not found. Available: US-1, US-2, US-3" |

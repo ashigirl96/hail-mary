@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "prd",
-      "source": "./.claude/plugins/prd-plugin",
+      "source": "./plugins/prd",
       "description": "PRD management skill - objectives, user stories, and implementation plans with dig + decomposition methodology",
       "version": "1.0.0",
       "category": "workflow",
