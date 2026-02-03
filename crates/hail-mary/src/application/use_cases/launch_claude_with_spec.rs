@@ -8,15 +8,13 @@ use crate::application::repositories::{
     steering_repository::SteeringRepositoryInterface,
 };
 use crate::domain::value_objects::spec::SpecValidator;
-use crate::domain::value_objects::steering::Steerings;
-use crate::domain::value_objects::system_prompt::SystemPrompt;
 use crate::infrastructure::process::claude_launcher::ClaudeProcessLauncher;
 use crate::infrastructure::tui::spec_selector::{SpecSelectionResult, SpecSelectorTui};
 
 pub fn launch_claude_with_spec(
     spec_repo: &dyn SpecRepositoryInterface,
     config_repo: &dyn ConfigRepositoryInterface,
-    steering_repo: &dyn SteeringRepositoryInterface,
+    _steering_repo: &dyn SteeringRepositoryInterface,
     no_danger: bool,
     continue_conversation: bool,
     project_root: &Path,
@@ -36,14 +34,14 @@ pub fn launch_claude_with_spec(
         .run()
         .map_err(|e| ApplicationError::FileSystemError(format!("TUI error: {}", e)))?;
 
-    let (spec_name, spec_path) = match selection_result {
+    let spec_path = match selection_result {
         SpecSelectionResult::SingleSpec(name) => {
             let path = spec_repo.get_spec_path(&name)?;
-            (Some(name), Some(path))
+            Some(path)
         }
         SpecSelectionResult::Pbi(name) => {
             let path = spec_repo.get_spec_path(&name)?;
-            (Some(name), Some(path))
+            Some(path)
         }
         SpecSelectionResult::Sbi(pbi_name, sbi_name) => {
             // Ensure SBI has tasks.md and memo.md (generate if missing)
@@ -51,7 +49,7 @@ pub fn launch_claude_with_spec(
 
             let pbi_path = spec_repo.get_spec_path(&pbi_name)?;
             let sbi_path = pbi_path.join(&sbi_name);
-            (Some(sbi_name), Some(sbi_path))
+            Some(sbi_path)
         }
         SpecSelectionResult::CreateNew => {
             // Prompt for name and create new spec
@@ -63,7 +61,7 @@ pub fn launch_claude_with_spec(
             let date = chrono::Utc::now().format("%Y-%m-%d");
             let full_name = format!("{}-{}", date, name);
             let path = spec_repo.get_spec_path(&full_name)?;
-            (Some(full_name), Some(path))
+            Some(path)
         }
         SpecSelectionResult::CreateNewSbi(pbi_name) => {
             // Prompt for SBI name
@@ -80,40 +78,24 @@ pub fn launch_claude_with_spec(
             // Get SBI path
             let pbi_path = spec_repo.get_spec_path(&pbi_name)?;
             let sbi_path = pbi_path.join(&sbi_name);
-            (Some(sbi_name), Some(sbi_path))
+            Some(sbi_path)
         }
-        SpecSelectionResult::NoSpec => (None, None),
+        SpecSelectionResult::NoSpec => None,
         SpecSelectionResult::Cancelled => {
             return Ok(()); // User cancelled, exit gracefully
         }
     };
 
-    // 4. Load project configuration and steering files
-    let steering_config = config_repo.load_steering_config()?;
-    let steering_files = steering_repo.load_steering_files(&steering_config)?;
-    let steerings = Steerings(steering_files);
-
-    // 5. Generate system prompt based on spec selection
-    let system_prompt = match (&spec_name, &spec_path) {
-        (Some(name), Some(path)) => SystemPrompt::new(Some(name), Some(path), &steerings),
-        _ => SystemPrompt::new(None, None, &steerings),
-    };
-
-    // 6. Compute relative spec path for plansDirectory
+    // 4. Compute relative spec path for plansDirectory
     let plans_directory = spec_path
         .as_ref()
         .and_then(|p| p.strip_prefix(project_root).ok())
         .map(|p| p.display().to_string());
 
-    // 7. Launch Claude with system prompt
+    // 5. Launch Claude (no system prompt - using skill-based approach)
     let launcher = ClaudeProcessLauncher::new();
     launcher
-        .launch(
-            system_prompt.as_str(),
-            no_danger,
-            continue_conversation,
-            plans_directory.as_deref(),
-        )
+        .launch(no_danger, continue_conversation, plans_directory.as_deref())
         .map_err(|e| ApplicationError::ProcessLaunchError(e.to_string()))?;
 
     Ok(())

@@ -10,7 +10,6 @@ impl ClaudeProcessLauncher {
 
     pub fn launch(
         &self,
-        system_prompt: &str,
         no_danger: bool,
         continue_conversation: bool,
         plans_directory: Option<&str>,
@@ -23,22 +22,6 @@ impl ClaudeProcessLauncher {
                 "Claude Code CLI not found. Please install it first: https://claude.ai/code"
             ));
         }
-
-        // TODO: PostToolUse hook does not run when tools fail
-        // Issue: PostToolUse only executes after successful tool completion
-        //        When tools fail, no hook is triggered, leaving Claude without steering context
-        //
-        // Related Issues:
-        // - https://github.com/anthropics/claude-code/issues/4809 (exit code 1 blocks execution)
-        // - https://github.com/anthropics/claude-code/issues/4831 (OnToolError feature request)
-        //
-        // Current Solution: Using UserPromptSubmit instead
-        // - Runs on every user prompt, regardless of tool success/failure
-        // - Ensures steering context is always available to Claude
-        // - Supported by steering_remind.rs with --user-prompt-submit flag
-        //
-        // TODO: When OnToolError hook is implemented, consider switching to that
-        //       to provide steering specifically on tool failures
 
         // Build inline settings JSON with UserPromptSubmit hook and optional plansDirectory
         let plans_dir_entry = match plans_directory {
@@ -64,19 +47,6 @@ impl ClaudeProcessLauncher {
             plans_dir_entry
         );
 
-        // Previously used PostToolUse (disabled due to not running on tool failures):
-        // "PostToolUse": [
-        //   {
-        //     "matcher": "*",
-        //     "hooks": [
-        //       {
-        //         "type": "command",
-        //         "command": "hail-mary steering remind --post-tool-use"
-        //       }
-        //     ]
-        //   }
-        // ]
-
         // Use exec to replace current process with Claude Code
         // This preserves TTY access while allowing backgrounding via shell job control
 
@@ -94,10 +64,8 @@ impl ClaudeProcessLauncher {
                 .env("ENABLE_BACKGROUND_TASKS", "1")
                 .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
 
-            // Add arguments
-            cmd.arg("--append-system-prompt")
-                .arg(system_prompt)
-                .arg("--permission-mode")
+            // Add arguments (no system prompt - using skill-based approach)
+            cmd.arg("--permission-mode")
                 .arg("plan")
                 .arg("--settings")
                 .arg(settings_json);
@@ -130,10 +98,8 @@ impl ClaudeProcessLauncher {
                 .env("ENABLE_BACKGROUND_TASKS", "1")
                 .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
 
-            // Add arguments
-            cmd.arg("--append-system-prompt")
-                .arg(system_prompt)
-                .arg("--permission-mode")
+            // Add arguments (no system prompt - using skill-based approach)
+            cmd.arg("--permission-mode")
                 .arg("plan")
                 .arg("--settings")
                 .arg(settings_json);
