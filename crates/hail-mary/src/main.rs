@@ -1,9 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use hail_mary::cli::args::{Cli, Commands, SteeringCommands};
-use hail_mary::cli::commands::{
-    CodeCommand, CompleteCommand, SteeringBackupCommand, SteeringRemindCommand, completion,
-};
+use hail_mary::cli::commands::{CodeCommand, CompleteCommand, SteeringBackupCommand, completion};
 use hail_mary::cli::formatters::format_error;
 use std::process;
 
@@ -37,15 +35,6 @@ async fn run() -> Result<()> {
             SteeringCommands::Backup => {
                 let backup_command = SteeringBackupCommand::new();
                 backup_command.execute()?;
-            }
-            SteeringCommands::Remind {
-                input,
-                user_prompt_submit,
-                post_tool_use,
-            } => {
-                let remind_command =
-                    SteeringRemindCommand::new(input, user_prompt_submit, post_tool_use);
-                remind_command.execute().await?;
             }
         },
     }

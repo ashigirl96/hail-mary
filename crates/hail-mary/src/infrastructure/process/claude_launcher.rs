@@ -23,29 +23,11 @@ impl ClaudeProcessLauncher {
             ));
         }
 
-        // Build inline settings JSON with UserPromptSubmit hook and optional plansDirectory
-        let plans_dir_entry = match plans_directory {
-            Some(dir) => format!(",\n  \"plansDirectory\": \"{}\"", dir),
-            None => String::new(),
+        // Build inline settings JSON with optional plansDirectory
+        let settings_json = match plans_directory {
+            Some(dir) => format!(r#"{{"plansDirectory": "{}"}}"#, dir),
+            None => "{}".to_string(),
         };
-
-        let settings_json = format!(
-            r#"{{
-  "hooks": {{
-    "UserPromptSubmit": [
-      {{
-        "hooks": [
-          {{
-            "type": "command",
-            "command": "hail-mary steering remind --user-prompt-submit"
-          }}
-        ]
-      }}
-    ]
-  }}{}
-}}"#,
-            plans_dir_entry
-        );
 
         // Use exec to replace current process with Claude Code
         // This preserves TTY access while allowing backgrounding via shell job control
@@ -64,7 +46,7 @@ impl ClaudeProcessLauncher {
                 .env("ENABLE_BACKGROUND_TASKS", "1")
                 .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
 
-            // Add arguments (no system prompt - using skill-based approach)
+            // Add arguments
             cmd.arg("--permission-mode")
                 .arg("plan")
                 .arg("--settings")
@@ -98,7 +80,7 @@ impl ClaudeProcessLauncher {
                 .env("ENABLE_BACKGROUND_TASKS", "1")
                 .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
 
-            // Add arguments (no system prompt - using skill-based approach)
+            // Add arguments
             cmd.arg("--permission-mode")
                 .arg("plan")
                 .arg("--settings")

@@ -42,21 +42,6 @@ pub enum Commands {
 pub enum SteeringCommands {
     /// Create a backup of steering files
     Backup,
-
-    /// Remind relevant steering sections based on input
-    Remind {
-        /// Input text (for hook mode, reads from stdin)
-        #[arg(value_name = "INPUT", conflicts_with_all = ["user_prompt_submit", "post_tool_use"])]
-        input: Option<String>,
-
-        /// UserPromptSubmit hook mode: read from stdin and format for template
-        #[arg(long, conflicts_with = "post_tool_use")]
-        user_prompt_submit: bool,
-
-        /// PostToolUse hook mode: read from stdin and format as JSON
-        #[arg(long, conflicts_with = "user_prompt_submit")]
-        post_tool_use: bool,
-    },
 }
 
 #[derive(ValueEnum, Clone, Debug)]
