@@ -15,6 +15,14 @@
       "version": "1.0.0",
       "category": "workflow",
       "tags": ["prd", "planning", "agile", "user-stories", "dig", "decomposition"]
+    },
+    {
+      "name": "steering",
+      "source": "./plugins/steering",
+      "description": "Steering documentation management - verify, update, and save learnings to project knowledge base",
+      "version": "1.0.0",
+      "category": "workflow",
+      "tags": ["steering", "documentation", "knowledge-base"]
     }
   ]
 }

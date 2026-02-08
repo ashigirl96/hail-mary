@@ -1,0 +1,17 @@
+{
+  "name": "steering",
+  "description": "Steering documentation management - verify, update, and save learnings to project knowledge base",
+  "version": "1.0.0",
+  "author": {
+    "name": "ashigirl96"
+  },
+  "repository": "https://github.com/ashigirl96/hail-mary",
+  "license": "MIT",
+  "keywords": [
+    "steering",
+    "documentation",
+    "knowledge-base",
+    "verification",
+    "learning"
+  ]
+}

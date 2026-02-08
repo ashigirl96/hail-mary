@@ -37,9 +37,6 @@ pub trait SteeringRepositoryInterface {
     /// Delete the oldest steering backups
     fn delete_oldest_steering_backups(&self, count: usize) -> Result<(), ApplicationError>;
 
-    /// Deploy embedded slash command markdown files
-    fn deploy_slash_commands(&self) -> Result<(), ApplicationError>;
-
     /// Update .gitignore file with necessary entries
     fn update_gitignore(&self) -> Result<(), ApplicationError>;
 

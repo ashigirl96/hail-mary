@@ -31,9 +31,6 @@ pub fn initialize_project(
     // Update .gitignore (idempotent)
     steering_repo.update_gitignore()?;
 
-    // Deploy slash command markdown files (always overwrites)
-    steering_repo.deploy_slash_commands()?;
-
     Ok(())
 }
 
@@ -166,19 +163,5 @@ mod tests {
             }
         }
 
-        // Test deploy slash commands failure
-        {
-            let config_repo = MockConfigRepository::new();
-            let spec_repo = MockSpecRepository::new();
-            let steering_repo = MockSteeringRepository::new();
-            steering_repo.set_operation_to_fail("deploy_slash_commands");
-
-            let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-            assert!(result.is_err());
-            match result.unwrap_err() {
-                ApplicationError::FileSystemError(_) => {}
-                other => panic!("Expected FileSystemError, got {:?}", other),
-            }
-        }
     }
 }

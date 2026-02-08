@@ -163,17 +163,6 @@ impl SteeringRepositoryInterface for MockSteeringRepository {
         Ok(())
     }
 
-    fn deploy_slash_commands(&self) -> Result<(), ApplicationError> {
-        if self.should_fail("deploy_slash_commands") {
-            return Err(ApplicationError::FileSystemError(
-                "Mock deploy failure".to_string(),
-            ));
-        }
-
-        // For testing purposes, this is a no-op
-        Ok(())
-    }
-
     fn update_gitignore(&self) -> Result<(), ApplicationError> {
         if self.should_fail("update_gitignore") {
             return Err(ApplicationError::FileSystemError(
