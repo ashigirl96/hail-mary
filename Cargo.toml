@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/hail-mary", "crates/anthropic-client"]
+members = ["crates/hail-mary"]
 resolver = "2"
 
 [workspace.dependencies]
