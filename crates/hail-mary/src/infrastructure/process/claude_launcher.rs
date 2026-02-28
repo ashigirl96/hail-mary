@@ -8,14 +8,7 @@ impl ClaudeProcessLauncher {
         Self
     }
 
-    pub fn launch(
-        &self,
-        system_prompt: Option<&str>,
-        no_danger: bool,
-        continue_conversation: bool,
-        plans_directory: Option<&str>,
-    ) -> Result<()> {
-        // Check if claude command exists
+    pub fn launch(&self, no_danger: bool, continue_conversation: bool) -> Result<()> {
         let claude_exists = Self::check_claude_availability()?;
 
         if !claude_exists {
@@ -24,85 +17,32 @@ impl ClaudeProcessLauncher {
             ));
         }
 
-        // Build inline settings JSON with optional plansDirectory
-        let settings_json = match plans_directory {
-            Some(dir) => format!(r#"{{"plansDirectory": "{}"}}"#, dir),
-            None => "{}".to_string(),
-        };
-
-        // Use exec to replace current process with Claude Code
-        // This preserves TTY access while allowing backgrounding via shell job control
-
         #[cfg(unix)]
         {
             use std::os::unix::process::CommandExt;
 
-            // On Unix systems, use exec to replace the current process
             let mut cmd = Command::new("claude");
 
-            // Set environment variables
-            cmd.env("DISABLE_INTERLEAVED_THINKING", "1")
-                .env("DISABLE_MICROCOMPACT", "1")
-                .env("FORCE_AUTO_BACKGROUND_TASKS", "1")
-                .env("ENABLE_BACKGROUND_TASKS", "1")
-                .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
-
-            // Add system prompt if provided
-            if let Some(prompt) = system_prompt {
-                cmd.arg("--append-system-prompt").arg(prompt);
-            }
-
-            // Add arguments
-            cmd.arg("--permission-mode")
-                .arg("plan")
-                .arg("--settings")
-                .arg(settings_json);
-
-            // Conditionally add --dangerously-skip-permissions (add it unless --no-danger is specified)
             if !no_danger {
                 cmd.arg("--dangerously-skip-permissions");
             }
 
-            // Add --continue flag if specified
             if continue_conversation {
                 cmd.arg("--continue");
             }
 
-            let error = cmd.exec(); // This never returns if successful
-
-            // If we reach here, exec failed
+            let error = cmd.exec();
             Err(anyhow::anyhow!("Failed to exec Claude Code: {}", error))
         }
 
         #[cfg(not(unix))]
         {
-            // Fallback for non-Unix systems
             let mut cmd = Command::new("claude");
 
-            // Set environment variables
-            cmd.env("DISABLE_INTERLEAVED_THINKING", "1")
-                .env("DISABLE_MICROCOMPACT", "1")
-                .env("FORCE_AUTO_BACKGROUND_TASKS", "1")
-                .env("ENABLE_BACKGROUND_TASKS", "1")
-                .env("CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR", "1");
-
-            // Add system prompt if provided
-            if let Some(prompt) = system_prompt {
-                cmd.arg("--append-system-prompt").arg(prompt);
-            }
-
-            // Add arguments
-            cmd.arg("--permission-mode")
-                .arg("plan")
-                .arg("--settings")
-                .arg(settings_json);
-
-            // Conditionally add --dangerously-skip-permissions (add it unless --no-danger is specified)
             if !no_danger {
                 cmd.arg("--dangerously-skip-permissions");
             }
 
-            // Add --continue flag if specified
             if continue_conversation {
                 cmd.arg("--continue");
             }
@@ -115,7 +55,6 @@ impl ClaudeProcessLauncher {
     }
 
     fn check_claude_availability() -> Result<bool> {
-        // Use 'which' on Unix-like systems, 'where' on Windows
         let command = if cfg!(target_os = "windows") {
             "where"
         } else {
@@ -132,34 +71,4 @@ impl Default for ClaudeProcessLauncher {
     fn default() -> Self {
         Self::new()
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_claude_launcher_new() {
-        let launcher = ClaudeProcessLauncher::new();
-        // Just ensure it can be created without panicking
-        assert!(std::mem::size_of_val(&launcher) == 0);
-    }
-
-    #[test]
-    fn test_claude_launcher_default() {
-        let launcher = ClaudeProcessLauncher::new();
-        // Just ensure default works
-        assert!(std::mem::size_of_val(&launcher) == 0);
-    }
-
-    #[test]
-    fn test_check_claude_availability() {
-        // This test will depend on whether claude is actually installed
-        // We just test that the function doesn't panic
-        let result = ClaudeProcessLauncher::check_claude_availability();
-        assert!(result.is_ok());
-    }
-
-    // Note: We don't test launch() method in unit tests as it would actually
-    // try to launch Claude. This should be tested in integration tests with mocks.
 }

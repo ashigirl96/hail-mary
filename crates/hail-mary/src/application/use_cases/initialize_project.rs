@@ -1,167 +1,89 @@
 use crate::application::errors::ApplicationError;
-use crate::application::repositories::{
-    ConfigRepositoryInterface, SpecRepositoryInterface, SteeringRepositoryInterface,
-};
-use crate::domain::value_objects::steering::SteeringConfig;
+use std::fs;
+use std::path::Path;
 
-pub fn initialize_project(
-    config_repo: &dyn ConfigRepositoryInterface,
-    _spec_repo: &dyn SpecRepositoryInterface,
-    steering_repo: &dyn SteeringRepositoryInterface,
-) -> Result<(), ApplicationError> {
-    // Initialize steering directories (idempotent)
-    steering_repo.initialize_steering()?;
+pub fn initialize_project(project_root: &Path) -> Result<(), ApplicationError> {
+    let specs_dir = project_root.join(".specs");
+    let archive_dir = specs_dir.join("archive");
 
-    // Ensure steering configuration exists (idempotent)
-    config_repo.ensure_steering_config()?;
+    // Create .specs/ and .specs/archive/ (idempotent)
+    fs::create_dir_all(&archive_dir).map_err(|e| {
+        ApplicationError::ProjectInitializationError(format!(
+            "Failed to create .specs directories: {}",
+            e
+        ))
+    })?;
 
-    // Ensure steering backup configuration exists (idempotent)
-    config_repo.ensure_steering_backup_config()?;
+    // Auto-migration: .kiro/specs/ → .specs/
+    let old_specs_dir = project_root.join(".kiro").join("specs");
+    if old_specs_dir.exists() && is_dir_empty_or_nonexistent(&specs_dir, &["archive"]) {
+        migrate_directory_contents(&old_specs_dir, &specs_dir)?;
+    }
 
-    // Ensure allowed_operations exists for all steering types (idempotent)
-    config_repo.ensure_allowed_operations()?;
-
-    // Ensure spec configuration exists (idempotent)
-    config_repo.ensure_spec_config()?;
-
-    // Create steering files (idempotent)
-    let steering_config = SteeringConfig::default_for_new_project();
-    steering_repo.create_steering_files(&steering_config)?;
-
-    // Update .gitignore (idempotent)
-    steering_repo.update_gitignore()?;
+    // Auto-migration: .kiro/archive/ → .specs/archive/
+    let old_archive_dir = project_root.join(".kiro").join("archive");
+    if old_archive_dir.exists() && is_dir_empty(&archive_dir) {
+        migrate_directory_contents(&old_archive_dir, &archive_dir)?;
+    }
 
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::application::test_helpers::{
-        MockConfigRepository, MockSpecRepository, MockSteeringRepository,
-    };
-
-    #[test]
-    fn test_initialize_project_success() {
-        let config_repo = MockConfigRepository::new();
-        let spec_repo = MockSpecRepository::new();
-        let steering_repo = MockSteeringRepository::new();
-
-        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-        assert!(result.is_ok());
+fn is_dir_empty(dir: &Path) -> bool {
+    if !dir.exists() {
+        return true;
     }
-
-    #[test]
-    fn test_initialize_project_idempotent() {
-        let config_repo = MockConfigRepository::new();
-        let spec_repo = MockSpecRepository::new();
-        let steering_repo = MockSteeringRepository::new();
-        steering_repo.set_project_exists(true); // Project already exists
-
-        // Should succeed even if project already exists (idempotent)
-        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-        assert!(result.is_ok());
+    match fs::read_dir(dir) {
+        Ok(mut entries) => entries.next().is_none(),
+        Err(_) => true,
     }
+}
 
-    #[test]
-    fn test_initialize_project_steering_failure() {
-        let config_repo = MockConfigRepository::new();
-        let spec_repo = MockSpecRepository::new();
-        let steering_repo = MockSteeringRepository::new();
-        steering_repo.set_operation_to_fail("initialize_steering");
-
-        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            ApplicationError::FileSystemError(_) => {}
-            other => panic!("Expected FileSystemError, got {:?}", other),
-        }
+fn is_dir_empty_or_nonexistent(dir: &Path, ignore: &[&str]) -> bool {
+    if !dir.exists() {
+        return true;
     }
-
-    #[test]
-    fn test_initialize_project_config_failure() {
-        let config_repo = MockConfigRepository::new();
-        config_repo.set_operation_to_fail("ensure_steering_config");
-        let spec_repo = MockSpecRepository::new();
-        let steering_repo = MockSteeringRepository::new();
-
-        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            ApplicationError::ConfigurationError(_) => {}
-            other => panic!("Expected ConfigurationError, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn test_initialize_project_gitignore_failure() {
-        let config_repo = MockConfigRepository::new();
-        let spec_repo = MockSpecRepository::new();
-        let steering_repo = MockSteeringRepository::new();
-        steering_repo.set_operation_to_fail("update_gitignore");
-
-        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-        assert!(result.is_err());
-        match result.unwrap_err() {
-            ApplicationError::FileSystemError(_) => {}
-            other => panic!("Expected FileSystemError, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn test_initialize_project_flow_order() {
-        // Test that operations are called in the correct order
-        let config_repo = MockConfigRepository::new();
-        let spec_repo = MockSpecRepository::new();
-        let steering_repo = MockSteeringRepository::new();
-
-        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_initialize_project_with_default_config() {
-        let config_repo = MockConfigRepository::new();
-        let spec_repo = MockSpecRepository::new();
-        let steering_repo = MockSteeringRepository::new();
-
-        let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_initialize_project_error_propagation() {
-        // Test that all possible errors from dependencies are properly propagated
-
-        // Test steering config failure
-        {
-            let config_repo = MockConfigRepository::new();
-            config_repo.set_operation_to_fail("ensure_steering_config");
-            let spec_repo = MockSpecRepository::new();
-            let steering_repo = MockSteeringRepository::new();
-
-            let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-            assert!(result.is_err());
-            match result.unwrap_err() {
-                ApplicationError::ConfigurationError(_) => {}
-                other => panic!("Expected ConfigurationError, got {:?}", other),
+    match fs::read_dir(dir) {
+        Ok(entries) => {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if !ignore.contains(&name.as_str()) {
+                    return false;
+                }
             }
+            true
         }
-
-        // Test gitignore failure
-        {
-            let config_repo = MockConfigRepository::new();
-            let spec_repo = MockSpecRepository::new();
-            let steering_repo = MockSteeringRepository::new();
-            steering_repo.set_operation_to_fail("update_gitignore");
-
-            let result = initialize_project(&config_repo, &spec_repo, &steering_repo);
-            assert!(result.is_err());
-            match result.unwrap_err() {
-                ApplicationError::FileSystemError(_) => {}
-                other => panic!("Expected FileSystemError, got {:?}", other),
-            }
-        }
-
+        Err(_) => true,
     }
+}
+
+fn migrate_directory_contents(src: &Path, dst: &Path) -> Result<(), ApplicationError> {
+    let entries = fs::read_dir(src).map_err(|e| {
+        ApplicationError::ProjectInitializationError(format!(
+            "Failed to read migration source {}: {}",
+            src.display(),
+            e
+        ))
+    })?;
+
+    for entry in entries {
+        let entry = entry.map_err(|e| {
+            ApplicationError::ProjectInitializationError(format!(
+                "Failed to read directory entry: {}",
+                e
+            ))
+        })?;
+        let dest_path = dst.join(entry.file_name());
+        if !dest_path.exists() {
+            fs::rename(entry.path(), &dest_path).map_err(|e| {
+                ApplicationError::ProjectInitializationError(format!(
+                    "Failed to migrate {}: {}",
+                    entry.path().display(),
+                    e
+                ))
+            })?;
+        }
+    }
+
+    Ok(())
 }

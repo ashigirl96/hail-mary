@@ -21,7 +21,7 @@ pub enum Commands {
     /// Mark specifications as complete
     Complete,
 
-    /// Launch Claude Code with Kiro specification context
+    /// Launch Claude Code with specification context
     Code {
         /// Skip the dangerous permissions flag (--dangerously-skip-permissions)
         #[arg(long)]
@@ -30,18 +30,6 @@ pub enum Commands {
         #[arg(short = 'c', long = "continue")]
         continue_conversation: bool,
     },
-
-    /// Steering system management
-    Steering {
-        #[command(subcommand)]
-        command: SteeringCommands,
-    },
-}
-
-#[derive(Subcommand, Debug)]
-pub enum SteeringCommands {
-    /// Create a backup of steering files
-    Backup,
 }
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -95,19 +83,5 @@ impl Commands {
             } => Some(*continue_conversation),
             _ => None,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_commands_is_methods() {
-        let code_cmd = Commands::Code {
-            no_danger: false,
-            continue_conversation: false,
-        };
-        assert!(code_cmd.is_code());
     }
 }

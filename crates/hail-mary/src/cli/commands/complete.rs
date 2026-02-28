@@ -21,7 +21,6 @@ impl CompleteCommand {
     }
 
     pub fn execute(&self) -> Result<()> {
-        // Discover project root
         let path_manager = match PathManager::discover() {
             Ok(pm) => pm,
             Err(_) => {
@@ -33,10 +32,8 @@ impl CompleteCommand {
             }
         };
 
-        // Create spec repository
         let spec_repo = SpecRepository::new(path_manager);
 
-        // Get list of specifications
         let specs = match spec_repo.list_spec_directories() {
             Ok(specs) => specs,
             Err(e) => {
@@ -48,16 +45,14 @@ impl CompleteCommand {
         if specs.is_empty() {
             println!(
                 "{}",
-                format_error("No specifications found in .kiro/specs directory.")
+                format_error("No specifications found in .specs directory.")
             );
             return Ok(());
         }
 
-        // Show TUI for spec selection
         let selected_specs = match select_specs_for_completion(specs)? {
             Some(specs) => specs,
             None => {
-                // User cancelled
                 return Ok(());
             }
         };
@@ -66,7 +61,6 @@ impl CompleteCommand {
             return Ok(());
         }
 
-        // Execute complete specs
         match complete_specs(&spec_repo, &selected_specs) {
             Ok(()) => {
                 println!(
